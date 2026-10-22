@@ -1,0 +1,37 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: staging_deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Remote Deployment over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME || 'root' }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            cd /opt/ess-chatbot-staging
+            git fetch origin main
+            git reset --hard origin/main
+            chmod +x scripts/update_staging.sh
+            bash scripts/update_staging.sh
+
+      - name: Verify Public Health Endpoint
+        run: |
+          echo "Verifying public staging health endpoint..."
+          curl -fsSL https://chatbot.emperorsmartsolutions.com/api/health
