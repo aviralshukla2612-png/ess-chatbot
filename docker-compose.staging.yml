@@ -1,0 +1,140 @@
+name: ess-chatbot-staging
+
+networks:
+  ess_staging_internal:
+    name: ess_staging_internal
+    driver: bridge
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ess-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ess_chatbot_staging}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgvector_staging_data:/var/lib/postgresql/data
+    networks:
+      - ess_staging_internal
+    ports:
+      # Bound strictly to loopback interface 127.0.0.1 for local staging testing
+      - "127.0.0.1:${POSTGRES_PORT:-5499}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ess_chatbot_staging}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ess-ollama-staging
+    restart: unless-stopped
+    networks:
+      - ess_staging_internal
+    environment:
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=1
+    volumes:
+      - ollama_staging_data:/root/.ollama
+      - ./artifacts:/root/artifacts:ro
+      - ./scripts:/root/scripts:ro
+    # Ollama is NOT exposed on host ports for complete network isolation
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ess-frontend-staging
+    restart: unless-stopped
+    ports:
+      # Bound strictly to loopback interface 127.0.0.1 for host Nginx reverse proxy
+      - "127.0.0.1:${FRONTEND_PORT:-3301}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://127.0.0.1:3301}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ess_chatbot_staging}?schema=public}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-ess_chatbot_staging}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-groq}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - OLLAMA_URL=http://ollama:11434
+      - CHAT_MODEL=${CHAT_MODEL:-llama3.2:1b}
+      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
+      - LEAD_WEBHOOK_URL=${LEAD_WEBHOOK_URL:-}
+      - LEAD_WEBHOOK_SECRET=${LEAD_WEBHOOK_SECRET:-}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - DB_POOL_MAX=${DB_POOL_MAX:-10}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-}
+      - WHATSAPP_API_TOKEN=${WHATSAPP_API_TOKEN:-}
+      - WHATSAPP_VERIFY_TOKEN=${WHATSAPP_VERIFY_TOKEN:-}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-}
+    volumes:
+      # Staging uses a dedicated, isolated data directory
+      - ./frontend/data-staging:/app/data
+    networks:
+      - ess_staging_internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ess-fastapi-staging
+    restart: unless-stopped
+    networks:
+      - ess_staging_internal
+    ports:
+      # Bound strictly to loopback interface 127.0.0.1 to avoid public exposure
+      - "127.0.0.1:${FASTAPI_PORT:-8009}:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-ess_chatbot_staging}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASS=${POSTGRES_PASSWORD}
+      - OLLAMA_URL=http://ollama:11434
+      - LLM_MODEL=${CHAT_MODEL:-llama3.2:1b}
+      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
+    volumes:
+      - ./app:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+volumes:
+  pgvector_staging_data:
+    name: pgvector_staging_data
+  ollama_staging_data:
+    name: ollama_staging_data

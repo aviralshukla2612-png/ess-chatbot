@@ -2,10 +2,29 @@ import { NextResponse } from "next/server";
 import { validateUrlForSSRF } from "@/lib/security/ssrf";
 import { websitesDb } from "@/lib/db/websites";
 import { botsStore } from "@/lib/db/botsStore";
+import { requireOrgRole, ROLES } from "@/lib/auth/guard";
 
 export async function POST(request, { params }) {
   try {
+    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
+    if (!auth.ok) return auth.response;
+
+    const { principal } = auth;
     const { botId } = await params;
+
+    const isSuperAdmin =
+      principal.platformRole === ROLES.SUPER_ADMIN ||
+      principal.orgRole === ROLES.SUPER_ADMIN;
+
+    const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    if (!bot) {
+      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    }
+
+    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
+      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    }
+
     const body = await request.json();
     const { websiteUrl, manualOverride, forceVerify } = body;
 
@@ -80,7 +99,6 @@ export async function POST(request, { params }) {
     }
 
     // 2. Inspect HTML for widget script
-    const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
     const validIds = [botId];
     if (bot) {
       if (bot.id) validIds.push(bot.id);

@@ -15,34 +15,12 @@ export async function OPTIONS() {
 export async function GET(request, { params }) {
   try {
     const { botId } = await params;
-    const resolvedBotId =
-      botId === "default" ||
-      botId === "preview" ||
-      botId === "demo" ||
-      botId === "undefined" ||
-      botId === "bot_1791618269632"
-        ? "bot_aa"
-        : botId;
+    const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
 
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
-    if (!bot) {
-      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
-    }
-
-    if (!bot) {
+    if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       return corsResponse(
-        NextResponse.json({
-          success: true,
-          bot: {
-            id: botId,
-            name: "AI Assistant",
-            avatar: "🤖",
-            primaryColor: "#4f46e5",
-            welcomeMessage: "Hi there! How can I assist you today?",
-            launcherPosition: "bottom-right",
-            brandingEnabled: true,
-          },
-        })
+        NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 })
       );
     }
 

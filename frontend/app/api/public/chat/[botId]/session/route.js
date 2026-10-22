@@ -78,28 +78,12 @@ function setVisitorCookie(response, botId, rawToken) {
 async function handleSession(request, { params }) {
   try {
     const { botId } = await params;
-    const resolvedBotId =
-      botId === "default" ||
-      botId === "preview" ||
-      botId === "demo" ||
-      botId === "undefined" ||
-      botId === "aa" ||
-      botId === "bot_1791618269632"
-        ? "bot_aa"
-        : botId;
-
+    // Strict resolution: Only support exact botId or legacy alias 'aa' -> 'bot_aa', never fall back to default/random bots
+    const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
-    if (!bot) {
-      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
-    }
-    if (!bot) {
-      const allBots = (await botsStore.getBotsAsync()) || botsStore.getBots();
-      if (allBots && allBots.length > 0) bot = allBots[0];
-    }
-
-    if (!bot) {
+    if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       return corsResponse(
-        NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 }),
+        NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 }),
         request
       );
     }
@@ -244,14 +228,11 @@ async function handleSession(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { botId } = await params;
-    const resolvedBotId = botId === "default" || botId === "aa" ? "bot_aa" : botId;
+    const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
-    if (!bot) {
-      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
-    }
-    if (!bot) {
+    if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       return corsResponse(
-        NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 }),
+        NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 }),
         request
       );
     }

@@ -1,12 +1,32 @@
 import { NextResponse } from "next/server";
 import { validateUrlForSSRF } from "@/lib/security/ssrf";
 import { websitesDb } from "@/lib/db/websites";
+import { botsStore } from "@/lib/db/botsStore";
 import { n8nClient } from "@/lib/n8n/client";
+import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
 
 export async function GET(request, { params }) {
   try {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
+    const { principal } = auth;
     const { botId } = await params;
-    const sources = await websitesDb.getWebsiteSources(botId);
+
+    const isSuperAdmin =
+      principal.platformRole === ROLES.SUPER_ADMIN ||
+      principal.orgRole === ROLES.SUPER_ADMIN;
+
+    const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    if (!bot) {
+      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    }
+
+    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
+      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    }
+
+    const sources = await websitesDb.getWebsiteSources(botId, isSuperAdmin ? null : principal.organizationId);
     return NextResponse.json({ success: true, sources });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -15,7 +35,26 @@ export async function GET(request, { params }) {
 
 export async function POST(request, { params }) {
   try {
+    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
+    if (!auth.ok) return auth.response;
+
+    const { principal } = auth;
     const { botId } = await params;
+
+    const isSuperAdmin =
+      principal.platformRole === ROLES.SUPER_ADMIN ||
+      principal.orgRole === ROLES.SUPER_ADMIN;
+
+    const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    if (!bot) {
+      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    }
+
+    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
+      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    }
+
+    const targetOrgId = bot.organizationId || principal.organizationId;
     const body = await request.json();
 
     const {
@@ -41,9 +80,9 @@ export async function POST(request, { params }) {
       );
     }
 
-    // 2. Create Website Source Record
+    // 2. Create Website Source Record with authentic tenant organizationId
     const source = await websitesDb.createWebsiteSource({
-      organizationId: "org_ess_01",
+      organizationId: targetOrgId,
       botId,
       name: name?.trim() || ssrfCheck.hostname,
       baseUrl: ssrfCheck.normalizedUrl,
@@ -55,14 +94,14 @@ export async function POST(request, { params }) {
     });
 
     // 3. Create Background Ingestion Job
-    const job = await websitesDb.createIngestionJob(source.id, botId, "org_ess_01");
+    const job = await websitesDb.createIngestionJob(source.id, botId, targetOrgId);
 
     // 4. Trigger n8n Workflow / Background Pipeline (Non-blocking)
     const dispatch = await n8nClient.triggerIngestionWorkflow({
       jobId: job.id,
       websiteSource: source,
       botId,
-      organizationId: "org_ess_01",
+      organizationId: targetOrgId,
     });
 
     return NextResponse.json(

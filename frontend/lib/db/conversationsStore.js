@@ -269,37 +269,60 @@ export const conversationsStore = {
     // Broadcast in real-time to all connected dashboards
     sseBroker.broadcast("message_added", {
       conversationId: conv.id,
+      organizationId: conv.organizationId,
       message: newMsg,
       conversation: conv,
     });
 
     // Dual-write message to PostgreSQL
     try {
-      queryDb(
-        `INSERT INTO "Message" ("id", "conversationId", "role", "content", "createdAt")
-         VALUES ($1, $2, $3, $4, $5);`,
-        [newMsg.id, conv.id, newMsg.role, newMsg.content, newMsg.createdAt]
-      ).catch((err) => console.warn("[DB_MESSAGE_INSERT_FAIL]", err.message));
+      (async () => {
+        // Ensure parent Conversation exists before inserting child Message
+        await queryDb(
+          `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "visitorName", "status", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+           ON CONFLICT ("id") DO NOTHING;`,
+          [
+            conv.id,
+            conv.organizationId || "org_ess_default",
+            conv.botId || "bot_aa",
+            conv.visitorId || null,
+            conv.visitorName || "Website Visitor",
+            conv.status || "Active",
+            conv.lastActivityAt,
+            conv.historyExpiresAt,
+            conv.createdAt,
+            conv.updatedAt,
+          ]
+        );
 
-      queryDb(
-        `UPDATE "Conversation"
-         SET "lastMessage" = $1,
-             "lastActivityAt" = $2,
-             "historyExpiresAt" = $3,
-             "visitorId" = COALESCE($4, "visitorId"),
-             "qualificationState" = COALESCE($5, "qualificationState"),
-             "updatedAt" = $6
-         WHERE "id" = $7;`,
-        [
-          newMsg.content,
-          conv.lastActivityAt,
-          conv.historyExpiresAt,
-          conv.visitorId,
-          conv.qualification ? JSON.stringify(conv.qualification) : null,
-          conv.updatedAt,
-          conv.id,
-        ]
-      ).catch((err) => console.warn("[DB_CONVERSATION_UPDATE_FAIL]", err.message));
+        await queryDb(
+          `INSERT INTO "Message" ("id", "conversationId", "role", "content", "createdAt")
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT ("id") DO NOTHING;`,
+          [newMsg.id, conv.id, newMsg.role, newMsg.content, newMsg.createdAt]
+        );
+
+        await queryDb(
+          `UPDATE "Conversation"
+           SET "lastMessage" = $1,
+               "lastActivityAt" = $2,
+               "historyExpiresAt" = $3,
+               "visitorId" = COALESCE($4, "visitorId"),
+               "qualificationState" = COALESCE($5, "qualificationState"),
+               "updatedAt" = $6
+           WHERE "id" = $7;`,
+          [
+            newMsg.content,
+            conv.lastActivityAt,
+            conv.historyExpiresAt,
+            conv.visitorId,
+            conv.qualification ? JSON.stringify(conv.qualification) : null,
+            conv.updatedAt,
+            conv.id,
+          ]
+        );
+      })().catch((err) => console.warn("[DB_MESSAGE_INSERT_FAIL]", err.message));
     } catch (e) {}
 
     return { message: newMsg, conversation: conv };
@@ -384,14 +407,25 @@ export const conversationsStore = {
     return { cleanedCount: modified };
   },
 
-  deleteConversation(id) {
+  deleteConversation(id, organizationId = null) {
     const list = loadFromDisk();
-    const filtered = list.filter((c) => c.id !== id);
+    const target = list.find((c) => c.id === id && (!organizationId || c.organizationId === organizationId));
+    const targetOrgId = organizationId || target?.organizationId || null;
+
+    const filtered = list.filter((c) => {
+      if (c.id !== id) return true;
+      if (organizationId && c.organizationId !== organizationId) return true;
+      return false;
+    });
     saveToDisk(filtered);
-    sseBroker.broadcast("conversation_deleted", { id });
+    sseBroker.broadcast("conversation_deleted", { id, organizationId: targetOrgId });
 
     try {
-      queryDb('DELETE FROM "Conversation" WHERE "id" = $1', [id]).catch((e) => {});
+      if (organizationId) {
+        queryDb('DELETE FROM "Conversation" WHERE "id" = $1 AND "organizationId" = $2;', [id, organizationId]).catch((e) => {});
+      } else {
+        queryDb('DELETE FROM "Conversation" WHERE "id" = $1;', [id]).catch((e) => {});
+      }
     } catch (e) {}
 
     return { success: true };

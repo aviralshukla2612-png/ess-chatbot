@@ -199,27 +199,12 @@ export async function POST(request, { params }) {
       );
     }
 
-    // 1. Resolve Bot & Enforce Status
-    const resolvedBotId =
-      botId === "default" ||
-      botId === "preview" ||
-      botId === "demo" ||
-      botId === "undefined" ||
-      botId === "aa" ||
-      botId === "bot_1791618269632"
-        ? "bot_aa"
-        : botId;
+    // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots)
+    const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
-    if (!bot) {
-      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
-    }
-    if (!bot) {
-      const allBots = (await botsStore.getBotsAsync()) || botsStore.getBots();
-      if (allBots && allBots.length > 0) bot = allBots[0];
-    }
-    if (!bot) {
+    if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       return corsResponse(
-        NextResponse.json({ error: "Bot not found" }, { status: 404 }),
+        NextResponse.json({ error: "Chatbot not found or inactive" }, { status: 404 }),
         request
       );
     }

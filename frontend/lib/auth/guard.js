@@ -3,7 +3,15 @@
  * Enforces authenticated identity, session tokens, API keys, and RBAC on every private endpoint.
  */
 
-import { NextResponse } from "next/server.js";
+let NextResponse = globalThis.Response;
+try {
+  const nextServer = await import("next/server.js");
+  if (nextServer?.NextResponse) {
+    NextResponse = nextServer.NextResponse;
+  }
+} catch {
+  // Use global Response in environments without next package installed (standalone test runner)
+}
 import { parseCookies, verifySessionToken } from "./session.js";
 import { authStore } from "../db/authStore.js";
 

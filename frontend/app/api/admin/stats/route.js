@@ -3,8 +3,12 @@ import { queryDb } from "@/lib/db/dbPool";
 import { botsStore } from "@/lib/db/botsStore";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 import { leadsStore } from "@/lib/db/leadsStore";
+import { requireSuperAdmin } from "@/lib/auth/guard";
 
-export async function GET() {
+export async function GET(request) {
+  const auth = await requireSuperAdmin(request);
+  if (!auth.ok) return auth.response;
+
   try {
     // 1. Live count of Organizations
     let orgsCount = 1;

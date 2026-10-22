@@ -13,9 +13,16 @@ export async function POST(request) {
   try {
     const clone = request.clone();
     const body = await clone.json().catch(() => ({}));
-    const botId = body.botId || "bot_aa";
+    const botId = body.botId || request.headers.get("x-bot-id");
+    if (!botId) {
+      const res = NextResponse.json({ success: false, error: "Chatbot ID is required" }, { status: 400 });
+      res.headers.set("Access-Control-Allow-Origin", "*");
+      return res;
+    }
     return await handleChatPost(request, { params: Promise.resolve({ botId }) });
   } catch (err) {
-    return await handleChatPost(request, { params: Promise.resolve({ botId: "bot_aa" }) });
+    const res = NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    res.headers.set("Access-Control-Allow-Origin", "*");
+    return res;
   }
 }

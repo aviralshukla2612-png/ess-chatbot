@@ -318,15 +318,27 @@ export const leadsStore = {
     return lead;
   },
 
-  deleteLead(id) {
+  deleteLead(id, organizationId = null) {
     const list = loadFromDisk();
-    const filtered = list.filter((l) => l.id !== id);
+    const target = list.find((l) => l.id === id && (!organizationId || l.organizationId === organizationId));
+    const targetOrgId = organizationId || target?.organizationId || null;
+
+    const filtered = list.filter((l) => {
+      if (l.id !== id) return true;
+      if (organizationId && l.organizationId !== organizationId) return true;
+      return false;
+    });
     saveToDisk(filtered);
-    sseBroker.broadcast("lead_deleted", { id });
+    sseBroker.broadcast("lead_deleted", { id, organizationId: targetOrgId });
 
     try {
-      queryDb('DELETE FROM "Lead" WHERE "id" = $1', [id])
-        .catch((err) => console.warn("[DB_LEAD_DELETE_FAIL]", err.message));
+      if (organizationId) {
+        queryDb('DELETE FROM "Lead" WHERE "id" = $1 AND "organizationId" = $2', [id, organizationId])
+          .catch((err) => console.warn("[DB_LEAD_DELETE_FAIL]", err.message));
+      } else {
+        queryDb('DELETE FROM "Lead" WHERE "id" = $1', [id])
+          .catch((err) => console.warn("[DB_LEAD_DELETE_FAIL]", err.message));
+      }
     } catch (e) {}
 
     return { success: true };

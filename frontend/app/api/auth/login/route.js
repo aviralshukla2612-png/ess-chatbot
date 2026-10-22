@@ -30,40 +30,26 @@ export async function POST(request) {
   try {
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const body = await request.json().catch(() => ({}));
-    const { email, password, directLogin, portalRole } = body;
-
-    const isDirect = Boolean(directLogin || (!email && !password));
-    if (!isDirect) {
-      const rateCheck = checkLoginRateLimit(clientIp);
-      if (!rateCheck.allowed) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Too many login attempts. Please try again in ${rateCheck.retrySec} seconds.`,
-          },
-          { status: 429, headers: { "Retry-After": String(rateCheck.retrySec) } }
-        );
-      }
+    const { email, password } = body;
+    if (!email || !password) {
+      return NextResponse.json(
+        { success: false, error: "Email and password are required" },
+        { status: 400 }
+      );
     }
 
-    const isSuperRole =
-      portalRole === "superadmin" ||
-      portalRole === "SUPER_ADMIN" ||
-      String(portalRole || "").toLowerCase().includes("super") ||
-      (email && email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
-
-    let authResult = null;
-
-    if (isDirect) {
-      authResult = await authStore.directLogin(isSuperRole ? "superadmin" : (portalRole || "ORG_ADMIN"));
-    } else {
-      try {
-        authResult = await authStore.login({ email, password });
-      } catch (loginErr) {
-        // Graceful fallback for portal role switching
-        authResult = await authStore.directLogin(isSuperRole ? "superadmin" : "ORG_ADMIN");
-      }
+    const rateCheck = checkLoginRateLimit(clientIp);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many login attempts. Please try again in ${rateCheck.retrySec} seconds.`,
+        },
+        { status: 429, headers: { "Retry-After": String(rateCheck.retrySec) } }
+      );
     }
+
+    const authResult = await authStore.login({ email, password });
 
     const { user, organizationId, orgRole, memberships } = authResult;
 

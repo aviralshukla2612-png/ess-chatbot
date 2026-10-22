@@ -48,7 +48,7 @@ describe("SaaS Subscription Billing & Quota Enforcement Suite", () => {
 
   it("3. Enforces strict idempotency on duplicate webhook events", async () => {
     const mockEvent = {
-      id: "evt_duplicate_test_001",
+      id: `evt_duplicate_test_${crypto.randomUUID().slice(0, 8)}`,
       event: "subscription.charged",
       payload: {
         subscription: {

@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getPlatformSettings, savePlatformSettings } from "@/lib/db/settingsStore";
 import { queryDb } from "@/lib/db/dbPool";
+import { requireSuperAdmin } from "@/lib/auth/guard";
 
-export async function GET() {
+export async function GET(request) {
+  const auth = await requireSuperAdmin(request);
+  if (!auth.ok) return auth.response;
+
   const settings = getPlatformSettings();
 
   // Test live status of PostgreSQL
@@ -73,6 +77,9 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    const auth = await requireSuperAdmin(req);
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const result = savePlatformSettings(body);
     if (!result.ok) {

@@ -37,12 +37,15 @@ export const quotaGuard = {
       [organizationId, metric, periodKey]
     );
 
+    const key = `${organizationId}_${metric}_${periodKey}`;
+    const memUsage = memoryUsageCounters.get(key) || 0;
+
     if (dbRes.ok && dbRes.rows.length > 0) {
-      return parseInt(dbRes.rows[0].total, 10);
+      const dbTotal = parseInt(dbRes.rows[0].total, 10);
+      return Math.max(dbTotal, memUsage);
     }
 
-    const key = `${organizationId}_${metric}_${periodKey}`;
-    return memoryUsageCounters.get(key) || 0;
+    return memUsage;
   },
 
   /**

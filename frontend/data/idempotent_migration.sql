@@ -1,6 +1,6 @@
 -- =========================================================
 -- ESS CHATBOT SaaS — COMPLETE POSTGRESQL & PGVECTOR MIGRATION
--- Generated: 2026-10-14T05:32:13.713Z
+-- Generated: 2026-10-22T12:31:12.942Z
 -- =========================================================
 BEGIN;
 
@@ -38,31 +38,11 @@ CREATE TABLE IF NOT EXISTS "Bot" (
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3.5. Visitors Table (Persistent identity, opaque token hashes)
-CREATE TABLE IF NOT EXISTS "Visitor" (
-  "id" VARCHAR(128) PRIMARY KEY,
-  "organizationId" VARCHAR(64) NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
-  "botId" VARCHAR(64) NOT NULL REFERENCES "Bot"("id") ON DELETE CASCADE,
-  "visitorTokenHash" VARCHAR(128) NOT NULL,
-  "leadId" VARCHAR(128),
-  "name" VARCHAR(255),
-  "email" VARCHAR(255),
-  "phone" VARCHAR(64),
-  "metadata" JSONB DEFAULT '{}'::JSONB,
-  "lastSeenAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  "lastConversationAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "uq_visitor_token_bot" UNIQUE ("botId", "visitorTokenHash")
-);
-
--- 4. Conversations Table (Supports 24h visibility window and qualification persistence)
+-- 4. Conversations Table
 CREATE TABLE IF NOT EXISTS "Conversation" (
   "id" VARCHAR(128) PRIMARY KEY,
   "organizationId" VARCHAR(64) NOT NULL,
   "botId" VARCHAR(64) NOT NULL REFERENCES "Bot"("id") ON DELETE CASCADE,
-  "visitorId" VARCHAR(128),
-  "leadId" VARCHAR(128),
   "visitorName" VARCHAR(255) DEFAULT 'Website Visitor',
   "visitorEmail" VARCHAR(255),
   "visitorPhone" VARCHAR(64),
@@ -71,19 +51,9 @@ CREATE TABLE IF NOT EXISTS "Conversation" (
   "isLead" BOOLEAN DEFAULT FALSE,
   "leadScore" VARCHAR(32),
   "lastMessage" TEXT,
-  "qualificationState" JSONB DEFAULT '{}'::JSONB,
-  "lastActivityAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  "historyExpiresAt" TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- Migration statements to guarantee columns exist on existing databases
-ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "visitorId" VARCHAR(128);
-ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "leadId" VARCHAR(128);
-ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "qualificationState" JSONB DEFAULT '{}'::JSONB;
-ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "historyExpiresAt" TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours');
 
 -- 5. Messages Table
 CREATE TABLE IF NOT EXISTS "Message" (
@@ -169,11 +139,7 @@ CREATE TABLE IF NOT EXISTS "AuditLog" (
 
 -- Indexes for performance & vector search
 CREATE INDEX IF NOT EXISTS idx_bot_org ON "Bot" ("organizationId");
-CREATE INDEX IF NOT EXISTS idx_visitor_lookup ON "Visitor" ("botId", "visitorTokenHash");
-CREATE INDEX IF NOT EXISTS idx_visitor_tenant ON "Visitor" ("organizationId", "botId");
 CREATE INDEX IF NOT EXISTS idx_conversation_tenant ON "Conversation" ("organizationId", "botId");
-CREATE INDEX IF NOT EXISTS idx_conversation_visitor ON "Conversation" ("visitorId", "lastActivityAt");
-CREATE INDEX IF NOT EXISTS idx_conversation_history_expiry ON "Conversation" ("historyExpiresAt");
 CREATE INDEX IF NOT EXISTS idx_lead_tenant ON "Lead" ("organizationId", "botId");
 CREATE INDEX IF NOT EXISTS idx_document_tenant ON "KnowledgeDocument" ("organizationId", "botId");
 CREATE INDEX IF NOT EXISTS idx_chunk_tenant ON "KnowledgeChunk" ("organizationId", "botId");
@@ -183,27 +149,27 @@ WITH (m = 16, ef_construction = 64);
 
 -- Organization & Bot: aa (bot_aa)
 INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_default', 'Emperor Smart Solutions', 'org-bot_aa', 'Enterprise', 'ACTIVE', NOW(), NOW())
+VALUES ('org_ess_default', 'Emperor Smart Solutions', 'org-bot_aa', 'Enterprise', 'ACTIVE', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_aa', 'org_default', 'aa', 'Official AI assistant for Emperor Smart Solutions.', '⚡', '#4f46e5', 'Active', 'You are the official AI assistant for Emperor Smart Solutions (ESS), founded by Yash Sharma (Founder) and Karan Makwana (Co-Founder). Provide verified facts about services, founders, developer hiring, office location in Ahmedabad, and budget tiers. Never fabricate or invent facts.', 'Hello! I am the AI assistant for Emperor Smart Solutions. How can I help you today?', NOW(), NOW())
+VALUES ('bot_aa', 'org_ess_default', 'aa', 'Official AI assistant for Emperor Smart Solutions.', '⚡', '#4f46e5', 'Active', 'You are the official AI technology consultant for Emperor Smart Solutions (ESS), founded by Yash Sharma (Founder) and Karan Makwana (Co-Founder). Official Website: https://emperorsmartsolutions.com (always use HTTPS). Head Office: 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India. Phone & WhatsApp: +91 63591 20081. Inquiries Email: contact@emperorsmartsolutions.com. We are a custom software engineering and enterprise AI company. WE build mobile apps with Flutter, React Native, iOS, and Android, as well as modern web platforms, backend APIs, and custom AI systems (RAG, autonomous agents). GREETINGS & PERSONALIZATION: Whenever a visitor greets you or begins conversation, if their name is not yet known, politely ask for their Name and Phone number first. When their name is known, ALWAYS address them personally by their name (e.g., ''Hi Aviral!'', ''Hello Aviral, ...''). NEVER suggest competitors or tell visitors to build apps on their own. PRICING IN RUPEES ONLY: When discussing mobile apps, AI, or project costs, present Emperor Smart Solutions'' development services and pricing tiers strictly in Indian Rupees (₹) only without US dollars: prototypes from ₹50,000, bespoke applications ₹2,00,000 – ₹5,00,000+. Always proactively ask for the visitor''s Name, Phone Number (or WhatsApp), and Email address to send them a customized proposal.', 'Hello! Welcome to Emperor Smart Solutions. May I know your name and contact number (or WhatsApp) so I can assist you better?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791787975361_b7dj', 'org_default', 'bot_aa', 'Vikram Joshi', 'vikram@enterprise.in', '+91 99887 76655', 'Direct Inbound', 'High', 'New', 'Full Stack Next.js + Flutter development quote', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_1792666528752_mh5r', 'org_default', 'bot_aa', 'Siddharth Mehta', 'siddharth.new@logistics.in', '+91 99000 88776', 'Mehta Freight Solutions', 'Hot', 'New', 'Custom ERP & GPS fleet tracking application', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791608783809_j20l', 'org_default', 'bot_aa', 'Sarah Connor', 'sarah@sky.net', '+1 555-0199', 'Website Embed Visitor', 'High', 'New', 'Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_master_eval_1792666527562', 'org_default', 'bot_aa', 'Enterprise Client', 'client@enterprise.com', '+919876543210', 'Direct Inbound', 'Hot', 'NEW', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791608185636_9oft', 'org_default', 'bot_aa', 'John Doe', 'john.doe@innovate.io', '+91 99999 88888', 'Website Embed Visitor', 'High', 'New', 'Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_alpha_confidential', 'org_default', 'bot_aa', 'VIP Buyer', 'vip@buyer.com', '', 'Direct Inbound', 'Medium', 'New', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_seed_01', 'org_default', 'bot_aa', 'Rohan Varma', 'rohan.v@techlogix.co', '+91 98200 12345', 'TechLogix Global', 'High', 'New', 'Interested in custom ERP & CRM automation pipeline with real-time vector search.', '₹1,50,000', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_1791889312212_yf2w', 'org_default', 'bot_aa', 'Aviral', '', '', 'Direct Inbound', 'Medium', 'New', 'Website Development: Business: Yes | Project: New website | Admin Panel: Yes | Online Payments: Yes', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
@@ -260,15 +226,39 @@ VALUES ('chk_doc_emperor_smart_solutions_01_4', 'doc_emperor_smart_solutions_01'
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('test_deploy_1791608783005', 'org_default', 'bot_aa', 'Sarah Connor', 'sarah@sky.net', '+1 555-0199', 'Active', true, 'Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?', NOW(), NOW())
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('session_bot_aa_1791608185637', 'org_default', 'bot_aa', 'John Doe', 'john.doe@innovate.io', '+91 99999 88888', 'Active', true, 'Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.', NOW(), NOW())
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_seed_01', 'org_default', 'bot_aa', 'Acme Logistics Inquiry', 'contact@acmelogistics.com', '+91 98765 43210', 'Active', true, 'Can we schedule a live demo of the ERP integration modules?', NOW(), NOW())
+VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('wa_919876543210', 'org_default', 'bot_aa', 'WhatsApp Lead', '', '919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 COMMIT;

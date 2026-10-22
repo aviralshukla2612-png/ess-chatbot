@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { queryDb } from "./dbPool.js";
+import { sseBroker } from "./sseBroker.js";
 
 function resolveDataFile() {
   const frontendPath = path.join(process.cwd(), "frontend", "data", "bots.json");
@@ -273,7 +274,6 @@ export const botsStore = {
     ).catch(() => {});
 
     try {
-      const { sseBroker } = require("./sseBroker");
       sseBroker.broadcast("bot_updated", merged);
     } catch (e) {}
 
@@ -282,6 +282,11 @@ export const botsStore = {
 
   deleteBot(id, organizationId = null) {
     const bots = loadBotsFromDisk();
+    const target = bots.find(
+      (b) => (b.id === id || b.name?.toLowerCase() === id?.toLowerCase()) && (!organizationId || b.organizationId === organizationId)
+    );
+    const targetOrgId = organizationId || target?.organizationId || null;
+
     const filtered = bots.filter((b) => {
       if (b.id !== id && b.name?.toLowerCase() !== id?.toLowerCase()) return true;
       if (organizationId && b.organizationId !== organizationId) return true; // keep if different tenant
@@ -297,8 +302,7 @@ export const botsStore = {
     }
 
     try {
-      const { sseBroker } = require("./sseBroker");
-      sseBroker.broadcast("bot_deleted", { id });
+      sseBroker.broadcast("bot_deleted", { id, organizationId: targetOrgId });
     } catch (e) {}
     return { success: true };
   },
