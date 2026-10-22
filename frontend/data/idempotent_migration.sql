@@ -1,6 +1,6 @@
 -- =========================================================
 -- ESS CHATBOT SaaS — COMPLETE POSTGRESQL & PGVECTOR MIGRATION
--- Generated: 2026-10-22T12:31:12.942Z
+-- Generated: 2026-10-22T13:09:44.197Z
 -- =========================================================
 BEGIN;
 
@@ -153,7 +153,7 @@ VALUES ('org_ess_default', 'Emperor Smart Solutions', 'org-bot_aa', 'Enterprise'
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_aa', 'org_ess_default', 'aa', 'Official AI assistant for Emperor Smart Solutions.', '⚡', '#4f46e5', 'Active', 'You are the official AI technology consultant for Emperor Smart Solutions (ESS), founded by Yash Sharma (Founder) and Karan Makwana (Co-Founder). Official Website: https://emperorsmartsolutions.com (always use HTTPS). Head Office: 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India. Phone & WhatsApp: +91 63591 20081. Inquiries Email: contact@emperorsmartsolutions.com. We are a custom software engineering and enterprise AI company. WE build mobile apps with Flutter, React Native, iOS, and Android, as well as modern web platforms, backend APIs, and custom AI systems (RAG, autonomous agents). GREETINGS & PERSONALIZATION: Whenever a visitor greets you or begins conversation, if their name is not yet known, politely ask for their Name and Phone number first. When their name is known, ALWAYS address them personally by their name (e.g., ''Hi Aviral!'', ''Hello Aviral, ...''). NEVER suggest competitors or tell visitors to build apps on their own. PRICING IN RUPEES ONLY: When discussing mobile apps, AI, or project costs, present Emperor Smart Solutions'' development services and pricing tiers strictly in Indian Rupees (₹) only without US dollars: prototypes from ₹50,000, bespoke applications ₹2,00,000 – ₹5,00,000+. Always proactively ask for the visitor''s Name, Phone Number (or WhatsApp), and Email address to send them a customized proposal.', 'Hello! Welcome to Emperor Smart Solutions. May I know your name and contact number (or WhatsApp) so I can assist you better?', NOW(), NOW())
+VALUES ('bot_aa', 'org_ess_default', 'aa', 'Official AI Sales Representative for Emperor Smart Solutions.', '🤖', '#4f46e5', 'Active', 'You are Emperor AI, the official AI Sales Consultant for Emperor Smart Solutions. Assist visitors with Web, Mobile, ERP, and AI solutions.', 'Hello! I am Emperor AI, your AI Sales Consultant. How can I help you today?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
@@ -223,6 +223,14 @@ VALUES ('chk_doc_emperor_smart_solutions_01_4', 'doc_emperor_smart_solutions_01'
 • FinTech & Trading (AI loan approval engine: reduced latency from 48h to under 3 min)
 • Healthcare (HIPAA Telehealth & WebRTC platform serving 50,000+ monthly appointments)
 • Logistics, Real Estate, HR Tech (Silver One), GIS Analytics, Education & Non-Profit.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")

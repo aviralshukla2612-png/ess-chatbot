@@ -1,5 +1,43 @@
 [
   {
+    "id": "bot_beta_valid",
+    "organizationId": "org_reg_beta_222",
+    "status": "Active",
+    "conversationsCount": 0,
+    "questionsCount": 0,
+    "leadsCount": 0,
+    "sourcesCount": 0,
+    "createdDate": "Oct 22, 2026",
+    "lastActive": "Just now",
+    "primaryColor": "#4f46e5",
+    "welcomeMessage": "Hello! I am Beta Tech Support. How can I help you today?",
+    "launcherPosition": "bottom-right",
+    "brandingEnabled": true,
+    "allowedDomains": [
+      "*"
+    ],
+    "name": "Beta Tech Support"
+  },
+  {
+    "id": "bot_alpha_valid",
+    "organizationId": "org_reg_alpha_111",
+    "status": "Active",
+    "conversationsCount": 0,
+    "questionsCount": 0,
+    "leadsCount": 0,
+    "sourcesCount": 0,
+    "createdDate": "Oct 22, 2026",
+    "lastActive": "Just now",
+    "primaryColor": "#4f46e5",
+    "welcomeMessage": "Hello! I am Alpha Customer Service. How can I help you today?",
+    "launcherPosition": "bottom-right",
+    "brandingEnabled": true,
+    "allowedDomains": [
+      "*"
+    ],
+    "name": "Alpha Customer Service"
+  },
+  {
     "id": "bot_aa",
     "organizationId": "org_ess_default",
     "name": "aa",

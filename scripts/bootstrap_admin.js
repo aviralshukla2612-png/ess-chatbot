@@ -30,9 +30,22 @@
 
 import crypto from "crypto";
 import { createRequire } from "module";
-import { hashPassword } from "../frontend/lib/auth/password.js";
-
 const require = createRequire(import.meta.url);
+
+let hashPassword;
+try {
+  const m = await import("../frontend/lib/auth/password.js");
+  hashPassword = m.hashPassword;
+} catch {
+  try {
+    const m = await import("../lib/auth/password.js");
+    hashPassword = m.hashPassword;
+  } catch {
+    const m = await import("./lib/auth/password.js");
+    hashPassword = m.hashPassword;
+  }
+}
+
 let pg;
 try {
   pg = require("pg");
@@ -40,8 +53,12 @@ try {
   try {
     pg = require("../frontend/node_modules/pg");
   } catch {
-    console.error("[BOOTSTRAP_ERROR] 'pg' package is required but could not be resolved.");
-    process.exit(1);
+    try {
+      pg = require("/app/node_modules/pg");
+    } catch {
+      console.error("[BOOTSTRAP_ERROR] 'pg' package is required but could not be resolved.");
+      process.exit(1);
+    }
   }
 }
 

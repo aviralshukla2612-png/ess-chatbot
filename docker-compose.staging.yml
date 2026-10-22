@@ -91,6 +91,7 @@ services:
     volumes:
       # Staging uses a dedicated, isolated data directory
       - ./frontend/data-staging:/app/data
+      - ./scripts:/app/scripts:ro
     networks:
       - ess_staging_internal
     depends_on:
