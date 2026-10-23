@@ -636,51 +636,73 @@
 
   function formatMessage(text, isUser = false) {
     if (!text || typeof text !== "string") return "";
-    let html = text;
+
+    // 1. Safe HTML escaping for all messages (XSS prevention)
+    let escaped = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
 
     if (isUser) {
-      // Safe HTML escaping for user messages
-      html = html
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
       // Auto-link standalone URLs in user bubble with WHITE text
-      html = html.replace(
-        /(https?:\/\/[^\s<)]+)/g,
+      escaped = escaped.replace(
+        /(https?:\/\/[^\s<)"']+)/g,
         '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#ffffff!important;text-decoration:underline;font-weight:600;word-break:break-all;">$1</a>'
       );
-
-      // Newlines to <br/>
-      return html.replace(/\n/g, "<br/>");
+      return escaped.replace(/\n/g, "<br/>");
     }
 
-    // Filter out leaked system prompt directives or meta headers
-    html = html.replace(/^(?:(?:You are|The visitor is|The user is)\s+writing in[^\n]*\n*)+/gim, "");
-    html = html.replace(/^(?:VISITOR\s*(?:IDENTITY|DETAILS)?:?[^\n]*\n*)+/gim, "");
-    html = html.replace(/^(?:MANDATORY\s+)?[A-Z0-9_\s-]+(?:RULE|DIRECTIVE|INSTRUCTION):[^\n]*\n*/gim, "");
-    html = html.replace(/^[•*-]\s*(?:If the visitor|Greet them|Whenever a visitor|The visitor|You MUST)[^\n]*\n*/gim, "");
-    html = html.replace(/^Greet them warmly[^\n]*\n*/gim, "");
-    html = html.replace(/^Example:\s*"[^"]*"\s*\n*/gim, "");
-    html = html.replace(/^(?:Language & Tone|Core Rules|Verified Knowledge|WHO WE ARE|PUBLIC COMPANY CONTACT|GUIDELINES|ABOUT EMPEROR SMART SOLUTIONS)[^\n]*\n*/gim, "");
-    html = html.replace(/^Hello!\s*Welcome to Emperor Smart Solutions\.\s*May I know your name and contact number[^\n]*\n+/gi, "");
+    // 2. Filter out leaked system prompt directives or meta headers
+    escaped = escaped.replace(/^(?:IMPORTANT\s+CHATBOT\s+RULES|CHATBOT\s+RULES|SYSTEM\s+RULES|RULES|SYSTEM\s+PROMPT):?[^\n]*\n*/gim, "");
+    escaped = escaped.replace(/^(?:(?:You are|The visitor is|The user is)\s+writing in[^\n]*\n*)+/gim, "");
+    escaped = escaped.replace(/^(?:VISITOR\s*(?:IDENTITY|DETAILS)?:?[^\n]*\n*)+/gim, "");
+    escaped = escaped.replace(/^(?:MANDATORY\s+)?[A-Z0-9_\s-]+(?:RULE|DIRECTIVE|INSTRUCTION):[^\n]*\n*/gim, "");
+    escaped = escaped.replace(/^[•*-]\s*(?:If the visitor|Greet them|Whenever a visitor|The visitor|You MUST)[^\n]*\n*/gim, "");
+    escaped = escaped.replace(/^Greet them warmly[^\n]*\n*/gim, "");
+    escaped = escaped.replace(/^Example:\s*"[^"]*"\s*\n*/gim, "");
+    escaped = escaped.replace(/^(?:Language & Tone|Core Rules|Verified Knowledge|WHO WE ARE|PUBLIC COMPANY CONTACT|GUIDELINES|ABOUT EMPEROR SMART SOLUTIONS)[^\n]*\n*/gim, "");
+    escaped = escaped.replace(/^Hello!\s*Welcome to Emperor Smart Solutions\.\s*May I know your name and contact number[^\n]*\n+/gi, "");
 
-    // Convert bold: ***text*** or **text** -> <strong style="font-weight:700!important;color:#0f172a!important;opacity:1!important;">text</strong>
-    html = html.replace(/\*{2,3}([^*]+)\*{2,3}/g, '<strong style="font-weight:700!important;color:#0f172a!important;opacity:1!important;">$1</strong>');
+    // 3. Convert bold: ***text*** or **text** -> <strong>text</strong>
+    escaped = escaped.replace(/\*{2,3}([^*]+)\*{2,3}/g, '<strong style="font-weight:700!important;color:#0f172a!important;opacity:1!important;">$1</strong>');
 
-    // Convert markdown links: [Title](https://...) -> <a href="https://..." target="_blank" rel="noopener noreferrer">Title</a>
-    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:${botConfig.primaryColor};text-decoration:underline;font-weight:600;">$1</a>`);
+    // 4. Tokenized link parser: Prevents double-replacement and nested <a> tags
+    const linkTokens = [];
 
-    // Auto-link standalone https:// URLs
-    html = html.replace(/(^|[\s(])(https:\/\/[^\s<)]+)/g, `$1<a href="$2" target="_blank" rel="noopener noreferrer" style="color:${botConfig.primaryColor};text-decoration:underline;font-weight:600;">$2</a>`);
+    // Pass 1: Extract markdown links [Title](https://...)
+    escaped = escaped.replace(/\[([^\]]+)\]\(((?:https?:\/\/)[^\s)<>"']+)\)/gi, (match, rawTitle, rawUrl) => {
+      const idx = linkTokens.length;
+      linkTokens.push({ title: rawTitle, url: rawUrl });
+      return `%%NEXUS_LINK_TOKEN_${idx}%%`;
+    });
 
-    // Bullet points: * Item or - Item
-    html = html.replace(/^[*-]\s+(.+)$/gm, "• $1");
+    // Pass 2: Extract standalone URLs (https://... or http://...)
+    escaped = escaped.replace(/(^|[\s(])((?:https?:\/\/)[^\s<>)"]+)/gi, (match, prefix, rawUrl) => {
+      const cleanUrl = rawUrl.replace(/[.,;:!?]+$/, "");
+      const trailingPunct = rawUrl.slice(cleanUrl.length);
+      const idx = linkTokens.length;
+      linkTokens.push({ title: cleanUrl, url: cleanUrl });
+      return `${prefix}%%NEXUS_LINK_TOKEN_${idx}%%${trailingPunct}`;
+    });
 
-    // Newlines to <br/>
-    html = html.replace(/\n/g, "<br/>");
+    // Pass 3: Re-hydrate tokens as sanitized, safe anchor elements
+    const linkColor = botConfig.primaryColor || "#4f46e5";
+    escaped = escaped.replace(/%%NEXUS_LINK_TOKEN_(\d+)%%/g, (match, index) => {
+      const token = linkTokens[Number(index)];
+      if (!token) return "";
+      if (!/^https?:\/\//i.test(token.url)) return token.title;
+      return `<a href="${token.url}" target="_blank" rel="noopener noreferrer" style="color:${linkColor};text-decoration:underline;font-weight:600;word-break:break-all;">${token.title}</a>`;
+    });
 
-    return html;
+    // 5. Bullet points: * Item or - Item
+    escaped = escaped.replace(/^[*-]\s+(.+)$/gm, "• $1");
+
+    // 6. Newlines to <br/>
+    escaped = escaped.replace(/\n/g, "<br/>");
+
+    return escaped;
   }
 
   // 8. Render Message Feed
@@ -694,7 +716,7 @@
     if (messages.length === 0) {
       const welcomeEl = document.createElement("div");
       welcomeEl.className = "nexus-msg nexus-msg-bot";
-      welcomeEl.textContent = botConfig.welcomeMessage;
+      welcomeEl.innerHTML = formatMessage(botConfig.welcomeMessage || "Hello! How can I assist you today?");
 
       const defaultServices = [
         "Website Development",
@@ -705,20 +727,27 @@
         "Cloud & DevOps",
         "SEO & Marketing",
       ];
-      const qrContainer = document.createElement("div");
-      qrContainer.className = "nexus-quick-replies";
-      defaultServices.forEach((serviceText) => {
-        const qrBtn = document.createElement("button");
-        qrBtn.type = "button";
-        qrBtn.className = "nexus-quick-reply-btn";
-        qrBtn.textContent = serviceText;
-        qrBtn.addEventListener("click", () => {
-          qrContainer.querySelectorAll("button").forEach((b) => (b.disabled = true));
-          sendMessage(serviceText);
+      const isEssBot = !botConfig.businessName || botConfig.businessName === "Emperor Smart Solutions" || botConfig.botId === "bot_aa";
+      const botQr = (botConfig.quickReplies && Array.isArray(botConfig.quickReplies) && botConfig.quickReplies.length > 0)
+        ? botConfig.quickReplies
+        : (isEssBot ? defaultServices : []);
+
+      if (botQr.length > 0) {
+        const qrContainer = document.createElement("div");
+        qrContainer.className = "nexus-quick-replies";
+        botQr.forEach((serviceText) => {
+          const qrBtn = document.createElement("button");
+          qrBtn.type = "button";
+          qrBtn.className = "nexus-quick-reply-btn";
+          qrBtn.textContent = serviceText;
+          qrBtn.addEventListener("click", () => {
+            qrContainer.querySelectorAll("button").forEach((b) => (b.disabled = true));
+            sendMessage(serviceText);
+          });
+          qrContainer.appendChild(qrBtn);
         });
-        qrContainer.appendChild(qrBtn);
-      });
-      welcomeEl.appendChild(qrContainer);
+        welcomeEl.appendChild(qrContainer);
+      }
       list.appendChild(welcomeEl);
     }
 

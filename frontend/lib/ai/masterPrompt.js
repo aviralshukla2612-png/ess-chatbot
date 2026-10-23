@@ -112,16 +112,24 @@ export function buildMasterSystemPrompt(options = {}) {
     ? `The visitor's name is "${visitorName}". Address them warmly by name.`
     : `Answer the visitor's question directly, clearly, and concisely.`;
 
-  const leadCaptureDirective = !hasVisitorDetails
-    ? `CRITICAL LEAD QUALIFICATION REQUIREMENT:
+  const leadCaptureDirective = isEss
+    ? (!hasVisitorDetails
+      ? `CRITICAL LEAD QUALIFICATION REQUIREMENT:
 VISITOR IDENTITY: UNKNOWN.
 The visitor has not yet provided their contact details.
 1. When a visitor greets you (e.g. "hi", "hello", "whatsup", "hey") or begins conversation:
-   Greet them warmly and IMMEDIATELY invite them to share their Name and Phone/WhatsApp (or Email) so our technical team can prepare a tailored architecture proposal.
+   Greet them warmly and invite them to share their Name and Phone/WhatsApp (or Email) so our technical team can prepare a tailored architecture proposal.
 2. When a visitor inquires about building any website, mobile app, software, or AI system, or asks about pricing, services, or contact details:
-   Provide the helpful answer, and ALWAYS conclude by proactively asking for their Name and Phone Number (or WhatsApp) to prepare a customized proposal!
-3. Never end a response with generic chat filler like "How can I help you today?" or "Not much, just chillin'". Always ask for their Name and Phone/WhatsApp when their identity is unknown!`
-    : `The prospect has already shared contact details. Address them personally and do not ask for their contact information again.`;
+   Provide the helpful answer, and conclude by proactively asking for their Name and Phone Number (or WhatsApp) to prepare a customized proposal!
+3. Never end a response with generic chat filler like "How can I help you today?" or "Not much, just chillin'".`
+      : `The prospect has already shared contact details. Address them personally and do not ask for their contact information again.`)
+    : (collectLeads
+      ? (!hasVisitorDetails
+        ? `CUSTOMER ASSISTANCE & LEAD CAPTURE:
+- If a customer explicitly requests a follow-up, quotation, custom order, or assistance from the ${businessName} team, politely invite them to share their Name and Phone/Email.
+- Do NOT demand contact details on every greeting, general FAQ, or simple information lookup. Deliver genuine help first.`
+        : `The customer has already shared contact details. Do not ask for their contact information again.`)
+      : `LEAD CAPTURE: Lead capture is disabled for this bot. Do not ask visitors for contact information.`);
 
   const companyIdentityBlock = isEss
     ? `CRITICAL IDENTITY DIRECTIVE (NEVER IMPERSONATE FOUNDERS):
@@ -201,9 +209,15 @@ ${isEss ? `OBJECTION HANDLING:
 
 COMMERCIAL POLICIES & FORMATTING:
 - Pricing in Indian Rupees only: MVPs starting from ₹50,000; standard custom mobile/web apps ₹50,000 to ₹2,00,000; bespoke platforms ₹2,00,000 to ₹5,00,000. Never quote in US dollars.` : `CUSTOMER INQUIRIES & POLICIES:
-- Ground all product details, warranties, and pricing strictly in the Verified Knowledge provided below.
-- Never invent products, prices, or policies not documented in verified knowledge.
-- If specific details are not documented, politely invite the customer to contact ${businessName} directly${businessPhone ? ` at ${businessPhone}` : ""}${websiteUrl ? ` or visit ${websiteUrl}` : ""}.
+- Ground all product details, warranties, and pricing strictly in the Verified Knowledge provided below. Ground all returns, shipping, and payment methods strictly in verified knowledge.
+- NEVER invent or assume:
+  * Warranty durations (e.g. do not invent 1-year or 2-year warranty)
+  * Return or exchange windows (e.g. do not invent 30-day or 7-day return policy)
+  * Shipping times, charges, or delivery guarantees
+  * Payment methods (e.g. do not invent Cash on Delivery or UPI unless explicitly stated)
+  * Prices, discounts, or special offers
+  * Founder or executive names (if verified knowledge states founder is known as 'Heet Sir' with full name unverified, state only that)
+- If specific details are not documented in the verified knowledge, honestly state that this information is currently not verified or available in the official records, and politely invite the customer to check the official website${websiteUrl ? ` (${websiteUrl})` : ""}${businessPhone ? ` or contact ${businessPhone}` : ""}.
 - Never quote arbitrary software engineering packages or unrelated services.`}
 - Formatting: Use standard markdown bolding **like this**. Never use triple asterisks.
 - ${langDirective}
@@ -243,8 +257,9 @@ STRICT PROFESSIONAL SCOPE & ZERO-TOLERANCE OFF-TOPIC REJECTION:
 
 STRICT KNOWLEDGE GROUNDING & HONESTY RULE:
 - Base all factual answers about ${businessName} on the "Verified Knowledge" provided below.
-- If the answer to a question cannot be confirmed or is absent from verified knowledge, DO NOT invent facts, clinical details, contact numbers, or policies.
-- Explicitly state: "I do not have that specific information in my verified records for ${businessName}. Please contact us directly${businessPhone ? ` at ${businessPhone}` : ""}${websiteUrl ? ` or visit ${websiteUrl}` : ""} for assistance."
+- If the answer to a question cannot be confirmed or is absent from verified knowledge, DO NOT invent facts, clinical details, warranty terms, return policies, contact numbers, or policies.
+- For missing policies or facts, respond truthfully: "I do not have that specific information in my verified records for ${businessName}. I couldn't verify that specific information from the available ${businessName} records. Please check the official website${websiteUrl ? ` (${websiteUrl})` : ""} for the latest details."
+- When founder information in verified knowledge specifies that the founder is known as 'Heet Sir' with the full name unverified, answer consistently that the founder is known to us as Heet Sir and the full name has not been verified. NEVER invent a surname.
 
 Verified Knowledge for ${businessName}:
 ${contextBlock}
@@ -515,6 +530,7 @@ Could you please share your **Name and Phone Number (or WhatsApp)** so our techn
   }
 
   // 1. Strip any leaked system prompt instructions, headers, or meta-directives
+  cleaned = cleaned.replace(/^(?:IMPORTANT\s+CHATBOT\s+RULES|CHATBOT\s+RULES|SYSTEM\s+RULES|RULES|SYSTEM\s+PROMPT):?[^\n]*\n*/gim, "");
   cleaned = cleaned.replace(/^(?:(?:You are|The visitor is|The user is)\s+writing in[^\n]*\n*)+/gim, "");
   cleaned = cleaned.replace(/^(?:VISITOR\s*(?:IDENTITY|DETAILS)?:?[^\n]*\n*)+/gim, "");
   cleaned = cleaned.replace(/^(?:MANDATORY\s+)?[A-Z0-9_\s-]+(?:RULE|DIRECTIVE|INSTRUCTION):[^\n]*\n*/gim, "");
@@ -530,6 +546,14 @@ Could you please share your **Name and Phone Number (or WhatsApp)** so our techn
 
   // If leaked greeting instruction example is echoed before the actual answer
   cleaned = cleaned.replace(/^Hello!\s*Welcome to Emperor Smart Solutions\.\s*May I know your name and contact number[^\n]*\n+/gi, "");
+
+  // Prevent Emperor Smart Solutions persona or software sales leaking into non-ESS bots
+  if (!isEss) {
+    cleaned = cleaned.replace(/\bWelcome\s+to\s+Emperor\s+Smart\s+Solutions\b/gi, `Welcome to ${businessName}`);
+    cleaned = cleaned.replace(/\b(?:at|for)\s+Emperor\s+Smart\s+Solutions\b/gi, `for ${businessName}`);
+    cleaned = cleaned.replace(/\bEmperor\s+Smart\s+Solutions\b/gi, businessName);
+    cleaned = cleaned.replace(/\b(?:custom\s+software\s+engineering|mobile\s+applications|web\s+platforms,\s+and\s+enterprise\s+AI\s+solutions)\b/gi, "our verified products and services");
+  }
 
   // 2. Strip leading role prefixes if the LLM outputted "Assistant: ..." or "<botName>: ..."
   if (assistantName) {

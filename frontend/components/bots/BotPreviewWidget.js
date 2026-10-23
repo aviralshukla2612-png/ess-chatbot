@@ -13,6 +13,61 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+function formatPreviewMessage(text, isUser = false, primaryColor = "#4f46e5") {
+  if (!text || typeof text !== "string") return "";
+
+  let escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  if (isUser) {
+    escaped = escaped.replace(
+      /(https?:\/\/[^\s<)"']+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#ffffff;text-decoration:underline;font-weight:600;word-break:break-all;">$1</a>'
+    );
+    return escaped.replace(/\n/g, "<br/>");
+  }
+
+  // Strip leaked prompt rules
+  escaped = escaped.replace(/^(?:IMPORTANT\s+CHATBOT\s+RULES|CHATBOT\s+RULES|SYSTEM\s+RULES|RULES|SYSTEM\s+PROMPT):?[^\n]*\n*/gim, "");
+  escaped = escaped.replace(/^(?:(?:You are|The visitor is|The user is)\s+writing in[^\n]*\n*)+/gim, "");
+  escaped = escaped.replace(/^(?:VISITOR\s*(?:IDENTITY|DETAILS)?:?[^\n]*\n*)+/gim, "");
+  escaped = escaped.replace(/^(?:MANDATORY\s+)?[A-Z0-9_\s-]+(?:RULE|DIRECTIVE|INSTRUCTION):[^\n]*\n*/gim, "");
+
+  // Bold
+  escaped = escaped.replace(/\*{2,3}([^*]+)\*{2,3}/g, '<strong class="font-bold text-neutral-900 dark:text-neutral-50">$1</strong>');
+
+  // Tokenized Link Parser
+  const linkTokens = [];
+  escaped = escaped.replace(/\[([^\]]+)\]\(((?:https?:\/\/)[^\s)<>"']+)\)/gi, (match, rawTitle, rawUrl) => {
+    const idx = linkTokens.length;
+    linkTokens.push({ title: rawTitle, url: rawUrl });
+    return `%%PREVIEW_LINK_TOKEN_${idx}%%`;
+  });
+
+  escaped = escaped.replace(/(^|[\s(])((?:https?:\/\/)[^\s<>)"]+)/gi, (match, prefix, rawUrl) => {
+    const cleanUrl = rawUrl.replace(/[.,;:!?]+$/, "");
+    const trailingPunct = rawUrl.slice(cleanUrl.length);
+    const idx = linkTokens.length;
+    linkTokens.push({ title: cleanUrl, url: cleanUrl });
+    return `${prefix}%%PREVIEW_LINK_TOKEN_${idx}%%${trailingPunct}`;
+  });
+
+  escaped = escaped.replace(/%%PREVIEW_LINK_TOKEN_(\d+)%%/g, (match, index) => {
+    const token = linkTokens[Number(index)];
+    if (!token) return "";
+    if (!/^https?:\/\//i.test(token.url)) return token.title;
+    return `<a href="${token.url}" target="_blank" rel="noopener noreferrer" class="underline font-semibold hover:opacity-80 break-all" style="color:${primaryColor}">${token.title}</a>`;
+  });
+
+  escaped = escaped.replace(/^[*-]\s+(.+)$/gm, "• $1");
+  escaped = escaped.replace(/\n/g, "<br/>");
+  return escaped;
+}
+
 export default function BotPreviewWidget({
   botId = null,
   botName = "AI Sales Executive",
@@ -23,20 +78,23 @@ export default function BotPreviewWidget({
   position = "right",
   showLeadForm = false,
 }) {
+  const isEss = botId === "bot_aa" || botId === "aa" || !botId;
   const [messages, setMessages] = useState([
     {
       id: "w_1",
       role: "assistant",
       content: welcomeMessage,
-      quickReplies: [
-        "Website Development",
-        "Mobile Application",
-        "AI Chatbot",
-        "Custom Software",
-        "UI/UX Design",
-        "Cloud & DevOps",
-        "SEO & Marketing",
-      ],
+      quickReplies: isEss
+        ? [
+            "Website Development",
+            "Mobile Application",
+            "AI Chatbot",
+            "Custom Software",
+            "UI/UX Design",
+            "Cloud & DevOps",
+            "SEO & Marketing",
+          ]
+        : [],
       sources: [],
     },
   ]);
@@ -233,11 +291,12 @@ export default function BotPreviewWidget({
               className={`max-w-[85%] rounded-2xl p-3 shadow-2xs ${
                 m.role === "user"
                   ? "bg-indigo-600 text-white rounded-tr-xs"
-                  : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-200/70 dark:border-neutral-700/80 rounded-tl-xs whitespace-pre-line"
+                  : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-200/70 dark:border-neutral-700/80 rounded-tl-xs"
               }`}
-            >
-              {m.content}
-            </div>
+              dangerouslySetInnerHTML={{
+                __html: formatPreviewMessage(m.content, m.role === "user", primaryColor),
+              }}
+            />
 
             {/* Quick Replies Interactive Options */}
             {m.quickReplies && m.quickReplies.length > 0 && idx === messages.length - 1 && (

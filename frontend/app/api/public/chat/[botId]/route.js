@@ -141,6 +141,38 @@ function resolveCookieName(botId) {
   return `ess_visitor_${cleanId}`;
 }
 
+function formatSafeUrl(url) {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function isQueryAboutCurrentBotEntity(msg, bot) {
+  if (!msg || !bot) return false;
+  const lowerMsg = msg.toLowerCase();
+
+  // Self or deictic pronoun references
+  if (/\b(?:your\s+company|your\s+business|this\s+company|this\s+business|your\s+brand|your\s+store|this\s+store|your\s+firm|your\s+agency|you\b|u\b|our\s+company)\b/i.test(lowerMsg)) {
+    return true;
+  }
+
+  const candidates = [bot.company, bot.name, ...(bot.aliases || [])].filter(Boolean);
+  for (const cand of candidates) {
+    const cleanCand = cand.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+    if (!cleanCand) continue;
+    const candWords = cleanCand.split(/\s+/).filter((w) => w.length >= 3);
+    for (const word of candWords) {
+      if (word === "the" || word === "and" || word === "for" || word === "ltd" || word === "inc" || word === "llc") continue;
+      const regex = new RegExp(`\\b${word}\\b`, "i");
+      if (regex.test(lowerMsg)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 function extractVisitorToken(request, botId, body = null) {
   const cookieName = resolveCookieName(botId);
   const cookieVal = request.cookies.get(cookieName)?.value;
@@ -174,6 +206,10 @@ export async function OPTIONS(request) {
 }
 
 export async function POST(request, { params }) {
+  const reqStart = Date.now();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const timings = { startMs: reqStart };
+
   try {
     const { botId } = await params;
 
@@ -202,6 +238,8 @@ export async function POST(request, { params }) {
     // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots)
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
+    timings.botLookupMs = Date.now() - reqStart;
+
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       return corsResponse(
         NextResponse.json({ error: "Chatbot not found or inactive" }, { status: 404 }),
@@ -407,8 +445,10 @@ export async function POST(request, { params }) {
       }
     }
 
-    // 4. Step 4: Multi-Tenant Vector Search over Authorized Knowledge (Top 2 chunks for fast evaluation)
-    const relevantChunks = await searchWebsiteKnowledge(botId, message, 2);
+    // 4. Step 4: Multi-Tenant Vector Search over Authorized Knowledge (Top 4 chunks for high-fidelity grounding)
+    const ragStart = Date.now();
+    const relevantChunks = await searchWebsiteKnowledge(botId, message, 4);
+    timings.retrievalMs = Date.now() - ragStart;
     const contextText = relevantChunks
       .map((c) => `[Source: ${c.pageTitle || c.pageUrl}]:\n${c.content}`)
       .join("\n\n");
@@ -588,12 +628,15 @@ export async function POST(request, { params }) {
       /\b(?:[1-9]k|[1-4]\d\s*k|[1-9]\d{2,4})\b/i.test(message) &&
       /\b(?:budget|only|have|afford|pay|give|price|cost|rs|inr|rupees)\b/i.test(message);
 
+    const isInternalEntity = isQueryAboutCurrentBotEntity(message, bot) || (isEssBot && /\b(?:ess|emperor|emperor\s*smart\s*solutions)\b/i.test(message));
+
     const isExternalEntityQuery =
+      !isInternalEntity &&
       !hasSoftwareOrCompanyContext &&
       !hasTechnicalKeywords &&
-      (/\b(?:owner|founder|co-founder|ceo|cto|leader|chairman|director|president|creator)\s+of\s+(?!ess\b|emperor\b|this\b|your\b)[a-z\s]+/i.test(message) ||
-       /\bwho\s+(?:is|was|are)\s+(?:the\s+)?(?:founder|ceo|cto|owner|leader|chairman|director|president|creator)\s+of\s+(?!ess\b|emperor\b|this\b|your\b)[a-z\s]+/i.test(message) ||
-       /\b(?:mahindra|reliance|adani|tesla|netflix|infosys|tcs|wipro|twitter|bjp|congress)\b/i.test(message));
+      (/\b(?:owner|founder|co-founder|ceo|cto|leader|chairman|director|president|creator)\s+of\s+[a-z\s]+/i.test(message) ||
+       /\bwho\s+(?:is|was|are)\s+(?:the\s+)?(?:founder|ceo|cto|owner|leader|chairman|director|president|creator)\s+of\s+[a-z\s]+/i.test(message) ||
+       /\b(?:mahindra|reliance|adani|tesla|netflix|infosys|tcs|wipro|twitter|bjp|congress|microsoft|apple|google|meta|amazon)\b/i.test(message));
 
     const isEssLeadershipQuery =
       !isExternalEntityQuery &&
@@ -697,8 +740,9 @@ export async function POST(request, { params }) {
     // 3. General knowledge and trivia
     const isGeneralKnowledgeAndTrivia =
       /\b(?:general\s*knowledge|trivia|quiz|random\s*facts?|fun\s*facts?|history\s*questions?|geography\s*questions?|world\s*capitals?|capital\s*of|country\s*population|famous\s*personalities|scientific\s*trivia|space\s*trivia|animal\s*facts?|riddles?|puzzles?|brain\s*teasers?|crossword\s*answers?|word\s*games?|dictionary\s*questions?|unrelated\s*facts?|solar\s*system|mars|jupiter|moon|galaxy|universe|black\s*hole|gravity|quantum\s*physics|photosynthesis|dna|evolution|dinosaurs?|longest\s*river|highest\s*mountain|mythology|ramayana|mahabharata|zeus|gods)\b/i.test(message) ||
-      (/\bwho\s+(?:is|was|are|were)(?!\s+(?:you|u|this|your\s+company|the\s+(?:founder|ceo|owner|team))\b)/i.test(message) ||
-       /\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i.test(message));
+      (/\bwho\s+(?:is|was|are|were)\s+(?:the\s+)?(?:best|richest|tallest|fastest|greatest|most\s+famous)\s+(?:actor|actress|singer|player|person|man|woman|cricketer|footballer|celebrity)\b/i.test(message)) ||
+      (/\bwho\s+(?:is|was|are|were)\s+(?:the\s+)?(?:prime\s*minister|president|governor|king|queen|emperor|pope)\s+of\b/i.test(message)) ||
+      (/\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i.test(message) && !isInternalEntity);
 
     // 4. Health and medical advice
     const isHealthAndMedical =
@@ -744,6 +788,7 @@ export async function POST(request, { params }) {
       !/\b(?:web|website|app|mobile|android|ios|flutter|react|native|next\.?js|node|python|ai|bot|chatbot|saas|software|ecommerce|cloud|devops|design|redesign|new|existing|fixed|hourly|sprint|timeline|budget|inr|usd|yes|no)\b/i.test(message.replace(/\b(?:laptop|phone|computer|pc)\b/gi, ""));
 
     const isCelebrityOrTriviaQuery =
+      !isInternalEntity &&
       !hasActiveProject &&
       !isAnsweringQualificationOption &&
       !hasTechnicalKeywords &&
@@ -772,8 +817,8 @@ export async function POST(request, { params }) {
       isPersonalBotQuery ||
       isGeneralOffTopicAdvice ||
       isOffTopicDilemma ||
-      (isEntertainmentOrTrivia && !isEssLeadershipQuery) ||
-      (!hasSoftwareOrCompanyContext && !isPureGreeting && !isFirstMessageQuery && !isNameIntroductionOnly && !isBotIdentityQuery && !isExplicitPlatformProviderQuery && /\b(who|what|where|how|why|when|can you|give me|tell me|name|list)\b/i.test(message) && !isEssLeadershipQuery && !/\b(office|address|contact|email|phone)\b/i.test(message)));
+      (isEntertainmentOrTrivia && !isEssLeadershipQuery && !isInternalEntity) ||
+      (isEssBot && !hasSoftwareOrCompanyContext && !isPureGreeting && !isFirstMessageQuery && !isNameIntroductionOnly && !isBotIdentityQuery && !isExplicitPlatformProviderQuery && /\b(who|what|where|how|why|when|can you|give me|tell me|name|list)\b/i.test(message) && !isEssLeadershipQuery && !/\b(office|address|contact|email|phone)\b/i.test(message)));
 
     let deterministicReply = null;
     let quickReplies = [];
@@ -814,7 +859,7 @@ export async function POST(request, { params }) {
       const hasActiveProject = Boolean(activeQual && activeQual.service);
       const displayName = (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") ? resolvedName : "";
 
-      if (hasActiveProject && (resolvedPhone || resolvedEmail)) {
+      if (isEssBot && hasActiveProject && (resolvedPhone || resolvedEmail)) {
         const serviceTitle = QUALIFICATION_FLOWS[activeQual.service]?.serviceName || "Digital Project";
         const contactVal = resolvedPhone || resolvedEmail;
 
@@ -865,6 +910,42 @@ export async function POST(request, { params }) {
           ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
           ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
         });
+      } else if (!isEssBot && (resolvedPhone || resolvedEmail)) {
+        quickReplies = bot?.quickReplies || [];
+        const contactVal = resolvedPhone || resolvedEmail;
+        if (lang === "hindi") {
+          deterministicReply = `शानदार! धन्यवाद ${displayName || ""}! हमने आपका संपर्क विवरण (**${contactVal}**) नोट कर लिया है।\n\n${businessName} की टीम जल्द ही आपसे संपर्क करेगी!`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Great! Thank you ${displayName || ""}! Humne aapke contact details (**${contactVal}**) note kar liye hain.\n\n${businessName} ki team jald hi aapse connect karegi!`;
+        } else {
+          deterministicReply = displayName
+            ? `Thank you, ${displayName}! We have recorded your contact details (**${contactVal}**).\n\nThe ${businessName} team will get in touch with you shortly!`
+            : `Thank you! We have recorded your contact details (**${contactVal}**).\n\nThe ${businessName} team will get in touch with you shortly!`;
+        }
+
+        leadsStore.createLead({
+          sessionId: currentSessionId,
+          botId: bot?.id || botId,
+          organizationId: bot?.organizationId || "org_default",
+          name: displayName || leadDetails.name || "Customer Lead",
+          email: resolvedEmail || leadDetails.email || "",
+          phone: resolvedPhone || leadDetails.phone || "",
+          company: businessName,
+          bot: botName,
+          inquiry: `Customer inquiry for ${businessName}`,
+          budget: "N/A",
+          source: "Web Chatbot Widget",
+          answers: {},
+          qualification: null,
+        });
+
+        conversationsStore.updateConversation(currentSessionId, {
+          status: "completed",
+          isLead: true,
+          ...(displayName ? { visitorName: displayName } : {}),
+          ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+          ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+        });
       } else {
         if (isEssBot) {
           quickReplies = [...ALL_ESS_SERVICES];
@@ -907,14 +988,14 @@ export async function POST(request, { params }) {
           leadsStore.createLead({
             sessionId: currentSessionId,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
             name: displayName,
             email: resolvedEmail || "",
             phone: resolvedPhone || "",
-            company: bot?.company || "Direct Inbound",
+            company: businessName,
             bot: botName,
-            inquiry: "Visitor introduced themselves. Offered services options.",
-            budget: "₹50,000+",
+            inquiry: isEssBot ? "Visitor introduced themselves. Offered services options." : `Visitor introduction for ${businessName}`,
+            budget: isEssBot ? "₹50,000+" : "N/A",
             source: "Web Chatbot Widget",
           });
 
@@ -927,11 +1008,19 @@ export async function POST(request, { params }) {
             });
           }
         } else {
-          deterministicReply = lang === "hindi"
-            ? `धन्यवाद! आपका संपर्क विवरण नोट कर लिया गया है। क्या आप अपना **नाम** भी साझा कर सकते हैं ताकि हमारी तकनीकी टीम आपसे व्यक्तिगत रूप से संपर्क कर सके?`
-            : lang === "hinglish"
-            ? `Thank you! Aapka contact number note kar liya gaya hai. Kya aap apna **Name** bhi share kar sakte hain taaki hamari technical team aapse personally connect kar sakein?`
-            : `Thank you! Your contact details have been noted. Could you also please share your **Name** so our technical team can address you personally?`;
+          if (isEssBot) {
+            deterministicReply = lang === "hindi"
+              ? `धन्यवाद! आपका संपर्क विवरण नोट कर लिया गया है। क्या आप अपना **नाम** भी साझा कर सकते हैं ताकि हमारी तकनीकी टीम आपसे व्यक्तिगत रूप से संपर्क कर सके?`
+              : lang === "hinglish"
+              ? `Thank you! Aapka contact number note kar liya gaya hai. Kya aap apna **Name** bhi share kar sakte hain taaki hamari technical team aapse personally connect kar sakein?`
+              : `Thank you! Your contact details have been noted. Could you also please share your **Name** so our technical team can address you personally?`;
+          } else {
+            deterministicReply = lang === "hindi"
+              ? `धन्यवाद! आपका संपर्क विवरण नोट कर लिया गया है। क्या आप अपना **नाम** भी साझा कर सकते हैं ताकि हम बेहतर सहायता कर सकें?`
+              : lang === "hinglish"
+              ? `Thank you! Aapka contact number note kar liya gaya hai. Kya aap apna **Name** bhi share kar sakte hain taaki hum aapko behtar assist kar sakein?`
+              : `Thank you! Your contact details have been noted. Could you also please share your **Name** so we can assist you better?`;
+          }
         }
       }
     } else if (isPureGreeting && !hasTechnicalKeywords) {
@@ -1043,7 +1132,7 @@ If you would like to update your phone number, email, or project requirements, p
     } else if (isContactDetailsQuery) {
       if (!isEssBot) {
         const contactParts = [];
-        if (bot?.websiteUrl) contactParts.push(`🌐 **Website:** [${bot.websiteUrl}](${bot.websiteUrl})`);
+        if (bot?.websiteUrl) contactParts.push(`🌐 **Website:** [${bot.websiteUrl}](${formatSafeUrl(bot.websiteUrl)})`);
         if (bot?.phoneNumber) contactParts.push(`📞 **Phone / WhatsApp:** ${bot.phoneNumber}`);
 
         if (contactParts.length > 0) {
@@ -1178,12 +1267,13 @@ With a proven track record of 50+ delivered projects across FinTech, Healthcare,
     } else if (isWebsiteUrlQuery) {
       if (!isEssBot) {
         if (bot?.websiteUrl) {
+          const safeUrl = formatSafeUrl(bot.websiteUrl);
           if (lang === "hindi") {
-            deterministicReply = `हाँ बिल्कुल! **${businessName}** की आधिकारिक वेबसाइट [${bot.websiteUrl}](${bot.websiteUrl}) है। 🌐\n\nक्या मैं आपकी किसी अन्य जानकारी में सहायता कर सकता हूँ?`;
+            deterministicReply = `हाँ बिल्कुल! **${businessName}** की आधिकारिक वेबसाइट [${bot.websiteUrl}](${safeUrl}) है। 🌐\n\nक्या मैं आपकी किसी अन्य जानकारी में सहायता कर सकता हूँ?`;
           } else if (lang === "hinglish") {
-            deterministicReply = `Haan bilkul! **${businessName}** ki official website [${bot.websiteUrl}](${bot.websiteUrl}) hai. 🌐\n\nKya main aapki kisi aur cheez mein help kar sakta hoon?`;
+            deterministicReply = `Haan bilkul! **${businessName}** ki official website [${bot.websiteUrl}](${safeUrl}) hai. 🌐\n\nKya main aapki kisi aur cheez mein help kar sakta hoon?`;
           } else {
-            deterministicReply = `Yes! The official website for **${businessName}** is: 🌐 [${bot.websiteUrl}](${bot.websiteUrl})\n\nHow else can I assist you today?`;
+            deterministicReply = `Yes! The official website for **${businessName}** is: 🌐 [${bot.websiteUrl}](${safeUrl})\n\nHow else can I assist you today?`;
           }
         } else {
           deterministicReply = `An official website is not currently configured for **${businessName}**. How else can I assist you today?`;
@@ -1435,18 +1525,18 @@ Here are our official contact details to speak with our engineering leadership:
           const leadData = {
             sessionId: currentSessionId,
             visitorId: persistentVisitor?.id || null,
-            botId: bot?.id || "bot_aa",
-            organizationId: bot?.organizationId || "org_ess_default",
-            name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
+            botId: bot?.id || botId,
+            organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+            name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Customer Lead"),
             email: resolvedEmail,
             phone: resolvedPhone,
-            company: bot?.company || "Direct Inbound",
+            company: businessName,
             bot: botName,
             score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
-            inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
-            answers: qualAnswers,
-            qualification: qual,
-            budget: qualAnswers.budget || "₹50,000+",
+            inquiry: isEssBot ? (qualInquiry || leadDetails.inquiry || "Inquired via live chat widget") : `Customer contact inquiry for ${businessName}`,
+            answers: isEssBot ? qualAnswers : {},
+            qualification: isEssBot ? qual : null,
+            budget: isEssBot ? (qualAnswers.budget || "₹50,000+") : "N/A",
             source: "Web Chatbot Widget",
           };
           leadsStore.createLead(leadData);
@@ -1554,18 +1644,18 @@ Here are our official contact details to speak with our engineering leadership:
             const leadData = {
               sessionId: currentSessionId,
               visitorId: persistentVisitor?.id || null,
-              botId: bot?.id || "bot_aa",
-              organizationId: bot?.organizationId || "org_ess_default",
-              name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
+              botId: bot?.id || botId,
+              organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+              name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Customer Lead"),
               email: resolvedEmail,
               phone: resolvedPhone,
-              company: bot?.company || "Direct Inbound",
+              company: businessName,
               bot: botName,
               score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
-              inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
-              answers: qualAnswers,
-              qualification: qual,
-              budget: qualAnswers.budget || "₹50,000+",
+              inquiry: isEssBot ? (qualInquiry || leadDetails.inquiry || "Inquired via live chat widget") : `Customer contact inquiry for ${businessName}`,
+              answers: isEssBot ? qualAnswers : {},
+              qualification: isEssBot ? qual : null,
+              budget: isEssBot ? (qualAnswers.budget || "₹50,000+") : "N/A",
               source: "Web Chatbot Widget",
             };
             leadsStore.createLead(leadData);
@@ -1587,25 +1677,23 @@ Here are our official contact details to speak with our engineering leadership:
     // --- STANDARD JSON RESPONSE PIPELINE ---
     let botReply = deterministicReply;
     if (!botReply) {
-      botReply = await executeChatInference({
-        messages: llmMessages,
-        temperature: 0.3,
-        num_predict: 512,
-      });
-
-      botReply = validateOutput(botReply, businessName, lang, botName, resolvedName);
-
-      const askedForContact = /(?:name|phone|whatsapp|contact number|email)/i.test(botReply) &&
-        /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(botReply);
-
-      if (!hasVisitorDetails && !askedForContact && !resolvedName) {
-        const leadAsk = isEssBot
-          ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
-          : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
-        if (leadAsk) {
-          botReply += leadAsk;
-        }
+      const infStart = Date.now();
+      try {
+        botReply = await executeChatInference({
+          messages: llmMessages,
+          temperature: 0.3,
+          num_predict: 512,
+        });
+        timings.inferenceMs = Date.now() - infStart;
+      } catch (infErr) {
+        console.error("[INFERENCE_TIMEOUT_OR_ERROR]", infErr.message);
+        botReply = `The request took longer than expected to process. Please try asking your question again!`;
+        timings.inferenceMs = Date.now() - infStart;
       }
+
+      const valStart = Date.now();
+      botReply = validateOutput(botReply, businessName, lang, botName, resolvedName);
+      timings.validationMs = Date.now() - valStart;
     }
 
     // Capture Lead: require email or phone before creating a CRM lead
@@ -1619,18 +1707,18 @@ Here are our official contact details to speak with our engineering leadership:
       const leadData = {
         sessionId: currentSessionId,
         visitorId: persistentVisitor?.id || null,
-        botId: bot?.id || "bot_aa",
-        organizationId: bot?.organizationId || "org_ess_default",
-        name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
+        botId: bot?.id || botId,
+        organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+        name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Customer Lead"),
         email: resolvedEmail,
         phone: resolvedPhone,
-        company: bot?.company || "Direct Inbound",
+        company: businessName,
         bot: botName,
         score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
-        inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
-        answers: qualAnswers,
-        qualification: qual,
-        budget: qualAnswers.budget || "₹50,000+",
+        inquiry: isEssBot ? (qualInquiry || leadDetails.inquiry || "Inquired via live chat widget") : `Customer contact inquiry for ${businessName}`,
+        answers: isEssBot ? qualAnswers : {},
+        qualification: isEssBot ? qual : null,
+        budget: isEssBot ? (qualAnswers.budget || "₹50,000+") : "N/A",
         source: "Web Chatbot Widget",
       };
       leadsStore.createLead(leadData);
@@ -1672,12 +1760,20 @@ Here are our official contact details to speak with our engineering leadership:
       });
     }
 
+    const sources = relevantChunks.map((c) => ({
+      title: c.pageTitle || c.pageUrl || "Knowledge Document",
+      url: c.pageUrl || "",
+    }));
+
+    timings.totalMs = Date.now() - reqStart;
+    console.log("[CHAT_TELEMETRY]", JSON.stringify({ requestId, botId: resolvedBotId, tenantId, timings, isDeterministic: Boolean(deterministicReply) }));
+
     const finalRes = corsResponse(
       NextResponse.json({
         success: true,
         reply: botReply,
         quickReplies: quickReplies || [],
-        sources: [],
+        sources,
         sessionId: currentSessionId,
       }),
       request

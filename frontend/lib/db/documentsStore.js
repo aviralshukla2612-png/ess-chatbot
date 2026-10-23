@@ -43,10 +43,31 @@ function chunkDocumentText(text, chunkSize = 450, overlap = 60) {
   return chunks;
 }
 
-// Simple keyword score (term frequency with query word overlap)
+// Keyword synonyms to ensure robust RAG retrieval across phrasing variations
+const KEYWORD_SYNONYMS = {
+  founder: ["founder", "founder's", "founders", "owner", "owner's", "creator", "started", "leadership", "ceo", "heet", "sir"],
+  owner: ["owner", "owner's", "founder", "founder's", "creator", "leadership", "heet"],
+  heet: ["heet", "founder", "owner", "leadership"],
+  price: ["price", "prices", "pricing", "cost", "costs", "rate", "rates"],
+  warranty: ["warranty", "guarantee", "warranties"],
+  return: ["return", "returns", "refund", "refunds", "exchange", "exchanges"],
+  shipping: ["shipping", "delivery", "dispatch", "courier"],
+  contact: ["contact", "phone", "email", "whatsapp", "address", "location"],
+};
+
+const STOP_WORDS = new Set([
+  "the", "and", "for", "are", "you", "who", "what", "is", "was", "were", "be", "been", "being",
+  "in", "on", "at", "to", "of", "by", "with", "from", "about", "into", "through", "after", "before",
+  "this", "that", "these", "those", "it", "its", "they", "them", "their",
+  "can", "could", "would", "should", "do", "does", "did", "have", "has", "had",
+  "how", "why", "when", "where", "which", "your", "our", "my", "me", "tell", "please", "know"
+]);
+
+// Resilient keyword relevance score with boundary matching and synonyms
 function scoreChunkRelevance(query, chunk) {
   if (!query || !chunk) return 0;
-  const qWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
+  // Keep meaningful tokens like 'mr', 'dr', 'ai', 'qa', but filter out generic stop words
+  const qWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length >= 2 && !STOP_WORDS.has(w));
   if (qWords.length === 0) return 0;
 
   const cLower = chunk.toLowerCase();
@@ -58,12 +79,90 @@ function scoreChunkRelevance(query, chunk) {
       // Bonus for exact word boundaries
       const regex = new RegExp(`\\b${word}\\b`, "i");
       if (regex.test(cLower)) {
+        score += 2.0;
+      }
+    }
+
+    // Check synonyms
+    const syns = KEYWORD_SYNONYMS[word] || [];
+    for (const syn of syns) {
+      if (syn !== word && cLower.includes(syn)) {
         score += 1.5;
+        const sRegex = new RegExp(`\\b${syn}\\b`, "i");
+        if (sRegex.test(cLower)) {
+          score += 1.0;
+        }
       }
     }
   }
 
   return score;
+}
+
+function syncDocToDbAsync(doc) {
+  (async () => {
+    try {
+      const { queryDb } = await import("./dbPool.js");
+      const { generateEmbedding } = await import("../crawler/engine.js");
+      const docSize = doc.content ? doc.content.length : 0;
+      const chunksCount = Array.isArray(doc.chunks) ? doc.chunks.length : 0;
+      const orgId = doc.organizationId || "org_default";
+
+      await queryDb(
+        `INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, 'Ready', $7, NOW(), NOW())
+         ON CONFLICT ("id") DO UPDATE SET
+           "name" = EXCLUDED."name",
+           "type" = EXCLUDED."type",
+           "sizeBytes" = EXCLUDED."sizeBytes",
+           "chunksCount" = EXCLUDED."chunksCount",
+           "updatedAt" = NOW();`,
+        [doc.id, orgId, doc.botId, doc.name, doc.type || "Document", docSize, chunksCount]
+      );
+
+      await queryDb('DELETE FROM "KnowledgeChunk" WHERE "documentId" = $1;', [doc.id]);
+
+      if (Array.isArray(doc.chunks)) {
+        for (let i = 0; i < doc.chunks.length; i++) {
+          const chunkText = doc.chunks[i];
+          const chunkId = `chk_${doc.id}_${i}`;
+          let embeddingVec = null;
+          try {
+            embeddingVec = await generateEmbedding(chunkText);
+          } catch (e) {}
+
+          if (embeddingVec && Array.isArray(embeddingVec)) {
+            const vectorStr = `[${embeddingVec.join(",")}]`;
+            await queryDb(
+              `INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "embedding", "createdAt")
+               VALUES ($1, $2, $3, $4, $5, $6, $7::vector, NOW())
+               ON CONFLICT ("id") DO NOTHING;`,
+              [chunkId, doc.id, orgId, doc.botId, i, chunkText, vectorStr]
+            );
+          } else {
+            await queryDb(
+              `INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+               VALUES ($1, $2, $3, $4, $5, $6, NOW())
+               ON CONFLICT ("id") DO NOTHING;`,
+              [chunkId, doc.id, orgId, doc.botId, i, chunkText]
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Disk JSON is durable fallback
+    }
+  })();
+}
+
+function deleteDocFromDbAsync(docId) {
+  (async () => {
+    try {
+      const { queryDb } = await import("./dbPool.js");
+      await queryDb('DELETE FROM "KnowledgeChunk" WHERE "documentId" = $1;', [docId]);
+      await queryDb('DELETE FROM "KnowledgeDocument" WHERE "id" = $1;', [docId]);
+    } catch (e) {}
+  })();
 }
 
 function loadDocumentsFromDisk() {
@@ -129,6 +228,7 @@ export const documentsStore = {
     }
 
     saveDocumentsToDisk(all);
+    syncDocToDbAsync(doc);
     return doc;
   },
 
@@ -150,6 +250,7 @@ export const documentsStore = {
     };
     all[idx] = updated;
     saveDocumentsToDisk(all);
+    syncDocToDbAsync(updated);
     return updated;
   },
 
@@ -157,6 +258,7 @@ export const documentsStore = {
     const all = loadDocumentsFromDisk();
     const filtered = all.filter((d) => d.id !== docId);
     saveDocumentsToDisk(filtered);
+    deleteDocFromDbAsync(docId);
     return true;
   },
 

@@ -50,11 +50,13 @@ const ENTERTAINMENT_AND_TRIVIA_PATTERNS = [
 
   // 2. Entertainment and celebrity topics
   /\b(?:movies?|films?|web\s*series|tv\s*shows?|actors?|actresses?|celebrity\s*gossip|celebrity\s*news|songs?|music\s*lyrics|lyrics|singers?|albums?|entertainment\s*news|movie\s*reviews?|movie\s*recommendations?|memes?|jokes?|comedy|funny\s*stories|cartoons?|anime|manga|gaming|video\s*games?|game\s*cheats?|gaming\s*walkthroughs?|sports\s*entertainment|comedian|comedians|stand-?up|standup|roast|cricket|ipl|bcci|icc|world\s*cup|trophy|match|tournament|football|fifa|goal|messi|ronaldo|batting|bowling|wicket|toss|stadium|tennis|badminton|olympics|medal|chess|grandmaster|pubg|free\s*fire|bgmi|fortnite|gameplay|dialogue|trailer|box\s*office|bollywood|hollywood)\b/i,
-  /\b(?:salman|salman\s+khan|shah\s*rukh|srk|aamir|akshay|deepika|katrina|alia|ranbir|ranveer|kareena|priyanka|amitabh|bachchan|hrithik|rajinikanth|prabhas|allu\s*arjun|modi|rahul\s*gandhi|nehru|gandhi|bjp|congress|trump|biden|putin|obama|hasan\s*minhaj|john\s*mulaney|ali\s*wong|trevor\s*noah|zakir\s*khan|bassie|samay\s*raina|munawar)\b/i,
+  /\b(?:salman|salman\s+khan|shah\s*rukh|srk|aamir|akshay|deepika|katrina|alia|ranbir|ranveer|kareena|priyanka|amitabh|bachchan|hrithik|rajinikanth|prabhas|allu\s*arjun|modi|rahul\s*gandhi|nehru|gandhi|bjp|congress|trump|biden|putin|obama|leonardo|dicaprio|leonardo\s*di\s*caprio|tom\s*cruise|brad\s*pitt|hasan\s*minhaj|john\s*mulaney|ali\s*wong|trevor\s*noah|zakir\s*khan|bassie|samay\s*raina|munawar)\b/i,
 
   // 3. General knowledge and trivia
   /\b(?:general\s*knowledge|trivia|quiz|random\s*facts?|fun\s*facts?|history\s*questions?|geography\s*questions?|world\s*capitals?|capital\s*of|country\s*population|famous\s*personalities|scientific\s*trivia|space\s*trivia|animal\s*facts?|riddles?|puzzles?|brain\s*teasers?|crossword\s*answers?|word\s*games?|dictionary\s*questions?|unrelated\s*facts?|solar\s*system|mars|jupiter|moon|galaxy|universe|black\s*hole|gravity|quantum\s*physics|photosynthesis|dna|evolution|dinosaurs?|longest\s*river|highest\s*mountain|mythology|ramayana|mahabharata|zeus|gods)\b/i,
-  /\bwho\s+(?:is|was|are|were)\s+(?!(?:you|u|this|your\s+company|the\s+(?:founder|ceo|owner|team))\b)[a-z]/i,
+  /\bwho\s+(?:is|was|are|were)\s+(?:the\s+)?(?:best|richest|tallest|fastest|greatest|most\s+famous)\s+(?:actor|actress|singer|player|person|man|woman|cricketer|footballer|celebrity)\b/i,
+  /\bwho\s+(?:is|was|are|were)\s+(?:the\s+)?(?:prime\s*minister|president|governor|king|queen|emperor|pope)\s+of\b/i,
+  /\bwho\s+(?:is|was|are|were)\s+(?:salman|shah\s*rukh|srk|aamir|akshay|deepika|katrina|alia|ranbir|ranveer|kareena|priyanka|amitabh|bachchan|hrithik|rajinikanth|prabhas|allu\s*arjun|modi|rahul\s*gandhi|nehru|gandhi|trump|biden|putin|obama|messi|ronaldo|virat|dhoni|sachin|elon\s*musk|bill\s*gates|steve\s*jobs|zuckerberg|bezos|taylor\s*swift|leonardo|dicaprio|leonardo\s*di\s*caprio|tom\s*cruise|brad\s*pitt)\b/i,
   /\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i,
 
   // 4. Health and medical advice
@@ -184,6 +186,8 @@ export function classifyMessageIntent({
   const isLeadership =
     /\b(?:who\s+(?:is|are|was)\s+(?:the\s+)?(?:founder|co-founder|founder's|ceo|cto|owner|leader|team|boss))\b/i.test(trimmed) ||
     (/\b(?:founder|co-founder|owner|ceo|cto|leader|boss)\b/i.test(trimmed) && /\b(?:who|what|name|kiska|kisne|kon|kaun|company|agency|details?)\b/i.test(trimmed)) ||
+    /\b(?:who\s+(?:founded|owns|started|created|built))\b/i.test(trimmed) ||
+    /\bwho\s+(?:is|was)\s+(?:mr\.?|dr\.?|ms\.?|mrs\.?|prof\.?|sir)\s+[a-z]+/i.test(trimmed) ||
     (isEss && /\b(?:yash\s+sharma|karan\s+makwana|yash|karan)\b/i.test(trimmed) && /\b(?:who|what|founder|ceo|owner|sharma|makwana)\b/i.test(trimmed));
 
   const isContactOrOffice =

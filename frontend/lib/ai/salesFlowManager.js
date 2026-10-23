@@ -824,8 +824,15 @@ export function detectServiceIntent(message = "", currentService = null) {
     return "ai_chatbot";
   }
 
-  // Website & E-commerce Intent
-  if (/\b(?:website|web\s*site|web\s*portal|web\s*page|landing\s*page|e-?commerce|online\s*store|clinic\s*website|business\s*website|web\s*platform|website\s*development)\b/i.test(clean)) {
+  // Website & E-commerce Intent (Disambiguate informational URL requests from software development intent)
+  const isInformationalLinkQuery = /\b(?:what\s+is\s+(?:the\s+)?(?:website\s+link|website\s+url)|website\s+link|website\s+url|share\s+(?:the\s+)?website|your\s+website|link\s+of\s+(?:your\s+)?website|give\s+(?:me\s+)?(?:the\s+)?website)\b/i.test(clean);
+
+  if (!isInformationalLinkQuery && (
+    /\b(?:website\s+development|web\s+development|e-?commerce\s+development|clinic\s*website|business\s*website|web\s*platform)\b/i.test(clean) ||
+    /\b(?:build|develop|create|want|need|redesign|launch|make)\s+(?:a|an)?\s*(?:new\s+)?(?:website|web\s*site|web\s*portal|web\s*page|landing\s*page|e-?commerce|online\s*store)\b/i.test(clean) ||
+    /\b(?:cost|price|quote|pricing|budget)\s+(?:of|for)\s+(?:a|an)?\s*(?:website|web\s*site|e-?commerce)\b/i.test(clean) ||
+    (/\b(?:website|web\s*site|landing\s*page|e-?commerce|online\s*store)\b/i.test(clean) && !/\b(?:link|url|open|visit|where)\b/i.test(clean))
+  )) {
     return "website";
   }
 
