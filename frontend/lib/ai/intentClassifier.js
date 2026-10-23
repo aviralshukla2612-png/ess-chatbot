@@ -54,7 +54,8 @@ const ENTERTAINMENT_AND_TRIVIA_PATTERNS = [
 
   // 3. General knowledge and trivia
   /\b(?:general\s*knowledge|trivia|quiz|random\s*facts?|fun\s*facts?|history\s*questions?|geography\s*questions?|world\s*capitals?|capital\s*of|country\s*population|famous\s*personalities|scientific\s*trivia|space\s*trivia|animal\s*facts?|riddles?|puzzles?|brain\s*teasers?|crossword\s*answers?|word\s*games?|dictionary\s*questions?|unrelated\s*facts?|solar\s*system|mars|jupiter|moon|galaxy|universe|black\s*hole|gravity|quantum\s*physics|photosynthesis|dna|evolution|dinosaurs?|longest\s*river|highest\s*mountain|mythology|ramayana|mahabharata|zeus|gods)\b/i,
-  /\bwho\s+(?:is|was|are|were|act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i,
+  /\bwho\s+(?:is|was|are|were)\s+(?!(?:you|u|this|your\s+company|the\s+(?:founder|ceo|owner|team))\b)[a-z]/i,
+  /\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i,
 
   // 4. Health and medical advice
   /\b(?:medical\s*advice|symptoms?|disease\s*diagnosis|medicine\s*dosage|prescription\s*advice|treatment\s*recommendations?|home\s*remedies|pregnancy\s*advice|mental\s*health\s*diagnosis|therapy\s*advice|medical\s*emergency|doctor\s*consultation|fitness\s*diagnosis|nutrition\s*treatment|drug\s*interactions?|headache|fever|cough|flu|covid|cancer\s*cure|paracetamol|antibiotics?|prescription|dosage)\b/i,
@@ -105,15 +106,16 @@ const LEGITIMATE_TECH_CONTEXT_PATTERNS = [
 export function classifyMessageIntent({
   message = "",
   bot = {},
+  businessName: passedBusinessName,
   history = [],
   lang = "english",
 }) {
   const trimmed = (message || "").trim();
   const lower = trimmed.toLowerCase();
 
-  const businessName = bot?.company || "Emperor Smart Solutions";
+  const businessName = passedBusinessName || bot?.company || "Emperor Smart Solutions";
   const botName = bot?.name || "AI Assistant";
-  const isEss = !bot?.company || bot.company === "Emperor Smart Solutions" || bot.company === "My Organization";
+  const isEss = !businessName || businessName === "Emperor Smart Solutions" || businessName === "My Organization";
 
   // 1. Check for UNSAFE_OR_UNAUTHORIZED: Cross-Tenant Access Attempts
   for (const pattern of CROSS_TENANT_EXFILTRATION_PATTERNS) {
@@ -173,7 +175,12 @@ export function classifyMessageIntent({
     };
   }
 
-  // 4. Check for COMPANY_SPECIFIC: Leadership, contact, office address
+  // 4. Check for COMPANY_SPECIFIC or BOT_IDENTITY: Leadership, bot identity, contact, office address
+  const isBotIdentity =
+    /\bwho\s+(?:are\s+you|are\s+u|is\s+this|made\s+you|created\s+you)\b/i.test(trimmed) ||
+    /\b(?:what\s+are\s+you|who\s+am\s+i\s+talking\s+to|what\s+is\s+your\s+name|tell\s+me\s+about\s+yourself|what\s+do\s+you\s+do)\b/i.test(trimmed) ||
+    /\b(?:aap\s+kaun\s+h[a-z]*|tum\s+kaun\s+h[a-z]*|kaun\s+ho\s+tum|kaun\s+hai\s+tu|kaun\s+ho)\b/i.test(trimmed);
+
   const isLeadership =
     /\b(?:who\s+(?:is|are|was)\s+(?:the\s+)?(?:founder|co-founder|founder's|ceo|cto|owner|leader|team|boss))\b/i.test(trimmed) ||
     (/\b(?:founder|co-founder|owner|ceo|cto|leader|boss)\b/i.test(trimmed) && /\b(?:who|what|name|kiska|kisne|kon|kaun|company|agency|details?)\b/i.test(trimmed)) ||
@@ -183,12 +190,16 @@ export function classifyMessageIntent({
     /\b(?:contact|details?|phone|whatsapp|email|address|office|location|head\s*office|reach\s*out|call|sampark|pata)\b/i.test(trimmed) &&
     /\b(?:where|how|what|give|tell|share|provide|kahan|kidhar|kaha)\b/i.test(trimmed);
 
-  if (isLeadership || isContactOrOffice) {
+  if (isBotIdentity || isLeadership || isContactOrOffice) {
     return {
-      intent: "COMPANY_SPECIFIC",
+      intent: isBotIdentity ? "BOT_IDENTITY" : "COMPANY_SPECIFIC",
       confidence: 0.96,
-      reason: isLeadership ? "Company leadership inquiry" : "Company contact details or office location inquiry",
-      subCategory: isLeadership ? "leadership" : "contact_office",
+      reason: isBotIdentity
+        ? "Bot identity inquiry"
+        : isLeadership
+        ? "Company leadership inquiry"
+        : "Company contact details or office location inquiry",
+      subCategory: isBotIdentity ? "identity" : isLeadership ? "leadership" : "contact_office",
       action: "PROCEED",
       refusalReply: null,
       clarificationPrompt: null,
@@ -235,7 +246,7 @@ export function classifyMessageIntent({
     /\b(?:flutter|react|native|next\.?js|node|python|backend|frontend|fullstack|api|graphql|rest|database|postgres|pgvector|docker|kubernetes|aws|cloud|ai|rag|llm|agent|chatbot|architecture|microservices|integration|webhook|android|ios|website|web\s*(?:app|application|platform|dev|development|portal)|software)\b/i.test(trimmed);
 
   const isServicesOrOfferings =
-    /\b(?:services?|offerings?|solutions?|what\s+can\s+you\s+(?:do|build|make)|what\s+(?:do\s+you|they|does\s+company)\s+(?:do|provide|offer)|capabilities|expertise)\b/i.test(trimmed) ||
+    /\b(?:services?|offerings?|solutions?|products?|items?|models?|watches|collection|catalog|what\s+can\s+you\s+(?:do|build|make|sell)|what\s+(?:do\s+you|they|does\s+company)\s+(?:do|provide|offer|sell)|capabilities|expertise)\b/i.test(trimmed) ||
     /\b(?:cost|price|pricing|quote|budget|estimate|timeline|sprint|proposal|package|hire)\b/i.test(trimmed) ||
     /\b(?:projects?|portfolio|case\s*studies|demo|clients?)\b/i.test(trimmed) ||
     /^(?:hi+|hello+|hey+|namaste|greetings)\b/i.test(trimmed);
@@ -274,12 +285,22 @@ export function classifyMessageIntent({
   }
 
   if (isExplicitOffTopic) {
-    const refusal =
-      lang === "hindi"
-        ? `मैं ${businessName} का आधिकारिक AI सेल्स कंसल्टेंट हूँ, जो विशेष रूप से कस्टम सॉफ्टवेयर इंजीनियरिंग, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और एंटरप्राइज़ AI समाधानों पर केंद्रित है। मैं सामान्य व्यक्तिगत सलाह, संबंध मार्गदर्शन, मनोरंजन या सामान्य सामान्य ज्ञान प्रदान नहीं करता, लेकिन आपके डिजिटल प्रोजेक्ट पर चर्चा करने में मुझे बेहद खुशी होगी! आप कौन सा समाधान बनाने की योजना बना रहे हैं?`
-        : lang === "hinglish"
-        ? `Main ${businessName} ka official AI Sales Consultant hoon, jo specifically custom software engineering, mobile apps, web platforms, aur enterprise AI solutions par focus karta hai. Main personal advice, relationship guidance, entertainment ya general trivia discuss nahi karta, lekin aapke digital project ko build ya scale karne par discuss karne mein mujhe khushi hogi! Aap kaun sa solution build karne ki planning kar rahe hain?`
-        : `I am the official AI Sales Consultant for ${businessName}, focusing exclusively on custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+    let refusal = "";
+    if (isEss) {
+      refusal =
+        lang === "hindi"
+          ? `मैं Emperor Smart Solutions का आधिकारिक AI सेल्स कंसल्टेंट हूँ, जो विशेष रूप से कस्टम सॉफ्टवेयर इंजीनियरिंग, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और एंटरप्राइज़ AI समाधानों पर केंद्रित है। मैं सामान्य व्यक्तिगत सलाह, संबंध मार्गदर्शन, मनोरंजन या सामान्य सामान्य ज्ञान प्रदान नहीं करता, लेकिन आपके डिजिटल प्रोजेक्ट पर चर्चा करने में मुझे बेहद खुशी होगी! आप कौन सा समाधान बनाने की योजना बना रहे हैं?`
+          : lang === "hinglish"
+          ? `Main Emperor Smart Solutions ka official AI Sales Consultant hoon, jo specifically custom software engineering, mobile apps, web platforms, aur enterprise AI solutions par focus karta hai. Main personal advice, relationship guidance, entertainment ya general trivia discuss nahi karta, lekin aapke digital project ko build ya scale karne par discuss karne mein mujhe khushi hogi! Aap kaun sa solution build karne ki planning kar rahe hain?`
+          : `I am the official AI Sales Consultant for Emperor Smart Solutions, focusing exclusively on custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+    } else {
+      refusal =
+        lang === "hindi"
+          ? `मैं ${businessName} का आधिकारिक AI सहायक हूँ। मैं केवल ${businessName} के उत्पादों, सेवाओं और व्यावसायिक पूछताछ में सहायता करता हूँ। मैं व्यक्तिगत सलाह, मनोरंजन या सामान्य सामान्य ज्ञान प्रदान नहीं करता। मैं ${businessName} के संबंध में आपकी किस प्रकार सहायता कर सकता हूँ?`
+          : lang === "hinglish"
+          ? `Main ${businessName} ka official AI assistant hoon. Main sirf ${businessName} ke products, services aur business inquiries mein help karta hoon. Main personal advice, entertainment ya general trivia discuss nahi karta. Main ${businessName} ke baare mein aapki kya madad kar sakta hoon?`
+          : `I am the official AI assistant for ${businessName}. I specialize exclusively in assisting with ${businessName}'s products, services, and verified business inquiries. I don't provide personal advice, relationship guidance, entertainment, or general trivia. How can I assist you with ${businessName} today?`;
+    }
 
     return {
       intent: "OUT_OF_SCOPE",
@@ -324,12 +345,17 @@ export function classifyMessageIntent({
 
   // 9. Check for AMBIGUOUS: Truly underspecified or gibberish FIRST-TURN queries
   if (trimmed.length <= 15 && !/^(?:hi|hello|hey|yes|no|ok|sure|thanks|thank you)\b/i.test(trimmed)) {
-    const clarification =
-      lang === "hindi"
-        ? `मैं ${businessName} में आपकी सहायता के लिए तैयार हूँ। क्या आप किसी सॉफ्टवेयर, मोबाइल ऐप, वेबसाइट या AI समाधान के बारे में जानना चाहते हैं?`
-        : lang === "hinglish"
-        ? `Main ${businessName} mein aapki help karne ke liye available hoon. Kya aap software development, mobile app, website, ya AI solutions ke baare mein inquire karna chahte hain?`
-        : `I specialize in business and technology solutions at ${businessName}. Could you please clarify if you are inquiring about software development, mobile apps, web platforms, or AI integrations?`;
+    const clarification = isEss
+      ? (lang === "hindi"
+          ? `मैं Emperor Smart Solutions में आपकी सहायता के लिए तैयार हूँ। क्या आप किसी सॉफ्टवेयर, मोबाइल ऐप, वेबसाइट या AI समाधान के बारे में जानना चाहते हैं?`
+          : lang === "hinglish"
+          ? `Main Emperor Smart Solutions mein aapki help karne ke liye available hoon. Kya aap software development, mobile app, website, ya AI solutions ke baare mein inquire karna chahte hain?`
+          : `I specialize in business and technology solutions at Emperor Smart Solutions. Could you please clarify if you are inquiring about software development, mobile apps, web platforms, or AI integrations?`)
+      : (lang === "hindi"
+          ? `मैं ${businessName} में आपकी सहायता के लिए तैयार हूँ। क्या आप हमारे उत्पादों, सेवाओं या किसी विशिष्ट जानकारी के बारे में जानना चाहते हैं?`
+          : lang === "hinglish"
+          ? `Main ${businessName} mein aapki help karne ke liye available hoon. Kya aap hamare products, services ya kisi specific details ke baare mein inquire karna chahte hain?`
+          : `I am available to assist you with ${businessName}. Could you please clarify what products, services, or information you are inquiring about?`);
 
     return {
       intent: "AMBIGUOUS",

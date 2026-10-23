@@ -344,7 +344,9 @@ export async function POST(request, { params }) {
     });
 
     if (intentResult.action === "REFUSE" || intentResult.action === "RESTRICT") {
-      const defaultPills = ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"];
+      const defaultPills = isEssBot
+        ? ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"]
+        : (bot?.quickReplies || []);
       return corsResponse(
         NextResponse.json({
           success: true,
@@ -541,6 +543,16 @@ export async function POST(request, { params }) {
     const hasTechnicalKeywords = Boolean(message.toLowerCase().match(/\b(cost|price|quote|how much|build|flutter|app|website|software|ai|service|hire|develop|office|address)\b/i));
     const hasSoftwareOrCompanyContext = Boolean(message.toLowerCase().match(/\b(flutter|react|native|next\.?js|node|python|backend|frontend|fullstack|api|database|postgres|aws|cloud|ai|rag|llm|agent|chatbot|automation|erp|crm|saas|mvp|prototype|architecture|ui|ux|design|dev|code|coding|software|website|web|app|apps|application|mobile|ios|android|ecommerce|e-commerce|store|portal|platform|custom\s*software|cost|price|pricing|quote|budget|hire|developer|engineer|timeline|sprint|estimate|proposal|package|5k|10k|50k|rupees|inr|rs|ess|emperor|smart\s*solutions|yash|karan|sharma|makwana|shitiratna|panchvati|navrangpura|ahmedabad|consultation|meeting|demo|service|services|provide|provides|providing|offer|offers|offering|offerings|solution|solutions|work|works|working|build|building|make|create|features?|technology|tech|stack|capabilities|expertise|company|business|client|clients)\b/i));
 
+    const isBotIdentityQuery =
+      /\bwho\s+(?:are\s+you|are\s+u|is\s+this|made\s+you|created\s+you)\b/i.test(trimmedMsg) ||
+      /\b(?:what\s+are\s+you|tell\s+me\s+about\s+yourself|who\s+am\s+i\s+talking\s+to|what\s+do\s+you\s+do)\b/i.test(trimmedMsg) ||
+      /\b(?:aap\s+kaun\s+h[a-z]*|tum\s+kaun\s+h[a-z]*|kaun\s+ho\s+tum|kaun\s+hai\s+tu|kaun\s+ho)\b/i.test(trimmedMsg);
+
+    const isExplicitPlatformProviderQuery =
+      !isEssBot &&
+      /\b(?:emperor\s+smart\s+solutions?|ess)\b/i.test(message) &&
+      /\b(?:what\s+(?:is|does|services?)|who\s+(?:is|are)|tell\s+me\s+about|provide|offer)\b/i.test(message);
+
     const isOfferingToShareContact =
       !hasTechnicalKeywords &&
       (/\b(?:note|save|take|record|write|keep)\s+(?:down\s+)?(?:my\s+)?(?:name|number|phone|details|contact|whatsapp)\b/i.test(message) ||
@@ -685,7 +697,8 @@ export async function POST(request, { params }) {
     // 3. General knowledge and trivia
     const isGeneralKnowledgeAndTrivia =
       /\b(?:general\s*knowledge|trivia|quiz|random\s*facts?|fun\s*facts?|history\s*questions?|geography\s*questions?|world\s*capitals?|capital\s*of|country\s*population|famous\s*personalities|scientific\s*trivia|space\s*trivia|animal\s*facts?|riddles?|puzzles?|brain\s*teasers?|crossword\s*answers?|word\s*games?|dictionary\s*questions?|unrelated\s*facts?|solar\s*system|mars|jupiter|moon|galaxy|universe|black\s*hole|gravity|quantum\s*physics|photosynthesis|dna|evolution|dinosaurs?|longest\s*river|highest\s*mountain|mythology|ramayana|mahabharata|zeus|gods)\b/i.test(message) ||
-      /\bwho\s+(?:is|was|are|were|act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i.test(message);
+      (/\bwho\s+(?:is|was|are|were)(?!\s+(?:you|u|this|your\s+company|the\s+(?:founder|ceo|owner|team))\b)/i.test(message) ||
+       /\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i.test(message));
 
     // 4. Health and medical advice
     const isHealthAndMedical =
@@ -744,6 +757,8 @@ export async function POST(request, { params }) {
       !isWebsiteUrlQuery &&
       !isServicesQuery &&
       !isContactSubmission &&
+      !isBotIdentityQuery &&
+      !isExplicitPlatformProviderQuery &&
       (isExternalEntityQuery ||
       isRomanceOrRelationships ||
       isGeneralKnowledgeAndTrivia ||
@@ -758,22 +773,36 @@ export async function POST(request, { params }) {
       isGeneralOffTopicAdvice ||
       isOffTopicDilemma ||
       (isEntertainmentOrTrivia && !isEssLeadershipQuery) ||
-      (!hasSoftwareOrCompanyContext && !isPureGreeting && !isFirstMessageQuery && !isNameIntroductionOnly && /\b(who|what|where|how|why|when|can you|give me|tell me|name|list)\b/i.test(message) && !isEssLeadershipQuery && !/\b(office|address|contact|email|phone)\b/i.test(message)));
+      (!hasSoftwareOrCompanyContext && !isPureGreeting && !isFirstMessageQuery && !isNameIntroductionOnly && !isBotIdentityQuery && !isExplicitPlatformProviderQuery && /\b(who|what|where|how|why|when|can you|give me|tell me|name|list)\b/i.test(message) && !isEssLeadershipQuery && !/\b(office|address|contact|email|phone)\b/i.test(message)));
 
     let deterministicReply = null;
     let quickReplies = [];
     if (isLanguageSwitchQuery) {
       lang = /[\u0900-\u097F]/.test(message) ? "hindi" : "hinglish";
-      quickReplies = [...ALL_ESS_SERVICES];
-      if (lang === "hindi") {
-        deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। Emperor Smart Solutions में आपका स्वागत है! मैं आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ? क्या आप कोई मोबाइल ऐप, वेबसाइट या कस्टम AI समाधान बनवाना चाहते हैं?`;
+      if (isEssBot) {
+        quickReplies = [...ALL_ESS_SERVICES];
+        if (lang === "hindi") {
+          deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। Emperor Smart Solutions में आपका स्वागत है! मैं आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ? क्या आप कोई मोबाइल ऐप, वेबसाइट या कस्टम AI समाधान बनवाना चाहते हैं?`;
+        } else {
+          deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. Emperor Smart Solutions ki taraf se main aapke digital project mein kaise help kar sakta hoon? Aapko mobile app, website, ya custom AI solution banwana hai?`;
+        }
       } else {
-        deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. Emperor Smart Solutions ki taraf se main aapke digital project mein kaise help kar sakta hoon? Aapko mobile app, website, ya custom AI solution banwana hai?`;
+        quickReplies = bot?.quickReplies || [];
+        if (lang === "hindi") {
+          deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। ${businessName} में आपका स्वागत है! मैं आपकी किस प्रकार सहायता कर सकता हूँ?`;
+        } else {
+          deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. ${businessName} mein aapka swagat hai. Main aapki kya madad kar sakta hoon?`;
+        }
       }
     } else if (isEnglishSwitchQuery) {
       lang = "english";
-      quickReplies = [...ALL_ESS_SERVICES];
-      deterministicReply = `Yes, absolutely! I can converse fluently in English. Emperor Smart Solutions specializes in custom mobile apps, web platforms, and enterprise AI solutions. What kind of project are you looking to build?`;
+      if (isEssBot) {
+        quickReplies = [...ALL_ESS_SERVICES];
+        deterministicReply = `Yes, absolutely! I can converse fluently in English. Emperor Smart Solutions specializes in custom mobile apps, web platforms, and enterprise AI solutions. What kind of project are you looking to build?`;
+      } else {
+        quickReplies = bot?.quickReplies || [];
+        deterministicReply = `Yes, absolutely! I can converse fluently in English. Welcome to ${businessName}! How can I assist you today?`;
+      }
     } else if (isOfferingToShareContact) {
       deterministicReply = lang === "hindi"
         ? `जरूर! कृपया अपना **नाम और फ़ोन नंबर (या WhatsApp)** साझा करें, ताकि हम इसे सुरक्षित रूप से नोट कर सकें और हमारी तकनीकी टीम आपसे संपर्क कर सके।`
@@ -837,22 +866,43 @@ export async function POST(request, { params }) {
           ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
         });
       } else {
-        quickReplies = [...ALL_ESS_SERVICES];
-        if (displayName) {
-          if (!resolvedPhone && !resolvedEmail) {
-            deterministicReply = lang === "hindi"
-              ? `नमस्ते ${displayName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
-              : lang === "hinglish"
-              ? `Nice to meet you, ${displayName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
-              : `Nice to meet you, ${displayName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
-          } else {
-            deterministicReply = lang === "hindi"
-              ? `धन्यवाद ${displayName}! आपका संपर्क विवरण नोट कर लिया गया है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
-              : lang === "hinglish"
-              ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Aap kaunsa digital solution develop karwana chahte hain?`
-              : `Thank you, ${displayName}! Your contact details have been recorded. Which digital solution are you planning to build?`;
+        if (isEssBot) {
+          quickReplies = [...ALL_ESS_SERVICES];
+          if (displayName) {
+            if (!resolvedPhone && !resolvedEmail) {
+              deterministicReply = lang === "hindi"
+                ? `नमस्ते ${displayName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
+                : lang === "hinglish"
+                ? `Nice to meet you, ${displayName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
+                : `Nice to meet you, ${displayName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
+            } else {
+              deterministicReply = lang === "hindi"
+                ? `धन्यवाद ${displayName}! आपका संपर्क विवरण नोट कर लिया गया है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
+                : lang === "hinglish"
+                ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Aap kaunsa digital solution develop karwana chahte hain?`
+                : `Thank you, ${displayName}! Your contact details have been recorded. Which digital solution are you planning to build?`;
+            }
           }
+        } else {
+          quickReplies = bot?.quickReplies || [];
+          if (displayName) {
+            if (!resolvedPhone && !resolvedEmail) {
+              deterministicReply = lang === "hindi"
+                ? `नमस्ते ${displayName}! ${businessName} में आपका स्वागत है। आज मैं आपकी किस प्रकार सहायता कर सकता हूँ?`
+                : lang === "hinglish"
+                ? `Nice to meet you, ${displayName}! ${businessName} mein aapka swagat hai. Aaj main aapki kya madad kar sakta hoon?`
+                : `Nice to meet you, ${displayName}! Welcome to ${businessName}. How can I assist you today?`;
+            } else {
+              deterministicReply = lang === "hindi"
+                ? `धन्यवाद ${displayName}! आपका विवरण नोट कर लिया गया है। मैं ${businessName} के संबंध में आपकी किस प्रकार सहायता कर सकता हूँ?`
+                : lang === "hinglish"
+                ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Main ${businessName} ke baare mein aapki kya madad kar sakta hoon?`
+                : `Thank you, ${displayName}! Your contact details have been recorded. How can I assist you with ${businessName} today?`;
+            }
+          }
+        }
 
+        if (displayName) {
           // Immediately register lead with the visitor's name
           leadsStore.createLead({
             sessionId: currentSessionId,
@@ -885,19 +935,69 @@ export async function POST(request, { params }) {
         }
       }
     } else if (isPureGreeting && !hasTechnicalKeywords) {
-      quickReplies = [...ALL_ESS_SERVICES];
-      if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
-        deterministicReply = lang === "hindi"
-          ? `नमस्ते ${resolvedName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
-          : lang === "hinglish"
-          ? `Hi ${resolvedName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
-          : `Hi ${resolvedName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
+      if (isEssBot) {
+        quickReplies = [...ALL_ESS_SERVICES];
+        if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
+          deterministicReply = lang === "hindi"
+            ? `नमस्ते ${resolvedName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
+            : lang === "hinglish"
+            ? `Hi ${resolvedName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
+            : `Hi ${resolvedName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
+        } else {
+          deterministicReply = lang === "hindi"
+            ? `नमस्ते! Emperor Smart Solutions में आपका स्वागत है। क्या आप अपना नाम साझा कर सकते हैं ताकि हम बेहतर सहायता कर सकें?`
+            : lang === "hinglish"
+            ? `Hello! Emperor Smart Solutions mein aapka swagat hai. Kya aap apna Name share kar sakte hain taaki hum aapko personalize assist kar sakein?`
+            : `Hello! Welcome to Emperor Smart Solutions. May I know your name so I can assist you better and personalize our conversation?`;
+        }
       } else {
-        deterministicReply = lang === "hindi"
-          ? `नमस्ते! Emperor Smart Solutions में आपका स्वागत है। क्या आप अपना नाम साझा कर सकते हैं ताकि हम बेहतर सहायता कर सकें?`
-          : lang === "hinglish"
-          ? `Hello! Emperor Smart Solutions mein aapka swagat hai. Kya aap apna Name share kar sakte hain taaki hum aapko personalize assist kar sakein?`
-          : `Hello! Welcome to Emperor Smart Solutions. May I know your name so I can assist you better and personalize our conversation?`;
+        quickReplies = bot?.quickReplies || [];
+        const botWelcome = bot?.welcomeMessage && !bot.welcomeMessage.includes("Emperor AI") && !bot.welcomeMessage.includes("Emperor Smart Solutions")
+          ? bot.welcomeMessage
+          : null;
+        if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
+          deterministicReply = lang === "hindi"
+            ? `नमस्ते ${resolvedName}! ${businessName} में आपका स्वागत है। मैं आपकी किस प्रकार सहायता कर सकता हूँ?`
+            : lang === "hinglish"
+            ? `Hi ${resolvedName}! ${businessName} mein aapka swagat hai. Main aapki kya madad kar sakta hoon?`
+            : `Hi ${resolvedName}! Welcome to ${businessName}. How can I assist you today?`;
+        } else {
+          deterministicReply = botWelcome || (lang === "hindi"
+            ? `नमस्ते! ${businessName} में आपका स्वागत है। मैं आज आपकी क्या सहायता कर सकता हूँ?`
+            : lang === "hinglish"
+            ? `Hello! ${businessName} mein aapka swagat hai. Aaj main aapki kya madad kar sakta hoon?`
+            : `Hello! Welcome to ${businessName}. How can I assist you today?`);
+        }
+      }
+    } else if (isBotIdentityQuery) {
+      if (isEssBot) {
+        quickReplies = [...ALL_ESS_SERVICES];
+        if (lang === "hindi") {
+          deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI सेल्स कंसल्टेंट और टेक्नोलॉजी एडवाइजर हूँ। मैं कस्टम सॉफ्टवेयर इंजीनियरिंग, मोबाइल ऐप्स (iOS और Android), वेब प्लेटफॉर्म और एंटरप्राइज AI सॉल्यूशंस में विशेषज्ञता रखता हूँ। आप किस तरह का डिजिटल समाधान बनवाना चाहते हैं?`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Main Emperor Smart Solutions ka official AI Sales Consultant hoon. Main custom software engineering, mobile apps, web platforms, aur enterprise AI solutions mein assist karta hoon. Aap kaunsa project plan kar rahe hain?`;
+        } else {
+          deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize in custom software engineering, mobile applications, full-stack web platforms, and enterprise AI solutions. What kind of digital project are you looking to build today?`;
+        }
+      } else {
+        quickReplies = bot?.quickReplies || [];
+        const botDesc = bot?.description ? ` ${bot.description}` : "";
+        if (lang === "hindi") {
+          deterministicReply = `मैं ${businessName} का आधिकारिक AI सहायक हूँ।${botDesc} मैं ${businessName} के उत्पादों, सेवाओं और पूछताछ में आपकी सहायता के लिए यहाँ उपलब्ध हूँ। आज मैं आपकी किस प्रकार सहायता कर सकता हूँ?`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Main ${businessName} ka official AI assistant hoon.${botDesc} Main ${businessName} ke products, services aur inquiries mein aapki help karne ke liye available hoon. Aaj main aapki kya madad kar sakta hoon?`;
+        } else {
+          deterministicReply = `I am the official AI assistant for ${businessName}.${botDesc} I am here to help you with inquiries regarding our products, services, and policies. How can I assist you with ${businessName} today?`;
+        }
+      }
+    } else if (isExplicitPlatformProviderQuery) {
+      quickReplies = bot?.quickReplies || [];
+      if (lang === "hindi") {
+        deterministicReply = `Emperor Smart Solutions एक AI और डिजिटल इंजीनियरिंग प्रदाता है जो ${businessName} के इस चैटबॉट प्लेटफॉर्म को संचालित करता है। मैं यहाँ विशेष रूप से ${businessName} और उसके उत्पादों के संबंध में आपकी सहायता के लिए उपलब्ध हूँ। क्या मैं ${businessName} से संबंधित किसी विषय में आपकी सहायता कर सकता हूँ?`;
+      } else if (lang === "hinglish") {
+        deterministicReply = `Emperor Smart Solutions ek AI aur digital engineering provider hai jo ${businessName} ke is chatbot platform ko power karta hai. Main yahan specifically ${businessName} aur uske products ke liye assist karta hoon. Kya main ${businessName} ke regarding aapki help kar sakta hoon?`;
+      } else {
+        deterministicReply = `Emperor Smart Solutions is the technology provider and AI platform that powers this chatbot for ${businessName}. As the AI assistant for ${businessName}, my focus is on assisting you with our timepieces and business inquiries. How can I help you with ${businessName} today?`;
       }
     } else if (isFirstMessageQuery) {
       let firstUserMsg = "";
