@@ -96,26 +96,32 @@ export const documentsStore = {
   getDocuments(botId) {
     const all = loadDocumentsFromDisk();
     if (!botId) return all;
-    return all.filter((d) => !d.botId || d.botId === botId || d.botId === "all");
+    return all.filter((d) => d.botId === botId);
   },
 
-  addDocument({ id, botId = "all", name, content, type = "PDF" }) {
+  getDocumentById(docId) {
+    const all = loadDocumentsFromDisk();
+    return all.find((d) => d.id === docId) || null;
+  },
+
+  addDocument({ id, botId, name, content, type = "Document" }) {
     const all = loadDocumentsFromDisk();
     const docId = id || `doc_${Date.now()}`;
     const chunks = chunkDocumentText(content);
 
     const doc = {
       id: docId,
-      botId,
+      botId: botId || "bot_sales_01",
       name: name || "Untitled Document",
-      type,
-      content,
+      type: type || "Document",
+      content: content || "",
       chunks,
       chunksCount: chunks.length,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    const existingIdx = all.findIndex((d) => d.id === docId || (d.name === name && d.botId === botId));
+    const existingIdx = all.findIndex((d) => d.id === docId);
     if (existingIdx >= 0) {
       all[existingIdx] = doc;
     } else {
@@ -124,6 +130,27 @@ export const documentsStore = {
 
     saveDocumentsToDisk(all);
     return doc;
+  },
+
+  updateDocument(docId, { name, content, type }) {
+    const all = loadDocumentsFromDisk();
+    const idx = all.findIndex((d) => d.id === docId);
+    if (idx === -1) return null;
+    const existing = all[idx];
+    const newContent = content !== undefined ? content : existing.content;
+    const newChunks = chunkDocumentText(newContent);
+    const updated = {
+      ...existing,
+      name: name !== undefined && name.trim() ? name.trim() : existing.name,
+      content: newContent,
+      type: type !== undefined ? type : existing.type,
+      chunks: newChunks,
+      chunksCount: newChunks.length,
+      updatedAt: new Date().toISOString(),
+    };
+    all[idx] = updated;
+    saveDocumentsToDisk(all);
+    return updated;
   },
 
   deleteDocument(docId) {

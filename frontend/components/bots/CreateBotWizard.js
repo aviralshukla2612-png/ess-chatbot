@@ -62,6 +62,9 @@ export default function CreateBotWizard() {
 
   // Knowledge Documents - Empty for user's own files
   const [documents, setDocuments] = useState([]);
+  const [writeNoteModalOpen, setWriteNoteModalOpen] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
 
   // Live widget preview chat state
   const [chatInput, setChatInput] = useState("");
@@ -126,7 +129,7 @@ export default function CreateBotWizard() {
   const handleFinish = async () => {
     setIsSubmitting(true);
     const finalName = botName.trim() || "My AI Assistant";
-    await botsApi.createBot({
+    const created = await botsApi.createBot({
       name: finalName,
       company: companyName,
       websiteUrl: websiteUrl.trim(),
@@ -143,7 +146,11 @@ export default function CreateBotWizard() {
       documents,
       sourcesCount: documents.length,
     });
-    router.push("/bots");
+    if (created?.id) {
+      router.push(`/bots/${created.id}?tab=knowledge`);
+    } else {
+      router.push("/bots");
+    }
   };
 
   return (
@@ -416,29 +423,19 @@ export default function CreateBotWizard() {
             {/* 4. Enter Information */}
             <div
               onClick={() => {
-                const text = prompt("Paste your custom text/knowledge info:");
-                if (text) {
-                  setDocuments((prev) => [
-                    ...prev,
-                    {
-                      name: "Custom Information Note",
-                      type: "TXT",
-                      size: `${text.length} chars`,
-                      status: "Ready",
-                      uploaded: "Just now",
-                    },
-                  ]);
-                }
+                setNoteTitle("");
+                setNoteContent("");
+                setWriteNoteModalOpen(true);
               }}
               className="p-5 rounded-xl border border-slate-200 hover:border-indigo-600 bg-white hover:shadow-xs text-center flex flex-col justify-between cursor-pointer transition-all"
             >
               <div>
                 <FileText className="w-6 h-6 text-indigo-600 mx-auto mb-2" />
                 <h4 className="font-bold text-xs text-slate-900">
-                  Enter Information
+                  Write Custom Note
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Add text manually
+                  Type text directly
                 </p>
               </div>
 
@@ -446,7 +443,7 @@ export default function CreateBotWizard() {
                 type="button"
                 className="mt-4 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-semibold text-xs hover:bg-indigo-100 transition-colors w-full"
               >
-                + Add Info
+                + Write Text
               </button>
             </div>
           </div>
@@ -520,6 +517,75 @@ export default function CreateBotWizard() {
               </div>
             )}
           </div>
+
+          {writeNoteModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <div className="bg-white rounded-2xl w-full max-w-xl p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-slate-900">
+                    Write Custom Knowledge Note
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setWriteNoteModalOpen(false)}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-700">Note Title</label>
+                  <input
+                    type="text"
+                    value={noteTitle}
+                    onChange={(e) => setNoteTitle(e.target.value)}
+                    placeholder="e.g. Return Policy, Pricing Guide, Company FAQs"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-700">Content</label>
+                  <textarea
+                    rows={8}
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                    placeholder="Type or paste information you want your bot to know..."
+                    className="w-full p-3 text-xs font-mono rounded-xl border border-slate-200 bg-slate-50"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setWriteNoteModalOpen(false)}
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!noteContent.trim()) return;
+                      setDocuments((prev) => [
+                        ...prev,
+                        {
+                          name: noteTitle.trim() || "Custom Knowledge Note",
+                          type: "NOTE",
+                          content: noteContent.trim(),
+                          size: `${noteContent.length} chars`,
+                          status: "Ready",
+                          uploaded: "Just now",
+                        },
+                      ]);
+                      setWriteNoteModalOpen(false);
+                    }}
+                    className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    Add to Bot Knowledge
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

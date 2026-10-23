@@ -25,6 +25,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import StatCard from "@/components/ui/StatCard";
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 import WebsiteKnowledgeManager from "@/components/knowledge/WebsiteKnowledgeManager";
+import DocumentKnowledgeManager from "@/components/knowledge/DocumentKnowledgeManager";
 import { botsApi } from "@/lib/api/bots";
 import { knowledgeApi } from "@/lib/api/knowledge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
@@ -127,9 +128,12 @@ function BotDetailContent() {
           {/* Direct Add Information / Knowledge Button */}
           <button
             type="button"
-            onClick={() => setActiveTab("knowledge")}
+            onClick={() => {
+              setActiveTab("knowledge");
+              setKnowledgeSubtab("documents");
+            }}
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-colors cursor-pointer"
-            title="Add website URLs, documents, Q&A pairs, or training information"
+            title="Add website URLs, write custom documents, or upload files"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>+ Add Information 📚</span>
@@ -287,7 +291,7 @@ function BotDetailContent() {
           <div className="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-semibold">
             {[
               { id: "websites", label: "Websites", icon: Globe },
-              { id: "documents", label: `Documents (${documents.length})`, icon: FileText },
+              { id: "documents", label: "Documents & Written Notes", icon: FileText },
               { id: "qa", label: `Q&A Pairs (${qas.length})`, icon: HelpCircle },
             ].map((st) => {
               const SubIcon = st.icon;
@@ -297,8 +301,8 @@ function BotDetailContent() {
                   onClick={() => setKnowledgeSubtab(st.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-colors cursor-pointer ${
                     knowledgeSubtab === st.id
-                      ? "bg-indigo-50 text-indigo-700 font-bold"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                      ? "bg-indigo-50 text-indigo-700 font-bold dark:bg-indigo-950 dark:text-indigo-300"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800"
                   }`}
                 >
                   <SubIcon className="w-4 h-4" />
@@ -313,35 +317,7 @@ function BotDetailContent() {
           )}
 
           {knowledgeSubtab === "documents" && (
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-              <h3 className="font-semibold text-sm text-neutral-900 dark:text-white mb-4">
-                Vectorized Documents ({documents.length})
-              </h3>
-              <div className="space-y-2">
-                {documents.map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold text-[10px] bg-indigo-50 text-indigo-700 dark:bg-indigo-950 px-2 py-0.5 rounded-md">
-                        {d.type}
-                      </span>
-                      <span className="font-semibold text-neutral-900 dark:text-white">
-                        {d.name}
-                      </span>
-                      <span className="text-neutral-400">({d.size})</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-emerald-600 font-semibold text-[10px] bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
-                        Ready
-                      </span>
-                      <span className="text-neutral-400 text-[11px]">{d.chunks} chunks</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <DocumentKnowledgeManager botId={bot.id} />
           )}
 
           {knowledgeSubtab === "qa" && (
