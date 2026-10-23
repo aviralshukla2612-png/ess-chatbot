@@ -45,8 +45,28 @@ export function middleware(request) {
   const sessionCookie = request.cookies.get("ess_session")?.value;
   const session = sessionCookie ? decodeEdgeSession(sessionCookie) : null;
 
-  // 3. Protect /dashboard and /dashboard/*
-  if (pathname.startsWith("/dashboard")) {
+  // 3. Protect all tenant dashboard routes (/dashboard, /bots, /knowledge, /conversations, /leads, /analytics, /integrations, /team, /settings)
+  const isDashboardRoute =
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname === "/bots" ||
+    pathname.startsWith("/bots/") ||
+    pathname === "/knowledge" ||
+    pathname.startsWith("/knowledge/") ||
+    pathname === "/conversations" ||
+    pathname.startsWith("/conversations/") ||
+    pathname === "/leads" ||
+    pathname.startsWith("/leads/") ||
+    pathname === "/analytics" ||
+    pathname.startsWith("/analytics/") ||
+    pathname === "/integrations" ||
+    pathname.startsWith("/integrations/") ||
+    pathname === "/team" ||
+    pathname.startsWith("/team/") ||
+    pathname === "/settings" ||
+    pathname.startsWith("/settings/");
+
+  if (isDashboardRoute) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
@@ -65,8 +85,7 @@ export function middleware(request) {
 
     const isSuper =
       session.role === "SUPER_ADMIN" ||
-      session.orgRole === "SUPER_ADMIN" ||
-      (session.email && session.email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
+      session.orgRole === "SUPER_ADMIN";
 
     if (!isSuper) {
       // Forbidden: redirect regular tenant to dashboard
@@ -84,6 +103,14 @@ export function middleware(request) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/bots/:path*",
+    "/knowledge/:path*",
+    "/conversations/:path*",
+    "/leads/:path*",
+    "/analytics/:path*",
+    "/integrations/:path*",
+    "/team/:path*",
+    "/settings/:path*",
     "/admin/:path*",
   ],
 };

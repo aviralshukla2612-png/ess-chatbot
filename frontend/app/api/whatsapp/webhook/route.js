@@ -37,18 +37,35 @@ export async function POST(request) {
     }
 
     // Resolve tenant mapping
-    let organizationId = "org_ess_default";
-    let botId = "bot_aa";
+    let organizationId = null;
+    let botId = null;
 
     if (normalized.phoneNumberId) {
       const mapping = await queryDb(
         'SELECT "organizationId", "botId" FROM "WhatsAppMapping" WHERE "phoneNumberId" = $1;',
         [normalized.phoneNumberId]
       );
-      if (mapping.ok && mapping.rows.length > 0) {
+      if (mapping.ok && mapping.rows && mapping.rows.length > 0) {
         organizationId = mapping.rows[0].organizationId;
         botId = mapping.rows[0].botId;
+      } else {
+        // Safely acknowledge unmapped phone numbers according to Meta webhook contract
+        // without routing to other tenants or default bots
+        return NextResponse.json({
+          status: "ignored_unmapped_phone",
+          phoneNumberId: normalized.phoneNumberId,
+        });
       }
+    } else {
+      return NextResponse.json({
+        status: "ignored_missing_phone_id",
+      });
+    }
+
+    if (!organizationId || !botId) {
+      return NextResponse.json({
+        status: "ignored_invalid_mapping",
+      });
     }
 
     const response = await whatsappService.handleInboundMessage({

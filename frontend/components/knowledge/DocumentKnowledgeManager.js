@@ -443,7 +443,7 @@ export default function DocumentKnowledgeManager({ botId }) {
                   <div className="flex items-center gap-3 text-[10px] text-neutral-400 mt-1.5">
                     <span className="flex items-center gap-1 font-semibold text-indigo-600 dark:text-indigo-400">
                       <Layers className="w-3 h-3" />
-                      {doc.chunksCount || doc.chunks?.length || 1} chunks indexed
+                      {doc.chunksCount ?? doc.chunks?.length ?? 0} chunks indexed
                     </span>
                     {doc.createdAt && (
                       <span>
@@ -805,7 +805,7 @@ export default function DocumentKnowledgeManager({ botId }) {
                     {viewingDoc.name}
                   </h3>
                   <p className="text-[11px] text-neutral-500">
-                    {viewingDoc.type || "Document"} • {viewingDoc.chunksCount || viewingDoc.chunks?.length || 1} chunks
+                    {viewingDoc.type || "Document"} • {viewingDoc.chunksCount ?? viewingDoc.chunks?.length ?? 0} chunks
                   </p>
                 </div>
               </div>

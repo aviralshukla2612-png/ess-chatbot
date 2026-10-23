@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   BookOpen,
   FileText,
@@ -14,58 +16,105 @@ import {
   CheckCircle2,
   Sparkles,
   ExternalLink,
+  Loader2,
+  Bot,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import Modal from "@/components/ui/Modal";
-import KnowledgeGapsModal from "@/components/knowledge/KnowledgeGapsModal";
 import WebsiteKnowledgeManager from "@/components/knowledge/WebsiteKnowledgeManager";
 import { knowledgeApi } from "@/lib/api/knowledge";
+import { botsApi } from "@/lib/api/bots";
 
-export default function KnowledgePage() {
+function KnowledgePageContent() {
+  const searchParams = useSearchParams();
   const fileInputRef = useRef(null);
+
   const [activeTab, setActiveTab] = useState("documents");
+  const [bots, setBots] = useState([]);
+  const [selectedBotId, setSelectedBotId] = useState(searchParams?.get("botId") || "");
   const [documents, setDocuments] = useState([]);
   const [qas, setQas] = useState([]);
   const [websites, setWebsites] = useState([]);
-  const [gaps, setGaps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
 
   // Modals state
   const [qaModalOpen, setQaModalOpen] = useState(false);
   const [newQA, setNewQA] = useState({ question: "", answer: "" });
-  const [webModalOpen, setWebModalOpen] = useState(false);
-  const [newUrl, setNewUrl] = useState("");
-  const [selectedGap, setSelectedGap] = useState(null);
+  const [qaSubmitting, setQaSubmitting] = useState(false);
 
-  const processFiles = (files) => {
-    if (!files || files.length === 0) return;
-    const newDocs = Array.from(files).map((file) => {
-      const ext = file.name.split(".").pop()?.toUpperCase() || "PDF";
-      const sizeFormatted =
-        file.size > 1024 * 1024
-          ? (file.size / (1024 * 1024)).toFixed(1) + " MB"
-          : Math.round(file.size / 1024) + " KB";
+  // 1. Load bots on mount
+  useEffect(() => {
+    async function loadBots() {
+      try {
+        const fetchedBots = await botsApi.getBots();
+        setBots(fetchedBots || []);
+        if (fetchedBots && fetchedBots.length > 0) {
+          const paramId = searchParams?.get("botId");
+          const matched = fetchedBots.find((b) => b.id === paramId);
+          setSelectedBotId(matched ? matched.id : fetchedBots[0].id);
+        }
+      } catch (err) {
+        console.warn("[KNOWLEDGE_LOAD_BOTS_WARN]", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadBots();
+  }, [searchParams]);
 
-      return {
-        id: `doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        name: file.name,
-        size: sizeFormatted,
-        type: ext,
-        chunks: Math.floor(Math.random() * 25) + 8,
-        status: "Processing",
-        uploadedDate: "Just now",
-      };
-    });
+  // 2. Load bot knowledge when selectedBotId changes
+  useEffect(() => {
+    if (!selectedBotId) return;
 
-    setDocuments((prev) => [...newDocs, ...prev]);
+    let isMounted = true;
+    async function loadBotKnowledge() {
+      try {
+        setLoading(true);
+        const [docs, qList, webs] = await Promise.all([
+          knowledgeApi.getDocuments(selectedBotId),
+          knowledgeApi.getQAPairs(selectedBotId),
+          knowledgeApi.getWebsites(selectedBotId),
+        ]);
+        if (isMounted) {
+          setDocuments(docs || []);
+          setQas(qList || []);
+          setWebsites(webs || []);
+        }
+      } catch (err) {
+        console.warn("[KNOWLEDGE_LOAD_DATA_WARN]", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadBotKnowledge();
 
-    // Simulate vectorization completed to Ready
-    setTimeout(() => {
-      setDocuments((prev) =>
-        prev.map((d) => (d.status === "Processing" ? { ...d, status: "Ready" } : d))
-      );
-    }, 1200);
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedBotId]);
+
+  const processFiles = async (files) => {
+    if (!files || files.length === 0 || !selectedBotId) return;
+    setUploading(true);
+    setUploadError("");
+
+    for (const file of Array.from(files)) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("name", file.name);
+
+        const newDoc = await knowledgeApi.addDocument(selectedBotId, formData);
+        setDocuments((prev) => [newDoc, ...prev]);
+      } catch (err) {
+        console.error("[FILE_UPLOAD_ERR]", err);
+        setUploadError(err.message || `Failed to process ${file.name}`);
+      }
+    }
+    setUploading(false);
   };
 
   const handleFileInputChange = (e) => {
@@ -94,52 +143,73 @@ export default function KnowledgePage() {
     setIsDragging(false);
   };
 
-  useEffect(() => {
-    async function loadData() {
-      const docs = await knowledgeApi.getDocuments();
-      const qList = await knowledgeApi.getQAPairs();
-      const webs = await knowledgeApi.getWebsites();
-      const gpList = await knowledgeApi.getKnowledgeGaps();
-      setDocuments(docs);
-      setQas(qList);
-      setWebsites(webs);
-      setGaps(gpList);
-      setLoading(false);
-    }
-    loadData();
-  }, []);
-
   const handleAddQA = async (e) => {
     e.preventDefault();
-    if (!newQA.question || !newQA.answer) return;
-    const created = await knowledgeApi.addQAPair("bot_sales_01", newQA);
-    setQas([created, ...qas]);
-    setNewQA({ question: "", answer: "" });
-    setQaModalOpen(false);
+    if (!newQA.question || !newQA.answer || !selectedBotId) return;
+    setQaSubmitting(true);
+    try {
+      const created = await knowledgeApi.addQAPair(selectedBotId, newQA);
+      setQas([created, ...qas]);
+      setNewQA({ question: "", answer: "" });
+      setQaModalOpen(false);
+    } catch (err) {
+      alert(err.message || "Failed to add Q&A pair");
+    } finally {
+      setQaSubmitting(false);
+    }
   };
 
   const handleDeleteQA = async (id) => {
-    await knowledgeApi.deleteQAPair(id);
-    setQas(qas.filter((q) => q.id !== id));
-  };
-
-  const handleAddWebsite = async (e) => {
-    e.preventDefault();
-    if (!newUrl) return;
-    const created = await knowledgeApi.addWebsite("bot_sales_01", newUrl);
-    setWebsites([created, ...websites]);
-    setNewUrl("");
-    setWebModalOpen(false);
+    if (!selectedBotId) return;
+    try {
+      await knowledgeApi.deleteQAPair(selectedBotId, id);
+      setQas(qas.filter((q) => q.id !== id));
+    } catch (err) {
+      alert(err.message || "Failed to delete Q&A");
+    }
   };
 
   const handleDeleteDocument = async (id) => {
-    await knowledgeApi.deleteDocument(id);
-    setDocuments(documents.filter((d) => d.id !== id));
+    if (!selectedBotId) return;
+    try {
+      await knowledgeApi.deleteDocument(selectedBotId, id);
+      setDocuments(documents.filter((d) => d.id !== id));
+    } catch (err) {
+      alert(err.message || "Failed to delete document");
+    }
   };
 
-  const handleGapResolved = (gapId) => {
-    setGaps(gaps.filter((g) => g.id !== gapId));
-  };
+  if (!loading && bots.length === 0) {
+    return (
+      <div className="space-y-8 animate-fade-in pb-12">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
+            Knowledge Engine
+          </h1>
+          <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            Train your AI assistants with documents, verified answers, and web pages.
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-12 text-center max-w-lg mx-auto space-y-4">
+          <Bot className="w-12 h-12 mx-auto text-indigo-500" />
+          <h3 className="font-bold text-lg text-neutral-900 dark:text-white">
+            No Assistants Found
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            You must create at least one AI assistant in your workspace before uploading training documents.
+          </p>
+          <Link
+            href="/bots/create"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Create Your First Assistant
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
@@ -150,29 +220,56 @@ export default function KnowledgePage() {
             Knowledge Engine
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Train your AI bots with documents, verified answers, web pages, and resolve visitor knowledge gaps.
+            Train your AI bots with documents, verified answers, web pages, and vector embeddings.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Bot selector & Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {bots.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+                Assistant:
+              </span>
+              <select
+                value={selectedBotId}
+                onChange={(e) => setSelectedBotId(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-neutral-900 dark:text-white shadow-2xs cursor-pointer"
+              >
+                {bots.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.companyName || b.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {activeTab === "qa" && (
             <button
               onClick={() => setQaModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Add Q&A Pair
             </button>
           )}
-          {activeTab === "websites" && (
-            <button
-              onClick={() => setWebModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
-            >
-              <Plus className="w-4 h-4" /> Add Website URL
-            </button>
-          )}
         </div>
       </div>
+
+      {uploadError && (
+        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600" />
+            <span>{uploadError}</span>
+          </div>
+          <button
+            onClick={() => setUploadError("")}
+            className="text-neutral-400 hover:text-neutral-600 text-xs font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold">
@@ -180,19 +277,13 @@ export default function KnowledgePage() {
           { id: "documents", label: "Documents", icon: FileText, count: documents.length },
           { id: "qa", label: "Questions & Answers", icon: HelpCircle, count: qas.length },
           { id: "websites", label: "Websites", icon: Globe, count: websites.length },
-          {
-            id: "gaps",
-            label: "Knowledge Gaps",
-            icon: AlertCircle,
-            badge: gaps.length > 0 ? `${gaps.length} Actionable` : null,
-          },
         ].map((t) => {
           const Icon = t.icon;
           return (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 pb-3.5 relative transition-colors ${
+              className={`flex items-center gap-2 pb-3.5 relative transition-colors cursor-pointer ${
                 activeTab === t.id
                   ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
@@ -200,13 +291,7 @@ export default function KnowledgePage() {
             >
               <Icon className="w-4 h-4" />
               <span>{t.label}</span>
-              {t.badge ? (
-                <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full">
-                  {t.badge}
-                </span>
-              ) : t.count !== undefined ? (
-                <span className="text-[10px] text-neutral-400 font-mono">({t.count})</span>
-              ) : null}
+              <span className="text-[10px] text-neutral-400 font-mono">({t.count})</span>
             </button>
           );
         })}
@@ -227,74 +312,107 @@ export default function KnowledgePage() {
 
           {/* Uploader Box */}
           <div
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => !uploading && fileInputRef.current?.click()}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-              isDragging
+              uploading
+                ? "border-indigo-400 bg-indigo-50/20 cursor-wait"
+                : isDragging
                 ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 ring-4 ring-indigo-500/20 scale-[1.01]"
                 : "border-neutral-300 dark:border-neutral-800 hover:border-indigo-500 bg-white dark:bg-neutral-900 shadow-2xs"
             }`}
           >
-            <Upload className="w-10 h-10 mx-auto text-indigo-500 mb-2" />
-            <h4 className="font-semibold text-sm text-neutral-900 dark:text-white">
-              {isDragging ? "Drop your PDF or knowledge files here" : "Click to browse or Drag & Drop Knowledge Files Here"}
-            </h4>
-            <p className="text-xs text-neutral-400 mt-1">
-              Supports PDF, DOCX, TXT, CSV up to 25MB. Files are automatically chunked and embedded in vector storage.
-            </p>
+            {uploading ? (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <h4 className="font-semibold text-sm text-indigo-600">
+                  Uploading and indexing document in vector store...
+                </h4>
+                <p className="text-xs text-neutral-400">
+                  Extracting text, generating embeddings, and saving chunks to database.
+                </p>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-10 h-10 mx-auto text-indigo-500 mb-2" />
+                <h4 className="font-semibold text-sm text-neutral-900 dark:text-white">
+                  {isDragging ? "Drop your knowledge files here" : "Click to browse or Drag & Drop Knowledge Files Here"}
+                </h4>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Supports PDF, DOCX, TXT, CSV up to 25MB. Files are chunked and embedded in PostgreSQL vector storage.
+                </p>
+              </>
+            )}
           </div>
 
           {/* Documents Table */}
           <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-neutral-400 font-medium uppercase text-[10px] border-b border-neutral-200 dark:border-neutral-800">
-                  <tr>
-                    <th className="p-4">File Name</th>
-                    <th className="p-4">Type</th>
-                    <th className="p-4">Size</th>
-                    <th className="p-4">Vector Chunks</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Uploaded</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                  {documents.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40">
-                      <td className="p-4 font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-indigo-500" />
-                        {doc.name}
-                      </td>
-                      <td className="p-4">
-                        <span className="font-mono text-[10px] bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-sm">
-                          {doc.type}
-                        </span>
-                      </td>
-                      <td className="p-4 text-neutral-500">{doc.size}</td>
-                      <td className="p-4 font-mono font-bold text-neutral-700 dark:text-neutral-300">
-                        {doc.chunks} chunks
-                      </td>
-                      <td className="p-4">
-                        <StatusBadge status={doc.status} size="sm" />
-                      </td>
-                      <td className="p-4 text-neutral-400">{doc.uploadedDate}</td>
-                      <td className="p-4 text-right">
-                        <button
-                          onClick={() => handleDeleteDocument(doc.id)}
-                          className="p-1.5 text-neutral-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                          title="Delete File"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
+            {loading ? (
+              <div className="p-12 text-center text-neutral-400 flex flex-col items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                <p className="text-xs">Loading assistant knowledge documents...</p>
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="p-12 text-center text-neutral-400 text-xs space-y-2">
+                <FileText className="w-8 h-8 mx-auto text-neutral-300 dark:text-neutral-700" />
+                <p className="font-semibold text-neutral-700 dark:text-neutral-300 text-sm">
+                  No documents uploaded for this assistant
+                </p>
+                <p className="text-neutral-500">
+                  Upload PDF manuals, product lists, or company FAQs above to train the AI.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-neutral-400 font-medium uppercase text-[10px] border-b border-neutral-200 dark:border-neutral-800">
+                    <tr>
+                      <th className="p-4">File Name</th>
+                      <th className="p-4">Type</th>
+                      <th className="p-4">Size</th>
+                      <th className="p-4">Vector Chunks</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4">Uploaded</th>
+                      <th className="p-4 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                    {documents.map((doc) => (
+                      <tr key={doc.id} className="hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40">
+                        <td className="p-4 font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                          <span className="truncate max-w-xs">{doc.name}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="font-mono text-[10px] bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-sm">
+                            {doc.type || "FILE"}
+                          </span>
+                        </td>
+                        <td className="p-4 text-neutral-500">{doc.size || "—"}</td>
+                        <td className="p-4 font-mono font-bold text-neutral-700 dark:text-neutral-300">
+                          {doc.chunks !== undefined ? `${doc.chunks} chunks` : "—"}
+                        </td>
+                        <td className="p-4">
+                          <StatusBadge status={doc.status || "Ready"} size="sm" />
+                        </td>
+                        <td className="p-4 text-neutral-400">{doc.uploadedDate || "Recently"}</td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="p-1.5 text-neutral-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                            title="Delete File"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -302,110 +420,54 @@ export default function KnowledgePage() {
       {/* TAB 2: Q&A */}
       {activeTab === "qa" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3">
-            {qas.map((qa) => (
-              <div
-                key={qa.id}
-                className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xs flex items-start justify-between gap-4"
-              >
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
-                      VERIFIED Q&A
-                    </span>
-                    <span className="text-neutral-400 text-[11px]">{qa.createdDate}</span>
-                  </div>
-                  <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
-                    Q: {qa.question}
-                  </h4>
-                  <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                    A: {qa.answer}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => handleDeleteQA(qa.id)}
-                  className="p-2 text-neutral-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer shrink-0"
+          {qas.length === 0 ? (
+            <div className="p-12 text-center text-xs text-neutral-400 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-2">
+              <HelpCircle className="w-8 h-8 mx-auto text-neutral-300 dark:text-neutral-700" />
+              <p className="font-semibold text-neutral-700 dark:text-neutral-300 text-sm">
+                No verified Q&A pairs yet
+              </p>
+              <p className="text-neutral-500">
+                Add authoritative question-and-answer pairs to give your bot exact responses.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {qas.map((qa) => (
+                <div
+                  key={qa.id}
+                  className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xs flex items-start justify-between gap-4"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 px-2 py-0.5 rounded-md">
+                        VERIFIED Q&A
+                      </span>
+                      <span className="text-neutral-400 text-[11px]">{qa.createdDate || qa.uploadedDate || "Active"}</span>
+                    </div>
+                    <h4 className="text-sm font-bold text-neutral-900 dark:text-white">
+                      {qa.question ? `Q: ${qa.question}` : qa.name}
+                    </h4>
+                    <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed whitespace-pre-wrap">
+                      {qa.answer ? `A: ${qa.answer}` : qa.content}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleDeleteQA(qa.id)}
+                    className="p-2 text-neutral-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* TAB 3: Websites */}
       {activeTab === "websites" && (
-        <WebsiteKnowledgeManager botId="bot_sales_01" />
-      )}
-
-      {/* TAB 4: Knowledge Gaps (Important SaaS feature) */}
-      {activeTab === "gaps" && (
-        <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-              <div>
-                <h4 className="font-semibold text-xs text-amber-900 dark:text-amber-200">
-                  Automated Gap Detection Engine
-                </h4>
-                <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                  These questions were asked repeatedly by website visitors where your bots could not find matching embeddings. Resolve them with one click.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {gaps.length === 0 ? (
-              <div className="p-12 text-center text-xs text-neutral-400 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
-                🎉 All customer queries are currently covered! No knowledge gaps detected.
-              </div>
-            ) : (
-              gaps.map((gap) => (
-                <div
-                  key={gap.id}
-                  className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                        Asked {gap.askedCount} Times
-                      </span>
-                      <span className="text-[10px] text-neutral-400">
-                        Category: {gap.suggestedCategory}
-                      </span>
-                    </div>
-                    <h4 className="font-bold text-sm text-neutral-900 dark:text-white">
-                      "{gap.question}"
-                    </h4>
-                    <p className="text-[11px] text-neutral-400">First detected: {gap.firstAsked}</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedGap(gap)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer transition-colors"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Add Answer
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await knowledgeApi.ignoreKnowledgeGap(gap.id);
-                        setGaps(gaps.filter((g) => g.id !== gap.id));
-                      }}
-                      className="px-3 py-2 text-xs font-medium text-neutral-500 hover:text-neutral-700 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        <WebsiteKnowledgeManager botId={selectedBotId} />
       )}
 
       {/* Add Q&A Modal */}
@@ -446,66 +508,29 @@ export default function KnowledgePage() {
             <button
               type="button"
               onClick={() => setQaModalOpen(false)}
-              className="px-3.5 py-2 text-neutral-500 hover:bg-neutral-100 rounded-xl"
+              className="px-3.5 py-2 text-neutral-500 hover:bg-neutral-100 rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
+              disabled={qaSubmitting}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
+              {qaSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Save Q&A
             </button>
           </div>
         </form>
       </Modal>
-
-      {/* Add Website Modal */}
-      <Modal
-        isOpen={webModalOpen}
-        onClose={() => setWebModalOpen(false)}
-        title="Add Website Source"
-        description="Our crawler will extract text content and index all reachable pages."
-      >
-        <form onSubmit={handleAddWebsite} className="space-y-4 text-xs">
-          <div>
-            <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
-              Website URL
-            </label>
-            <input
-              type="url"
-              required
-              placeholder="https://example.com/docs"
-              value={newUrl}
-              onChange={(e) => setNewUrl(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setWebModalOpen(false)}
-              className="px-3.5 py-2 text-neutral-500 hover:bg-neutral-100 rounded-xl"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
-            >
-              Start Crawling
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Resolve Knowledge Gap Modal */}
-      <KnowledgeGapsModal
-        gap={selectedGap}
-        isOpen={!!selectedGap}
-        onClose={() => setSelectedGap(null)}
-        onResolved={handleGapResolved}
-      />
     </div>
+  );
+}
+
+export default function KnowledgePage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading knowledge base...</div>}>
+      <KnowledgePageContent />
+    </React.Suspense>
   );
 }

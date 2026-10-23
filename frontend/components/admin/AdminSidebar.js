@@ -78,7 +78,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
               </Link>
             </div>
             <p className="font-bold text-slate-100 text-xs truncate">
-              Emperor Smart Solution
+              Platform Master Controller
             </p>
           </div>
         </div>

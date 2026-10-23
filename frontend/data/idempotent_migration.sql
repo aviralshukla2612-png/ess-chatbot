@@ -1,6 +1,6 @@
 -- =========================================================
 -- ESS CHATBOT SaaS — COMPLETE POSTGRESQL & PGVECTOR MIGRATION
--- Generated: 2026-10-23T06:27:28.591Z
+-- Generated: 2026-10-23T13:26:09.233Z
 -- =========================================================
 BEGIN;
 
@@ -147,13 +147,184 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_hnsw
 ON "KnowledgeChunk" USING hnsw ("embedding" vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
--- Organization & Bot: Beta Tech Support (bot_beta_valid)
+-- Organization & Bot: Beta Assistant (bot_test_b_1792761776032)
 INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_reg_beta_222', 'Default Org', 'org-bot_beta_valid', 'Enterprise', 'ACTIVE', NOW(), NOW())
+VALUES ('org_tenant_b_1792761776032', 'Beta Retailers', 'org-bot_test_b_1792761776032', 'Enterprise', 'ACTIVE', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_beta_valid', 'org_reg_beta_222', 'Beta Tech Support', '', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Tech Support. How can I help you today?', NOW(), NOW())
+VALUES ('bot_test_b_1792761776032', 'org_tenant_b_1792761776032', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792761776032)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792761776032', 'Alpha Dynamics', 'org-bot_test_a_1792761776032', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792761776032', 'org_tenant_a_1792761776032', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792761759413)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792761759413', 'Beta Retailers', 'org-bot_test_b_1792761759413', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792761759413', 'org_tenant_b_1792761759413', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792761759413)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792761759413', 'Alpha Dynamics', 'org-bot_test_a_1792761759413', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792761759413', 'org_tenant_a_1792761759413', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792760887698)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792760887698', 'Beta Retailers', 'org-bot_test_b_1792760887698', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792760887698', 'org_tenant_b_1792760887698', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792760887698)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792760887698', 'Alpha Dynamics', 'org-bot_test_a_1792760887698', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792760887698', 'org_tenant_a_1792760887698', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792760870609)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792760870609', 'Beta Retailers', 'org-bot_test_b_1792760870609', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792760870609', 'org_tenant_b_1792760870609', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792760870609)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792760870609', 'Alpha Dynamics', 'org-bot_test_a_1792760870609', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792760870609', 'org_tenant_a_1792760870609', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792754649681)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792754649681', 'Beta Retailers', 'org-bot_test_b_1792754649681', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792754649681', 'org_tenant_b_1792754649681', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792754649680)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792754649681', 'Alpha Dynamics', 'org-bot_test_a_1792754649680', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792754649680', 'org_tenant_a_1792754649681', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792754581707)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792754581707', 'Beta Retailers', 'org-bot_test_b_1792754581707', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792754581707', 'org_tenant_b_1792754581707', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792754581707)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792754581707', 'Alpha Dynamics', 'org-bot_test_a_1792754581707', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792754581707', 'org_tenant_a_1792754581707', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792751683260)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792751683260', 'Beta Retailers', 'org-bot_test_b_1792751683260', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792751683260', 'org_tenant_b_1792751683260', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792751683260)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792751683260', 'Alpha Dynamics', 'org-bot_test_a_1792751683260', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792751683260', 'org_tenant_a_1792751683260', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792751631583)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792751631583', 'Beta Retailers', 'org-bot_test_b_1792751631583', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792751631583', 'org_tenant_b_1792751631583', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792751631583)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792751631583', 'Alpha Dynamics', 'org-bot_test_a_1792751631583', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792751631583', 'org_tenant_a_1792751631583', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792749238202)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792749238202', 'Beta Retailers', 'org-bot_test_b_1792749238202', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792749238202', 'org_tenant_b_1792749238202', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792749238202)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792749238202', 'Alpha Dynamics', 'org-bot_test_a_1792749238202', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792749238202', 'org_tenant_a_1792749238202', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Beta Assistant (bot_test_b_1792736848717)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_b_1792736848717', 'Beta Retailers', 'org-bot_test_b_1792736848717', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_b_1792736848717', 'org_tenant_b_1792736848717', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+-- Organization & Bot: Alpha Assistant (bot_test_a_1792736848717)
+INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
+VALUES ('org_tenant_a_1792736848717', 'Alpha Dynamics', 'org-bot_test_a_1792736848717', 'Enterprise', 'ACTIVE', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
+VALUES ('bot_test_a_1792736848717', 'org_tenant_a_1792736848717', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 -- Organization & Bot: Beta Assistant (bot_test_b_1792736767300)
@@ -256,6 +427,18 @@ VALUES ('bot_aa', 'org_ess_default', 'aa', 'Official AI Sales Representative for
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
+VALUES ('lead_1792760446848_aeq8', 'org_default', 'bot_test_b_1792761776032', 'Lead Beta', 'lead_b@beta.com', '', 'Direct Inbound', 'Medium', 'New', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
+VALUES ('lead_1792760446827_9hvn', 'org_default', 'bot_test_b_1792761776032', 'Lead Alpha', 'lead_a@alpha.com', '', 'Direct Inbound', 'Medium', 'New', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
+VALUES ('lead_1792760446772_mnx7', 'org_default', 'bot_test_b_1792761776032', 'Orphan Lead', 'orphan@example.com', '', 'Direct Inbound', 'Medium', 'New', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
 VALUES ('lead_1792666528752_mh5r', 'org_default', 'bot_aa', 'Siddharth Mehta', 'siddharth.new@logistics.in', '+91 99000 88776', 'Mehta Freight Solutions', 'Hot', 'New', 'Custom ERP & GPS fleet tracking application', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
@@ -272,56 +455,499 @@ VALUES ('lead_1791889312212_yf2w', 'org_default', 'bot_aa', 'Aviral', '', '', 'D
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
-VALUES ('doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 'Emperor_Smart_Solutions_Company_Profile.pdf', 'PDF', 5601, 'Ready', 5, NOW(), NOW())
+VALUES ('doc_tenant_iso_1792761780903', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
-VALUES ('chk_doc_emperor_smart_solutions_01_0', 'doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 0, 'Company Identity & Leadership — Emperor Smart Solutions:
-Emperor Smart Solutions (ESS) was founded by Yash Sharma (Founder) and Karan Makwana (Co-Founder).
-It is an ISO 27001 & ISO 9001 certified digital engineering and enterprise AI company with 50+ projects delivered and 30+ happy clients.
-• Founder: Yash Sharma
-• Co-Founder: Karan Makwana
-• Head Office: 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India
-• Phone & WhatsApp: +91 63591 20081
-• Email: emperorsmartsolutions@gmail.com | sales@emperorsmartsolutions.com | contact@emperorsmartsolutions.com
-• Business Hours: Monday to Saturday: 10:00 AM – 7:00 PM IST (Sunday closed)', NOW())
+VALUES ('chk_doc_tenant_iso_1792761780903_0', 'doc_tenant_iso_1792761780903', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792761780853', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
-VALUES ('chk_doc_emperor_smart_solutions_01_1', 'doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 1, 'Core Engineering Services — Emperor Smart Solutions:
-1. Custom Software & Web: Next.js, React, Node.js, Flutter, React Native, iOS, Android, microservices.
-2. Enterprise AI & Machine Learning: RAG As A Service, custom LLM fine-tuning (Llama 3, GPT-4o, Claude 3.5), autonomous agents (LangChain, LlamaIndex), Vibe Coding (Cursor AI, Claude Code).
-3. Cloud & DevOps: AWS, Azure, GCP, Kubernetes (EKS, AKS, GKE), Terraform IaC, CI/CD, PostgreSQL, Redis.
-4. Cybersecurity: Zero-Trust, penetration testing, SOC 2 Type II, ISO 27001, HIPAA readiness, Cloudflare/AWS WAF.
-5. Data & BI: Snowflake, BigQuery, Databricks, Kafka, Spark, Airflow, PowerBI, Tableau.
-6. Enterprise & FinTech: Odoo, ERPNext, SAP, Salesforce, Algo trading engines (Zerodha, Angel One APIs).', NOW())
+VALUES ('chk_doc_retry_test_1792761780853_0', 'doc_retry_test_1792761780853', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792761780795', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
-VALUES ('chk_doc_emperor_smart_solutions_01_2', 'doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 2, 'Developer Hiring & Engagement Models:
-Emperor Smart Solutions offers flexible hiring models (Dedicated Pods, Hourly T&M, Fixed-Price Milestones):
-• Trending AI Developers: Cursor AI, Lovable, Claude Code, Gemini AI, LangChain/RAG Engineers
-• Full-Stack & Frontend: Next.js, React, Vue, Angular, MERN/MEAN
-• Backend & APIs: Python/Django, Node.js, Laravel/PHP, ASP.NET Core, Go
-• Mobile: Flutter, React Native, Swift, Kotlin
-• Cloud/DevOps: AWS Architects, Kubernetes SRE, Terraform specialists.', NOW())
+VALUES ('chk_doc_failed_1792761780795_0', 'doc_failed_1792761780795', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792761780746', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
-VALUES ('chk_doc_emperor_smart_solutions_01_3', 'doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 3, 'Pricing & Typical Budget Tiers — Emperor Smart Solutions:
-• Rapid Prototypes: Under ₹50,000
-• Standard Web & Mobile Modules: ₹50,000 – ₹2,00,000
-• Comprehensive Bespoke Applications: ₹2,00,000 – ₹5,00,000
-• Enterprise Platforms, AI Pipelines & Algo Trading: ₹5,00,000+
-All projects include 100% bilateral NDA protection and 24-hour response SLA.', NOW())
+VALUES ('chk_doc_ready_1792761780746_0', 'doc_ready_1792761780746', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792761780629', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
-VALUES ('chk_doc_emperor_smart_solutions_01_4', 'doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 4, 'Industries & Proven Case Studies:
-• Retail & eCommerce (Osia Hypermart: 150-store chain cloud POS, 99.99% uptime)
-• FinTech & Trading (AI loan approval engine: reduced latency from 48h to under 3 min)
-• Healthcare (HIPAA Telehealth & WebRTC platform serving 50,000+ monthly appointments)
-• Logistics, Real Estate, HR Tech (Silver One), GIS Analytics, Education & Non-Profit.', NOW())
+VALUES ('chk_doc_test_fail_1792761780629_0', 'doc_test_fail_1792761780629', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_success_1792761780177', 'org_default', 'bot_test_b_1792761776032', 'Warranty Policy', 'Document', 102, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_success_1792761780177_0', 'doc_test_success_1792761780177', 'org_default', 'bot_test_b_1792761776032', 0, 'All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_init_1792761780160', 'org_default', 'bot_test_b_1792761776032', 'Product Catalog', 'Document', 104, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_init_1792761780160_0', 'doc_test_init_1792761780160', 'org_default', 'bot_test_b_1792761776032', 0, 'Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_tenant_iso_1792761734979', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_tenant_iso_1792761734979_0', 'doc_tenant_iso_1792761734979', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792761734892', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_retry_test_1792761734892_0', 'doc_retry_test_1792761734892', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792761734862', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_failed_1792761734862_0', 'doc_failed_1792761734862', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792761734745', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_ready_1792761734745_0', 'doc_ready_1792761734745', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792761734600', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_fail_1792761734600_0', 'doc_test_fail_1792761734600', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_success_1792761734229', 'org_default', 'bot_test_b_1792761776032', 'Warranty Policy', 'Document', 102, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_success_1792761734229_0', 'doc_test_success_1792761734229', 'org_default', 'bot_test_b_1792761776032', 0, 'All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_init_1792761734215', 'org_default', 'bot_test_b_1792761776032', 'Product Catalog', 'Document', 104, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_init_1792761734215_0', 'doc_test_init_1792761734215', 'org_default', 'bot_test_b_1792761776032', 0, 'Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_tenant_iso_1792760891667', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_tenant_iso_1792760891667_0', 'doc_tenant_iso_1792760891667', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792760891556', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_retry_test_1792760891556_0', 'doc_retry_test_1792760891556', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792760891546', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_failed_1792760891546_0', 'doc_failed_1792760891546', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792760891377', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_ready_1792760891377_0', 'doc_ready_1792760891377', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792760891169', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_fail_1792760891169_0', 'doc_test_fail_1792760891169', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_success_1792760890588', 'org_default', 'bot_test_b_1792761776032', 'Warranty Policy', 'Document', 102, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_success_1792760890588_0', 'doc_test_success_1792760890588', 'org_default', 'bot_test_b_1792761776032', 0, 'All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_init_1792760890534', 'org_default', 'bot_test_b_1792761776032', 'Product Catalog', 'Document', 104, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_init_1792760890534_0', 'doc_test_init_1792760890534', 'org_default', 'bot_test_b_1792761776032', 0, 'Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_tenant_iso_1792760844951', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_tenant_iso_1792760844951_0', 'doc_tenant_iso_1792760844951', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792760844855', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_retry_test_1792760844855_0', 'doc_retry_test_1792760844855', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792760844847', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_failed_1792760844847_0', 'doc_failed_1792760844847', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792760844733', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_ready_1792760844733_0', 'doc_ready_1792760844733', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792760844505', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_fail_1792760844505_0', 'doc_test_fail_1792760844505', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_success_1792760844037', 'org_default', 'bot_test_b_1792761776032', 'Warranty Policy', 'Document', 102, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_success_1792760844037_0', 'doc_test_success_1792760844037', 'org_default', 'bot_test_b_1792761776032', 0, 'All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_init_1792760844001', 'org_default', 'bot_test_b_1792761776032', 'Product Catalog', 'Document', 104, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_init_1792760844001_0', 'doc_test_init_1792760844001', 'org_default', 'bot_test_b_1792761776032', 0, 'Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_tenant_iso_1792760799616', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_tenant_iso_1792760799616_0', 'doc_tenant_iso_1792760799616', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792760799517', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_retry_test_1792760799517_0', 'doc_retry_test_1792760799517', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792760799450', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_failed_1792760799450_0', 'doc_failed_1792760799450', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792760799360', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_ready_1792760799360_0', 'doc_ready_1792760799360', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792760799298', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_fail_1792760799298_0', 'doc_test_fail_1792760799298', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_success_1792760798877', 'org_default', 'bot_test_b_1792761776032', 'Warranty Policy', 'Document', 102, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_success_1792760798877_0', 'doc_test_success_1792760798877', 'org_default', 'bot_test_b_1792761776032', 0, 'All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_init_1792760798857', 'org_default', 'bot_test_b_1792761776032', 'Product Catalog', 'Document', 104, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_init_1792760798857_0', 'doc_test_init_1792760798857', 'org_default', 'bot_test_b_1792761776032', 0, 'Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_tenant_iso_1792760741613', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_tenant_iso_1792760741613_0', 'doc_tenant_iso_1792760741613', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792760741459', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_retry_test_1792760741459_0', 'doc_retry_test_1792760741459', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792760741331', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_failed_1792760741331_0', 'doc_failed_1792760741331', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792760741124', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_ready_1792760741124_0', 'doc_ready_1792760741124', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792760740980', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_fail_1792760740980_0', 'doc_test_fail_1792760740980', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_success_1792760740297', 'org_default', 'bot_test_b_1792761776032', 'Warranty Policy', 'Document', 102, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_success_1792760740297_0', 'doc_test_success_1792760740297', 'org_default', 'bot_test_b_1792761776032', 0, 'All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_init_1792760740276', 'org_default', 'bot_test_b_1792761776032', 'Product Catalog', 'Document', 104, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_init_1792760740276_0', 'doc_test_init_1792760740276', 'org_default', 'bot_test_b_1792761776032', 0, 'Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_tenant_iso_1792760613701', 'org_default', 'bot_test_b_1792761776032', 'Internal Strategy', 'Document', 44, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_tenant_iso_1792760613701_0', 'doc_tenant_iso_1792760613701', 'org_default', 'bot_test_b_1792761776032', 0, 'Confidential financial roadmap for Tenant A.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_retry_test_1792760613549', 'org_default', 'bot_test_b_1792761776032', 'Pricing Guide', 'Document', 55, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_retry_test_1792760613549_0', 'doc_retry_test_1792760613549', 'org_default', 'bot_test_b_1792761776032', 0, 'Standard Tier is $49/mo and Enterprise Tier is $199/mo.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_failed_1792760613466', 'org_default', 'bot_test_b_1792761776032', 'Draft Unverified Doc', 'Document', 62, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_failed_1792760613466_0', 'doc_failed_1792760613466', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder of the company is John Doe who started it in 1990.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_ready_1792760613350', 'org_default', 'bot_test_b_1792761776032', 'Founder Bio', 'Document', 87, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_ready_1792760613350_0', 'doc_ready_1792760613350', 'org_default', 'bot_test_b_1792761776032', 0, 'The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
+VALUES ('doc_test_fail_1792760613215', 'org_default', 'bot_test_b_1792761776032', 'Broken File', 'Document', 38, 'Ready', 1, NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "KnowledgeChunk" ("id", "documentId", "organizationId", "botId", "chunkIndex", "content", "createdAt")
+VALUES ('chk_doc_test_fail_1792760613215_0', 'doc_test_fail_1792760613215', 'org_default', 'bot_test_b_1792761776032', 0, 'Sample text for simulated failure test', NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_1792761778917_3tto', 'org_default', 'bot_test_b_1792761776032', 'Orphan Visitor', '', '', 'Active', false, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_1792761748536_3a67', 'org_default', 'bot_test_b_1792761776032', 'Orphan Visitor', '', '', 'Active', false, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_1792760889292_itut', 'org_default', 'bot_test_b_1792761776032', 'Orphan Visitor', '', '', 'Active', false, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_1792760858161_01v1', 'org_default', 'bot_test_b_1792761776032', 'Orphan Visitor', '', '', 'Active', false, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_1792760446936_4dyf', 'org_default', 'bot_test_b_1792761776032', 'Orphan Visitor', '', '', 'Active', false, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('wa_919876543210', 'org_default', 'bot_test_b_1792754649681', 'WhatsApp Lead', '', '919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('wa_919876543210', 'org_default', 'bot_test_b_1792761776032', 'WhatsApp Lead', '', '919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('wa_919876543210', 'org_default', 'bot_test_b_1792761776032', 'WhatsApp Lead', '', '919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('wa_919876543210', 'org_default', 'bot_test_b_1792751631583', 'WhatsApp Lead', '', '919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_test_b_1792761776032', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_test_b_1792761776032', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+ON CONFLICT ("id") DO NOTHING;
+
+INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
+VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")

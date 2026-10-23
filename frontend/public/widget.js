@@ -718,19 +718,9 @@
       welcomeEl.className = "nexus-msg nexus-msg-bot";
       welcomeEl.innerHTML = formatMessage(botConfig.welcomeMessage || "Hello! How can I assist you today?");
 
-      const defaultServices = [
-        "Website Development",
-        "Mobile Application",
-        "AI Chatbot",
-        "Custom Software",
-        "UI/UX Design",
-        "Cloud & DevOps",
-        "SEO & Marketing",
-      ];
-      const isEssBot = !botConfig.businessName || botConfig.businessName === "Emperor Smart Solutions" || botConfig.botId === "bot_aa";
       const botQr = (botConfig.quickReplies && Array.isArray(botConfig.quickReplies) && botConfig.quickReplies.length > 0)
         ? botConfig.quickReplies
-        : (isEssBot ? defaultServices : []);
+        : [];
 
       if (botQr.length > 0) {
         const qrContainer = document.createElement("div");

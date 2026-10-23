@@ -23,14 +23,7 @@ export async function GET(request) {
         users: 1,
       }));
     } else {
-      topOrgs = [
-        {
-          name: "Emperor Smart Solutions",
-          bots: 1,
-          conversations: 0,
-          users: 1,
-        },
-      ];
+      topOrgs = [];
     }
 
     // 2. Live count of Users

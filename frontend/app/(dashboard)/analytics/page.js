@@ -72,18 +72,58 @@ export default function AnalyticsPage() {
   const convRate = totalConvs > 0 ? ((totalLeads / totalConvs) * 100).toFixed(1) : "0.0";
   const avgQ = totalConvs > 0 ? (totalQuestions / totalConvs).toFixed(1) : "0.0";
 
+  // Real calculated response time between user question and assistant answer
+  const avgResponseTime = React.useMemo(() => {
+    let totalDiff = 0;
+    let pairs = 0;
+    conversations.forEach((c) => {
+      const msgs = c.messages || [];
+      for (let i = 0; i < msgs.length - 1; i++) {
+        if (msgs[i].role === "user" && msgs[i + 1].role === "assistant") {
+          const t1 = new Date(msgs[i].createdAt || msgs[i].timestamp).getTime();
+          const t2 = new Date(msgs[i + 1].createdAt || msgs[i + 1].timestamp).getTime();
+          if (!isNaN(t1) && !isNaN(t2) && t2 >= t1 && t2 - t1 < 60000) {
+            totalDiff += t2 - t1;
+            pairs++;
+          }
+        }
+      }
+    });
+    if (pairs > 0) {
+      return `${(totalDiff / pairs / 1000).toFixed(1)}s`;
+    }
+    return totalConvs > 0 ? "< 1s" : "0s";
+  }, [conversations, totalConvs]);
+
+  // Dynamic calendar date intervals computed client-side
+  const [dynamicTimeline, setDynamicTimeline] = React.useState([]);
+
+  React.useEffect(() => {
+    const list = [];
+    const now = new Date();
+    for (let i = 6; i >= 1; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 5);
+      list.push({
+        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        conversations: 0,
+        questions: 0,
+        leads: 0,
+      });
+    }
+    list.push({
+      date: "Today",
+      conversations: totalConvs,
+      questions: totalQuestions,
+      leads: totalLeads,
+    });
+    setDynamicTimeline(list);
+  }, [totalConvs, totalQuestions, totalLeads]);
+
   const performanceTimeline =
     analytics?.timeseries && analytics.timeseries.length > 0
       ? analytics.timeseries
-      : [
-          { date: "Oct 1", conversations: 0, questions: 0, leads: 0 },
-          { date: "Oct 5", conversations: 0, questions: 0, leads: 0 },
-          { date: "Oct 10", conversations: 0, questions: 0, leads: 0 },
-          { date: "Oct 15", conversations: 0, questions: 0, leads: 0 },
-          { date: "Oct 20", conversations: 0, questions: 0, leads: 0 },
-          { date: "Oct 25", conversations: 0, questions: 0, leads: 0 },
-          { date: "Today", conversations: totalConvs, questions: totalQuestions, leads: totalLeads },
-        ];
+      : dynamicTimeline;
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in font-sans">
@@ -228,7 +268,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                {totalConvs > 0 ? "1.2 sec" : "0 sec"}
+                {avgResponseTime}
               </span>
               <span className="text-[11px] font-semibold text-slate-400">
                 0%
@@ -367,7 +407,7 @@ export default function AnalyticsPage() {
               Leads Generated
             </h3>
             <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
-              +14.8% This Month
+              {totalLeads > 0 ? `${totalLeads} Total Captured` : "No Leads Yet"}
             </span>
           </div>
 

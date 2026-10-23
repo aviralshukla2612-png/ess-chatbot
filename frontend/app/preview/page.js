@@ -18,8 +18,8 @@ import {
 
 function PreviewContent() {
   const searchParams = useSearchParams();
-  const rawUrl = searchParams.get("url") || "https://emperorsmartsolutions.com";
-  const botId = searchParams.get("botId") || "bot_aa";
+  const rawUrl = searchParams.get("url") || "";
+  const botId = searchParams.get("botId");
   const primaryColor = searchParams.get("color") || "#4F46E5";
 
   const [targetUrl, setTargetUrl] = useState(rawUrl);
@@ -30,14 +30,17 @@ function PreviewContent() {
   // Normalize URL
   const formatUrl = (input) => {
     let u = input.trim();
+    if (!u) return "";
     if (!u.startsWith("http://") && !u.startsWith("https://")) {
       u = "https://" + u;
     }
     return u;
   };
 
-  // Mount real widget.js on this page
+  // Mount real widget.js on this page if botId is provided
   useEffect(() => {
+    if (!botId) return;
+
     const existing = document.getElementById("nexus-chatbot-widget-container");
     if (existing) existing.remove();
     const existingScript = document.getElementById("nexus-preview-widget-script");
@@ -59,6 +62,31 @@ function PreviewContent() {
       if (sc) sc.remove();
     };
   }, [botId, primaryColor]);
+
+  if (!botId) {
+    return (
+      <div className="relative w-screen h-screen overflow-hidden bg-slate-950 font-sans flex items-center justify-center p-6 text-white">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-5 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
+            <Bot className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-white">Assistant ID Required</h2>
+            <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+              No chatbot assistant was specified for this mirror preview. A valid <code className="text-indigo-400 font-mono bg-indigo-500/10 px-1.5 py-0.5 rounded">botId</code> parameter is required.
+            </p>
+          </div>
+          <Link
+            href="/bots"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-600/20"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Assistants
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleShare = () => {
     if (typeof window !== "undefined") {

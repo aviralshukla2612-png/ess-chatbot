@@ -1,26 +1,38 @@
-import {
-  mockPlatformUsage,
-  mockSystemHealth,
-  mockOrganizations,
-  mockBots,
-  mockConversations,
-  mockLeads,
-} from "@/lib/mock/data";
-
 export const adminApi = {
   async getPlatformOverview() {
+    try {
+      const res = await fetch("/api/admin/stats", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          return {
+            stats: data.stats || {},
+            topOrganizations: data.topOrganizations || [],
+            growthTrend: data.growthTrend || [],
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("[ADMIN_API_OVERVIEW_WARN]", err.message);
+    }
     return {
-      usage: mockPlatformUsage,
-      systemHealth: mockSystemHealth,
-      organizations: mockOrganizations,
-      bots: mockBots,
-      conversations: mockConversations,
-      leads: mockLeads,
+      stats: {
+        organizationsCount: 0,
+        usersCount: 0,
+        botsCount: 0,
+        conversationsCount: 0,
+        questionsCount: 0,
+        leadsCount: 0,
+        uptime: "99.9%",
+        tier: "Enterprise",
+      },
+      topOrganizations: [],
+      growthTrend: [],
     };
   },
 
   /**
-   * Paginated, searchable query for 1000s of sub-admin organizations
+   * Paginated, searchable query for organizations
    */
   async getOrganizations({ page = 1, limit = 25, search = "", status = "ALL", sortBy = "createdAt", sortOrder = "desc" } = {}) {
     try {
@@ -33,22 +45,22 @@ export const adminApi = {
         sortOrder,
       });
 
-      const res = await fetch(`/api/admin/organizations?${params.toString()}`);
+      const res = await fetch(`/api/admin/organizations?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`Failed to fetch organizations: ${res.statusText}`);
       }
       return await res.json();
     } catch (err) {
-      console.warn("[ADMIN_API_FALLBACK] Error loading organizations API, falling back:", err.message);
+      console.warn("[ADMIN_API_ORGS_WARN]", err.message);
       return {
-        success: true,
-        data: mockOrganizations,
-        pagination: { page: 1, limit: 25, totalCount: mockOrganizations.length, totalPages: 1 },
+        success: false,
+        data: [],
+        pagination: { page: 1, limit, totalCount: 0, totalPages: 1 },
         stats: {
-          totalOrganizations: mockOrganizations.length,
-          activeOrganizations: mockOrganizations.filter((o) => o.status === "ACTIVE").length,
+          totalOrganizations: 0,
+          activeOrganizations: 0,
           suspendedOrganizations: 0,
-          totalBots: 1,
+          totalBots: 0,
           totalCapturedLeads: 0,
         },
       };
@@ -88,17 +100,17 @@ export const adminApi = {
         status,
       });
 
-      const res = await fetch(`/api/admin/users?${params.toString()}`);
+      const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) {
         throw new Error(`Failed to fetch users: ${res.statusText}`);
       }
       return await res.json();
     } catch (err) {
-      console.warn("[ADMIN_API_FALLBACK] Error loading users API:", err.message);
+      console.warn("[ADMIN_API_USERS_WARN]", err.message);
       return {
-        success: true,
+        success: false,
         data: [],
-        pagination: { page: 1, limit: 25, totalCount: 0, totalPages: 1 },
+        pagination: { page: 1, limit, totalCount: 0, totalPages: 1 },
       };
     }
   },

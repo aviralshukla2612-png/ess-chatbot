@@ -3,19 +3,7 @@ import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
 
 function getDefaultPlatformUsers() {
-  return [
-    {
-      id: "u_super_01",
-      name: "Emperor Smart Solution",
-      email: "admin@emperorsmartsolutions.com",
-      organization: "Emperor Smart Solutions",
-      role: "Platform Super Admin",
-      status: "Active",
-      bots: 1,
-      lastLogin: "Active now",
-      createdAt: "2026-01-15",
-    },
-  ];
+  return [];
 }
 
 export async function GET(request) {
@@ -51,12 +39,9 @@ export async function GET(request) {
       const dataSql = `
         SELECT 
           u.id,
-          CASE 
-            WHEN u.email = 'admin@emperorsmartsolutions.com' OR u.role = 'SUPER_ADMIN' THEN 'Emperor Smart Solution'
-            ELSE u.name
-          END as name,
+          u.name,
           u.email,
-          COALESCE(o.name, 'Emperor Smart Solutions') as organization,
+          COALESCE(o.name, 'No Workspace') as organization,
           CASE 
             WHEN u.role = 'SUPER_ADMIN' THEN 'Platform Super Admin'
             WHEN om.role IN ('OWNER', 'ORG_OWNER', 'ADMIN', 'ORG_ADMIN') THEN 'Workspace Owner'

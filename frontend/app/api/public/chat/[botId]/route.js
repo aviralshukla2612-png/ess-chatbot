@@ -293,6 +293,7 @@ export async function POST(request, { params }) {
         : (bot?.id === "bot_aa" ? "Emperor Smart Solutions" : (bot?.name || "Business"));
     const isEssBot = bot?.id === "bot_aa" || businessName === "Emperor Smart Solutions";
     const tenantId = bot?.organizationId || botId;
+    const botOrgId = bot?.organizationId || (isEssBot ? "org_ess_default" : null);
 
     // --- SAAS BILLING & QUOTA ENFORCEMENT ---
     if (!isPreviewMode) {
@@ -341,7 +342,7 @@ export async function POST(request, { params }) {
 
     if (!persistentVisitor) {
       const created = visitorsStore.createVisitor({
-        organizationId: bot.organizationId || "org_ess_default",
+        organizationId: botOrgId,
         botId: bot.id,
       });
       persistentVisitor = created.visitor;
@@ -944,7 +945,7 @@ export async function POST(request, { params }) {
         leadsStore.createLead({
           sessionId: currentSessionId,
           botId: bot?.id || botId,
-          organizationId: bot?.organizationId || "org_ess_default",
+          organizationId: botOrgId,
           name: displayName || leadDetails.name || "Website Prospect",
           email: resolvedEmail || leadDetails.email || "",
           phone: resolvedPhone || leadDetails.phone || "",
@@ -1042,7 +1043,7 @@ export async function POST(request, { params }) {
           leadsStore.createLead({
             sessionId: currentSessionId,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+            organizationId: botOrgId,
             name: displayName,
             email: resolvedEmail || "",
             phone: resolvedPhone || "",
@@ -1532,7 +1533,7 @@ Here are our official contact details to speak with our engineering leadership:
             sessionId: currentSessionId,
             visitorId: persistentVisitor?.id || null,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: botOrgId,
             name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
             email: resolvedEmail || "",
             phone: resolvedPhone || "",
@@ -1580,7 +1581,7 @@ Here are our official contact details to speak with our engineering leadership:
             sessionId: currentSessionId,
             visitorId: persistentVisitor?.id || null,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+            organizationId: botOrgId,
             name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Customer Lead"),
             email: resolvedEmail,
             phone: resolvedPhone,
@@ -1699,7 +1700,7 @@ Here are our official contact details to speak with our engineering leadership:
               sessionId: currentSessionId,
               visitorId: persistentVisitor?.id || null,
               botId: bot?.id || botId,
-              organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+              organizationId: botOrgId,
               name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Customer Lead"),
               email: resolvedEmail,
               phone: resolvedPhone,
@@ -1762,7 +1763,7 @@ Here are our official contact details to speak with our engineering leadership:
         sessionId: currentSessionId,
         visitorId: persistentVisitor?.id || null,
         botId: bot?.id || botId,
-        organizationId: bot?.organizationId || (isEssBot ? "org_ess_default" : "org_default"),
+        organizationId: botOrgId,
         name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Customer Lead"),
         email: resolvedEmail,
         phone: resolvedPhone,

@@ -70,31 +70,21 @@ function formatPreviewMessage(text, isUser = false, primaryColor = "#4f46e5") {
 
 export default function BotPreviewWidget({
   botId = null,
-  botName = "AI Sales Executive",
-  avatar = "💼",
+  botName = "AI Assistant",
+  avatar = "💬",
   primaryColor = "#4f46e5",
-  welcomeMessage = "Hello! Welcome to our workspace. How can I help you today?",
+  welcomeMessage = "Hello! How can I help you today?",
   placeholderText = "Ask a question...",
   position = "right",
   showLeadForm = false,
+  quickReplies = [],
 }) {
-  const isEss = botId === "bot_aa" || botId === "aa" || !botId;
   const [messages, setMessages] = useState([
     {
       id: "w_1",
       role: "assistant",
       content: welcomeMessage,
-      quickReplies: isEss
-        ? [
-            "Website Development",
-            "Mobile Application",
-            "AI Chatbot",
-            "Custom Software",
-            "UI/UX Design",
-            "Cloud & DevOps",
-            "SEO & Marketing",
-          ]
-        : [],
+      quickReplies: Array.isArray(quickReplies) ? quickReplies : [],
       sources: [],
     },
   ]);
@@ -232,7 +222,7 @@ export default function BotPreviewWidget({
       {
         id: `w_lead_${Date.now()}`,
         role: "assistant",
-        content: `Thank you, ${leadData.name || "friend"}! Our engineering and sales team has received your inquiry and will contact you at ${leadData.email || "your email"} within 2 business hours.`,
+        content: `Thank you${leadData.name ? ', ' + leadData.name : ''}! We have received your details and will get back to you shortly.`,
         sources: [],
       },
     ]);
@@ -261,10 +251,12 @@ export default function BotPreviewWidget({
         <button
           onClick={async () => {
             try {
-              await fetch(`/api/public/chat/${encodeURIComponent(botId || "bot_aa")}/session`, {
-                method: "DELETE",
-                credentials: "include",
-              });
+              if (botId) {
+                await fetch(`/api/public/chat/${encodeURIComponent(botId)}/session`, {
+                  method: "DELETE",
+                  credentials: "include",
+                });
+              }
             } catch (e) {}
             setMessages([{ id: "w_1", role: "assistant", content: welcomeMessage, sources: [] }]);
             setShowPromptLead(false);

@@ -26,7 +26,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
-    if (!isSuperAdmin && (lead.organizationId || "org_ess_default") !== principal.organizationId) {
+    if (!isSuperAdmin && (!lead.organizationId || lead.organizationId !== principal.organizationId)) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
@@ -53,7 +53,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
-    if (!isSuperAdmin && (lead.organizationId || "org_ess_default") !== principal.organizationId) {
+    if (!isSuperAdmin && (!lead.organizationId || lead.organizationId !== principal.organizationId)) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
@@ -82,7 +82,7 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
-    if (!isSuperAdmin && (lead.organizationId || "org_ess_default") !== principal.organizationId) {
+    if (!isSuperAdmin && (!lead.organizationId || lead.organizationId !== principal.organizationId)) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 

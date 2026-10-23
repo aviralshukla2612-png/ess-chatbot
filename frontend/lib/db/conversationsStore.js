@@ -57,7 +57,7 @@ export const conversationsStore = {
   getConversations(filters = {}) {
     let list = loadFromDisk();
     if (filters.organizationId) {
-      list = list.filter((c) => (c.organizationId || "org_ess_default") === filters.organizationId);
+      list = list.filter((c) => c.organizationId === filters.organizationId);
     }
     if (filters.botId && filters.botId !== "All") {
       list = list.filter((c) => c.botId === filters.botId || c.botName === filters.botId);
@@ -85,7 +85,7 @@ export const conversationsStore = {
 
   getConversation(id, organizationId = null) {
     const list = loadFromDisk();
-    return list.find((c) => c.id === id && (!organizationId || (c.organizationId || "org_ess_default") === organizationId)) || null;
+    return list.find((c) => c.id === id && (!organizationId || c.organizationId === organizationId)) || null;
   },
 
   /**
@@ -156,8 +156,8 @@ export const conversationsStore = {
 
     const newConv = {
       id,
-      organizationId: data.organizationId || "org_ess_default",
-      botId: data.botId || "bot_aa",
+      organizationId: data.organizationId || null,
+      botId: data.botId || null,
       botName: data.botName || "AI Assistant",
       visitorId: data.visitorId || null,
       leadId: data.leadId || null,
@@ -170,8 +170,8 @@ export const conversationsStore = {
       leadScore: data.leadScore || (data.visitorEmail ? "High" : "Medium"),
       startedAt: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       duration: "1 min",
-      messagesCount: data.messages?.length || 1,
-      questionsCount: data.messages?.filter((m) => m.role === "user").length || 1,
+      messagesCount: Array.isArray(data.messages) ? data.messages.length : 0,
+      questionsCount: Array.isArray(data.messages) ? data.messages.filter((m) => m.role === "user").length : 0,
       lastMessage: data.lastMessage || (data.messages?.[data.messages.length - 1]?.content) || "",
       lastActivityAt,
       historyExpiresAt,
@@ -284,8 +284,8 @@ export const conversationsStore = {
            ON CONFLICT ("id") DO NOTHING;`,
           [
             conv.id,
-            conv.organizationId || "org_ess_default",
-            conv.botId || "bot_aa",
+            conv.organizationId || null,
+            conv.botId || null,
             conv.visitorId || null,
             conv.visitorName || "Website Visitor",
             conv.status || "Active",

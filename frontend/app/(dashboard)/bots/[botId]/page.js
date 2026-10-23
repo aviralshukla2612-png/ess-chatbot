@@ -31,9 +31,10 @@ import { knowledgeApi } from "@/lib/api/knowledge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
 
 function BotDetailContent() {
+  const router = useRouter();
   const routeParams = useParams();
   const searchParams = useSearchParams();
-  const botId = routeParams?.botId || "bot_sales_01";
+  const botId = routeParams?.botId;
   const queryTab = searchParams?.get("tab");
 
   const [bot, setBot] = useState(null);
@@ -43,41 +44,145 @@ function BotDetailContent() {
   const [deployModalOpen, setDeployModalOpen] = useState(false);
   const [knowledgeSubtab, setKnowledgeSubtab] = useState("websites");
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     if (queryTab) setActiveTab(queryTab);
   }, [queryTab]);
 
-  useEffect(() => {
-    async function loadBotData() {
-      const b = await botsApi.getBotById(botId);
+  const loadBotData = async () => {
+    if (!botId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setLoadError(null);
+    setNotFound(false);
+
+    try {
+      // First check session / bot via direct fetch to detect 401/404 explicitly
+      const res = await fetch(`/api/bots/${encodeURIComponent(botId)}`, { cache: "no-store" });
+      if (res.status === 401) {
+        if (typeof window !== "undefined") {
+          window.location.replace(`/login?redirect=${encodeURIComponent(`/bots/${botId}`)}`);
+        }
+        return;
+      }
+
+      if (res.status === 404) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      const botResult = await botsApi.getBotById(botId);
+      if (!botResult) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
       const docs = await knowledgeApi.getDocuments(botId);
       const qList = await knowledgeApi.getQAPairs(botId);
-      setBot(b);
-      setDocuments(docs);
-      setQas(qList);
+
+      setBot(botResult);
+      setDocuments(Array.isArray(docs) ? docs : []);
+      setQas(Array.isArray(qList) ? qList : []);
+    } catch (err) {
+      console.warn("[BOT_LOAD_ERROR]", err);
+      setLoadError(err.message || "Failed to load assistant data.");
+    } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadBotData();
   }, [botId]);
 
-  const router = useRouter();
-
   const handleDeleteBot = async () => {
+    if (!bot) return;
     if (confirm(`Are you sure you want to permanently delete "${bot.name}"?`)) {
       await botsApi.deleteBot(bot.id);
       router.push("/bots");
     }
   };
 
-  if (loading || !bot) {
+  if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-16 bg-neutral-200/60 dark:bg-neutral-800 rounded-2xl w-1/2" />
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-28 bg-neutral-200/60 dark:bg-neutral-800 rounded-2xl" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !bot) {
+    return (
+      <div className="min-h-[420px] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-neutral-900 rounded-3xl p-8 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto shadow-xs">
+            <Bot className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+              Assistant Not Found
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              The requested AI assistant <code className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 font-mono text-[11px]">{botId || "unknown"}</code> was not found or does not belong to your organization workspace.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              href="/bots"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to All Assistants</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-[420px] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white dark:bg-neutral-900 rounded-3xl p-8 border border-neutral-200 dark:border-neutral-800 shadow-xl text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-xs">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+              Failed to Load Assistant
+            </h2>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
+              {loadError}
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={loadBotData}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <span>Retry</span>
+            </button>
+            <Link
+              href="/bots"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs font-semibold transition-colors"
+            >
+              <span>Back to Bots</span>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -208,29 +313,29 @@ function BotDetailContent() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               title="Conversations"
-              value={bot.conversationsCount}
-              change="+18%"
+              value={bot.conversationsCount || 0}
+              change="+0%"
               icon={MessageSquare}
               colorScheme="indigo"
             />
             <StatCard
               title="Questions Asked"
-              value={bot.questionsCount}
-              change="+22%"
+              value={bot.questionsCount || 0}
+              change="+0%"
               icon={HelpCircle}
               colorScheme="violet"
             />
             <StatCard
               title="Leads Generated"
-              value={bot.leadsCount}
-              change="+14%"
+              value={bot.leadsCount || 0}
+              change="+0%"
               icon={Users2}
               colorScheme="emerald"
             />
             <StatCard
               title="Answer Accuracy"
-              value={`${bot.answerRate}%`}
-              change="+1.5%"
+              value={bot.answerRate != null ? `${bot.answerRate}%` : "100%"}
+              change="0%"
               icon={CheckCircle2}
               colorScheme="emerald"
             />
@@ -242,22 +347,26 @@ function BotDetailContent() {
                 Active Knowledge Ingested
               </h3>
               <div className="space-y-2">
-                {documents.map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-indigo-500" />
-                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                        {d.name}
+                {(documents || []).length === 0 ? (
+                  <p className="text-xs text-neutral-400 p-4 text-center">No documents ingested yet.</p>
+                ) : (
+                  (documents || []).map((d) => (
+                    <div
+                      key={d.id}
+                      className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-indigo-500" />
+                        <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                          {d.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400 font-mono">
+                        {Array.isArray(d.chunks) ? d.chunks.length : (d.chunksCount || d.chunks || 0)} chunks
                       </span>
                     </div>
-                    <span className="text-[10px] text-neutral-400 font-mono">
-                      {d.chunks} chunks
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -326,19 +435,23 @@ function BotDetailContent() {
                 Direct Q&A Pairs ({qas.length})
               </h3>
               <div className="space-y-3">
-                {qas.map((q) => (
-                  <div
-                    key={q.id}
-                    className="p-4 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs space-y-1.5"
-                  >
-                    <p className="font-bold text-neutral-900 dark:text-white">
-                      Q: {q.question}
-                    </p>
-                    <p className="text-neutral-600 dark:text-neutral-300">
-                      A: {q.answer}
-                    </p>
-                  </div>
-                ))}
+                {(qas || []).length === 0 ? (
+                  <p className="text-xs text-neutral-400 p-4 text-center">No direct Q&A pairs configured yet.</p>
+                ) : (
+                  (qas || []).map((q) => (
+                    <div
+                      key={q.id}
+                      className="p-4 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs space-y-1.5"
+                    >
+                      <p className="font-bold text-neutral-900 dark:text-white">
+                        Q: {q.question}
+                      </p>
+                      <p className="text-neutral-600 dark:text-neutral-300">
+                        A: {q.answer}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

@@ -23,36 +23,13 @@ import { leadsApi } from "@/lib/api/leads";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 
-const ANSWER_LABELS = {
-  is_business: "For Business",
-  is_redesign: "Build Type",
-  website_type: "Website Type",
-  budget: "Project Budget",
-  timeline: "Target Timeline",
-  non_business_type: "Project Purpose",
-  needs_admin: "Admin Panel",
-  needs_payment: "Online Payments",
-  platform: "Target Platform",
-  is_new_app: "App Category",
-  needs_backend: "Custom Backend",
-  needs_integrations: "Third-party Integrations",
-  channel: "Chatbot Channel",
-  purpose: "Bot Purpose",
-  needs_docs: "Document Training (RAG)",
-  needs_crm: "CRM Sync",
-  system_type: "System Type",
-  has_existing_data: "Data Migration",
-  needs_role_access: "Role-Based Access",
-  design_target: "Design Scope",
-  prototype_depth: "Prototypes Required",
-  brand_identity: "Brand Guidelines",
-  cloud_platform: "Cloud Infrastructure",
-  needs_cicd: "Automated CI/CD",
-  needs_db_ha: "High Availability DB",
-  website_status: "Current Website",
-  target_market: "Target Market",
-  scope_focus: "SEO Scope",
-};
+function formatQuestionLabel(key) {
+  if (!key) return "Detail";
+  return key
+    .replace(/[_-]/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 function formatAnswerValue(val) {
   if (val === true || val === "true") return { text: "Yes", type: "yes" };
@@ -499,11 +476,11 @@ export default function LeadsPage() {
                 </div>
               </div>
 
-              {/* Project Requirements & Scoping Answers Section */}
+              {/* Lead Capture & Custom Answers Section */}
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Project Scope & Answers
+                    Lead Details & Answers
                   </label>
                   {selectedLead.budget && (
                     <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80">
@@ -539,7 +516,7 @@ export default function LeadsPage() {
                         Customer Answers Breakdown
                       </p>
                       {entries.map(([k, rawVal]) => {
-                        const label = ANSWER_LABELS[k] || k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                        const label = formatQuestionLabel(k);
                         const { text, type } = formatAnswerValue(rawVal);
                         return (
                           <div

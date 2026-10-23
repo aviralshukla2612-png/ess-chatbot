@@ -91,7 +91,7 @@ export const leadsStore = {
     });
 
     if (filters.organizationId) {
-      list = list.filter((l) => (l.organizationId || "org_ess_default") === filters.organizationId);
+      list = list.filter((l) => l.organizationId === filters.organizationId);
     }
     if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
       list = list.filter((l) => l.status?.toLowerCase() === filters.status.toLowerCase());
@@ -119,7 +119,7 @@ export const leadsStore = {
 
   getLead(id, organizationId = null) {
     const list = loadFromDisk();
-    return list.find((l) => l.id === id && (!organizationId || (l.organizationId || "org_ess_default") === organizationId)) || null;
+    return list.find((l) => l.id === id && (!organizationId || l.organizationId === organizationId)) || null;
   },
 
   async getLeadsAsync(filters = {}) {
@@ -158,7 +158,7 @@ export const leadsStore = {
   createLead(data) {
     const list = loadFromDisk();
     const now = new Date();
-    const targetOrgId = data.organizationId || "org_ess_default";
+    const targetOrgId = data.organizationId || null;
     data.organizationId = targetOrgId;
 
     // Check if lead already exists by visitorId, sessionId, verified email, or verified phone
@@ -173,7 +173,7 @@ export const leadsStore = {
     );
     if (existing) {
       if (data.visitorId && !existing.visitorId) existing.visitorId = data.visitorId;
-      if (data.organizationId && (!existing.organizationId || existing.organizationId === "org_ess_default")) {
+      if (data.organizationId && !existing.organizationId) {
         existing.organizationId = data.organizationId;
       }
       if (data.sessionId) existing.sessionId = data.sessionId;
@@ -211,7 +211,7 @@ export const leadsStore = {
 
       // Upsert to PostgreSQL so records missing in DB are guaranteed created
       try {
-        const targetBotId = (existing.bot === "aa" || !existing.botId) ? "bot_aa" : (existing.botId || existing.bot);
+        const targetBotId = existing.botId || (existing.bot && existing.bot !== "aa" ? existing.bot : null) || null;
         const resolvedOrg = existing.organizationId || targetOrgId;
         queryDb(
           `INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
@@ -247,7 +247,7 @@ export const leadsStore = {
       email: data.email || "",
       phone: data.phone || "",
       company: data.company || "Direct Inbound",
-      bot: data.bot || "aa",
+      bot: data.bot || data.botId || null,
       score: data.score || (data.phone && data.email ? "High" : "Medium"),
       status: data.status || "New",
       created: now.toLocaleDateString("en-US", {
@@ -272,7 +272,7 @@ export const leadsStore = {
 
     // Async dual-write to PostgreSQL
     try {
-      const targetBotId = (data.bot === "aa" || !data.botId) ? "bot_aa" : (data.botId || data.bot);
+      const targetBotId = data.botId || (data.bot && data.bot !== "aa" ? data.bot : null) || null;
       queryDb(
         `INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)

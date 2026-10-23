@@ -95,10 +95,10 @@ export default function HomePage() {
               Try It Right Now
             </span>
             <h2 className="text-2xl font-bold text-white">
-              Experience the Emperor Sales Assistant Live
+              Experience Interactive Conversational AI Live
             </h2>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Ask about ERP Starter vs Professional rates, e-commerce web applications, or discount approval policies. The bot grounds every answer with verified citations.
+              Test real-time streaming RAG responses, multi-document grounding, and automated lead qualification directly in your browser.
             </p>
 
             <div className="space-y-2 pt-2 text-xs">
@@ -108,11 +108,11 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-2 text-neutral-300">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>In-chat lead capture trigger during high commercial intent</span>
+                <span>In-chat lead capture triggered upon qualified intent</span>
               </div>
               <div className="flex items-center gap-2 text-neutral-300">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Zero-discount policy guardrails enforced</span>
+                <span>Multi-tenant data isolation and strict tenant security</span>
               </div>
             </div>
 
@@ -128,13 +128,14 @@ export default function HomePage() {
 
           <div>
             <BotPreviewWidget
-              botId="bot_aa"
-              botName="AI Sales Executive"
-              avatar="💼"
+              botId="demo"
+              botName="ChatPilot Showcase"
+              avatar="🤖"
               primaryColor="#4f46e5"
-              welcomeMessage="Hello! Welcome to Emperor Smart Solutions. Ask about our ERP modules, web apps, or project timelines!"
-              placeholderText="Type 'pricing for ERP' or 'discounts'..."
+              welcomeMessage="Hello! I am the ChatPilot platform assistant. Ask me how AI chatbots can help qualify leads and answer questions for your business!"
+              placeholderText="Ask about RAG knowledge, lead capture, or integrations..."
               showLeadForm={true}
+              quickReplies={["How does lead capture work?", "What documents can I upload?", "How do I embed on my site?"]}
             />
           </div>
         </div>

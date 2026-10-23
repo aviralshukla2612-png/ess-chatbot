@@ -2,25 +2,9 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
 
-// Single authoritative default platform organization (No dummy data)
+// Authoritative fallback (empty array if no organizations exist)
 function getDefaultPlatformOrgs() {
-  return [
-    {
-      id: "org_ess_01",
-      name: "Emperor Smart Solutions",
-      slug: "emperor-solutions",
-      owner: "Emperor Smart Solution",
-      ownerEmail: "admin@emperorsmartsolutions.com",
-      plan: "Enterprise",
-      status: "ACTIVE",
-      botsCount: 1,
-      usersCount: 1,
-      conversationsCount: 0,
-      leadsCount: 0,
-      createdAt: "2026-01-15T09:00:00Z",
-      lastActive: "Just now",
-    },
-  ];
+  return [];
 }
 
 export async function GET(request) {
@@ -62,8 +46,8 @@ export async function GET(request) {
           o.slug,
           o.status,
           o."createdAt",
-          COALESCE(u.name, 'Emperor Smart Solution') as owner,
-          COALESCE(u.email, 'admin@emperorsmartsolutions.com') as "ownerEmail",
+          COALESCE(u.name, 'No Owner') as owner,
+          COALESCE(u.email, '') as "ownerEmail",
           'Enterprise' as plan,
           (SELECT COUNT(*)::int FROM "Bot" b WHERE b."organizationId" = o.id) as "botsCount",
           (SELECT COUNT(*)::int FROM "Conversation" c WHERE c."organizationId" = o.id) as "conversationsCount",

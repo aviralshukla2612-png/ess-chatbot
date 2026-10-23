@@ -41,9 +41,7 @@ export default function AdminOverviewPage() {
     uptime: "99.9%",
     tier: "Enterprise",
   });
-  const [topOrgs, setTopOrgs] = useState([
-    { name: "Emperor Smart Solutions", bots: 1, conversations: 0, users: 1 }
-  ]);
+  const [topOrgs, setTopOrgs] = useState([]);
   const [growthData, setGrowthData] = useState([
     { date: "Day 1", orgs: 1, users: 1, bots: 1 },
     { date: "Today", orgs: 1, users: 1, bots: 1 },

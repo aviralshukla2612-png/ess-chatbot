@@ -20,7 +20,7 @@ export const analyticsApi = {
         totalQuestions: 0,
         leadsGenerated: 0,
         answerRate: "100%",
-        avgResponseTime: "1.1s",
+        avgResponseTime: "0s",
         activeBotsCount: 0,
         unansweredCount: 0,
         timeseries: [],

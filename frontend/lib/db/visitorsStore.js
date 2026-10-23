@@ -103,7 +103,7 @@ export const visitorsStore = {
   getVisitorById(id, organizationId = null) {
     const list = loadFromDisk();
     return list.find(
-      (v) => v.id === id && (!organizationId || (v.organizationId || "org_ess_default") === organizationId)
+      (v) => v.id === id && (!organizationId || v.organizationId === organizationId)
     ) || null;
   },
 
@@ -111,8 +111,8 @@ export const visitorsStore = {
    * Create a new persistent visitor record with an opaque token
    */
   createVisitor({
-    organizationId = "org_ess_default",
-    botId = "bot_aa",
+    organizationId = null,
+    botId = null,
     token = null,
     name = "",
     email = "",
@@ -136,8 +136,8 @@ export const visitorsStore = {
     const id = `vis_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
     const newVisitor = {
       id,
-      organizationId: organizationId || "org_ess_default",
-      botId: botId || "bot_aa",
+      organizationId: organizationId || null,
+      botId: botId || null,
       visitorTokenHash: tokenHash,
       leadId: leadId || null,
       name: name || "",

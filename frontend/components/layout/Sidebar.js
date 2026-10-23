@@ -22,6 +22,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -38,7 +39,17 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-  const [currentOrg, setCurrentOrg] = useState("Acme Healthcare");
+  const {
+    user,
+    memberships,
+    currentOrg,
+    switchOrganization,
+    userInitials,
+    activeOrgRole,
+    logout,
+  } = useAuth();
+
+  const orgDisplayName = currentOrg?.orgName || "My Workspace";
 
   return (
     <>
@@ -84,9 +95,13 @@ export default function Sidebar({ isOpen, onClose }) {
                 <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
                 <div className="truncate">
                   <p className="text-xs font-semibold text-white truncate">
-                    {currentOrg}
+                    {orgDisplayName}
                   </p>
-                  <p className="text-[10px] text-slate-400">Organization</p>
+                  <p className="text-[10px] text-slate-400">
+                    {memberships.length > 1
+                      ? `${memberships.length} Workspaces`
+                      : "Organization"}
+                  </p>
                 </div>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -94,22 +109,32 @@ export default function Sidebar({ isOpen, onClose }) {
 
             {orgDropdownOpen && (
               <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-slate-900 border border-slate-800 rounded-xl shadow-xl p-1.5 text-xs">
-                {["Acme Healthcare", "Emperor Smart Solutions", "Apex FinTech"].map(
-                  (org) => (
-                    <button
-                      key={org}
-                      onClick={() => {
-                        setCurrentOrg(org);
-                        setOrgDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "w-full text-left px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors",
-                        org === currentOrg && "text-indigo-400 font-semibold bg-slate-800/60"
-                      )}
-                    >
-                      {org}
-                    </button>
-                  )
+                {memberships.length > 0 ? (
+                  memberships.map((m) => {
+                    const isSelected = m.organizationId === currentOrg?.organizationId;
+                    return (
+                      <button
+                        key={m.organizationId}
+                        onClick={() => {
+                          switchOrganization(m.organizationId);
+                          setOrgDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex items-center justify-between",
+                          isSelected && "text-indigo-400 font-semibold bg-slate-800/60"
+                        )}
+                      >
+                        <span className="truncate">{m.orgName || m.organizationId}</span>
+                        <span className="text-[10px] text-slate-500 uppercase ml-2">
+                          {m.role}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="px-2.5 py-1.5 text-slate-400 text-xs">
+                    {orgDisplayName}
+                  </div>
                 )}
               </div>
             )}
@@ -177,22 +202,29 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/40 border border-slate-700/40">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-7 h-7 rounded-full bg-linear-to-tr from-indigo-500 to-violet-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                A
+                {userInitials}
               </div>
               <div className="truncate">
                 <p className="text-xs font-semibold text-white truncate">
-                  Administrator
+                  {user?.name || user?.email || "User"}
                 </p>
-                <p className="text-[10px] text-indigo-400 font-medium">Workspace Owner</p>
+                <p className="text-[10px] text-indigo-400 font-medium truncate">
+                  {activeOrgRole
+                    ? `${activeOrgRole.charAt(0).toUpperCase() + activeOrgRole.slice(1).toLowerCase()}`
+                    : user?.role === "SUPER_ADMIN"
+                    ? "Platform Admin"
+                    : "Member"}
+                </p>
               </div>
             </div>
-            <Link
-              href="/login"
+            <button
+              onClick={() => logout()}
+              type="button"
               title="Sign Out"
               className="p-1.5 text-slate-400 hover:text-white transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

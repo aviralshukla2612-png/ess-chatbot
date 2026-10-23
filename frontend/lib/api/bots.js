@@ -106,7 +106,7 @@ export const botsApi = {
       }
     } catch (e) {}
 
-    return bots[0] || null;
+    return null;
   },
 
   async createBot(botData) {

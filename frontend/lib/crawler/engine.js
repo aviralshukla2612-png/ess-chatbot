@@ -449,11 +449,13 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
     if (queryVec && Array.isArray(queryVec)) {
       const vectorStr = `[${queryVec.join(",")}]`;
       const res = await queryDb(
-        `SELECT "id", "botId", "organizationId", "content", "sourceUrl", "pageTitle",
-                (1 - ("embedding" <=> $1::vector)) AS score
-         FROM "KnowledgeChunk"
-         WHERE "botId" = $2 AND "embedding" IS NOT NULL
-         ORDER BY "embedding" <=> $1::vector ASC
+        `SELECT c."id", c."botId", c."organizationId", c."content", c."sourceUrl", c."pageTitle",
+                (1 - (c."embedding" <=> $1::vector)) AS score
+         FROM "KnowledgeChunk" c
+         LEFT JOIN "KnowledgeDocument" d ON c."documentId" = d."id"
+         WHERE c."botId" = $2 AND c."embedding" IS NOT NULL
+           AND (d."status" IS NULL OR d."status" = 'Ready')
+         ORDER BY c."embedding" <=> $1::vector ASC
          LIMIT $3;`,
         [vectorStr, botId, topK]
       );
@@ -473,9 +475,11 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
       if (keywords.length > 0) {
         const pattern = `%${keywords[0]}%`;
         const res = await queryDb(
-          `SELECT "id", "botId", "organizationId", "content", "sourceUrl", "pageTitle", 1.0 AS score
-           FROM "KnowledgeChunk"
-           WHERE "botId" = $1 AND "content" ILIKE $2
+          `SELECT c."id", c."botId", c."organizationId", c."content", c."sourceUrl", c."pageTitle", 1.0 AS score
+           FROM "KnowledgeChunk" c
+           LEFT JOIN "KnowledgeDocument" d ON c."documentId" = d."id"
+           WHERE c."botId" = $1 AND c."content" ILIKE $2
+             AND (d."status" IS NULL OR d."status" = 'Ready')
            LIMIT $3;`,
           [botId, pattern, topK]
         );

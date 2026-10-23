@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
-    const docs = documentsStore.getDocuments(botId);
+    const docs = documentsStore.getDocuments(botId, isSuperAdmin ? null : principal.organizationId);
     return NextResponse.json({ success: true, documents: docs });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -67,14 +67,18 @@ export async function POST(request, { params }) {
       if (!content || !content.trim()) {
         return NextResponse.json({ success: false, error: "Document content cannot be empty" }, { status: 400 });
       }
-      const doc = documentsStore.addDocument({
+      const doc = await documentsStore.addDocumentAsync({
         id,
         botId,
+        organizationId: bot.organizationId,
         name: name?.trim() || "Custom Business Knowledge",
         content: content.trim(),
         type: type || "Document",
       });
-      return NextResponse.json({ success: true, document: doc });
+      return NextResponse.json(
+        { success: doc.status === "Ready", document: doc, error: doc.errorMessage || null },
+        { status: doc.status === "Ready" ? 200 : 422 }
+      );
     }
 
     // FormData upload
@@ -102,14 +106,18 @@ export async function POST(request, { params }) {
       );
     }
 
-    const doc = documentsStore.addDocument({
+    const doc = await documentsStore.addDocumentAsync({
       botId,
+      organizationId: bot.organizationId,
       name: fileName,
       content: textContent.trim(),
       type: fileName.split(".").pop()?.toUpperCase() || "Document",
     });
 
-    return NextResponse.json({ success: true, document: doc });
+    return NextResponse.json(
+      { success: doc.status === "Ready", document: doc, error: doc.errorMessage || null },
+      { status: doc.status === "Ready" ? 200 : 422 }
+    );
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
@@ -137,10 +145,22 @@ export async function PUT(request, { params }) {
     }
 
     const body = await request.json();
-    const { id, name, content, type } = body;
+    const { id, name, content, type, action } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: "Document id is required" }, { status: 400 });
+    }
+
+    if (action === "retry") {
+      const retryRes = await documentsStore.retryDocument(id, bot.organizationId);
+      if (!retryRes.ok && retryRes.error === "Document not found") {
+        return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
+      }
+      return NextResponse.json({
+        success: retryRes.ok,
+        document: retryRes.document,
+        error: retryRes.error,
+      });
     }
 
     const existing = documentsStore.getDocumentById(id);

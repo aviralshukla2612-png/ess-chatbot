@@ -37,6 +37,7 @@ import { leadsApi } from "@/lib/api/leads";
 import { analyticsApi } from "@/lib/api/analytics";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function DashboardPage() {
   const [timeView, setTimeView] = useState("daily");
@@ -45,6 +46,7 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const loadData = async () => {
     try {
@@ -88,37 +90,148 @@ export default function DashboardPage() {
       ? Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100 * 10) / 10)
       : 100;
 
+  // Real calculated response time between user question and assistant answer
+  const avgResponseTime = React.useMemo(() => {
+    let totalDiff = 0;
+    let pairs = 0;
+    conversations.forEach((c) => {
+      const msgs = c.messages || [];
+      for (let i = 0; i < msgs.length - 1; i++) {
+        if (msgs[i].role === "user" && msgs[i + 1].role === "assistant") {
+          const t1 = new Date(msgs[i].createdAt || msgs[i].timestamp).getTime();
+          const t2 = new Date(msgs[i + 1].createdAt || msgs[i + 1].timestamp).getTime();
+          if (!isNaN(t1) && !isNaN(t2) && t2 >= t1 && t2 - t1 < 60000) {
+            totalDiff += t2 - t1;
+            pairs++;
+          }
+        }
+      }
+    });
+    if (pairs > 0) {
+      return `${(totalDiff / pairs / 1000).toFixed(1)}s`;
+    }
+    return totalConvs > 0 ? "< 1s" : "0s";
+  }, [conversations, totalConvs]);
+
+  // Period-over-period comparison (current 7 days vs previous 7 days) computed client-side
+  const [periodComparison, setPeriodComparison] = React.useState({
+    convs: { change: "—", pos: true },
+    leads: { change: "—", pos: true },
+  });
+
+  React.useEffect(() => {
+    const nowTime = Date.now();
+    const p7 = 7 * 86400000;
+    const p14 = 14 * 86400000;
+
+    const currConvs = conversations.filter((c) => {
+      const t = new Date(c.createdAt || nowTime).getTime();
+      return t >= nowTime - p7;
+    }).length;
+    const priorConvs = conversations.filter((c) => {
+      const t = new Date(c.createdAt || nowTime).getTime();
+      return t >= nowTime - p14 && t < nowTime - p7;
+    }).length;
+
+    const currLeads = leads.filter((l) => {
+      const t = new Date(l.createdAt || nowTime).getTime();
+      return t >= nowTime - p7;
+    }).length;
+    const priorLeads = leads.filter((l) => {
+      const t = new Date(l.createdAt || nowTime).getTime();
+      return t >= nowTime - p14 && t < nowTime - p7;
+    }).length;
+
+    const calc = (curr, prior) => {
+      if (prior > 0) {
+        const pct = Math.round(((curr - prior) / prior) * 100);
+        return { change: `${pct >= 0 ? "+" : ""}${pct}%`, pos: pct >= 0 };
+      }
+      if (curr > 0 && prior === 0) {
+        return { change: "—", pos: true };
+      }
+      return { change: "0%", pos: true };
+    };
+
+    setPeriodComparison({
+      convs: calc(currConvs, priorConvs),
+      leads: calc(currLeads, priorLeads),
+    });
+  }, [conversations, leads]);
+
   const kpis = [
-    { title: "Total Conversations", value: totalConvs.toString(), change: totalConvs > 0 ? "+100%" : "0%", pos: true },
-    { title: "Unique Visitors", value: totalConvs.toString(), change: totalConvs > 0 ? "+100%" : "0%", pos: true },
-    { title: "Total Questions", value: totalQuestions.toString(), change: totalQuestions > 0 ? "+100%" : "0%", pos: true },
-    { title: "Leads Generated", value: totalLeads.toString(), change: totalLeads > 0 ? "+100%" : "0%", pos: true },
+    { title: "Total Conversations", value: totalConvs.toString(), change: periodComparison.convs.change, pos: periodComparison.convs.pos },
+    { title: "Unique Visitors", value: totalConvs.toString(), change: periodComparison.convs.change, pos: periodComparison.convs.pos },
+    { title: "Total Questions", value: totalQuestions.toString(), change: "—", pos: true },
+    { title: "Leads Generated", value: totalLeads.toString(), change: periodComparison.leads.change, pos: periodComparison.leads.pos },
     { title: "Answer Rate", value: `${answerRate}%`, change: "0%", pos: true },
-    { title: "Avg. Response Time", value: totalConvs > 0 ? "1.1 sec" : "0 sec", change: "0%", pos: true },
+    { title: "Avg. Response Time", value: avgResponseTime, change: "0%", pos: true },
     { title: "Active Bots", value: activeBotsCount.toString(), change: "0%", pos: true },
     { title: "Unanswered Questions", value: Math.max(0, totalQuestions - answeredQuestions).toString(), change: "0%", pos: true },
   ];
 
+  // Dynamic calendar date intervals for timeseries computed client-side
+  const [dynamicFallbackTimeseries, setDynamicFallbackTimeseries] = React.useState([]);
+
+  React.useEffect(() => {
+    const list = [];
+    const now = new Date();
+    for (let i = 6; i >= 1; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 5);
+      list.push({
+        date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        conversations: 0,
+      });
+    }
+    list.push({ date: "Today", conversations: totalConvs });
+    setDynamicFallbackTimeseries(list);
+  }, [totalConvs]);
+
   const timeseriesData =
     analytics?.timeseries && analytics.timeseries.length > 0
       ? analytics.timeseries
-      : [
-          { date: "Oct 1", conversations: 0 },
-          { date: "Oct 5", conversations: 0 },
-          { date: "Oct 10", conversations: 0 },
-          { date: "Oct 15", conversations: 0 },
-          { date: "Oct 20", conversations: 0 },
-          { date: "Oct 25", conversations: 0 },
-          { date: "Today", conversations: totalConvs },
-        ];
+      : dynamicFallbackTimeseries;
+
+  const totalBotConvs = bots.reduce((sum, b) => {
+    return sum + conversations.filter((c) => c.botId === b.id || c.botName === b.name).length;
+  }, 0);
 
   const botDonutData = bots.length > 0
-    ? bots.map((b, idx) => ({
-        name: b.name,
-        value: Math.max(1, conversations.filter((c) => c.botId === b.id || c.botName === b.name).length),
-        color: b.primaryColor || ["#4f46e5", "#38bdf8", "#a855f7"][idx % 3],
-      }))
-    : [{ name: "No Active Bots", value: 100, color: "#cbd5e1" }];
+    ? (totalBotConvs > 0
+        ? bots.map((b, idx) => {
+            const count = conversations.filter((c) => c.botId === b.id || c.botName === b.name).length;
+            const pct = (count / totalBotConvs) * 100;
+            return {
+              name: b.name,
+              value: pct,
+              rawCount: count,
+              color: b.primaryColor || ["#4f46e5", "#38bdf8", "#a855f7"][idx % 3],
+            };
+          })
+        : [{ name: "No Conversations Yet", value: 100, rawCount: 0, color: "#cbd5e1" }]
+      )
+    : [{ name: "No Active Bots", value: 100, rawCount: 0, color: "#cbd5e1" }];
+
+  const [greetingPrefix, setGreetingPrefix] = React.useState("Welcome");
+
+  React.useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreetingPrefix("Good morning");
+    } else if (hour < 18) {
+      setGreetingPrefix("Good afternoon");
+    } else {
+      setGreetingPrefix("Good evening");
+    }
+  }, []);
+
+  const userDisplayName = React.useMemo(() => {
+    if (!user) return "there";
+    if (user.name) return user.name.trim().split(" ")[0];
+    if (user.email) return user.email.split("@")[0];
+    return "there";
+  }, [user]);
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in text-slate-800 font-sans">
@@ -128,7 +241,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Sun className="w-5 h-5 text-amber-500 fill-amber-400" />
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Good morning, Srajan
+              {greetingPrefix}, {userDisplayName}
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -230,7 +343,7 @@ export default function DashboardPage() {
                     if (active && payload && payload.length) {
                       return (
                         <div className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg">
-                          <p className="font-bold">{payload[0].payload.date}, 2026</p>
+                          <p className="font-bold">{payload[0].payload.date}, {new Date().getFullYear()}</p>
                           <p className="text-indigo-300 font-semibold">{payload[0].value} conversations</p>
                         </div>
                       );

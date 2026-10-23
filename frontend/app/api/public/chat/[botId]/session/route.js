@@ -88,6 +88,9 @@ async function handleSession(request, { params }) {
       );
     }
 
+    const isEssBot = bot?.id === "bot_aa" || bot?.company === "Emperor Smart Solutions" || bot?.organizationId === "org_ess_default";
+    const botOrgId = bot?.organizationId || (isEssBot ? "org_ess_default" : null);
+
     // Domain origin check
     const originHeader = request.headers.get("origin") || request.headers.get("referer");
     const allowedDomains = (!bot?.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0)
@@ -130,7 +133,7 @@ async function handleSession(request, { params }) {
 
     if (!visitor) {
       const created = visitorsStore.createVisitor({
-        organizationId: bot.organizationId || "org_ess_default",
+        organizationId: botOrgId,
         botId: bot.id,
       });
       visitor = created.visitor;
@@ -167,7 +170,7 @@ async function handleSession(request, { params }) {
       // Do NOT restore expired messages, but preserve recognized visitor profile and qualification
       const newConv = conversationsStore.createConversation({
         visitorId: visitor.id,
-        organizationId: bot.organizationId || "org_ess_default",
+        organizationId: botOrgId,
         botId: bot.id,
         botName: bot.name || "AI Assistant",
         visitorName: visitor.name || latestConv?.visitorName || "Website Visitor",
@@ -250,7 +253,7 @@ export async function DELETE(request, { params }) {
         // Create a new clean conversation for the visitor
         const newConv = conversationsStore.createConversation({
           visitorId: visitor.id,
-          organizationId: bot.organizationId || "org_ess_default",
+          organizationId: botOrgId,
           botId: bot.id,
           visitorName: visitor.name || "Website Visitor",
           visitorEmail: visitor.email || "",

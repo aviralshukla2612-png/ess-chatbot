@@ -16,7 +16,7 @@ const memoryApiKeys = new Map();
 
 // Seed initial default organization & superadmin for development and testing
 const DEFAULT_ORG_ID = "org_ess_default";
-const DEFAULT_ADMIN_EMAIL = "admin@emperorsmartsolutions.com";
+const DEFAULT_ADMIN_EMAIL = process.env.ADMIN_EMAIL || "superadmin@platform.local";
 
 export const authStore = {
   /**
@@ -177,10 +177,8 @@ export const authStore = {
     const orgRole = isSuper ? "SUPER_ADMIN" : defaultOrgRole;
 
     if (isSuper) {
-      user.name = "Emperor Smart Solution";
       user.role = "SUPER_ADMIN";
-      await queryDb('UPDATE "User" SET "name" = $1, "role" = $2 WHERE "email" = $3;', [
-        "Emperor Smart Solution",
+      await queryDb('UPDATE "User" SET "role" = $1 WHERE "email" = $2;', [
         "SUPER_ADMIN",
         cleanEmail,
       ]);
@@ -189,7 +187,7 @@ export const authStore = {
     return {
       user: {
         id: user.id,
-        name: isSuper ? "Emperor Smart Solution" : user.name,
+        name: user.name || (isSuper ? "Platform Administrator" : "User"),
         email: user.email,
         role: isSuper ? "SUPER_ADMIN" : user.role,
       },
@@ -205,7 +203,7 @@ export const authStore = {
   async directLogin(targetRole = "ORG_OWNER") {
     const roleStr = String(targetRole || "").toLowerCase();
     const isSuper = roleStr === "super_admin" || roleStr === "superadmin" || roleStr.includes("super");
-    const email = isSuper ? DEFAULT_ADMIN_EMAIL : "admin@company.com";
+    const email = isSuper ? (process.env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL) : "admin@company.com";
     const cleanEmail = email.toLowerCase();
 
     let user = null;
@@ -220,8 +218,8 @@ export const authStore = {
       const reg = await this.register({
         email: cleanEmail,
         password: "AdminAccessPassword2026!",
-        name: isSuper ? "Emperor Smart Solution" : "Workspace Administrator",
-        organizationName: "Emperor Smart Solutions",
+        name: isSuper ? "Platform Administrator" : "Workspace Administrator",
+        organizationName: isSuper ? "Platform Admin Workspace" : "Workspace Demo",
         role: isSuper ? "SUPER_ADMIN" : "ORG_ADMIN",
       });
       user = {
@@ -231,28 +229,25 @@ export const authStore = {
         role: isSuper ? "SUPER_ADMIN" : "ORG_ADMIN",
       };
     } else if (isSuper) {
-      user.name = "Emperor Smart Solution";
       user.role = "SUPER_ADMIN";
-      await queryDb('UPDATE "User" SET "name" = $1, "role" = $2 WHERE "email" = $3;', [
-        "Emperor Smart Solution",
+      await queryDb('UPDATE "User" SET "role" = $1 WHERE "email" = $2;', [
         "SUPER_ADMIN",
         cleanEmail,
       ]);
       if (memoryUsers.has(cleanEmail)) {
-        memoryUsers.get(cleanEmail).name = "Emperor Smart Solution";
         memoryUsers.get(cleanEmail).role = "SUPER_ADMIN";
       }
     }
 
     const memberships = await this.getUserMemberships(user.id);
     const primaryMembership = memberships[0] || null;
-    const orgId = DEFAULT_ORG_ID;
+    const orgId = primaryMembership?.organizationId || DEFAULT_ORG_ID;
     const orgRole = isSuper ? "SUPER_ADMIN" : (primaryMembership?.role || "ORG_ADMIN");
 
     return {
       user: {
         id: user.id,
-        name: isSuper ? "Emperor Smart Solution" : (user.name || "Workspace Administrator"),
+        name: user.name || (isSuper ? "Platform Administrator" : "Workspace Administrator"),
         email: user.email,
         role: isSuper ? "SUPER_ADMIN" : (user.role || "MEMBER"),
       },
@@ -383,5 +378,181 @@ export const authStore = {
     }
 
     return memoryApiKeys.get(keyHash) || null;
+  },
+
+  /**
+   * Update user profile name.
+   */
+  async updateUserProfile(userId, { name }) {
+    if (!userId) return null;
+    if (name) {
+      await queryDb('UPDATE "User" SET "name" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $2;', [name, userId]);
+      for (const u of memoryUsers.values()) {
+        if (u.id === userId) {
+          u.name = name;
+        }
+      }
+    }
+    return this.getUserById(userId);
+  },
+
+  /**
+   * Update organization details.
+   */
+  async updateOrganization(organizationId, { name }) {
+    if (!organizationId) return null;
+    if (name) {
+      await queryDb('UPDATE "Organization" SET "name" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $2;', [name, organizationId]);
+      const org = memoryOrgs.get(organizationId);
+      if (org) {
+        org.name = name;
+      }
+    }
+    return { id: organizationId, name };
+  },
+
+  /**
+   * Get all members for an organization.
+   */
+  async getOrganizationMembers(organizationId) {
+    if (!organizationId) return [];
+    const dbRes = await queryDb(
+      `SELECT m."id", m."organizationId", m."userId", m."role", m."status", m."createdAt",
+              u."name", u."email"
+       FROM "OrganizationMembership" m
+       JOIN "User" u ON m."userId" = u."id"
+       WHERE m."organizationId" = $1
+       ORDER BY m."createdAt" ASC;`,
+      [organizationId]
+    );
+
+    if (dbRes.ok && dbRes.rows.length > 0) {
+      return dbRes.rows;
+    }
+
+    const list = [];
+    for (const mem of memoryMemberships.values()) {
+      if (mem.organizationId === organizationId) {
+        let u = null;
+        for (const user of memoryUsers.values()) {
+          if (user.id === mem.userId) {
+            u = user;
+            break;
+          }
+        }
+        list.push({
+          id: mem.id,
+          organizationId: mem.organizationId,
+          userId: mem.userId,
+          role: mem.role,
+          status: mem.status,
+          createdAt: mem.createdAt || new Date().toISOString(),
+          name: u?.name || "Team Member",
+          email: u?.email || "member@workspace.local",
+        });
+      }
+    }
+    return list;
+  },
+
+  /**
+   * Invite or add a member to an organization.
+   */
+  async inviteOrAddMember(organizationId, { email, name, role = "MEMBER" }) {
+    if (!organizationId || !email) throw new Error("Organization ID and email are required");
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = (name || cleanEmail.split("@")[0]).trim();
+    const normalizedRole = role.toUpperCase();
+
+    // 1. Find or create user
+    let user = await this.getUserByEmail(cleanEmail);
+    if (!user) {
+      const userId = `usr_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+      const randomSecret = crypto.randomBytes(16).toString("hex");
+      const passwordHash = await hashPassword(randomSecret);
+
+      await queryDb(
+        'INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "status") VALUES ($1, $2, $3, $4, $5, $6);',
+        [userId, cleanName, cleanEmail, passwordHash, "USER", "ACTIVE"]
+      );
+
+      user = {
+        id: userId,
+        name: cleanName,
+        email: cleanEmail,
+        passwordHash,
+        role: "USER",
+        status: "ACTIVE",
+      };
+      memoryUsers.set(cleanEmail, user);
+    }
+
+    // 2. Add or update membership
+    const membershipId = `mem_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+    await queryDb(
+      `INSERT INTO "OrganizationMembership" ("id", "organizationId", "userId", "role", "status")
+       VALUES ($1, $2, $3, $4, 'ACTIVE')
+       ON CONFLICT ("organizationId", "userId") DO UPDATE SET "role" = $4, "status" = 'ACTIVE';`,
+      [membershipId, organizationId, user.id, normalizedRole]
+    );
+
+    memoryMemberships.set(`${organizationId}_${user.id}`, {
+      id: membershipId,
+      organizationId,
+      userId: user.id,
+      role: normalizedRole,
+      status: "ACTIVE",
+      createdAt: new Date().toISOString(),
+    });
+
+    return {
+      id: membershipId,
+      organizationId,
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      role: normalizedRole,
+      status: "ACTIVE",
+      addedDate: new Date().toISOString().split("T")[0],
+    };
+  },
+
+  /**
+   * Remove a member from an organization.
+   */
+  async removeOrganizationMember(organizationId, membershipId) {
+    if (!organizationId || !membershipId) return false;
+
+    // Prevent removing the sole owner
+    const existing = await queryDb(
+      'SELECT "id", "role", "userId" FROM "OrganizationMembership" WHERE "id" = $1 AND "organizationId" = $2;',
+      [membershipId, organizationId]
+    );
+
+    if (existing.ok && existing.rows.length > 0) {
+      const target = existing.rows[0];
+      if (target.role === "ORG_OWNER" || target.role === "OWNER") {
+        const ownerCountRes = await queryDb(
+          'SELECT COUNT(*) as count FROM "OrganizationMembership" WHERE "organizationId" = $1 AND "role" IN (\'ORG_OWNER\', \'OWNER\');',
+          [organizationId]
+        );
+        if (Number(ownerCountRes.rows?.[0]?.count || 1) <= 1) {
+          throw new Error("Cannot remove the sole owner of the workspace");
+        }
+      }
+    }
+
+    await queryDb('DELETE FROM "OrganizationMembership" WHERE "id" = $1 AND "organizationId" = $2;', [
+      membershipId,
+      organizationId,
+    ]);
+
+    for (const [key, mem] of memoryMemberships.entries()) {
+      if (mem.id === membershipId && mem.organizationId === organizationId) {
+        memoryMemberships.delete(key);
+      }
+    }
+
+    return true;
   },
 };

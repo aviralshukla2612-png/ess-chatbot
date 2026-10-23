@@ -90,24 +90,51 @@ export const whatsappService = {
   /**
    * Process incoming message, run sales state machine, capture lead, and return reply.
    */
-  async handleInboundMessage({ senderPhone, messageId, text, phoneNumberId, organizationId = "org_ess_default", botId = "bot_aa" }) {
+  async handleInboundMessage({ senderPhone, messageId, text, phoneNumberId, organizationId, botId }) {
     // Idempotency check
     if (processedWhatsAppMessages.has(messageId)) {
       return { status: "duplicate_skipped", duplicate: true };
     }
     processedWhatsAppMessages.add(messageId);
 
-    const bot = botsStore.getBot(botId, organizationId) || botsStore.getBot("bot_aa");
+    let targetOrgId = organizationId;
+    let targetBotId = botId;
+
+    // Dynamically resolve mapped bot and tenant by phoneNumberId
+    if (phoneNumberId) {
+      try {
+        const mappingRes = await queryDb(
+          'SELECT "organizationId", "botId" FROM "WhatsAppMapping" WHERE "phoneNumberId" = $1 LIMIT 1;',
+          [phoneNumberId]
+        );
+        if (mappingRes.ok && mappingRes.rows.length > 0) {
+          targetOrgId = mappingRes.rows[0].organizationId;
+          targetBotId = mappingRes.rows[0].botId;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (!targetBotId) {
+      return { status: "ignored_unmapped_phone", reply: null };
+    }
+
+    const bot = botsStore.getBot(targetBotId, targetOrgId);
+    if (!bot) {
+      return { status: "bot_not_found", reply: null };
+    }
+
     const sessionId = `wa_${senderPhone}`;
 
     // 1. Resolve or create conversation
-    let conv = conversationsStore.getConversation(sessionId, organizationId);
+    let conv = conversationsStore.getConversation(sessionId, targetOrgId || bot.organizationId);
     if (!conv) {
       conv = conversationsStore.createConversation({
         id: sessionId,
-        organizationId,
-        botId: bot?.id || "bot_aa",
-        botName: bot?.name || "WhatsApp Assistant",
+        organizationId: targetOrgId || bot.organizationId,
+        botId: bot.id,
+        botName: bot.name,
         visitorPhone: senderPhone,
         visitorName: "WhatsApp Lead",
         visitorLocation: "WhatsApp",
@@ -115,7 +142,7 @@ export const whatsappService = {
     }
 
     // 2. Safety and scope check
-    const safety = checkInputScopeAndSafety(text, bot?.company || "Emperor Smart Solutions");
+    const safety = checkInputScopeAndSafety(text, bot.companyName || bot.company || "Our Company");
     let replyText = "";
 
     if (safety.blocked) {
@@ -154,8 +181,8 @@ export const whatsappService = {
 
       if (extracted?.hasLeadInfo) {
         leadsStore.createLead({
-          organizationId,
-          botId: bot?.id || "bot_aa",
+          organizationId: targetOrgId || bot.organizationId,
+          botId: bot.id,
           name: extracted.name || conv.visitorName || "WhatsApp Lead",
           email: extracted.email || null,
           phone: extracted.phone || senderPhone,

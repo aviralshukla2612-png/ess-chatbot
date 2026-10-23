@@ -73,7 +73,7 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Aviral Shukla"
+                  placeholder="e.g. Alex Morgan"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40 outline-hidden focus:border-indigo-500"
@@ -90,7 +90,7 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Emperor Smart Solutions"
+                  placeholder="e.g. Acme Corporation"
                   value={form.company}
                   onChange={(e) => setForm({ ...form, company: e.target.value })}
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40 outline-hidden focus:border-indigo-500"

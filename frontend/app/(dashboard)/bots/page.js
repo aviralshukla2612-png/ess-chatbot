@@ -78,11 +78,11 @@ export default function BotsPage() {
   const draftCount = bots.filter((b) => b.status === "Draft").length;
 
   const appOrigin =
-    typeof window !== "undefined" ? window.location.origin : "http://187.127.158.24:3300";
+    typeof window !== "undefined" ? window.location.origin : "";
 
   const getEmbedSnippet = (bot) => {
-    if (!bot) return "";
-    const idToUse = bot.id || "bot_aa";
+    if (!bot || !bot.id) return "";
+    const idToUse = bot.id;
     return `<script
   src="${appOrigin}/widget.js"
   data-bot-id="${idToUse}"

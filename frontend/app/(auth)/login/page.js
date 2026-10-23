@@ -29,8 +29,8 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   // Form states
-  const [email, setEmail] = useState("admin@company.com");
-  const [password, setPassword] = useState("AdminAccess2026!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
 
@@ -88,16 +88,13 @@ export default function LoginPage() {
         return;
       }
 
-      const isPlatformAdmin = email.trim().toLowerCase() === "admin@emperorsmartsolutions.com";
-      
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           password,
           directLogin: false,
-          portalRole: isPlatformAdmin ? "superadmin" : "ORG_ADMIN",
         }),
       });
 
@@ -106,7 +103,7 @@ export default function LoginPage() {
         throw new Error(data.error || "Invalid credentials");
       }
 
-      const isSuper = data.user?.role === "SUPER_ADMIN" || data.orgRole === "SUPER_ADMIN" || isPlatformAdmin;
+      const isSuper = data.user?.role === "SUPER_ADMIN" || data.orgRole === "SUPER_ADMIN";
       const destination = isSuper ? "/admin" : "/dashboard";
       window.location.replace(destination);
     } catch (err) {
@@ -448,7 +445,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          <div className="text-center pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div className="text-center pt-3 border-t border-slate-100 flex items-center justify-center">
             <Link
               href="/"
               className="text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1.5"
@@ -456,19 +453,6 @@ export default function LoginPage() {
               <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
               <span>← Public Website</span>
             </Link>
-
-            {/* Subtle Platform Operator Access */}
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("admin@emperorsmartsolutions.com");
-                setPassword("AdminAccess2026!");
-              }}
-              title="Platform Operator Mode"
-              className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-            >
-              Platform Access
-            </button>
           </div>
         </div>
       </div>

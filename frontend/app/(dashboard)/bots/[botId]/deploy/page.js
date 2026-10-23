@@ -28,7 +28,7 @@ import { botsApi } from "@/lib/api/bots";
 
 function DeployBotContent() {
   const routeParams = useParams();
-  const botId = routeParams?.botId || "bot_aa";
+  const botId = routeParams?.botId;
 
   const [bot, setBot] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,8 +39,9 @@ function DeployBotContent() {
   const [launcherPosition, setLauncherPosition] = useState("bottom-right");
   const [brandingEnabled, setBrandingEnabled] = useState(true);
   const [activeCms, setActiveCms] = useState("html"); // html, wordpress, shopify, webflow, ssh
+  const [sshTargetFile, setSshTargetFile] = useState("/var/www/html/index.html");
 
-  // Host URL (defaults to active server origin, e.g. http://187.127.158.24:3300)
+  // Host URL (defaults to active browser origin)
   const [customHost, setCustomHost] = useState("");
 
   useEffect(() => {
@@ -68,6 +69,10 @@ function DeployBotContent() {
 
   useEffect(() => {
     async function loadBot() {
+      if (!botId) {
+        setLoading(false);
+        return;
+      }
       const b = await botsApi.getBotById(botId);
       if (b) {
         setBot(b);
@@ -87,19 +92,19 @@ function DeployBotContent() {
   const appOrigin =
     typeof window !== "undefined"
       ? window.location.origin
-      : "http://localhost:3001";
+      : "";
 
   const effectiveHost = customHost.trim() || appOrigin;
 
   const scriptTag = `<script
   src="${effectiveHost}/widget.js"
-  data-bot-id="${bot?.id || botId}"
+  data-bot-id="${bot?.id || botId || ''}"
   data-color="${widgetColor}"
   data-position="${launcherPosition}"
   defer
 ></script>`;
 
-  const sshSedCommand = `sed -i 's|</body>|<script src="${effectiveHost}/widget.js" data-bot-id="${bot?.id || botId}" defer></script></body>|' /var/www/html/index.html`;
+  const sshSedCommand = `sed -i 's|</body>|<script src="${effectiveHost}/widget.js" data-bot-id="${bot?.id || botId || ''}" defer></script></body>|' ${sshTargetFile.trim() || '/var/www/html/index.html'}`;
 
   const handleCopyScript = () => {
     navigator.clipboard.writeText(scriptTag);
@@ -247,6 +252,24 @@ function DeployBotContent() {
       setSimulatorIsTyping(false);
     }
   };
+
+  if (!loading && (!bot || !botId)) {
+    return (
+      <div className="max-w-md mx-auto py-20 text-center space-y-4">
+        <AlertCircle className="w-12 h-12 mx-auto text-amber-500" />
+        <h2 className="text-xl font-bold text-slate-900">Assistant Not Found</h2>
+        <p className="text-xs text-slate-500">
+          The requested assistant could not be found or does not belong to your organization.
+        </p>
+        <Link
+          href="/bots"
+          className="inline-flex px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs"
+        >
+          Return to Assistants
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-16 font-sans text-slate-800">
@@ -585,14 +608,14 @@ function DeployBotContent() {
 
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    NexusAI Branding
+                    Assistant Branding
                   </label>
                   <select
                     value={brandingEnabled ? "yes" : "no"}
                     onChange={(e) => setBrandingEnabled(e.target.value === "yes")}
                     className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden cursor-pointer"
                   >
-                    <option value="yes">Show "Powered by NexusAI"</option>
+                    <option value="yes">Show "Powered by {bot?.companyName || 'ChatPilot'}"</option>
                     <option value="no">Hide Branding (White-label)</option>
                   </select>
                 </div>
@@ -639,8 +662,20 @@ function DeployBotContent() {
               {activeCms === "ssh" && (
                 <div className="space-y-2.5">
                   <p>
-                    If you are logged into your Linux / Nginx VPS via SSH, run this single command to inject the chatbot script into your <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">index.html</code>:
+                    If you are logged into your Linux / Nginx VPS via SSH, enter your server HTML file path and run this command to inject the chatbot script:
                   </p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label className="text-[11px] font-semibold text-slate-700 shrink-0">
+                      Target File on Server:
+                    </label>
+                    <input
+                      type="text"
+                      value={sshTargetFile}
+                      onChange={(e) => setSshTargetFile(e.target.value)}
+                      placeholder="/var/www/html/index.html"
+                      className="px-2.5 py-1 text-xs rounded-lg border border-slate-300 font-mono flex-1 bg-slate-50"
+                    />
+                  </div>
                   <div className="relative">
                     <pre className="p-3 rounded-xl bg-slate-900 text-emerald-400 font-mono text-[11px] overflow-x-auto border border-slate-800">
                       {sshSedCommand}
