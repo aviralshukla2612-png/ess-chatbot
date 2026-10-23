@@ -67,6 +67,26 @@ export async function POST(request) {
 
     const bot = botsStore.upsertBot(body, principal.organizationId);
 
+    // If documents were uploaded during wizard creation, persist them durably into documentsStore
+    if (Array.isArray(body.documents) && body.documents.length > 0) {
+      try {
+        const { documentsStore } = await import("@/lib/db/documentsStore");
+        for (const d of body.documents) {
+          if (d.content && typeof d.content === "string" && d.content.trim()) {
+            documentsStore.addDocument({
+              botId: bot.id,
+              organizationId: principal.organizationId,
+              name: d.name || "Business Knowledge",
+              content: d.content.trim(),
+              type: d.type || "Document",
+            });
+          }
+        }
+      } catch (docErr) {
+        console.warn("[BOT_DOC_INGEST_WARN]", docErr.message);
+      }
+    }
+
     // If websiteUrl was provided, automatically register the website source and trigger crawler
     if (validatedBaseUrl) {
       try {

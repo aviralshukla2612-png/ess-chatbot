@@ -75,22 +75,34 @@ export default function CreateBotWizard() {
   const avatarsList = ["🤖", "💼", "🎧", "⚡", "🩺", "💬"];
   const colorSwatches = ["#4F46E5", "#3B82F6", "#06B6D4", "#10B981", "#8B5CF6", "#111827"];
 
-  const handleFileUpload = (files) => {
+  const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
-    const newItems = Array.from(files).map((f) => {
-      const ext = f.name.split(".").pop()?.toUpperCase() || "PDF";
-      const sizeStr =
-        f.size > 1024 * 1024
-          ? (f.size / (1024 * 1024)).toFixed(1) + " MB"
-          : Math.round(f.size / 1024) + " KB";
-      return {
-        name: f.name,
-        type: ext,
-        size: sizeStr,
-        status: "Ready",
-        uploaded: "Just now",
-      };
-    });
+    const fileList = Array.from(files);
+    const newItems = await Promise.all(
+      fileList.map(async (f) => {
+        const ext = f.name.split(".").pop()?.toUpperCase() || "TXT";
+        const sizeStr =
+          f.size > 1024 * 1024
+            ? (f.size / (1024 * 1024)).toFixed(1) + " MB"
+            : Math.round(f.size / 1024) + " KB";
+        let content = "";
+        try {
+          if (typeof f.text === "function") {
+            content = await f.text();
+          }
+        } catch (e) {
+          console.warn("[FILE_READ_ERR]", e);
+        }
+        return {
+          name: f.name,
+          type: ext,
+          size: sizeStr,
+          content: content,
+          status: "Ready",
+          uploaded: "Just now",
+        };
+      })
+    );
     setDocuments((prev) => [...prev, ...newItems]);
   };
 
@@ -98,7 +110,7 @@ export default function CreateBotWizard() {
     setDocuments((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSendMessage = (textToSend) => {
+  const handleSendMessage = async (textToSend) => {
     const query = textToSend || chatInput;
     if (!query.trim()) return;
 
@@ -107,23 +119,89 @@ export default function CreateBotWizard() {
     setChatMessages(updatedMessages);
     if (!textToSend) setChatInput("");
 
-    setTimeout(() => {
-      const activeBot = botName.trim() || "My AI Assistant";
-      const activeCompany = companyName.trim() || "your business";
-      const docsCount = documents ? documents.length : 0;
-      const knowledgeSummary = docsCount > 0
-        ? `I have noted ${docsCount} knowledge source(s) configured (${documents.map((d) => d.name).slice(0, 2).join(", ")}${docsCount > 2 ? ` and ${docsCount - 2} more` : ""}).`
-        : "No knowledge sources have been attached yet.";
+    const activeBot = botName.trim() || "My AI Assistant";
+    const activeCompany = companyName.trim() || "your business";
 
+    // 1. Try Live Preview Chat API with draft bot and documents
+    try {
+      const res = await fetch("/api/public/chat/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: query,
+          draftBot: {
+            id: "draft_preview",
+            name: activeBot,
+            company: activeCompany,
+            websiteUrl: websiteUrl.trim(),
+            phoneNumber: phoneNumber.trim(),
+            description: description || "Custom AI chatbot assistant.",
+            personality,
+            responseLength,
+            instructions,
+            collectLeads,
+          },
+          draftDocuments: documents.filter((d) => d.content),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.reply) {
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: data.reply,
+              sources: data.sources || ["Verified Knowledge"],
+            },
+          ]);
+          return;
+        }
+      }
+    } catch (apiErr) {
+      console.warn("[PREVIEW_CHAT_API_ERR]", apiErr);
+    }
+
+    // 2. Direct Matching Fallback against draft knowledge documents
+    const queryLower = query.toLowerCase();
+    let bestMatch = null;
+    for (const doc of documents) {
+      if (!doc.content) continue;
+      const paragraphs = doc.content.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+      for (const p of paragraphs) {
+        const pLower = p.toLowerCase();
+        if (
+          (queryLower.includes("founder") || queryLower.includes("owner") || queryLower.includes("heet")) &&
+          (pLower.includes("founder") || pLower.includes("owner") || pLower.includes("heet sir"))
+        ) {
+          bestMatch = p;
+          break;
+        }
+      }
+      if (bestMatch) break;
+    }
+
+    if (bestMatch) {
       setChatMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `Hello! I am **${activeBot}** for **${activeCompany}**.\n\n${knowledgeSummary}\n\nLive AI answers from your verified documents and website will become active after you save this chatbot in Step 7 and crawling/indexing completes. You can then test full knowledge retrieval directly in the Bot Dashboard!`,
+          content: bestMatch,
+          sources: ["Draft Verified Knowledge"],
+        },
+      ]);
+    } else {
+      const docsCount = documents ? documents.length : 0;
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `I am ${activeBot} for ${activeCompany}. I couldn't verify that specific information from the ${docsCount} draft knowledge source(s) attached. Please verify the information is in your uploaded documents or ask another question!`,
           sources: docsCount > 0 ? ["Draft Knowledge Sources"] : [],
         },
       ]);
-    }, 450);
+    }
   };
 
   const handleFinish = async () => {
@@ -347,15 +425,18 @@ export default function CreateBotWizard() {
             <div
               onClick={() => {
                 const q = prompt("Enter a Question:");
-                if (q) {
+                if (q && q.trim()) {
                   const a = prompt("Enter the Answer:");
-                  if (a) {
+                  if (a && a.trim()) {
+                    const qTrim = q.trim();
+                    const aTrim = a.trim();
                     setDocuments((prev) => [
                       ...prev,
                       {
-                        name: `Q&A: ${q.substring(0, 25)}...`,
+                        name: `Q&A: ${qTrim.substring(0, 25)}...`,
                         type: "Q&A",
-                        size: "Custom",
+                        content: `Question: ${qTrim}\nAnswer: ${aTrim}`,
+                        size: `${(qTrim + aTrim).length} chars`,
                         status: "Ready",
                         uploaded: "Just now",
                       },

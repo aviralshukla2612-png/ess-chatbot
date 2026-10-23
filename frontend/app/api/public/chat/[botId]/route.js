@@ -237,7 +237,28 @@ export async function POST(request, { params }) {
 
     // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots)
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
-    let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
+    const isPreviewMode = resolvedBotId === "preview" || resolvedBotId === "draft" || Boolean(body.draftBot);
+    let bot = null;
+
+    if (isPreviewMode && body.draftBot) {
+      bot = {
+        id: "preview_bot",
+        name: body.draftBot.name || "AI Assistant",
+        company: body.draftBot.company || "Business",
+        description: body.draftBot.description || "Custom AI chatbot assistant.",
+        websiteUrl: body.draftBot.websiteUrl || "",
+        phoneNumber: body.draftBot.phoneNumber || "",
+        personality: body.draftBot.personality || "Helpful & Professional",
+        responseLength: body.draftBot.responseLength || "Balanced",
+        instructions: body.draftBot.instructions || "",
+        collectLeads: Boolean(body.draftBot.collectLeads),
+        status: "Active",
+        allowedDomains: ["*"],
+        organizationId: "org_preview",
+      };
+    } else {
+      bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
+    }
     timings.botLookupMs = Date.now() - reqStart;
 
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
@@ -248,19 +269,21 @@ export async function POST(request, { params }) {
     }
 
     // --- PHASE 4: DOMAIN WHITELISTS ---
-    const originHeader = request.headers.get("origin") || request.headers.get("referer");
-    const allowedDomains = (!bot?.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0)
-      ? ["*"]
-      : bot.allowedDomains;
-    const domainCheck = checkDomainAuthorization(originHeader, allowedDomains);
-    if (!domainCheck.allowed) {
-      return corsResponse(
-        NextResponse.json(
-          { error: `Unauthorized domain. This chatbot cannot be embedded on ${domainCheck.host || "this origin"}.` },
-          { status: 403 }
-        ),
-        request
-      );
+    if (!isPreviewMode) {
+      const originHeader = request.headers.get("origin") || request.headers.get("referer");
+      const allowedDomains = (!bot?.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0)
+        ? ["*"]
+        : bot.allowedDomains;
+      const domainCheck = checkDomainAuthorization(originHeader, allowedDomains);
+      if (!domainCheck.allowed) {
+        return corsResponse(
+          NextResponse.json(
+            { error: `Unauthorized domain. This chatbot cannot be embedded on ${domainCheck.host || "this origin"}.` },
+            { status: 403 }
+          ),
+          request
+        );
+      }
     }
 
     const botName = bot?.name || "AI Assistant";
@@ -272,19 +295,21 @@ export async function POST(request, { params }) {
     const tenantId = bot?.organizationId || botId;
 
     // --- SAAS BILLING & QUOTA ENFORCEMENT ---
-    const { quotaGuard } = await import("@/lib/billing/quotaGuard");
-    const quotaCheck = await quotaGuard.checkAndReserveQuota(tenantId, "message", 1, bot.id);
-    if (!quotaCheck.allowed) {
-      return corsResponse(
-        NextResponse.json(
-          {
-            error: quotaCheck.error || "Monthly message limit reached for this chatbot. Please upgrade your plan in the dashboard.",
-            code: quotaCheck.reason,
-            planId: quotaCheck.planId,
-          },
-          { status: 402 }
-        )
-      );
+    if (!isPreviewMode) {
+      const { quotaGuard } = await import("@/lib/billing/quotaGuard");
+      const quotaCheck = await quotaGuard.checkAndReserveQuota(tenantId, "message", 1, bot.id);
+      if (!quotaCheck.allowed) {
+        return corsResponse(
+          NextResponse.json(
+            {
+              error: quotaCheck.error || "Monthly message limit reached for this chatbot. Please upgrade your plan in the dashboard.",
+              code: quotaCheck.reason,
+              planId: quotaCheck.planId,
+            },
+            { status: 402 }
+          )
+        );
+      }
     }
 
     // 2. Step 1: Analyze Input Language (English, Hindi, or Hinglish)
@@ -447,9 +472,38 @@ export async function POST(request, { params }) {
 
     // 4. Step 4: Multi-Tenant Vector Search over Authorized Knowledge (Top 4 chunks for high-fidelity grounding)
     const ragStart = Date.now();
-    const relevantChunks = await searchWebsiteKnowledge(botId, message, 4);
+    let relevantChunks = [];
+    if (!isPreviewMode || bot.id !== "preview_bot") {
+      try {
+        relevantChunks = await searchWebsiteKnowledge(botId, message, 4);
+      } catch (err) {
+        console.warn("[SEARCH_WEBSITE_WARN]", err.message);
+      }
+    }
+
+    if (Array.isArray(body.draftDocuments) && body.draftDocuments.length > 0) {
+      const { scoreChunkRelevance } = await import("@/lib/db/documentsStore");
+      for (const d of body.draftDocuments) {
+        if (!d.content) continue;
+        const rawChunks = d.content.split(/\n\s*\n/).filter((c) => c.trim().length > 5);
+        for (const chunk of rawChunks) {
+          const score = scoreChunkRelevance(message, chunk);
+          if (score > 1.0) {
+            relevantChunks.push({
+              pageTitle: d.name || "Draft Knowledge Source",
+              pageUrl: d.name || "draft",
+              content: chunk.trim(),
+              score,
+            });
+          }
+        }
+      }
+      relevantChunks.sort((a, b) => (b.score || 0) - (a.score || 0));
+    }
+
     timings.retrievalMs = Date.now() - ragStart;
     const contextText = relevantChunks
+      .slice(0, 4)
       .map((c) => `[Source: ${c.pageTitle || c.pageUrl}]:\n${c.content}`)
       .join("\n\n");
 
