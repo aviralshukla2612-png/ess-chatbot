@@ -20,6 +20,9 @@ git reset --hard origin/main
 
 # 2. Apply any idempotent database schema updates
 echo "[STEP 2/4] Ensuring database schema is current..."
+if [ -f "frontend/data/migrations/002_bot_business_configuration.sql" ]; then
+  docker exec -i ess-postgres-staging psql -U postgres -d ess_chatbot_staging -v ON_ERROR_STOP=1 < frontend/data/migrations/002_bot_business_configuration.sql || true
+fi
 if [ -f "frontend/data/staging_initial_schema.sql" ]; then
   docker exec -i ess-postgres-staging psql -U postgres -d ess_chatbot_staging -v ON_ERROR_STOP=1 < frontend/data/staging_initial_schema.sql || {
     echo "[WARNING] Schema update reported warnings; continuing deployment..."
