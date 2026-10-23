@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS "Bot" (
   "allowedDomains" TEXT[] DEFAULT ARRAY['*']::TEXT[],
   "webhookUrl" TEXT,
   "webhookSecret" TEXT,
+  "company" VARCHAR(255),
+  "websiteUrl" TEXT,
+  "phoneNumber" VARCHAR(64),
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -170,13 +173,15 @@ CREATE TABLE IF NOT EXISTS "KnowledgeDocument" (
 -- Knowledge Chunks Table with Vector(768) (Next.js)
 CREATE TABLE IF NOT EXISTS "KnowledgeChunk" (
   "id" VARCHAR(128) PRIMARY KEY,
-  "documentId" VARCHAR(128) NOT NULL REFERENCES "KnowledgeDocument"("id") ON DELETE CASCADE,
+  "documentId" VARCHAR(128) REFERENCES "KnowledgeDocument"("id") ON DELETE CASCADE,
   "organizationId" VARCHAR(64) NOT NULL,
   "botId" VARCHAR(64) NOT NULL REFERENCES "Bot"("id") ON DELETE CASCADE,
   "chunkIndex" INT DEFAULT 0,
   "content" TEXT NOT NULL,
   "contentHash" VARCHAR(64),
   "embedding" VECTOR(768),
+  "sourceUrl" TEXT,
+  "pageTitle" TEXT,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

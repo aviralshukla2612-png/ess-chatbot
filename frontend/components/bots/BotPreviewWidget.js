@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export default function BotPreviewWidget({
-  botId = "bot_aa",
+  botId = null,
   botName = "AI Sales Executive",
   avatar = "💼",
   primaryColor = "#4f46e5",
@@ -62,15 +62,29 @@ export default function BotPreviewWidget({
       content: userText,
     };
     setMessages((prev) => [...prev, userMsg]);
-    const query = userText.toLowerCase();
     if (!explicitText) setInputText("");
     setIsTyping(true);
 
-    // 1. Try real live Next.js API endpoint (saves conversation and broadcasts to dashboard live)
+    if (!botId) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `w_err_${Date.now()}`,
+          role: "assistant",
+          content: "⚠️ No valid Bot ID provided. Please select or configure a chatbot to preview.",
+          quickReplies: [],
+          sources: [],
+        },
+      ]);
+      setIsTyping(false);
+      return;
+    }
+
+    // Try live Next.js API endpoint with 30s timeout for local LLM inference
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(`/api/public/chat/${encodeURIComponent(botId || "bot_aa")}`, {
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const res = await fetch(`/api/public/chat/${encodeURIComponent(botId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,185 +113,38 @@ export default function BotPreviewWidget({
           setIsTyping(false);
           return;
         }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `w_err_${Date.now()}`,
+            role: "assistant",
+            content: errorData.error || `⚠️ Chatbot service returned an error (HTTP ${res.status}). Please try again.`,
+            quickReplies: [],
+            sources: [],
+          },
+        ]);
+        setIsTyping(false);
+        return;
       }
     } catch (err) {
-      // Fallback seamlessly to local RAG engine if fetch fails
-    }
-
-    // 2. Intelligent RAG Knowledge Base Matching
-    setTimeout(() => {
-      let replyContent = "";
-      let sources = [];
-
-      // Check Hospital Details & Healthcare
-      if (
-        query.includes("hospital") ||
-        query.includes("clinic") ||
-        query.includes("health") ||
-        query.includes("opd") ||
-        query.includes("doctor") ||
-        query.includes("emergency") ||
-        query.includes("medical")
-      ) {
-        replyContent =
-          "Here are the complete details for our medical center:\n\n" +
-          "🏥 **Hospital Overview**:\n" +
-          "Multi-specialty hospital with 24/7 emergency & trauma care, modern ICU, and state-of-the-art diagnostic facilities.\n\n" +
-          "⏰ **OPD & Clinic Hours**:\n" +
-          "• Monday – Saturday: 9:00 AM to 7:00 PM\n" +
-          "• Emergency & Trauma Center: Open 24/7, 365 days a year\n" +
-          "• Sunday: Emergency & in-patient care only\n\n" +
-          "🩺 **Specialized Departments**:\n" +
-          "• **Cardiology**: ECG, 2D Echo & Cardiac ICU\n" +
-          "• **Orthopedics**: Joint replacement & trauma care\n" +
-          "• **Pediatrics & NICU**: Child specialist OPD\n" +
-          "• **General Surgery & Medicine**: Full inpatient care\n\n" +
-          "💳 **Cashless Insurance**: Empanelled with major TPAs (Star Health, HDFC Ergo, ICICI Lombard, Max Bupa, etc.).\n\n" +
-          "📞 **Helpline & Appointments**: +91 98765 43210 (Medical Enclave Campus)";
-        sources = ["hospital-services-guide.pdf"];
-      }
-      // Check Ownership & Leadership
-      else if (
-        query.includes("owner") ||
-        query.includes("founder") ||
-        query.includes("who owns") ||
-        query.includes("karan") ||
-        query.includes("yash") ||
-        query.includes("leadership") ||
-        query.includes("ceo") ||
-        query.includes("who started") ||
-        query.includes("management")
-      ) {
-        replyContent =
-          "Emperor Smart Solutions was founded and is led by **Karan Makwana & Yash Sharma**.\n\nThey oversee all strategic digital transformation, custom software architecture, and commercial project approvals across India.";
-        sources = ["Company_Profile_Leadership.pdf"];
-      }
-      // Check ERP Systems & Pricing
-      else if (
-        query.includes("erp") ||
-        query.includes("starter") ||
-        query.includes("inventory") ||
-        query.includes("accounting") ||
-        query.includes("invoice")
-      ) {
-        replyContent =
-          "Here is our ERP Development Solutions breakdown:\n\n• **ERP Starter**: From ₹2,50,000 (45-60 working days) — Dashboard, Products, Customers, Suppliers, Inventory, Purchases & Sales.\n• **ERP Professional**: From ₹5,00,000 (60-90 working days) — Stock management, Employees, Accounting, Invoices & Audit logs.\n• **ERP Enterprise**: From ₹8,50,000 (90-150 working days) — Multi-branch, Warehouse, GST e-invoicing & APIs.\n\n*Note: GST (18%) is applicable extra on all commercial invoices.*";
-        sources = ["Custom_ERP_Enterprise_Modules.docx", "Emperor_Services_RateCard_2026.pdf"];
-        if (showLeadForm && !leadCaptured) setShowPromptLead(true);
-      }
-      // Check Discounts & Commercial Concessions
-      else if (
-        query.includes("discount") ||
-        query.includes("offer") ||
-        query.includes("cheap") ||
-        query.includes("price drop") ||
-        query.includes("bargain") ||
-        query.includes("deal")
-      ) {
-        replyContent =
-          "Under our commercial policy, standard projects do not receive automatic discounts.\n\nSpecial concessions (up to 5% on Website + SEO, or up to 7% on ERP + CRM) strictly require direct approval from founders **Karan Makwana & Yash Sharma**. Would you like to connect with them directly?";
-        sources = ["Client_Terms_Discounts_SLA.txt"];
-        if (showLeadForm && !leadCaptured) setShowPromptLead(true);
-      }
-      // Check Mobile Applications
-      else if (
-        query.includes("mobile") ||
-        query.includes("app") ||
-        query.includes("flutter") ||
-        query.includes("android") ||
-        query.includes("ios")
-      ) {
-        replyContent =
-          "Our Mobile Application Development packages:\n\n• **Basic Android App**: From ₹1,50,000 (Up to 10 screens, REST APIs, push notifications, Play Store support).\n• **Cross-Platform Flutter App**: From ₹2,50,000 (Single codebase for Android + iOS with custom UI).\n• **Advanced Mobile App**: From ₹4,50,000 (Real-time functionality, payments, and admin panel).";
-        sources = ["Mobile_Flutter_Development_Brochure.pdf"];
-        if (showLeadForm && !leadCaptured) setShowPromptLead(true);
-      }
-      // Check Website & E-Commerce
-      else if (
-        query.includes("website") ||
-        query.includes("web") ||
-        query.includes("ecommerce") ||
-        query.includes("e-commerce") ||
-        query.includes("shop")
-      ) {
-        replyContent =
-          "Website & Web Application Solutions:\n\n• **Basic Business Website**: From ₹25,000 (Up to 5 pages, responsive, WhatsApp button, 7-12 days).\n• **Professional Website**: From ₹45,000 (Up to 10 pages, animations, SEO, speed optimized).\n• **E-Commerce Platform**: From ₹85,000 (Catalog, filters, payment gateways, admin order dashboard).\n• **Custom Web Applications / SaaS**: Starting from ₹1,25,000+.";
-        sources = ["Emperor_Services_RateCard_2026.pdf"];
-        if (showLeadForm && !leadCaptured) setShowPromptLead(true);
-      }
-      // Check CRM Solutions
-      else if (
-        query.includes("crm") ||
-        query.includes("pipeline") ||
-        query.includes("sales team")
-      ) {
-        replyContent =
-          "CRM Solutions & Automation:\n\n• **CRM Basic**: From ₹1,50,000 (Lead management, contacts, follow-up pipeline, tasks).\n• **CRM Professional**: From ₹3,00,000 (Deal management, email & WhatsApp integration, activity history).\n• **CRM Enterprise**: From ₹5,50,000 (Multi-team territory management, automated sequences & forecasting).";
-        sources = ["Company_Services_Overview.pdf"];
-      }
-      // Check Payment Milestones & Terms
-      else if (
-        query.includes("milestone") ||
-        query.includes("payment") ||
-        query.includes("terms") ||
-        query.includes("advance")
-      ) {
-        replyContent =
-          "Our standard commercial terms:\n\n• **40% Advance** upon contract kickoff\n• **40% Milestone** upon progress demo review\n• **20% Delivery** before production handover\n\nEvery project includes **30 days of free post-launch support** and warranty.";
-        sources = ["Client_Terms_Discounts_SLA.txt"];
-      }
-      // Check Digital Marketing & SEO
-      else if (
-        query.includes("seo") ||
-        query.includes("marketing") ||
-        query.includes("ads")
-      ) {
-        replyContent =
-          "Digital Marketing & SEO Packages:\n\n• **SEO Basic**: ₹12,000/month (Keyword research, technical audit, on-page optimization).\n• **Growth Marketing**: ₹25,000/month (SEO + Google/Meta Ads management).\n*(Note: Advertising spend is paid directly to Google/Meta platforms)*";
-        sources = ["Emperor_Services_RateCard_2026.pdf"];
-      }
-      // Check Contact / Consultation
-      else if (
-        query.includes("contact") ||
-        query.includes("call") ||
-        query.includes("meet") ||
-        query.includes("email") ||
-        query.includes("phone")
-      ) {
-        replyContent =
-          "We'd love to discuss your project! You can request a direct consultation with founders **Karan Makwana & Yash Sharma** by sharing your details below.";
-        sources = ["Company_Profile_Leadership.pdf"];
-        if (showLeadForm && !leadCaptured) setShowPromptLead(true);
-      }
-      // General Services Overview
-      else if (
-        query.includes("services") ||
-        query.includes("what do you do") ||
-        query.includes("help")
-      ) {
-        replyContent =
-          "Emperor Smart Solutions provides full-cycle digital transformation:\n\n• Custom Website & Web Application Development\n• Mobile Applications (Android & Flutter)\n• Custom ERP & CRM Enterprise Systems\n• UI/UX Design & Cloud DevOps Deployment\n• Search Engine Optimization (SEO) & Marketing";
-        sources = ["Company_Services_Overview.pdf"];
-      }
-      // Dynamic Fallback
-      else {
-        replyContent =
-          "I'd be glad to look into this for you! While this specific detail isn't in my immediate rate card, our sales engineering team can prepare a customized scope. Would you like our founders to reach out to you?";
-        sources = ["Company_Knowledge_Base.txt"];
-        if (showLeadForm && !leadCaptured) setShowPromptLead(true);
-      }
-
+      const isTimeout = err.name === "AbortError";
       setMessages((prev) => [
         ...prev,
         {
-          id: `w_a_${Date.now()}`,
+          id: `w_err_${Date.now()}`,
           role: "assistant",
-          content: replyContent,
-          sources,
+          content: isTimeout
+            ? "⚠️ The request took longer than 30 seconds to complete. Please try again."
+            : "⚠️ Unable to reach the chatbot service right now. Please verify that the chatbot service is online and try again.",
+          quickReplies: [],
+          sources: [],
         },
       ]);
       setIsTyping(false);
-    }, 500);
+      return;
+    }
   };
 
   const handleLeadSubmit = async (e) => {

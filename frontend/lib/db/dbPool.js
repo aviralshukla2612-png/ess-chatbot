@@ -116,9 +116,15 @@ export async function initPostgresTables() {
             "allowedDomains" TEXT[] DEFAULT ARRAY['*']::TEXT[],
             "webhookUrl" TEXT,
             "webhookSecret" TEXT,
+            "company" VARCHAR(255),
+            "websiteUrl" TEXT,
+            "phoneNumber" VARCHAR(64),
             "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
+          ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "company" VARCHAR(255);
+          ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "websiteUrl" TEXT;
+          ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "phoneNumber" VARCHAR(64);
         `);
 
         // 3.5. Visitors Table (Persistent identity, opaque token hashes)
@@ -227,15 +233,84 @@ export async function initPostgresTables() {
         await client.query(`
           CREATE TABLE IF NOT EXISTS "KnowledgeChunk" (
             "id" VARCHAR(128) PRIMARY KEY,
-            "documentId" VARCHAR(128) NOT NULL REFERENCES "KnowledgeDocument"("id") ON DELETE CASCADE,
+            "documentId" VARCHAR(128) REFERENCES "KnowledgeDocument"("id") ON DELETE CASCADE,
             "organizationId" VARCHAR(64) NOT NULL,
             "botId" VARCHAR(64) NOT NULL REFERENCES "Bot"("id") ON DELETE CASCADE,
             "chunkIndex" INT DEFAULT 0,
             "content" TEXT NOT NULL,
             "contentHash" VARCHAR(64),
             "embedding" VECTOR(768),
+            "sourceUrl" TEXT,
+            "pageTitle" TEXT,
             "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
+          ALTER TABLE "KnowledgeChunk" ALTER COLUMN "documentId" DROP NOT NULL;
+          ALTER TABLE "KnowledgeChunk" ADD COLUMN IF NOT EXISTS "sourceUrl" TEXT;
+          ALTER TABLE "KnowledgeChunk" ADD COLUMN IF NOT EXISTS "pageTitle" TEXT;
+        `);
+
+        // 8.5. Website Crawler Tables
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "WebsiteSource" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "organizationId" VARCHAR(64) NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
+            "botId" VARCHAR(64) NOT NULL REFERENCES "Bot"("id") ON DELETE CASCADE,
+            "name" VARCHAR(255) NOT NULL,
+            "baseUrl" TEXT NOT NULL,
+            "crawlScope" VARCHAR(32) DEFAULT 'entire',
+            "maxPages" INT DEFAULT 50,
+            "includePatterns" TEXT[] DEFAULT ARRAY[]::TEXT[],
+            "excludePatterns" TEXT[] DEFAULT ARRAY[]::TEXT[],
+            "syncSchedule" VARCHAR(32) DEFAULT 'manual',
+            "status" VARCHAR(64) DEFAULT 'Pending',
+            "pagesDiscovered" INT DEFAULT 0,
+            "pagesIndexed" INT DEFAULT 0,
+            "pagesSkipped" INT DEFAULT 0,
+            "pagesFailed" INT DEFAULT 0,
+            "lastSyncedAt" TIMESTAMP WITH TIME ZONE,
+            "lastError" TEXT,
+            "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS "WebsitePage" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "websiteSourceId" VARCHAR(128) NOT NULL REFERENCES "WebsiteSource"("id") ON DELETE CASCADE,
+            "botId" VARCHAR(64) NOT NULL,
+            "organizationId" VARCHAR(64) NOT NULL,
+            "url" TEXT NOT NULL,
+            "canonicalUrl" TEXT,
+            "title" TEXT,
+            "description" TEXT,
+            "contentHash" VARCHAR(64),
+            "crawlStatus" VARCHAR(64) DEFAULT 'Pending',
+            "chunksCount" INT DEFAULT 0,
+            "httpStatus" INT DEFAULT 200,
+            "lastIndexedAt" TIMESTAMP WITH TIME ZONE,
+            "lastError" TEXT,
+            "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS "IngestionJob" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "organizationId" VARCHAR(64) NOT NULL REFERENCES "Organization"("id") ON DELETE CASCADE,
+            "botId" VARCHAR(64) NOT NULL REFERENCES "Bot"("id") ON DELETE CASCADE,
+            "websiteSourceId" VARCHAR(128),
+            "status" VARCHAR(64) DEFAULT 'Pending',
+            "jobStatus" VARCHAR(64) DEFAULT 'Pending',
+            "url" TEXT,
+            "maxPages" INT DEFAULT 50,
+            "currentStep" VARCHAR(64) DEFAULT 'Queued',
+            "progress" INT DEFAULT 0,
+            "discoveredCount" INT DEFAULT 0,
+            "indexedCount" INT DEFAULT 0,
+            "failedCount" INT DEFAULT 0,
+            "startedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "finishedAt" TIMESTAMP WITH TIME ZONE,
+            "errorDetails" TEXT
+          );
+          ALTER TABLE "IngestionJob" ADD COLUMN IF NOT EXISTS "jobStatus" VARCHAR(64) DEFAULT 'Pending';
         `);
 
         // 9. Webhook Config Table

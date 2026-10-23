@@ -381,6 +381,7 @@ function BotDetailContent() {
             </p>
           </div>
           <BotPreviewWidget
+            botId={bot.id}
             botName={bot.name}
             avatar={bot.avatar}
             primaryColor={bot.primaryColor}

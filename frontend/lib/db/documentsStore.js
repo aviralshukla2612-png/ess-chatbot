@@ -141,8 +141,8 @@ export const documentsStore = {
     }
 
     const all = loadDocumentsFromDisk();
-    // Filter docs relevant to this bot
-    const relevantDocs = all.filter((d) => !botId || !d.botId || d.botId === botId || d.botId === "all" || botId.includes(d.botId) || (d.botId && botId.includes(d.botId.replace("bot_", ""))));
+    // Filter docs strictly relevant to this bot
+    const relevantDocs = all.filter((d) => Boolean(botId && d.botId === botId));
 
     const scoredChunks = [];
 
@@ -164,19 +164,9 @@ export const documentsStore = {
 
     scoredChunks.sort((a, b) => b.score - a.score);
 
-    // If query has specific matches, return topK
+    // Return scored chunks that matched the query
     if (scoredChunks.length > 0) {
       return scoredChunks.slice(0, topK);
-    }
-
-    // Only fallback for substantive queries longer than 15 chars, not for greetings or short chat
-    if (cleanQ.length > 15 && relevantDocs.length > 0 && relevantDocs[0].chunks?.length > 0) {
-      return relevantDocs[0].chunks.slice(0, 2).map((chunk) => ({
-        pageTitle: relevantDocs[0].name,
-        pageUrl: relevantDocs[0].name,
-        content: chunk,
-        score: 0.5,
-      }));
     }
 
     return [];

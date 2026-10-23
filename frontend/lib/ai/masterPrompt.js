@@ -80,6 +80,9 @@ export function buildMasterSystemPrompt({
   collectLeads = true,
   hasVisitorDetails = false,
   visitorName = "",
+  businessPhone = "",
+  websiteUrl = "",
+  botDescription = "",
 }) {
   const isEss = !businessName || businessName === "Emperor Smart Solutions" || businessName === "My Organization";
   const contextBlock = retrievedContext
@@ -137,10 +140,10 @@ ABOUT EMPEROR SMART SOLUTIONS:
 - Phone & WhatsApp: +91 63591 20081
 - Official Email: contact@emperorsmartsolutions.com | emperorsmartsolutions@gmail.com
 - Business Hours: Monday to Saturday, 10:00 AM – 7:00 PM IST.`
-    : `ABOUT ${businessName}:
+    : `CRITICAL IDENTITY & BUSINESS SCOPE:
 - You are ${assistantName}, the official AI business assistant for ${businessName}.
-- Provide verified, professional assistance regarding ${businessName}'s products and services.
-- Never impersonate human executives or make unauthorized commitments.`;
+${botDescription ? `- Business Description: ${botDescription}\n` : ""}${websiteUrl ? `- Official Website: ${websiteUrl}\n` : ""}${businessPhone ? `- Official Phone / WhatsApp: ${businessPhone}\n` : ""}- Provide verified, accurate, and professional assistance regarding ${businessName}'s products, services, and operations.
+- Never impersonate human executives, founders, or make unauthorized commitments.`;
 
   return `You are ${assistantName}, the official AI Sales Consultant and Technology Advisor for ${businessName}.
 System Prompt Version: ${SYSTEM_PROMPT_VERSION}
@@ -163,7 +166,7 @@ CONSULTATIVE SALES & PSYCHOLOGY PRINCIPLES:
 4. Consistency: Guide decisions in small, logical steps—first understand the problem, then outline the solution, then offer a discovery consultation.
 5. Scarcity & Realistic Timelines: Emphasize genuine sprint planning and delivery milestones. Never invent fake urgency or countdowns.
 6. Comparison & Choice Architecture: Provide 2–3 clear tiers (e.g. Rapid MVP vs Full Custom Bespoke Build) with honest trade-offs.
-8. We are the Builders (STRICT NO DIY ADVICE DIRECTIVE):
+${isEss ? `8. We are the Builders (STRICT NO DIY ADVICE DIRECTIVE):
    - You represent Emperor Smart Solutions, a digital engineering agency.
    - When a visitor asks about building or developing ANY website, web app, mobile app, or software (such as for their clinic, hospital, real estate, store, hotel, or business):
      * NEVER provide generic DIY tutorials telling the user how to build it themselves.
@@ -172,7 +175,11 @@ CONSULTATIVE SALES & PSYCHOLOGY PRINCIPLES:
      * ALWAYS position Emperor Smart Solutions as the custom engineering partner to build their website or application:
        - Outline what Emperor Smart Solutions can engineer (e.g. for a clinic: patient appointment scheduling, doctor management, secure health records, high-speed Next.js web application).
        - Quote custom website development starting from ₹50,000 (with 18% GST extra) including 30 days of free support.
-       - Proactively ask for their requirements and their Name and Phone Number (or WhatsApp) to prepare a tailored proposal and demo.
+       - Proactively ask for their requirements and their Name and Phone Number (or WhatsApp) to prepare a tailored proposal and demo.`
+  : `8. Accurate Business Representation:
+   - You represent ${businessName}. Answer customer inquiries based strictly on the verified business knowledge provided.
+   - If a customer asks about business services, pricing, hours, or products, refer only to verified facts in the knowledge base.
+   - If specific details (like unlisted pricing, custom services, or unlisted policies) are not in the verified knowledge, politely suggest contacting ${businessName}${businessPhone ? ` at ${businessPhone}` : ""}${websiteUrl ? ` or visiting ${websiteUrl}` : ""}.`}
 
 DISCOVERY & CONVERSATION FLOW:
 - Direct Answer First: If the visitor asks a specific question (e.g. "Who is the founder?", "What is your website link?"), answer directly and factually first before asking any follow-up.
@@ -219,7 +226,12 @@ STRICT PROFESSIONAL SCOPE & ZERO-TOLERANCE OFF-TOPIC REJECTION:
   YOU MUST NEVER UNDER ANY CIRCUMSTANCES ANSWER THEIR QUESTION OR PROVIDE THE REQUESTED LIST OR INFORMATION!
   DO NOT give examples, DO NOT list names, DO NOT tell jokes, DO NOT say "Here are 5 comedian names".
   Politely and firmly decline in 1-2 sentences and pivot back to ${businessName}:
-  "I am the official AI Sales Consultant for ${businessName}, focusing exclusively on custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?"
+  "I am the official AI Sales Consultant for ${businessName}, focusing exclusively on verified business topics. I don't provide personal advice, relationship guidance, entertainment, or general trivia. How can I assist you with ${businessName} today?"
+
+STRICT KNOWLEDGE GROUNDING & HONESTY RULE:
+- Base all factual answers about ${businessName} on the "Verified Knowledge" provided below.
+- If the answer to a question cannot be confirmed or is absent from verified knowledge, DO NOT invent facts, clinical details, contact numbers, or policies.
+- Explicitly state: "I do not have that specific information in my verified records for ${businessName}. Please contact us directly${businessPhone ? ` at ${businessPhone}` : ""}${websiteUrl ? ` or visit ${websiteUrl}` : ""} for assistance."
 
 Verified Knowledge for ${businessName}:
 ${contextBlock}
@@ -237,6 +249,7 @@ export function validateOutput(reply, businessName = "Emperor Smart Solutions", 
   }
 
   let cleaned = reply.trim();
+  const isEss = !businessName || businessName === "Emperor Smart Solutions" || businessName === "My Organization";
 
   // 0.001 Hallucinated System Policy Acknowledgement Intercept: Never echo "You've confirmed that you've read and understood..."
   if (/you'?ve\s+confirmed\s+that\s+you'?ve\s+read\s+and\s+understood/i.test(cleaned)) {
@@ -248,7 +261,7 @@ export function validateOutput(reply, businessName = "Emperor Smart Solutions", 
   }
 
   // 0.002 Hallucinated Safety Refusal Intercept: Intercept false-positive LLM safety refusals on web development inquiries
-  if (/cannot\s+assist\s+with.*(?:illegal\s+activities|creating\s+a\s+website\s+for\s+illegal|illegal\s+tasks)/i.test(cleaned)) {
+  if (isEss && /cannot\s+assist\s+with.*(?:illegal\s+activities|creating\s+a\s+website\s+for\s+illegal|illegal\s+tasks)/i.test(cleaned)) {
     return lang === "hindi"
       ? `Emperor Smart Solutions में हम हाई-परफॉर्मेंस, सुरक्षित और आधुनिक **वेबसाइट और वेब एप्लिकेशन डेवलपमेंट** सेवाएं प्रदान करते हैं! 🚀\n\nहमारे टेक स्टैक: Next.js, React, Node.js और PostgreSQL।\n\nक्या आप एक नए बिजनेस वेबसाइट, ई-कॉमर्स प्लेटफ़ॉर्म, या कस्टम वेब ऐप पर चर्चा करना चाहते हैं?`
       : lang === "hinglish"
@@ -259,14 +272,16 @@ export function validateOutput(reply, businessName = "Emperor Smart Solutions", 
   // 0. Competitor / Third-Party Agency Referral Intercept: Never tell user to look for other companies
   const competitorReferralRegex = /(?:would you like me to\s+)?(?:suggest|recommend)\s+(?:some\s+|other\s+|any\s+|different\s+)*(?:companies|agencies|firms|freelancers|developers)/i;
   if (competitorReferralRegex.test(cleaned)) {
-    cleaned = cleaned.replace(
-      /(?:Would you like me to\s+)?(?:suggest|recommend)\s+(?:some\s+|other\s+|any\s+|different\s+)*(?:companies|agencies|firms|freelancers|developers)[^.?!\n]*[.?!\n]?/gi,
-      "At Emperor Smart Solutions, we specialize in building custom Flutter mobile applications with cutting-edge AI integrations! Could you please share your **Name, Phone/WhatsApp number, and Email address**? Our technical team will reach out with a detailed proposal and exact quote."
-    );
+    if (isEss) {
+      cleaned = cleaned.replace(
+        /(?:Would you like me to\s+)?(?:suggest|recommend)\s+(?:some\s+|other\s+|any\s+|different\s+)*(?:companies|agencies|firms|freelancers|developers)[^.?!\n]*[.?!\n]?/gi,
+        "At Emperor Smart Solutions, we specialize in building custom Flutter mobile applications with cutting-edge AI integrations! Could you please share your **Name, Phone/WhatsApp number, and Email address**? Our technical team will reach out with a detailed proposal and exact quote."
+      );
+    }
   }
 
   // 0.01 DIY Website Builder & Generic Tutorial Intercept: Never tell visitor to use Wix, Squarespace, or WordPress
-  const isDiyBuilderReply =
+  const isDiyBuilderReply = isEss &&
     /\b(?:wix|squarespace|weebly|wordpress|choose a platform.*website builder|platforms like wix|use a website builder|hire a web developer|select a web hosting service.*godaddy|namecheap)\b/i.test(cleaned);
 
   if (isDiyBuilderReply) {
@@ -333,17 +348,21 @@ Could you please share your **Name and Phone Number (or WhatsApp)** so our healt
      /\b(?:love\s+(?:is|and|or)\s+lust|distinct\s+emotions|human\s+relationships|primal\s+emotion|physical\s+attraction)\b/i.test(cleaned));
 
   if (isOffTopicReply) {
-    return lang === "hindi"
-      ? `मैं Emperor Smart Solutions का आधिकारिक AI बिजनेस कंसल्टेंट हूँ, जो विशेष रूप से कस्टम सॉफ्टवेयर, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और AI समाधानों पर केंद्रित है। मैं सामान्य व्यक्तिगत सलाह, मनोरंजन या गैर-व्यावसायिक विषयों पर चर्चा नहीं करता। क्या आपके पास कोई डिजिटल प्रोजेक्ट है जिस पर हम चर्चा कर सकते हैं?`
-      : lang === "hinglish"
-      ? `Main Emperor Smart Solutions ka official AI Business Consultant hoon, jo specifically custom software, mobile apps, web platforms, aur AI solutions par focus karta hai. Main personal advice, entertainment ya non-business topics discuss nahi karta. Kya aap kisi digital project par kaam kar rahe hain?`
-      : `I am the official AI Sales Consultant for Emperor Smart Solutions, focusing exclusively on custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+    if (isEss) {
+      return lang === "hindi"
+        ? `मैं Emperor Smart Solutions का आधिकारिक AI बिजनेस कंसल्टेंट हूँ, जो विशेष रूप से कस्टम सॉफ्टवेयर, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और AI समाधानों पर केंद्रित है। मैं सामान्य व्यक्तिगत सलाह, मनोरंजन या गैर-व्यावसायिक विषयों पर चर्चा नहीं करता। क्या आपके पास कोई डिजिटल प्रोजेक्ट है जिस पर हम चर्चा कर सकते हैं?`
+        : lang === "hinglish"
+        ? `Main Emperor Smart Solutions ka official AI Business Consultant hoon, jo specifically custom software, mobile apps, web platforms, aur AI solutions par focus karta hai. Main personal advice, entertainment ya non-business topics discuss nahi karta. Kya aap kisi digital project par kaam kar rahe hain?`
+        : `I am the official AI Sales Consultant for Emperor Smart Solutions, focusing exclusively on custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+    }
+    return `I am the official AI assistant for ${businessName}, focusing exclusively on verified business topics. How can I assist you with ${businessName} today?`;
   }
 
-  // Safety refusal intercept: If model ever hallucinates that public office address/contact is private
+  // Safety refusal intercept: If model ever hallucinates that public office address/contact is private (ESS only)
   if (
-    /(?:can'?t|cannot)\s+provide\s+(?:the\s+)?(?:physical\s+address|personal\s+contact|contact\s+details|contact\s+information|contact\s+info|contact|phone|email|number|address)/i.test(cleaned) ||
-    /(?:private\s+and\s+sensitive|sensitive\s+information|confidential\s+information)/i.test(cleaned)
+    isEss &&
+    ((/(?:can'?t|cannot)\s+provide\s+(?:the\s+)?(?:physical\s+address|personal\s+contact|contact\s+details|contact\s+information|contact\s+info|contact|phone|email|number|address)/i.test(cleaned)) ||
+     /(?:private\s+and\s+sensitive|sensitive\s+information|confidential\s+information)/i.test(cleaned))
   ) {
     if (lang === "hindi") {
       return `Emperor Smart Solutions के आधिकारिक संपर्क विवरण और मुख्य कार्यालय का पता इस प्रकार है:
@@ -378,10 +397,11 @@ Aap hamare office visit kar sakte hain ya directly WhatsApp/email par connect ka
 Feel free to visit our office or reach out via WhatsApp/email! How else can we assist you with your project?`;
   }
 
-  // Founder missing info hallucination intercept
+  // Founder missing info hallucination intercept (ESS only)
   if (
-    /(?:yeh|ye)\s+jankari\s+nahi\s+di\s+gayi/i.test(cleaned) ||
-    /(?:founder|leadership|founders|owner)\s+(?:details?|information)\s+(?:is|are|was|were)?\s+not\s+(?:provided|given|available)/i.test(cleaned)
+    isEss &&
+    (/(?:yeh|ye)\s+jankari\s+nahi\s+di\s+gayi/i.test(cleaned) ||
+     /(?:founder|leadership|founders|owner)\s+(?:details?|information)\s+(?:is|are|was|were)?\s+not\s+(?:provided|given|available)/i.test(cleaned))
   ) {
     if (lang === "hindi") {
       return `Emperor Smart Solutions (ESS) के संस्थापक और नेतृत्व हैं:
@@ -423,11 +443,12 @@ Emperor Smart Solutions is a premier custom software engineering and enterprise 
     return `Thank you${thankName}! We have noted your details. Our technical team will connect with you shortly to discuss your project. What kind of solution are you looking to build?`;
   }
 
-  // Safety refusal intercept: If model ever hallucinates a payment/budget refusal (e.g. "I can't provide a response that includes a request for payment of or more...")
+  // Safety refusal intercept: If model ever hallucinates a payment/budget refusal (ESS only)
   if (
-    /(?:can'?t|cannot)\s+provide\s+a\s+response\s+that\s+includes\s+(?:a\s+)?request\s+for\s+payment/i.test(cleaned) ||
-    /(?:can'?t|cannot)\s+(?:discuss|accept|process|handle)\s+(?:payment|budget|pricing)/i.test(cleaned) ||
-    /request for payment of or more/i.test(cleaned)
+    isEss &&
+    (/(?:can'?t|cannot)\s+provide\s+a\s+response\s+that\s+includes\s+(?:a\s+)?request\s+for\s+payment/i.test(cleaned) ||
+     /(?:can'?t|cannot)\s+(?:discuss|accept|process|handle)\s+(?:payment|budget|pricing)/i.test(cleaned) ||
+     /request for payment of or more/i.test(cleaned))
   ) {
     return `We completely respect your budget! While our full-scale custom software and bespoke applications typically start from ₹50,000 to cover comprehensive architecture, UI/UX, and quality engineering, we would be delighted to learn about your goals and explore a lightweight MVP, pre-built modules, or a phased roadmap that fits your budget!
 
@@ -512,21 +533,28 @@ Could you please share your **Name and Phone Number (or WhatsApp)** so our techn
     /(?:tablespoon|teaspoon|cook for \d+ minutes|boil the water|heat the pan|garnish with|marinate the)/i.test(cleaned);
 
   if (isCelebrityOrActorBiography || isCookingRecipe) {
-    cleaned = lang === "hindi"
-      ? `मैं Emperor Smart Solutions का आधिकारिक AI कंसल्टेंट हूँ, जो विशेष रूप से कस्टम सॉफ्टवेयर, मोबाइल ऐप्स और एंटरप्राइज AI समाधानों पर केंद्रित है। मैं सामान्य मनोरंजन या सेलिब्रिटी ट्रिविया की जानकारी नहीं देता, लेकिन आपके सॉफ्टवेयर प्रोजेक्ट में सहायता करने में मुझे खुशी होगी! आप किस प्रकार का समाधान बनवाना चाहते हैं?`
-      : lang === "hinglish"
-      ? `Main Emperor Smart Solutions ka official AI Consultant hoon, jo specifically custom software, mobile apps, aur enterprise AI solutions par focus karta hai. Main celebrity trivia ya recipes provide nahi karta, par aapke software project mein help karne mein mujhe khushi hogi! Aap kis tarah ka solution develop karwana chahte hain?`
-      : `I am the AI Sales Consultant for ${businessName}, focusing exclusively on custom software engineering, mobile apps (Flutter, iOS, Android), web platforms, and enterprise AI solutions. I don't provide celebrity trivia, entertainment news, or cooking recipes, but I'd be delighted to assist you with your digital engineering or software project! What kind of solution are you looking to build?`;
+    if (isEss) {
+      cleaned = lang === "hindi"
+        ? `मैं Emperor Smart Solutions का आधिकारिक AI कंसल्टेंट हूँ, जो विशेष रूप से कस्टम सॉफ्टवेयर, मोबाइल ऐप्स और एंटरप्राइज AI समाधानों पर केंद्रित है। मैं सामान्य मनोरंजन या सेलिब्रिटी ट्रिविया की जानकारी नहीं देता, लेकिन आपके सॉफ्टवेयर प्रोजेक्ट में सहायता करने में मुझे खुशी होगी! आप किस प्रकार का समाधान बनवाना चाहते हैं?`
+        : lang === "hinglish"
+        ? `Main Emperor Smart Solutions ka official AI Consultant hoon, jo specifically custom software, mobile apps, aur enterprise AI solutions par focus karta hai. Main celebrity trivia ya recipes provide nahi karta, par aapke software project mein help karne mein mujhe khushi hogi! Aap kis tarah ka solution develop karwana chahte hain?`
+        : `I am the AI Sales Consultant for Emperor Smart Solutions, focusing exclusively on custom software engineering, mobile apps (Flutter, iOS, Android), web platforms, and enterprise AI solutions. I don't provide celebrity trivia, entertainment news, or cooking recipes, but I'd be delighted to assist you with your digital engineering or software project! What kind of solution are you looking to build?`;
+    } else {
+      cleaned = `I am the official AI assistant for ${businessName}, focusing exclusively on verified business topics. How can I assist you with ${businessName} today?`;
+    }
   }
 
   if (!cleaned || !cleaned.trim()) {
-    if (lang === "hindi") {
-      return `नमस्ते! Emperor Smart Solutions में आपका स्वागत है। मैं आपके सॉफ्टवेयर या डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ?`;
+    if (isEss) {
+      if (lang === "hindi") {
+        return `नमस्ते! Emperor Smart Solutions में आपका स्वागत है। मैं आपके सॉफ्टवेयर या डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ?`;
+      }
+      if (lang === "hinglish") {
+        return `Hello! Emperor Smart Solutions mein aapka swagat hai. Main aapke digital project ya software development mein kaise madad kar sakta hoon?`;
+      }
+      return `Hello! Welcome to Emperor Smart Solutions. How can we assist you with your software or digital project today?`;
     }
-    if (lang === "hinglish") {
-      return `Hello! Emperor Smart Solutions mein aapka swagat hai. Main aapke digital project ya software development mein kaise madad kar sakta hoon?`;
-    }
-    return `Hello! Welcome to Emperor Smart Solutions. How can we assist you with your software or digital project today?`;
+    return `Hello! Welcome to ${businessName}. How can I assist you today?`;
   }
 
   return cleaned.trim();

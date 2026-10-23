@@ -229,7 +229,8 @@ export async function POST(request, { params }) {
     const businessName =
       bot?.company && bot?.company !== "My Organization"
         ? bot.company
-        : "Emperor Smart Solutions";
+        : (bot?.id === "bot_aa" ? "Emperor Smart Solutions" : (bot?.name || "Business"));
+    const isEssBot = bot?.id === "bot_aa" || businessName === "Emperor Smart Solutions";
     const tenantId = bot?.organizationId || botId;
 
     // --- SAAS BILLING & QUOTA ENFORCEMENT ---
@@ -519,6 +520,9 @@ export async function POST(request, { params }) {
       collectLeads: bot?.collectLeads !== false,
       hasVisitorDetails,
       visitorName: resolvedName,
+      businessPhone: bot?.phoneNumber || "",
+      websiteUrl: bot?.websiteUrl || "",
+      botDescription: bot?.description || "",
     });
 
     const llmMessages = [
@@ -937,8 +941,31 @@ ${savedEmail !== "Not specified" ? `• **Email:** ${savedEmail}\n` : ""}
 If you would like to update your phone number, email, or project requirements, please feel free to share them and I will immediately update your record!`;
       }
     } else if (isContactDetailsQuery) {
-      if (lang === "hindi") {
-        deterministicReply = `Emperor Smart Solutions के आधिकारिक संपर्क विवरण और मुख्य कार्यालय का पता इस प्रकार है:
+      if (!isEssBot) {
+        const contactParts = [];
+        if (bot?.websiteUrl) contactParts.push(`🌐 **Website:** [${bot.websiteUrl}](${bot.websiteUrl})`);
+        if (bot?.phoneNumber) contactParts.push(`📞 **Phone / WhatsApp:** ${bot.phoneNumber}`);
+
+        if (contactParts.length > 0) {
+          if (lang === "hindi") {
+            deterministicReply = `${businessName} के आधिकारिक संपर्क विवरण:\n\n${contactParts.join("\n")}\n\nहम आपकी किस प्रकार सहायता कर सकते हैं?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `${businessName} ke official contact details yeh hain:\n\n${contactParts.join("\n")}\n\nAapko kis cheez mein help chahiye?`;
+          } else {
+            deterministicReply = `Here are the official contact details for ${businessName}:\n\n${contactParts.join("\n")}\n\nHow can we assist you today?`;
+          }
+        } else {
+          if (lang === "hindi") {
+            deterministicReply = `${businessName} के लिए वर्तमान में कोई संपर्क विवरण कॉन्फ़िगर नहीं किया गया है। क्या मैं आपके किसी अन्य प्रश्न में सहायता कर सकता हूँ?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `${businessName} ke liye currently koi contact details configure nahi hain. Kya main aapke kisi aur sawal mein help kar sakta hoon?`;
+          } else {
+            deterministicReply = `Official contact details are not currently configured for ${businessName}. How else can I assist you today?`;
+          }
+        }
+      } else {
+        if (lang === "hindi") {
+          deterministicReply = `Emperor Smart Solutions के आधिकारिक संपर्क विवरण और मुख्य कार्यालय का पता इस प्रकार है:
 
 🌐 **आधिकारिक वेबसाइट:** https://emperorsmartsolutions.com
 📍 **मुख्य कार्यालय:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
@@ -947,8 +974,8 @@ If you would like to update your phone number, email, or project requirements, p
 ⏰ **कार्य समय:** सोमवार से शनिवार: 10:00 AM – 7:00 PM IST
 
 आप हमारे कार्यालय आ सकते हैं या सीधे WhatsApp/ईमेल द्वारा संपर्क कर सकते हैं! हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Emperor Smart Solutions ke official contact details aur head office address yeh hain:
+        } else if (lang === "hinglish") {
+          deterministicReply = `Emperor Smart Solutions ke official contact details aur head office address yeh hain:
 
 🌐 **Official Website:** https://emperorsmartsolutions.com
 📍 **Head Office:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
@@ -957,8 +984,8 @@ If you would like to update your phone number, email, or project requirements, p
 ⏰ **Business Hours:** Monday to Saturday: 10:00 AM – 7:00 PM IST
 
 Aap hamare office visit kar sakte hain ya directly WhatsApp/email par connect kar sakte hain! Hum aapke project mein kaise help kar sakte hain?`;
-      } else {
-        deterministicReply = `Here are the official contact details and head office address for Emperor Smart Solutions:
+        } else {
+          deterministicReply = `Here are the official contact details and head office address for Emperor Smart Solutions:
 
 🌐 **Official Website:** https://emperorsmartsolutions.com
 📍 **Head Office:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
@@ -967,8 +994,9 @@ Aap hamare office visit kar sakte hain ya directly WhatsApp/email par connect ka
 ⏰ **Business Hours:** Monday to Saturday: 10:00 AM – 7:00 PM IST
 
 Feel free to visit our office or reach out via WhatsApp/email! How else can we assist you with your project?`;
+        }
       }
-    } else if (isProjectsPortfolioQuery) {
+    } else if (isEssBot && isProjectsPortfolioQuery) {
       const knownContact = resolvedPhone || resolvedEmail;
       const portfolioContactText = knownContact
         ? (lang === "hindi"
@@ -1008,7 +1036,7 @@ Our key portfolio areas include:
 • **Enterprise AI Solutions:** Production RAG pipelines, autonomous AI agents, and enterprise workflow automation.
 
 ${portfolioContactText}`;
-    } else if (isCompanyOverviewQuery) {
+    } else if (isEssBot && isCompanyOverviewQuery) {
       quickReplies = ["Recent projects", "Office location", "Website Development", "Mobile Applications"];
       if (lang === "hindi") {
         deterministicReply = `**Emperor Smart Solutions (ESS)** एक प्रमुख डिजिटल इंजीनियरिंग, कस्टम सॉफ्टवेयर और एंटरप्राइज AI सॉल्यूशंस कंसल्टेंसी है। 🚀
@@ -1048,15 +1076,29 @@ ${portfolioContactText}`;
 With a proven track record of 50+ delivered projects across FinTech, Healthcare, E-Commerce, and Education, we engineer scalable, secure, and production-ready digital products! How else can we assist you with your project?`;
       }
     } else if (isWebsiteUrlQuery) {
-      quickReplies = ["Website Development", "Mobile Applications", "Recent projects", "Office location"];
-      if (lang === "hindi") {
-        deterministicReply = `हाँ बिल्कुल! **Emperor Smart Solutions** की आधिकारिक वेबसाइट [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) है। 🌐\n\nयहाँ आप हमारे संपूर्ण डिजिटल इंजीनियरिंग पोर्टफोलियो, एंटरप्राइज AI समाधान और केस स्टडीज देख सकते हैं। क्या आप किसी विशिष्ट डिजिटल प्रोजेक्ट (वेबसाइट, मोबाइल ऐप या AI समाधान) पर चर्चा करना चाहते हैं?`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Haan bilkul! **Emperor Smart Solutions** ki official website [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) hai. 🌐\n\nYahan aap hamara digital engineering portfolio, enterprise AI capabilities, aur software services explore kar sakte hain. Kya aap kisi specific digital project par discuss karna chahte hain?`;
+      if (!isEssBot) {
+        if (bot?.websiteUrl) {
+          if (lang === "hindi") {
+            deterministicReply = `हाँ बिल्कुल! **${businessName}** की आधिकारिक वेबसाइट [${bot.websiteUrl}](${bot.websiteUrl}) है। 🌐\n\nक्या मैं आपकी किसी अन्य जानकारी में सहायता कर सकता हूँ?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Haan bilkul! **${businessName}** ki official website [${bot.websiteUrl}](${bot.websiteUrl}) hai. 🌐\n\nKya main aapki kisi aur cheez mein help kar sakta hoon?`;
+          } else {
+            deterministicReply = `Yes! The official website for **${businessName}** is: 🌐 [${bot.websiteUrl}](${bot.websiteUrl})\n\nHow else can I assist you today?`;
+          }
+        } else {
+          deterministicReply = `An official website is not currently configured for **${businessName}**. How else can I assist you today?`;
+        }
       } else {
-        deterministicReply = `Yes! That is the official website for **Emperor Smart Solutions**: 🌐 [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n\nYou can explore our full-stack engineering portfolio, case studies, and enterprise AI solutions there. Which digital solution (website, mobile app, AI, or custom software) would you like to build?`;
+        quickReplies = ["Website Development", "Mobile Applications", "Recent projects", "Office location"];
+        if (lang === "hindi") {
+          deterministicReply = `हाँ बिल्कुल! **Emperor Smart Solutions** की आधिकारिक वेबसाइट [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) है। 🌐\n\nयहाँ आप हमारे संपूर्ण डिजिटल इंजीनियरिंग पोर्टफोलियो, एंटरप्राइज AI समाधान और केस स्टडीज देख सकते हैं। क्या आप किसी विशिष्ट डिजिटल प्रोजेक्ट (वेबसाइट, मोबाइल ऐप या AI समाधान) पर चर्चा करना चाहते हैं?`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Haan bilkul! **Emperor Smart Solutions** ki official website [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) hai. 🌐\n\nYahan aap hamara digital engineering portfolio, enterprise AI capabilities, aur software services explore kar sakte hain. Kya aap kisi specific digital project par discuss karna chahte hain?`;
+        } else {
+          deterministicReply = `Yes! That is the official website for **Emperor Smart Solutions**: 🌐 [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n\nYou can explore our full-stack engineering portfolio, case studies, and enterprise AI solutions there. Which digital solution (website, mobile app, AI, or custom software) would you like to build?`;
+        }
       }
-    } else if (isServicesQuery) {
+    } else if (isEssBot && isServicesQuery) {
       deterministicReply = lang === "hindi"
         ? `Emperor Smart Solutions (ESS) एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज AI डेवलपमेंट कंपनी है। हमारी मुख्य सेवाएं इस प्रकार हैं:
 
@@ -1092,7 +1134,7 @@ Aap kis tarah ka digital project build karwana chahte hain? Apna idea ya **Name 
 Every project includes full turnkey execution: end-to-end design, development, rigorous QA testing, and 30 days of free post-launch support.
 
 What kind of digital project are you looking to build? Feel free to share your requirements or your **Name and Phone Number (or WhatsApp)**, and our technical team will prepare a tailored proposal for you!`;
-    } else if (isEssLeadershipQuery) {
+    } else if (isEssBot && isEssLeadershipQuery) {
       if (/\b(?:karan|karan\s+makwana)\b/i.test(message) && !/\byash\b/i.test(message)) {
         deterministicReply = lang === "hindi"
           ? `करण मकवाना (Karan Makwana) Emperor Smart Solutions के सह-संस्थापक (Co-Founder) हैं। वे कंपनी के रणनीतिक विकास और तकनीकी पहलों का नेतृत्व करते हैं। आज हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`
@@ -1127,11 +1169,12 @@ Emperor Smart Solutions ek premier custom software engineering aur enterprise AI
 
 Emperor Smart Solutions is a premier custom software engineering and enterprise AI development company headquartered in Ahmedabad, Gujarat. How can we assist you with your project today?`;
       }
-    } else if (/\b(?:guarantee\s+delivery|delivery\s+(?:within|in)?\s*(?:7|seven)\s*days?|7\s*day\s*(?:delivery|guarantee)|seven\s*day\s*(?:delivery|guarantee))\b/i.test(message)) {
+    } else if (isEssBot && /\b(?:guarantee\s+delivery|delivery\s+(?:within|in)?\s*(?:7|seven)\s*days?|7\s*day\s*(?:delivery|guarantee)|seven\s*day\s*(?:delivery|guarantee))\b/i.test(message)) {
       deterministicReply = `Emperor Smart Solutions (ESS) does not guarantee delivery of every mobile app within seven days. Production-grade custom mobile and web applications require structured UI/UX architecture, end-to-end engineering, and rigorous QA testing, which typically takes between 2 to 6 weeks depending on requirements and milestones. We do not provide unrealistic 7-day guarantees, as quality, security, and scalability are our top priorities.
 
 Would you like to discuss your project requirements and receive a realistic timeline? Feel free to share your **Name and Phone Number (or WhatsApp)** so our technical team can prepare a customized proposal!`;
     } else if (
+      isEssBot &&
       /\b(?:what\s+features|feature\s*list|tell\s+me\s+all\s+features|explain\s+all\s+features|clinic\s+features)\b/i.test(message) &&
       /\b(?:clinic|hospital|doctor|healthcare|medical)\b/i.test(message)
     ) {
@@ -1146,15 +1189,19 @@ Here is what our software engineering team builds for your clinic:
 
 Our custom clinic website & MVP packages start from **₹50,000** (18% GST extra), which includes complete UI/UX design, full-stack engineering, QA testing, and 30 days of free post-launch support.`;
     } else if (isCelebrityOrTriviaQuery) {
-      if (lang === "hindi") {
-        deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI बिजनेस कंसल्टेंट हूँ और केवल कस्टम सॉफ्टवेयर, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और AI समाधानों में सहायता करता हूँ। मैं व्यक्तिगत सलाह, सामान्य ज्ञान या गैर-व्यावसायिक विषयों पर चर्चा नहीं करता। क्या आपके पास कोई डिजिटल प्रोजेक्ट है जिस पर हम चर्चा कर सकते हैं?`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Main Emperor Smart Solutions ka official AI Business Consultant hoon aur sirf custom software, mobile apps, websites aur AI solutions mein help karta hoon. Main personal advice, entertainment ya non-business topics discuss nahi karta. Kya aap kisi digital project par kaam kar rahe hain?`;
+      if (!isEssBot) {
+        deterministicReply = `I am the official AI assistant for ${businessName}. I specialize exclusively in verified business topics for ${businessName}. How can I assist you with ${businessName} today?`;
       } else {
-        deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize exclusively in custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+        if (lang === "hindi") {
+          deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI बिजनेस कंसल्टेंट हूँ और केवल कस्टम सॉफ्टवेयर, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और AI समाधानों में सहायता करता हूँ। मैं व्यक्तिगत सलाह, सामान्य ज्ञान या गैर-व्यावसायिक विषयों पर चर्चा नहीं करता। क्या आपके पास कोई डिजिटल प्रोजेक्ट है जिस पर हम चर्चा कर सकते हैं?`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Main Emperor Smart Solutions ka official AI Business Consultant hoon aur sirf custom software, mobile apps, websites aur AI solutions mein help karta hoon. Main personal advice, entertainment ya non-business topics discuss nahi karta. Kya aap kisi digital project par kaam kar rahe hain?`;
+        } else {
+          deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize exclusively in custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+        }
+        quickReplies = ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"];
       }
-      quickReplies = ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"];
-    } else if (isLowBudgetQuery) {
+    } else if (isEssBot && isLowBudgetQuery) {
       const askForLead = (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect")
         ? (resolvedPhone ? "" : (
             lang === "hindi"
@@ -1195,8 +1242,8 @@ Here are our official contact details to speak with our engineering leadership:
       }
     }
 
-    // Consultative Adaptive Sales Flow Handler
-    if (!deterministicReply) {
+    // Consultative Adaptive Sales Flow Handler (ESS bots only)
+    if (!deterministicReply && isEssBot) {
       const salesResult = handleSalesFlowTurn({
         message,
         existingQualification: existingConv?.qualification || activeQual,
@@ -1374,9 +1421,13 @@ Here are our official contact details to speak with our engineering leadership:
               /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(accumulatedReply);
 
             if (!hasVisitorDetails && !askedForContact && !resolvedName) {
-              const leadAsk = "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?";
-              writer.write(encoder.encode(`data: ${JSON.stringify({ token: leadAsk })}\n\n`));
-              validated += leadAsk;
+              const leadAsk = isEssBot
+                ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
+                : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
+              if (leadAsk) {
+                writer.write(encoder.encode(`data: ${JSON.stringify({ token: leadAsk })}\n\n`));
+                validated += leadAsk;
+              }
             }
           }
 
@@ -1448,7 +1499,12 @@ Here are our official contact details to speak with our engineering leadership:
         /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(botReply);
 
       if (!hasVisitorDetails && !askedForContact && !resolvedName) {
-        botReply += "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?";
+        const leadAsk = isEssBot
+          ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
+          : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
+        if (leadAsk) {
+          botReply += leadAsk;
+        }
       }
     }
 

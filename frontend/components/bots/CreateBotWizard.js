@@ -45,6 +45,8 @@ export default function CreateBotWizard() {
   // Form State - Fresh empty fields for user's own bot
   const [botName, setBotName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [primaryColor, setPrimaryColor] = useState("#4F46E5");
@@ -93,205 +95,6 @@ export default function CreateBotWizard() {
     setDocuments((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const generateAIResponse = (query) => {
-    const q = query.toLowerCase().trim();
-    const bot = botName.trim() || "AI Assistant";
-    const company = companyName.trim() || "our hospital & medical center";
-    const primaryDoc = documents && documents.length > 0 ? documents[0].name : "hospital-services-guide.pdf";
-
-    // 1. Hospital Details / Overview / Departments / Facilities
-    if (
-      q.includes("hospital") ||
-      q.includes("detail") ||
-      q.includes("clinic") ||
-      q.includes("facility") ||
-      q.includes("center") ||
-      q.includes("about")
-    ) {
-      return {
-        text: `Here are the complete details for ${company}:\n\n` +
-          `🏥 **Hospital Overview**:\n` +
-          `We are a premier multi-specialty medical center offering round-the-clock emergency, outpatient, and surgical care with modern intensive care units (ICU).\n\n` +
-          `⏰ **OPD & Clinic Hours**:\n` +
-          `• Monday – Saturday: 9:00 AM to 7:00 PM\n` +
-          `• Emergency & Trauma Center: Open 24/7, 365 days a year\n` +
-          `• Sunday: Emergency & in-patient services only\n\n` +
-          `🩺 **Specialized Departments**:\n` +
-          `• **Cardiology**: ECG, 2D Echo, Cardiac ICU & Angiography\n` +
-          `• **Orthopedics**: Joint replacement, fracture trauma & sports medicine\n` +
-          `• **Pediatrics**: Child specialist OPD & NICU\n` +
-          `• **Internal Medicine & Diabetology**: Chronic illness management\n` +
-          `• **General Surgery & Laparoscopy**: Minimally invasive procedures\n` +
-          `• **Pathology & Radiology**: 24/7 Digital X-Ray & Ultrasound\n\n` +
-          `🛌 **Facilities**:\n` +
-          `• 50+ In-patient beds with Deluxe and Private room options\n` +
-          `• Advanced ICU with ventilator and continuous monitoring\n` +
-          `• 100% Cashless hospitalization with major health insurance TPAs\n\n` +
-          `📞 **Emergency Helpline & Appointments**: +91 98765 43210\n\n` +
-          `Would you like me to help you book an appointment with a specialist?`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 2. Opening Hours / Timings
-    if (
-      q.includes("hour") ||
-      q.includes("timing") ||
-      q.includes("open") ||
-      q.includes("close") ||
-      q.includes("sunday") ||
-      q.includes("time")
-    ) {
-      return {
-        text: `Our clinic & OPD opening hours:\n\n` +
-          `• **Monday to Saturday**: 9:00 AM – 7:00 PM\n` +
-          `• **Sunday**: Closed for routine OPD (Emergency care open 24/7)\n` +
-          `• **Emergency & Ambulance Hotline**: 24/7 active at **+91 98765 43210**.`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 3. Appointments & Booking
-    if (
-      q.includes("appointment") ||
-      q.includes("book") ||
-      q.includes("consult") ||
-      q.includes("schedule") ||
-      q.includes("slot")
-    ) {
-      return {
-        text: `You can book an appointment with our doctors right away:\n\n` +
-          `1. **By Phone**: Call our hospital reception at **+91 98765 43210**\n` +
-          `2. **Direct Booking**: Simply reply here with your **Name**, **Preferred Date**, and **Department**, and our desk will confirm your appointment!`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 4. Emergency Care & Ambulance
-    if (
-      q.includes("emergency") ||
-      q.includes("ambulance") ||
-      q.includes("trauma") ||
-      q.includes("urgent") ||
-      q.includes("icu")
-    ) {
-      return {
-        text: `🚨 **24/7 Emergency Care & Trauma Center**:\n\n` +
-          `Our emergency department is staffed 24 hours a day with critical care physicians and trauma specialists.\n\n` +
-          `• **Emergency Hotline**: +91 98765 43210\n` +
-          `• **Ambulance Service**: Cardiac life-support ambulance available on call.`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 5. Insurance & Cashless Hospitalization
-    if (
-      q.includes("insurance") ||
-      q.includes("cashless") ||
-      q.includes("tpa") ||
-      q.includes("claim") ||
-      q.includes("mediclaim")
-    ) {
-      return {
-        text: `Yes, we provide **100% Cashless Treatment** through all leading health insurance providers:\n\n` +
-          `• Star Health & Allied Insurance\n` +
-          `• HDFC ERGO General Insurance\n` +
-          `• ICICI Lombard & Bajaj Allianz\n` +
-          `• Max Bupa / Niva Bupa & Care Health\n` +
-          `• Medi Assist, Paramount & Vidal TPA\n\n` +
-          `Please present your health card and policy number at our TPA helpdesk upon arrival.`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 6. Doctor Specialists
-    if (
-      q.includes("doctor") ||
-      q.includes("specialist") ||
-      q.includes("physician") ||
-      q.includes("surgeon") ||
-      q.includes("cardio") ||
-      q.includes("ortho")
-    ) {
-      return {
-        text: `Our medical team features senior consultants across all key specialties:\n\n` +
-          `• **Cardiology**: Dr. S. K. Mehta (MD, DM Cardiology)\n` +
-          `• **Orthopedics**: Dr. R. Verma (MS Ortho, Joint Replacement)\n` +
-          `• **Pediatrics**: Dr. A. Joshi (MD Pediatrics)\n` +
-          `• **General Medicine**: Dr. P. Shah (MD Internal Medicine)\n` +
-          `• **General Surgery**: Dr. N. Patel (MS Surgery)\n\n` +
-          `Would you like to schedule a consultation with any of these specialists?`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 7. Pricing & Consultation Fees
-    if (
-      q.includes("price") ||
-      q.includes("cost") ||
-      q.includes("fee") ||
-      q.includes("charge") ||
-      q.includes("rate") ||
-      q.includes("package")
-    ) {
-      return {
-        text: `Our standard consultation and healthcare fee structure:\n\n` +
-          `• **General OPD Consultation**: ₹500\n` +
-          `• **Specialist Doctor Consultation**: ₹800\n` +
-          `• **Executive Health Screening**: ₹2,500\n` +
-          `• **Comprehensive Whole Body Profile**: ₹4,800\n` +
-          `• **Cardiac Checkup Package**: ₹3,200\n\n` +
-          `*All diagnostics and lab tests receive a 10% discount when booked with an OPD consultation.*`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 8. Contact & Address
-    if (
-      q.includes("contact") ||
-      q.includes("phone") ||
-      q.includes("number") ||
-      q.includes("address") ||
-      q.includes("location") ||
-      q.includes("where")
-    ) {
-      return {
-        text: `You can reach ${company} at:\n\n` +
-          `📍 **Address**: Central Medical Enclave Campus, Main Road\n` +
-          `📞 **Main Helpline**: +91 98765 43210\n` +
-          `🚨 **Emergency Line**: +91 98765 22108\n` +
-          `✉️ **Email**: info@hospital-care.org\n\n` +
-          `We are open 24/7 for emergency admissions and 9:00 AM to 7:00 PM for outpatient visits.`,
-        sources: [primaryDoc],
-      };
-    }
-
-    // 9. Greetings
-    if (
-      q === "hi" ||
-      q === "hello" ||
-      q === "hey" ||
-      q.startsWith("hi ") ||
-      q.startsWith("hello ")
-    ) {
-      return {
-        text: `Hello! I'm ${bot}, your assistant for ${company}.\n\nHow can I help you today? You can ask me about hospital details, clinic hours, doctor appointments, emergency care, or insurance claims.`,
-        sources: [],
-      };
-    }
-
-    // 10. Intelligent Contextual Response
-    return {
-      text: `Thank you for your inquiry! As the assistant for ${company}, here is what I can assist you with:\n\n` +
-        `• **Hospital Details & Facilities**: Multi-specialty care, modern ICU, and diagnostics\n` +
-        `• **OPD Hours**: Monday to Saturday, 9:00 AM – 7:00 PM (Emergency: 24/7)\n` +
-        `• **Doctor Consultations**: Booking slots with our senior specialists\n` +
-        `• **Cashless Insurance**: Empanelled with major insurance TPAs\n\n` +
-        `Please let me know if you would like more specific details or wish to book an appointment!`,
-      sources: [primaryDoc],
-    };
-  };
-
   const handleSendMessage = (textToSend) => {
     const query = textToSend || chatInput;
     if (!query.trim()) return;
@@ -302,13 +105,19 @@ export default function CreateBotWizard() {
     if (!textToSend) setChatInput("");
 
     setTimeout(() => {
-      const responseObj = generateAIResponse(query);
+      const activeBot = botName.trim() || "My AI Assistant";
+      const activeCompany = companyName.trim() || "your business";
+      const docsCount = documents ? documents.length : 0;
+      const knowledgeSummary = docsCount > 0
+        ? `I have noted ${docsCount} knowledge source(s) configured (${documents.map((d) => d.name).slice(0, 2).join(", ")}${docsCount > 2 ? ` and ${docsCount - 2} more` : ""}).`
+        : "No knowledge sources have been attached yet.";
+
       setChatMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: responseObj.text,
-          sources: responseObj.sources,
+          content: `Hello! I am **${activeBot}** for **${activeCompany}**.\n\n${knowledgeSummary}\n\nLive AI answers from your verified documents and website will become active after you save this chatbot in Step 7 and crawling/indexing completes. You can then test full knowledge retrieval directly in the Bot Dashboard!`,
+          sources: docsCount > 0 ? ["Draft Knowledge Sources"] : [],
         },
       ]);
     }, 450);
@@ -320,6 +129,8 @@ export default function CreateBotWizard() {
     await botsApi.createBot({
       name: finalName,
       company: companyName,
+      websiteUrl: websiteUrl.trim(),
+      phoneNumber: phoneNumber.trim(),
       description: description || "Custom AI chatbot assistant.",
       avatar: avatarsList[avatarIndex],
       primaryColor,
@@ -418,6 +229,34 @@ export default function CreateBotWizard() {
                 placeholder="e.g. Acme Corporation"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-hidden focus:border-indigo-600 bg-slate-50/50"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Website URL
+                </label>
+                <input
+                  type="url"
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-hidden focus:border-indigo-600 bg-slate-50/50"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Business Phone / WhatsApp
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="+1 555 019 2834"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-hidden focus:border-indigo-600 bg-slate-50/50"
+                />
+              </div>
             </div>
 
             <div>
@@ -540,12 +379,14 @@ export default function CreateBotWizard() {
             {/* 3. Website */}
             <div
               onClick={() => {
-                const url = prompt("Enter website URL to crawl (e.g. https://mycompany.com):");
-                if (url) {
+                const url = prompt("Enter website URL to crawl (e.g. https://mycompany.com):", websiteUrl || "");
+                if (url && url.trim()) {
+                  const trimmed = url.trim();
+                  setWebsiteUrl(trimmed);
                   setDocuments((prev) => [
-                    ...prev,
+                    ...prev.filter((d) => d.type !== "WEB"),
                     {
-                      name: url,
+                      name: trimmed,
                       type: "WEB",
                       size: "Live Crawl",
                       status: "Ready",
@@ -957,10 +798,10 @@ export default function CreateBotWizard() {
               {/* Quick suggestion prompt chips */}
               <div className="px-3 py-2 bg-slate-100/60 border-t border-slate-200/70 flex items-center gap-1.5 overflow-x-auto text-[11px]">
                 {[
-                  "Send detail of hospital",
-                  "Clinic opening hours",
-                  "Book appointment",
-                  "Emergency care",
+                  "What services do you offer?",
+                  "What are your business hours?",
+                  "How can I contact you?",
+                  "Where are you located?",
                 ].map((chip) => (
                   <button
                     key={chip}

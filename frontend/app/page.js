@@ -128,6 +128,7 @@ export default function HomePage() {
 
           <div>
             <BotPreviewWidget
+              botId="bot_aa"
               botName="AI Sales Executive"
               avatar="💼"
               primaryColor="#4f46e5"

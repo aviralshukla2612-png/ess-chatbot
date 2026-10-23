@@ -55,6 +55,23 @@ export async function PUT(request, { params }) {
       ? (body.organizationId || existingBot.organizationId)
       : principal.organizationId;
 
+    if (body.phoneNumber || body.phone) {
+      const raw = (body.phoneNumber || body.phone || "").trim();
+      const digitCount = (raw.match(/\d/g) || []).length;
+      body.phoneNumber = digitCount >= 7 ? raw : null;
+    }
+    if (body.company && typeof body.company === "string") {
+      body.company = body.company.trim();
+    }
+    if (body.websiteUrl && typeof body.websiteUrl === "string" && body.websiteUrl.trim()) {
+      const { validateUrlForSSRF } = await import("@/lib/security/ssrf");
+      const ssrfCheck = await validateUrlForSSRF(body.websiteUrl.trim());
+      if (!ssrfCheck.valid) {
+        return NextResponse.json({ success: false, error: ssrfCheck.error }, { status: 400 });
+      }
+      body.websiteUrl = ssrfCheck.normalizedUrl;
+    }
+
     const bot = botsStore.upsertBot({ ...body, id: botId, organizationId: targetOrgId }, targetOrgId);
     return NextResponse.json({ success: true, bot });
   } catch (err) {

@@ -235,7 +235,9 @@ export const botsStore = {
       welcomeMessage: `Hello! I am ${botData.name || "AI Assistant"}. How can I help you today?`,
       launcherPosition: "bottom-right",
       brandingEnabled: true,
-      allowedDomains: ["*"],
+      company: botData.company || null,
+      websiteUrl: botData.websiteUrl || null,
+      phoneNumber: botData.phoneNumber || botData.phone || null,
       ...botData,
     };
 
@@ -249,8 +251,8 @@ export const botsStore = {
 
     // Sync to PostgreSQL
     queryDb(
-      `INSERT INTO "Bot" ("id", "organizationId", "name", "description", "primaryColor", "status", "systemPrompt", "welcomeMessage", "allowedDomains")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO "Bot" ("id", "organizationId", "name", "description", "primaryColor", "status", "systemPrompt", "welcomeMessage", "allowedDomains", "company", "websiteUrl", "phoneNumber")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT ("id") DO UPDATE SET
          "name" = EXCLUDED."name",
          "description" = EXCLUDED."description",
@@ -259,6 +261,9 @@ export const botsStore = {
          "systemPrompt" = EXCLUDED."systemPrompt",
          "welcomeMessage" = EXCLUDED."welcomeMessage",
          "allowedDomains" = EXCLUDED."allowedDomains",
+         "company" = EXCLUDED."company",
+         "websiteUrl" = EXCLUDED."websiteUrl",
+         "phoneNumber" = EXCLUDED."phoneNumber",
          "updatedAt" = CURRENT_TIMESTAMP;`,
       [
         id,
@@ -270,6 +275,9 @@ export const botsStore = {
         merged.systemPrompt || null,
         merged.welcomeMessage || "Hello!",
         Array.isArray(merged.allowedDomains) ? merged.allowedDomains : ["*"],
+        merged.company || null,
+        merged.websiteUrl || null,
+        merged.phoneNumber || null,
       ]
     ).catch(() => {});
 

@@ -2,12 +2,13 @@ import crypto from "node:crypto";
 import { validateUrlForSSRF } from "../security/ssrf.js";
 import { websitesDb } from "../db/websites.js";
 import { documentsStore } from "../db/documentsStore.js";
+import { queryDb } from "../db/dbPool.js";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
 const QDRANT_URL = process.env.QDRANT_URL || "http://127.0.0.1:6333";
 
-// In-memory Vector Store fallback when Qdrant / pgvector is operating locally
+// In-memory Vector Store fallback when running locally or during tests
 const vectorStorePoints = [];
 
 /**
@@ -69,7 +70,7 @@ function cleanHtmlContent(rawHtml) {
  */
 function chunkText(text, chunkSize = 500, overlap = 80) {
   if (!text) return [];
-  const paragraphs = text.split("\n\n");
+  const paragraphs = text.split(/\n\s*\n/);
   const chunks = [];
   let currentChunk = "";
 
@@ -116,16 +117,20 @@ async function generateEmbedding(text) {
       }
     }
   } catch (e) {
-    // Ollama not responding or offline
+    // Ollama unreachable
   }
 
-  // Deterministic 768-dim pseudo vector fallback for local development & test
-  const hash = crypto.createHash("sha256").update(text).digest();
-  const vector = new Array(768).fill(0);
-  for (let i = 0; i < 768; i++) {
-    vector[i] = (hash[i % hash.length] - 128) / 128;
+  // If in test environment without Ollama container running, return deterministic test vector
+  if (process.env.NODE_ENV === "test" || process.env.ALLOW_TEST_EMBEDDINGS === "true") {
+    const hash = crypto.createHash("sha256").update(text).digest();
+    const vector = new Array(768).fill(0);
+    for (let i = 0; i < 768; i++) {
+      vector[i] = (hash[i % hash.length] - 128) / 128;
+    }
+    return vector;
   }
-  return vector;
+
+  throw new Error(`Embedding model '${EMBED_MODEL}' unavailable at ${OLLAMA_URL}`);
 }
 
 /**
@@ -143,59 +148,62 @@ async function discoverUrls(baseUrl, scope, maxPages = 50, includePatterns = [],
   // 1. Try fetching sitemap.xml
   try {
     const sitemapUrl = `${origin}/sitemap.xml`;
-    const ssrf = await validateUrlForSSRF(sitemapUrl);
-    if (ssrf.valid) {
+    const ssrfCheck = await validateUrlForSSRF(sitemapUrl);
+    if (ssrfCheck.valid) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const timeout = setTimeout(() => controller.abort(), 4000);
       const res = await fetch(sitemapUrl, { signal: controller.signal });
       clearTimeout(timeout);
 
       if (res.ok) {
         const xml = await res.text();
-        const matches = xml.match(/<loc>([^<]+)<\/loc>/gi);
-        if (matches) {
-          for (const match of matches) {
-            const u = match.replace(/<\/?loc>/gi, "").trim();
-            if (u.startsWith(origin) && discovered.size < maxPages) {
-              discovered.add(u);
-            }
+        const locMatches = xml.matchAll(/<loc>([^<]+)<\/loc>/g);
+        for (const match of locMatches) {
+          if (discovered.size >= maxPages) break;
+          const u = match[1].trim();
+          if (u.startsWith(origin)) {
+            discovered.add(u);
           }
         }
       }
     }
   } catch (e) {
-    // Sitemap discovery optional
+    // Sitemap discovery failed, fall back to link extraction from homepage
   }
 
-  // 2. Discover links from homepage HTML
-  try {
-    const ssrf = await validateUrlForSSRF(baseUrl);
-    if (ssrf.valid && discovered.size < maxPages) {
+  // 2. Discover links from homepage HTML if sitemap gave few links
+  if (discovered.size < maxPages) {
+    try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
-      const res = await fetch(baseUrl, { signal: controller.signal });
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(baseUrl, {
+        headers: { "User-Agent": "NexusAI-KnowledgeBot/1.0" },
+        signal: controller.signal,
+      });
       clearTimeout(timeout);
 
       if (res.ok) {
         const html = await res.text();
-        const linkMatches = html.matchAll(/href=["'](\/[^"'#\s]*|https?:\/\/[^"'#\s]*)/gi);
-        for (const match of linkMatches) {
-          let target = match[1];
-          if (target.startsWith("/")) {
-            target = `${origin}${target}`;
-          }
-          if (target.startsWith(origin) && discovered.size < maxPages) {
-            // Apply exclusion patterns
-            const shouldExclude = excludePatterns.some((pattern) => target.includes(pattern));
-            if (!shouldExclude) {
-              discovered.add(target.split("?")[0].replace(/\/+$/, ""));
+        const hrefMatches = html.matchAll(/href=["'](\/[^"'#\s]*|https?:\/\/[^"'#\s]*)["']/gi);
+        for (const match of hrefMatches) {
+          if (discovered.size >= maxPages) break;
+          try {
+            const rawHref = match[1];
+            const resolved = new URL(rawHref, baseUrl).href;
+            if (resolved.startsWith(origin)) {
+              // Apply exclude patterns
+              const isExcluded = excludePatterns.some((pattern) => resolved.includes(pattern));
+              if (!isExcluded) {
+                // Apply include patterns if specified
+                if (includePatterns.length === 0 || includePatterns.some((p) => resolved.includes(p))) {
+                  discovered.add(resolved);
+                }
+              }
             }
-          }
+          } catch (urlErr) {}
         }
       }
-    }
-  } catch (e) {
-    // Link discovery error
+    } catch (e) {}
   }
 
   return Array.from(discovered).slice(0, maxPages);
@@ -215,6 +223,7 @@ export async function executeWebsiteIngestion(jobId) {
     // Step 1: Discovering URLs
     await websitesDb.updateIngestionJob(jobId, {
       jobStatus: "Discovering",
+      status: "Discovering",
       currentStep: "Discovering sitemap and permitted public URLs",
       progress: 10,
     });
@@ -251,6 +260,7 @@ export async function executeWebsiteIngestion(jobId) {
 
       await websitesDb.updateIngestionJob(jobId, {
         jobStatus: "Crawling",
+        status: "Crawling",
         currentStep: `Crawling page (${i + 1}/${urls.length}): ${url}`,
         progress: Math.min(25 + Math.floor(((i + 1) / urls.length) * 35), 60),
       });
@@ -262,7 +272,7 @@ export async function executeWebsiteIngestion(jobId) {
 
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
+        const timeout = setTimeout(() => controller.abort(), 10000);
         const res = await fetch(url, {
           headers: {
             "User-Agent": "NexusAI-KnowledgeBot/1.0 (+https://nexusai.so/bot)",
@@ -279,23 +289,34 @@ export async function executeWebsiteIngestion(jobId) {
 
         const rawHtml = await res.text();
         const extracted = cleanHtmlContent(rawHtml);
-        pageTitle = extracted.title || new URL(url).pathname;
+        pageTitle = extracted.title || new URL(url).pathname || "Home";
         pageDesc = extracted.description;
         pageText = extracted.text;
         contentHash = crypto.createHash("sha256").update(pageText).digest("hex");
       } catch (fetchErr) {
-        // Fallback realistic page content if network is inaccessible
-        pageTitle = `Page: ${new URL(url).pathname || "Home"}`;
-        pageText = `Comprehensive information about services, offerings, and customer support for ${source.name}.\n\nURL: ${url}\n\nOur company provides industry-leading products, customer inquiries, business solutions, and technical assistance. Contact us anytime for consultations or inquiries.`;
-        contentHash = crypto.createHash("sha256").update(pageText).digest("hex");
+        // Truthful reporting: do not invent fake page text
+        console.warn(`[CRAWL_FETCH_FAIL] Could not fetch ${url}: ${fetchErr.message}`);
+        failedPages++;
+        continue;
+      }
+
+      // If text extraction yielded zero or insufficient usable text, report truthfully
+      if (!pageText || pageText.trim().length < 20) {
+        failedPages++;
+        continue;
       }
 
       // Step 4: Semantic Chunking
       const chunks = chunkText(pageText, 450, 70);
+      if (chunks.length === 0) {
+        failedPages++;
+        continue;
+      }
 
       // Step 5 & 6: Generate Embeddings & Upsert to Vector Store
       await websitesDb.updateIngestionJob(jobId, {
         jobStatus: "Embedding",
+        status: "Embedding",
         currentStep: `Generating embeddings for: ${pageTitle}`,
         progress: Math.min(60 + Math.floor(((i + 1) / urls.length) * 35), 95),
       });
@@ -303,10 +324,39 @@ export async function executeWebsiteIngestion(jobId) {
       for (let cIdx = 0; cIdx < chunks.length; cIdx++) {
         const chunk = chunks[cIdx];
         const embedding = await generateEmbedding(chunk);
+        const chunkId = `chk_ws_${source.id}_${i}_${cIdx}`;
 
-        // Store vector point with strict multi-tenant metadata isolation
+        // Persist to PostgreSQL KnowledgeChunk with vector embedding
+        if (embedding) {
+          const vectorStr = `[${embedding.join(",")}]`;
+          await queryDb(
+            `INSERT INTO "KnowledgeChunk" (
+              "id", "documentId", "organizationId", "botId", "chunkIndex",
+              "content", "contentHash", "embedding", "sourceUrl", "pageTitle", "createdAt"
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::vector, $9, $10, NOW())
+            ON CONFLICT ("id") DO UPDATE SET
+              "content" = EXCLUDED."content",
+              "embedding" = EXCLUDED."embedding",
+              "sourceUrl" = EXCLUDED."sourceUrl",
+              "pageTitle" = EXCLUDED."pageTitle";`,
+            [
+              chunkId,
+              source.id,
+              source.organizationId,
+              source.botId,
+              cIdx,
+              chunk,
+              contentHash,
+              vectorStr,
+              url,
+              pageTitle,
+            ]
+          );
+        }
+
+        // Cache in memory for fast local lookup
         vectorStorePoints.push({
-          id: `vec_${source.id}_${i}_${cIdx}`,
+          id: chunkId,
           tenantId: source.organizationId,
           botId: source.botId,
           websiteId: source.id,
@@ -340,26 +390,32 @@ export async function executeWebsiteIngestion(jobId) {
     }
 
     // Step 7: Finalize Job Status
+    const isSuccess = indexedPages > 0;
     await websitesDb.updateIngestionJob(jobId, {
-      jobStatus: "Completed",
-      currentStep: "Synchronization completed successfully",
+      jobStatus: isSuccess ? "Completed" : "Failed",
+      status: isSuccess ? "Completed" : "Failed",
+      currentStep: isSuccess
+        ? "Synchronization completed successfully"
+        : "Failed to extract usable content from the provided website.",
       progress: 100,
       indexedCount: indexedPages,
       failedCount: failedPages,
       finishedAt: new Date().toISOString(),
+      errorDetails: isSuccess ? null : "No usable content could be extracted from the provided URL(s).",
     });
 
     await websitesDb.updateWebsiteSource(source.id, {
-      status: "Ready",
+      status: isSuccess ? "Ready" : "Failed",
       pagesDiscovered: urls.length,
       pagesIndexed: indexedPages,
       pagesFailed: failedPages,
       lastSyncedAt: new Date().toISOString(),
-      lastError: null,
+      lastError: isSuccess ? null : "No usable content extracted from website.",
     });
   } catch (err) {
     await websitesDb.updateIngestionJob(jobId, {
       jobStatus: "Failed",
+      status: "Failed",
       currentStep: `Ingestion failed: ${err.message}`,
       errorDetails: err.message,
       finishedAt: new Date().toISOString(),
@@ -376,7 +432,9 @@ export async function executeWebsiteIngestion(jobId) {
  * Searches website and document knowledge with strict tenant and bot isolation
  */
 export async function searchWebsiteKnowledge(botId, query, topK = 4) {
-  // 1. Search persistent document knowledge first
+  if (!botId || !query) return [];
+
+  // 1. Search persistent document knowledge strictly for this botId
   let docResults = [];
   try {
     docResults = documentsStore.searchDocuments(botId, query, topK);
@@ -384,37 +442,101 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
     console.warn("[KNOWLEDGE_DOC_SEARCH_WARN]", err.message);
   }
 
-  // 2. Search in-memory crawled website vector store
+  // 2. Search PostgreSQL pgvector KnowledgeChunk table for this botId
+  let dbResults = [];
+  try {
+    const queryVec = await generateEmbedding(query);
+    if (queryVec && Array.isArray(queryVec)) {
+      const vectorStr = `[${queryVec.join(",")}]`;
+      const res = await queryDb(
+        `SELECT "id", "botId", "organizationId", "content", "sourceUrl", "pageTitle",
+                (1 - ("embedding" <=> $1::vector)) AS score
+         FROM "KnowledgeChunk"
+         WHERE "botId" = $2 AND "embedding" IS NOT NULL
+         ORDER BY "embedding" <=> $1::vector ASC
+         LIMIT $3;`,
+        [vectorStr, botId, topK]
+      );
+      if (res.ok && Array.isArray(res.rows)) {
+        dbResults = res.rows.map((r) => ({
+          pageTitle: r.pageTitle || r.sourceUrl,
+          pageUrl: r.sourceUrl,
+          content: r.content,
+          score: Number(r.score) || 0,
+        }));
+      }
+    }
+  } catch (dbErr) {
+    // Vector search error, try keyword search on PostgreSQL KnowledgeChunk
+    try {
+      const keywords = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
+      if (keywords.length > 0) {
+        const pattern = `%${keywords[0]}%`;
+        const res = await queryDb(
+          `SELECT "id", "botId", "organizationId", "content", "sourceUrl", "pageTitle", 1.0 AS score
+           FROM "KnowledgeChunk"
+           WHERE "botId" = $1 AND "content" ILIKE $2
+           LIMIT $3;`,
+          [botId, pattern, topK]
+        );
+        if (res.ok && Array.isArray(res.rows)) {
+          dbResults = res.rows.map((r) => ({
+            pageTitle: r.pageTitle || r.sourceUrl,
+            pageUrl: r.sourceUrl,
+            content: r.content,
+            score: Number(r.score) || 0.8,
+          }));
+        }
+      }
+    } catch (kwErr) {}
+  }
+
+  // 3. Search in-memory crawled website vector store for this botId
   const botPoints = vectorStorePoints.filter((p) => p.botId === botId);
   let websiteResults = [];
 
   if (botPoints.length > 0) {
     try {
       const queryVec = await generateEmbedding(query);
-      websiteResults = botPoints.map((point) => {
-        let dot = 0;
-        let normA = 0;
-        let normB = 0;
-        for (let i = 0; i < 768; i++) {
-          const a = queryVec[i] || 0;
-          const b = point.embedding[i] || 0;
-          dot += a * b;
-          normA += a * a;
-          normB += b * b;
-        }
-        const score = dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
-        return { ...point, score };
-      });
-      websiteResults.sort((a, b) => b.score - a.score);
+      if (queryVec) {
+        websiteResults = botPoints.map((point) => {
+          let dot = 0;
+          let normA = 0;
+          let normB = 0;
+          for (let i = 0; i < 768; i++) {
+            const a = queryVec[i] || 0;
+            const b = point.embedding?.[i] || 0;
+            dot += a * b;
+            normA += a * a;
+            normB += b * b;
+          }
+          const score = dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+          return { ...point, score };
+        });
+        websiteResults.sort((a, b) => b.score - a.score);
+      }
     } catch (e) {
       console.warn("[KNOWLEDGE_WEBSITE_SEARCH_WARN]", e.message);
     }
   }
 
-  // Combine document chunks and website chunks
-  const combined = [...docResults, ...websiteResults];
+  // Combine results strictly for this botId
+  const combined = [...docResults, ...dbResults, ...websiteResults];
   if (combined.length === 0) return [];
 
-  combined.sort((a, b) => (b.score || 0) - (a.score || 0));
-  return combined.slice(0, topK);
+  // Deduplicate by content substring
+  const unique = [];
+  const seenContent = new Set();
+  for (const item of combined) {
+    const key = (item.content || "").slice(0, 80);
+    if (!seenContent.has(key)) {
+      seenContent.add(key);
+      unique.push(item);
+    }
+  }
+
+  unique.sort((a, b) => (b.score || 0) - (a.score || 0));
+  return unique.slice(0, topK);
 }
+
+export { cleanHtmlContent, chunkText, generateEmbedding, vectorStorePoints };
