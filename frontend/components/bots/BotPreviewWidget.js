@@ -309,15 +309,37 @@ export default function BotPreviewWidget({
             {/* Citations if available */}
             {m.sources && m.sources.length > 0 && (
               <div className="mt-1 flex flex-wrap gap-1 max-w-[85%]">
-                {m.sources.map((src, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 text-[10px] bg-neutral-200/70 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-1.5 py-0.5 rounded-sm"
-                  >
-                    <FileText className="w-2.5 h-2.5 text-indigo-500" />
-                    {src}
-                  </span>
-                ))}
+                {m.sources.map((src, i) => {
+                  const title =
+                    typeof src === "object" && src !== null
+                      ? src.title || src.url || "Knowledge Document"
+                      : String(src || "Knowledge Source");
+                  const url = typeof src === "object" && src !== null ? src.url : null;
+
+                  return (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 text-[10px] bg-neutral-200/70 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-1.5 py-0.5 rounded-sm"
+                    >
+                      <FileText className="w-2.5 h-2.5 text-indigo-500 shrink-0" />
+                      {url ? (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline truncate max-w-[180px]"
+                          title={title}
+                        >
+                          {title}
+                        </a>
+                      ) : (
+                        <span className="truncate max-w-[180px]" title={title}>
+                          {title}
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>

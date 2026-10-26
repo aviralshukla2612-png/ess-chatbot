@@ -730,7 +730,9 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
                       <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-400">
                         <span>Source: </span>
                         <span className="font-semibold text-slate-600">
-                          {msg.sources[0].title || msg.sources[0].url}
+                          {typeof msg.sources[0] === "object" && msg.sources[0] !== null
+                            ? msg.sources[0].title || msg.sources[0].url || "Knowledge Source"
+                            : String(msg.sources[0] || "Knowledge Source")}
                         </span>
                       </div>
                     )}
