@@ -28,17 +28,46 @@ try {
   }
 }
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgrespassword@localhost:5432/ess_chatbot?schema=public";
+const DEFAULT_DEV_DATABASE_URL = "postgresql://postgres:postgrespassword@localhost:5432/ess_chatbot?schema=public";
 
 let pool = null;
 let isConnected = false;
 let initPromise = null;
 
+export function isPostgresConfigured() {
+  return Boolean(process.env.DATABASE_URL || (process.env.POSTGRES_HOST && process.env.POSTGRES_PASSWORD));
+}
+
+export function isTestMode() {
+  return (
+    process.env.NODE_ENV === "test" ||
+    process.execArgv.some((a) => a.includes("test")) ||
+    process.argv.some((a) => a.includes("test") || a.includes(".test.js"))
+  );
+}
+
+export function isPostgresAuthoritative() {
+  const env = process.env;
+  return (
+    env.NODE_ENV === "production" ||
+    env.NODE_ENV === "staging" ||
+    env.APP_ENV === "production" ||
+    env.APP_ENV === "staging" ||
+    env.PERSISTENCE_MODE === "postgres"
+  );
+}
+
 export function getDbPool() {
   if (!Pool) return null;
+
+  // In test environment without an explicitly configured database, do not attempt spurious local connections
+  if (isTestMode() && !isPostgresConfigured()) {
+    return null;
+  }
+
   if (!pool) {
     const envStatus = validateEnvironment(process.env);
-    if (!envStatus.valid && process.env.NODE_ENV === "production") {
+    if (!envStatus.valid && isPostgresAuthoritative()) {
       console.error("[DB_CONFIG_ERROR] Database environment validation failed:", envStatus.errors.join("; "));
     }
 
@@ -55,13 +84,18 @@ export function getDbPool() {
       poolConfig.user = process.env.POSTGRES_USER || "postgres";
       poolConfig.password = process.env.POSTGRES_PASSWORD;
     } else {
-      poolConfig.connectionString = process.env.DATABASE_URL || DATABASE_URL;
+      poolConfig.connectionString = process.env.DATABASE_URL || DEFAULT_DEV_DATABASE_URL;
     }
 
     pool = new Pool(poolConfig);
 
     pool.on("error", (err) => {
       console.error("[DB_POOL_ERROR] Unexpected error on idle client:", err.message);
+    });
+
+    // Automatically trigger idempotent schema initialization
+    initPostgresTables().catch((err) => {
+      console.warn(`[POSTGRES_INIT_WARN] Auto-migration check: ${err.message}`);
     });
   }
   return pool;
@@ -224,9 +258,13 @@ export async function initPostgresTables() {
             "sizeBytes" INT DEFAULT 0,
             "status" VARCHAR(64) DEFAULT 'Ready',
             "chunksCount" INT DEFAULT 0,
+            "errorMessage" TEXT,
+            "content" TEXT,
             "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
+          ALTER TABLE "KnowledgeDocument" ADD COLUMN IF NOT EXISTS "errorMessage" TEXT;
+          ALTER TABLE "KnowledgeDocument" ADD COLUMN IF NOT EXISTS "content" TEXT;
         `);
 
         // 8. Knowledge Chunks with Vector(768) & HNSW Index
@@ -460,6 +498,7 @@ export async function initPostgresTables() {
           CREATE INDEX IF NOT EXISTS idx_leads_tenant ON "Lead" ("organizationId", "botId");
           CREATE INDEX IF NOT EXISTS idx_documents_tenant ON "KnowledgeDocument" ("organizationId", "botId");
           CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_tenant ON "KnowledgeChunk" ("organizationId", "botId");
+          CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_doc ON "KnowledgeChunk" ("documentId");
           CREATE INDEX IF NOT EXISTS idx_user_email ON "User" ("email");
           CREATE INDEX IF NOT EXISTS idx_membership_lookup ON "OrganizationMembership" ("organizationId", "userId");
           CREATE INDEX IF NOT EXISTS idx_subscription_org ON "Subscription" ("organizationId");
@@ -489,6 +528,9 @@ export async function initPostgresTables() {
  * Execute a query with connection pooling and error handling
  */
 export async function queryDb(sql, params = []) {
+  if (process.env.SIMULATE_DB_UNAVAILABLE === "true") {
+    return { ok: false, error: "Database connection failed (simulated unavailable)", rows: [], rowCount: 0 };
+  }
   try {
     const p = getDbPool();
     if (!p) {
@@ -505,4 +547,40 @@ export async function queryDb(sql, params = []) {
 
 export function isDbConnected() {
   return isConnected;
+}
+
+/**
+ * Executes a callback within a managed database transaction.
+ * Rolls back automatically if an error is thrown.
+ */
+export async function withTransaction(callback) {
+  const p = getDbPool();
+  if (!p) {
+    throw new Error("Database pool unavailable for transaction execution");
+  }
+  const client = await p.connect();
+  try {
+    await client.query("BEGIN;");
+    const result = await callback(client);
+    await client.query("COMMIT;");
+    return result;
+  } catch (err) {
+    try {
+      await client.query("ROLLBACK;");
+    } catch {}
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function resetDbPoolForTesting() {
+  if (pool) {
+    try {
+      await pool.end();
+    } catch {}
+    pool = null;
+    isConnected = false;
+    initPromise = null;
+  }
 }

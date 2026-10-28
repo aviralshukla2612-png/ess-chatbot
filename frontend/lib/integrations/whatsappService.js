@@ -148,28 +148,56 @@ export const whatsappService = {
     if (safety.blocked) {
       replyText = safety.reply;
     } else {
-      // 3. Sales flow turn execution
-      const flowResult = handleSalesFlowTurn({
-        userMessage: text,
-        history: conv.messages || [],
-        qualification: conv.qualification || null,
-        botName: bot?.name || "Emperor AI",
-        companyName: bot?.company || "Emperor Smart Solutions",
-        services: ALL_ESS_SERVICES,
-      });
+      const isEssBot = Boolean(
+        bot.isEss ||
+        bot.isEssTenant ||
+        bot.id === "bot_aa" ||
+        (bot.company === "Emperor Smart Solutions" && (!targetOrgId || targetOrgId === "org_ess_default"))
+      );
+
+      // 3. Sales flow turn execution (only for ESS agency bot or if custom qualification is configured)
+      let flowResult = null;
+      if (isEssBot) {
+        flowResult = handleSalesFlowTurn({
+          userMessage: text,
+          history: conv.messages || [],
+          qualification: conv.qualification || null,
+          botName: bot?.name || "Emperor AI",
+          companyName: bot?.company || "Emperor Smart Solutions",
+          services: ALL_ESS_SERVICES,
+        });
+      }
 
       if (flowResult && flowResult.reply) {
         replyText = flowResult.reply;
       } else {
         try {
+          const systemPrompt = buildMasterSystemPrompt({
+            bot,
+            assistantName: bot?.name || (isEssBot ? "Emperor AI" : "AI Assistant"),
+            businessName: bot?.companyName || bot?.company || (isEssBot ? "Emperor Smart Solutions" : "Our Company"),
+            botDescription: bot?.description || "",
+            websiteUrl: bot?.websiteUrl || "",
+            businessPhone: bot?.phoneNumber || "",
+            isEssTenant: isEssBot,
+            userLanguage: "english",
+          });
           const messages = [
-            { role: "system", content: buildMasterSystemPrompt(bot?.company || "Emperor Smart Solutions", bot?.name || "Emperor AI") },
+            { role: "system", content: systemPrompt },
             ...(conv.messages || []).slice(-6),
             { role: "user", content: text },
           ];
-          replyText = await InferenceProvider.generate({ messages, maxTokens: 256 });
+          const rawInference = await InferenceProvider.generate({ messages, maxTokens: 256 });
+          replyText = validateOutput(rawInference, {
+            bot,
+            isEssTenant: isEssBot,
+            businessName: bot?.companyName || bot?.company || (isEssBot ? "Emperor Smart Solutions" : "Our Company"),
+            lang: "english",
+          });
         } catch (infErr) {
-          replyText = `Thank you for reaching out to ${bot?.company || "Emperor Smart Solutions"}. We specialize in web, mobile, and custom AI software. Our technology team will connect with you shortly!`;
+          replyText = isEssBot
+            ? "Thank you for reaching out to Emperor Smart Solutions. We specialize in web, mobile, and custom AI software. Our technology team will connect with you shortly!"
+            : `Thank you for contacting ${bot?.company || bot?.name || "us"}. Our team will connect with you shortly!`;
         }
       }
 

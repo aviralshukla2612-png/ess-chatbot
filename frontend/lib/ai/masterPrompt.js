@@ -43,11 +43,38 @@ export function detectLanguage(text) {
 
 /**
  * Checks incoming user message against backend guardrails.
+ * Supports configurable per-bot business scope, prohibited topics, and fallback messages.
  */
-export function checkInputScopeAndSafety(message, businessName = "Daily Cashbook", lang = "english") {
+export function checkInputScopeAndSafety(message, optionsOrBusinessName = "Daily Cashbook", langArg = "english") {
   const cleanMsg = (message || "").trim();
+  let businessName = "Daily Cashbook";
+  let lang = langArg;
+  let bot = {};
+  let isEss = false;
+  let allowedTopics = null;
+  let prohibitedTopics = null;
+  let outOfScopeFallback = "";
 
-  // Jailbreak & Prompt Injection Defense
+  if (typeof optionsOrBusinessName === "object" && optionsOrBusinessName !== null) {
+    const opts = optionsOrBusinessName;
+    bot = opts.bot || opts;
+    businessName = opts.businessName || bot.companyName || bot.company || bot.name || "Our Business";
+    lang = opts.lang || opts.userLanguage || langArg || "english";
+    const effectiveOrg = bot.organizationId || opts.organizationId || opts.tenantId || null;
+    isEss = Boolean(
+      opts.isEss ||
+      opts.isEssTenant ||
+      (effectiveOrg === "org_ess_default" && (bot.isEss || bot.isEssTenant || bot.id === "bot_aa" || businessName === "Emperor Smart Solutions"))
+    );
+    allowedTopics = opts.allowedTopics || bot.allowedTopics || null;
+    prohibitedTopics = opts.prohibitedTopics || bot.prohibitedTopics || null;
+    outOfScopeFallback = opts.outOfScopeFallback || bot.outOfScopeFallback || "";
+  } else {
+    businessName = optionsOrBusinessName || "Daily Cashbook";
+    isEss = businessName === "Emperor Smart Solutions";
+  }
+
+  // 1. Jailbreak & Prompt Injection Defense
   for (const pattern of PROMPT_INJECTION_PATTERNS) {
     if (pattern.test(cleanMsg)) {
       return {
@@ -55,8 +82,48 @@ export function checkInputScopeAndSafety(message, businessName = "Daily Cashbook
         reason: "prompt_injection",
         reply:
           lang === "english"
-            ? `Nice try attempting to hack me! 💀 Ask me what you actually need about ${businessName}.`
-            : `Arrey bhai, mujhe hack karne ke chakkar mein mat pad 💀 Seedha bol ${businessName} ke baare mein kya janna hai!`,
+            ? (isEss
+                ? `Nice try attempting to hack me! 💀 Ask me what you actually need about ${businessName}.`
+                : `I am the official AI assistant for ${businessName}. I operate strictly within our verified business scope. How can I assist you with ${businessName}?`)
+            : (isEss
+                ? `Arrey bhai, mujhe hack karne ke chakkar mein mat pad 💀 Seedha bol ${businessName} ke baare mein kya janna hai!`
+                : `Main ${businessName} ka official business assistant hoon aur sirf verified business topics mein help karta hoon.`),
+      };
+    }
+  }
+
+  // 2. Prohibited Topics Check (Configured per-bot)
+  if (Array.isArray(prohibitedTopics) && prohibitedTopics.length > 0) {
+    for (const topic of prohibitedTopics) {
+      if (typeof topic === "string" && topic.trim()) {
+        const regex = new RegExp(`\\b${topic.trim()}\\b`, "i");
+        if (regex.test(cleanMsg)) {
+          return {
+            blocked: true,
+            reason: "prohibited_topic",
+            reply:
+              outOfScopeFallback ||
+              (lang === "english"
+                ? `I apologize, but ${businessName} does not provide assistance regarding "${topic}". How can I help you with our verified services?`
+                : `Maaf kijiye, ${businessName} "${topic}" ke baare mein jankari provide nahi karta.`),
+          };
+        }
+      }
+    }
+  }
+
+  // 3. Domain Guardrails / Perimeter Out-of-Scope (for configured tenant bots with outOfScopeFallback)
+  if (!isEss && outOfScopeFallback) {
+    const isOffTopic =
+      /\b(?:stand-?up|comedian|comedians|comedy|cast of|film|movie|bollywood|hollywood|directed by|starring|played by|actor|actress|box office|character of|ingredients|recipe for|tablespoon|teaspoon|preheat|oven|cup of)\b/i.test(cleanMsg) ||
+      /\b(?:love\s+(?:is|and|or)\s+lust|distinct\s+emotions|human\s+relationships|primal\s+emotion|physical\s+attraction|emotional\s+connection|romantic\s+feelings|philosophical\s+topic|complex\s+and\s+intriguing\s+topic)\b/i.test(cleanMsg) ||
+      /\b(?:who\s+(?:is|was)\s+(?:salman|shah\s*rukh|srk|aamir|akshay|deepika|katrina|alia|ranbir|ranveer|kareena|priyanka|amitabh|bachchan|hrithik|rajinikanth|prabhas|allu\s*arjun|modi|rahul\s*gandhi|nehru|gandhi|trump|biden|putin|obama|messi|ronaldo|virat|dhoni|sachin|elon\s*musk|bill\s*gates|steve\s*jobs|zuckerberg|bezos|taylor\s*swift|leonardo|dicaprio|leonardo\s*di\s*caprio|tom\s*cruise|brad\s*pitt))\b/i.test(cleanMsg);
+
+    if (isOffTopic) {
+      return {
+        blocked: true,
+        reason: "out_of_scope",
+        reply: outOfScopeFallback,
       };
     }
   }
@@ -70,21 +137,36 @@ export const SYSTEM_PROMPT_VERSION = "2.2.0";
  * Builds the Master Grok-Style Conversational System Prompt with Language Adaptation
  */
 export function buildMasterSystemPrompt(options = {}) {
-  const bot = options.bot || {};
-  const assistantName = options.assistantName || bot.name || "Emperor AI";
-  const businessName = options.businessName || bot.company || "Emperor Smart Solutions";
-  const tenantId = options.tenantId || bot.organizationId || "default_tenant";
-  const retrievedContext = options.retrievedContext || options.verifiedKnowledge || "";
-  const chatHistory = options.chatHistory || "";
-  const customInstructions = options.customInstructions || bot.systemPrompt || bot.instructions || "";
-  const userLanguage = options.userLanguage || "english";
-  const collectLeads = options.collectLeads !== undefined ? options.collectLeads : (bot.collectLeads !== false);
-  const hasVisitorDetails = options.hasVisitorDetails || false;
-  const visitorName = options.visitorName || "";
-  const businessPhone = options.businessPhone || bot.phoneNumber || "";
-  const websiteUrl = options.websiteUrl || bot.websiteUrl || "";
-  const botDescription = options.botDescription || bot.description || "";
-  const isEss = !businessName || businessName === "Emperor Smart Solutions" || businessName === "My Organization";
+  let opts = options;
+  if (typeof options === "string") {
+    opts = { businessName: options };
+  }
+  const bot = opts.bot || {};
+  const tenantId = opts.tenantId || bot.organizationId || null;
+  const rawBusinessName = opts.businessName || bot.companyName || bot.company || "";
+  const isEss = Boolean(
+    opts.isEss ||
+    opts.isEssTenant ||
+    (tenantId === "org_ess_default" && (bot.isEss || bot.isEssTenant || bot.id === "bot_aa" || rawBusinessName === "Emperor Smart Solutions")) ||
+    (!rawBusinessName && !bot.id && !tenantId && !opts.bot)
+  );
+
+  const assistantName = opts.assistantName || bot.name || (isEss ? "Emperor AI" : "AI Assistant");
+  const businessName = rawBusinessName || (isEss ? "Emperor Smart Solutions" : (bot.name || "Our Company"));
+  const retrievedContext = opts.retrievedContext || opts.verifiedKnowledge || "";
+  const chatHistory = opts.chatHistory || "";
+  const customInstructions = opts.customInstructions || bot.systemPrompt || bot.instructions || "";
+  const userLanguage = opts.userLanguage || "english";
+  const collectLeads = opts.collectLeads !== undefined ? opts.collectLeads : (bot.collectLeads !== false);
+  const hasVisitorDetails = opts.hasVisitorDetails || false;
+  const visitorName = opts.visitorName || "";
+  const businessPhone = opts.businessPhone || bot.phoneNumber || "";
+  const businessEmail = opts.businessEmail || bot.contactEmail || bot.email || "";
+  const websiteUrl = opts.websiteUrl || bot.websiteUrl || "";
+  const botDescription = opts.botDescription || bot.description || "";
+  const allowedTopics = opts.allowedTopics || bot.allowedTopics || null;
+  const prohibitedTopics = opts.prohibitedTopics || bot.prohibitedTopics || null;
+  const outOfScopeFallback = opts.outOfScopeFallback || bot.outOfScopeFallback || "";
   const contextBlock = retrievedContext
     ? retrievedContext.trim()
     : "No verified website knowledge available.";
@@ -261,6 +343,11 @@ STRICT KNOWLEDGE GROUNDING & HONESTY RULE:
 - For missing policies or facts, respond truthfully: "I do not have that specific information in my verified records for ${businessName}. I couldn't verify that specific information from the available ${businessName} records. Please check the official website${websiteUrl ? ` (${websiteUrl})` : ""} for the latest details."
 - When founder information in verified knowledge specifies that the founder is known as 'Heet Sir' with the full name unverified, answer consistently that the founder is known to us as Heet Sir and the full name has not been verified. NEVER invent a surname.
 
+${allowedTopics && Array.isArray(allowedTopics) && allowedTopics.length > 0 ? `ALLOWED TOPICS & SCOPE BOUNDARY:
+- You are strictly confined to discussing the following topics: ${allowedTopics.join(", ")}.
+- Inquiries outside these topics must be politely declined.\n` : ""}${prohibitedTopics && Array.isArray(prohibitedTopics) && prohibitedTopics.length > 0 ? `PROHIBITED TOPICS:
+- You must refuse to discuss the following topics: ${prohibitedTopics.join(", ")}.\n` : ""}${outOfScopeFallback ? `OUT OF SCOPE RESPONSE:
+- When declining out-of-scope inquiries or prohibited topics, respond with: "${outOfScopeFallback}"\n` : ""}
 Verified Knowledge for ${businessName}:
 ${contextBlock}
 ${customInstructions ? `\nAdditional Instructions:\n${customInstructions}\n` : ""}`;
@@ -277,16 +364,29 @@ export function validateOutput(reply, arg2 = "Emperor Smart Solutions", arg3 = "
   let businessPhone = "";
   let websiteUrl = "";
 
+  let isEss = false;
   if (typeof arg2 === "object" && arg2 !== null) {
     const opts = arg2;
-    businessName = opts.businessName || opts.bot?.company || "Emperor Smart Solutions";
+    const bot = opts.bot || {};
+    const tenantId = opts.tenantId || bot.organizationId;
+    const rawName = opts.businessName || bot.companyName || bot.company || "";
+    isEss = Boolean(
+      opts.isEss ||
+      opts.isEssTenant ||
+      bot.isEss ||
+      bot.isEssTenant ||
+      bot.id === "bot_aa" ||
+      (rawName === "Emperor Smart Solutions" && (!tenantId || tenantId === "default_tenant" || tenantId === "org_ess_default"))
+    );
+    businessName = rawName || (isEss ? "Emperor Smart Solutions" : (bot.name || "Our Company"));
     lang = opts.lang || opts.userLanguage || "english";
-    assistantName = opts.assistantName || opts.bot?.name || "";
+    assistantName = opts.assistantName || bot.name || "";
     visitorName = opts.visitorName || "";
-    businessPhone = opts.businessPhone || opts.bot?.phoneNumber || "";
-    websiteUrl = opts.websiteUrl || opts.bot?.websiteUrl || "";
+    businessPhone = opts.businessPhone || bot.phoneNumber || "";
+    websiteUrl = opts.websiteUrl || bot.websiteUrl || "";
   } else {
-    businessName = arg2 || "Emperor Smart Solutions";
+    isEss = arg2 === "Emperor Smart Solutions";
+    businessName = arg2 || (isEss ? "Emperor Smart Solutions" : "Our Company");
     lang = arg3 || "english";
     assistantName = arg4 || "";
     visitorName = arg5 || "";
@@ -299,7 +399,6 @@ export function validateOutput(reply, arg2 = "Emperor Smart Solutions", arg3 = "
   }
 
   let cleaned = reply.trim();
-  const isEss = !businessName || businessName === "Emperor Smart Solutions" || businessName === "My Organization";
 
   // 0.001 Hallucinated System Policy Acknowledgement Intercept: Never echo "You've confirmed that you've read and understood..."
   if (/you'?ve\s+confirmed\s+that\s+you'?ve\s+read\s+and\s+understood/i.test(cleaned)) {

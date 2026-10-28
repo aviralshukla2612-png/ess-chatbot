@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { validateUrlForSSRF } from "../security/ssrf.js";
 import { websitesDb } from "../db/websites.js";
 import { documentsStore } from "../db/documentsStore.js";
-import { queryDb } from "../db/dbPool.js";
+import { queryDb, isPostgresAuthoritative } from "../db/dbPool.js";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 const EMBED_MODEL = process.env.EMBED_MODEL || "nomic-embed-text";
@@ -92,9 +92,13 @@ function chunkText(text, chunkSize = 500, overlap = 80) {
 }
 
 /**
- * Generates embeddings via Ollama nomic-embed-text with robust fallback
+ * Generates embeddings via Ollama nomic-embed-text with robust fallback and strict dimension validation
  */
 async function generateEmbedding(text) {
+  if (process.env.FORCE_EMBEDDING_FAILURE === "true") {
+    throw new Error(`Embedding model '${EMBED_MODEL}' failed: simulated embedding inference rejection`);
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
@@ -113,11 +117,29 @@ async function generateEmbedding(text) {
     if (res.ok) {
       const data = await res.json();
       if (data.embeddings && data.embeddings[0]) {
-        return data.embeddings[0];
+        const vec = data.embeddings[0];
+        if (
+          !Array.isArray(vec) ||
+          vec.length !== 768 ||
+          !vec.every((n) => typeof n === "number" && Number.isFinite(n))
+        ) {
+          throw new Error(
+            `Embedding dimension mismatch: expected 768, got ${Array.isArray(vec) ? vec.length : typeof vec}`
+          );
+        }
+        return vec;
       }
     }
   } catch (e) {
+    if (e.message.includes("Embedding dimension mismatch") || e.message.includes("simulated")) {
+      throw e;
+    }
     // Ollama unreachable
+  }
+
+  if (process.env.FORCE_EMBEDDING_DIM_MISMATCH === "true") {
+    // Return invalid 512 dimensions to test dimension mismatch rejection
+    return new Array(512).fill(0.1);
   }
 
   // If in test environment without Ollama container running, return deterministic test vector
@@ -431,35 +453,53 @@ export async function executeWebsiteIngestion(jobId) {
 /**
  * Searches website and document knowledge with strict tenant and bot isolation
  */
-export async function searchWebsiteKnowledge(botId, query, topK = 4) {
+export async function searchWebsiteKnowledge(botId, query, topK = 4, options = {}) {
   if (!botId || !query) return [];
 
-  // 1. Search persistent document knowledge strictly for this botId
-  let docResults = [];
+  // Parse options
+  const explicitOrgId = typeof options === "string" ? options : (options?.organizationId || options?.tenantId || null);
+
+  // Server-side verification of bot ownership
+  let bot = null;
   try {
-    docResults = documentsStore.searchDocuments(botId, query, topK);
-  } catch (err) {
-    console.warn("[KNOWLEDGE_DOC_SEARCH_WARN]", err.message);
+    const { botsStore } = await import("../db/botsStore.js");
+    bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+  } catch (e) {}
+
+  // Cross-tenant verification:
+  // If caller provided an organizationId, but the verified bot belongs to a different organization,
+  // this is an unauthorized cross-tenant attempt!
+  if (explicitOrgId && bot && bot.organizationId && bot.organizationId !== explicitOrgId) {
+    return [];
   }
 
-  // 2. Search PostgreSQL pgvector KnowledgeChunk table for this botId
+  const effectiveOrgId = explicitOrgId || bot?.organizationId || null;
+  // Fail closed if tenant boundary cannot be established
+  if (!effectiveOrgId) {
+    return [];
+  }
+
+  const isAuthoritative = isPostgresAuthoritative();
   let dbResults = [];
+  let dbQueriedSuccessfully = false;
+
+  // 1. Primary: Search PostgreSQL pgvector KnowledgeChunk table for this botId & effectiveOrgId
   try {
     const queryVec = await generateEmbedding(query);
     if (queryVec && Array.isArray(queryVec)) {
       const vectorStr = `[${queryVec.join(",")}]`;
-      const res = await queryDb(
-        `SELECT c."id", c."botId", c."organizationId", c."content", c."sourceUrl", c."pageTitle",
+      const sql = `SELECT c."id", c."botId", c."organizationId", c."content", c."sourceUrl", c."pageTitle",
                 (1 - (c."embedding" <=> $1::vector)) AS score
          FROM "KnowledgeChunk" c
          LEFT JOIN "KnowledgeDocument" d ON c."documentId" = d."id"
-         WHERE c."botId" = $2 AND c."embedding" IS NOT NULL
+         WHERE c."botId" = $2 AND c."organizationId" = $3 AND c."embedding" IS NOT NULL
            AND (d."status" IS NULL OR d."status" = 'Ready')
-         ORDER BY c."embedding" <=> $1::vector ASC
-         LIMIT $3;`,
-        [vectorStr, botId, topK]
-      );
+         ORDER BY c."embedding" <=> $1::vector ASC LIMIT $4;`;
+      const params = [vectorStr, botId, effectiveOrgId, topK];
+
+      const res = await queryDb(sql, params);
       if (res.ok && Array.isArray(res.rows)) {
+        dbQueriedSuccessfully = true;
         dbResults = res.rows.map((r) => ({
           pageTitle: r.pageTitle || r.sourceUrl,
           pageUrl: r.sourceUrl,
@@ -474,16 +514,17 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
       const keywords = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
       if (keywords.length > 0) {
         const pattern = `%${keywords[0]}%`;
-        const res = await queryDb(
-          `SELECT c."id", c."botId", c."organizationId", c."content", c."sourceUrl", c."pageTitle", 1.0 AS score
+        const kwSql = `SELECT c."id", c."botId", c."organizationId", c."content", c."sourceUrl", c."pageTitle", 1.0 AS score
            FROM "KnowledgeChunk" c
            LEFT JOIN "KnowledgeDocument" d ON c."documentId" = d."id"
-           WHERE c."botId" = $1 AND c."content" ILIKE $2
+           WHERE c."botId" = $1 AND c."organizationId" = $2 AND c."content" ILIKE $3
              AND (d."status" IS NULL OR d."status" = 'Ready')
-           LIMIT $3;`,
-          [botId, pattern, topK]
-        );
+           LIMIT $4;`;
+        const kwParams = [botId, effectiveOrgId, pattern, topK];
+
+        const res = await queryDb(kwSql, kwParams);
         if (res.ok && Array.isArray(res.rows)) {
+          dbQueriedSuccessfully = true;
           dbResults = res.rows.map((r) => ({
             pageTitle: r.pageTitle || r.sourceUrl,
             pageUrl: r.sourceUrl,
@@ -495,8 +536,28 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
     } catch (kwErr) {}
   }
 
-  // 3. Search in-memory crawled website vector store for this botId
-  const botPoints = vectorStorePoints.filter((p) => p.botId === botId);
+  // If PostgreSQL is canonical and was successfully queried:
+  // Return database results directly. Do not merge with stale or unpersisted JSON copies.
+  if (dbQueriedSuccessfully && dbResults.length > 0) {
+    return dbResults.slice(0, topK);
+  }
+
+  // In authoritative production/staging mode, do not silently fall back to JSON or mock data
+  if (isAuthoritative) {
+    return dbResults.slice(0, topK);
+  }
+
+  // Fallback for local test environments where PostgreSQL container is not configured
+  let docResults = [];
+  try {
+    docResults = documentsStore.searchDocuments(botId, query, topK, effectiveOrgId);
+  } catch (err) {
+    console.warn("[KNOWLEDGE_DOC_SEARCH_WARN]", err.message);
+  }
+
+  const botPoints = vectorStorePoints.filter(
+    (p) => p.botId === botId && p.organizationId === effectiveOrgId
+  );
   let websiteResults = [];
 
   if (botPoints.length > 0) {
@@ -524,11 +585,9 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
     }
   }
 
-  // Combine results strictly for this botId
-  const combined = [...docResults, ...dbResults, ...websiteResults];
+  const combined = [...dbResults, ...docResults, ...websiteResults];
   if (combined.length === 0) return [];
 
-  // Deduplicate by content substring
   const unique = [];
   const seenContent = new Set();
   for (const item of combined) {

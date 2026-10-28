@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
-    const docs = documentsStore.getDocuments(botId, isSuperAdmin ? null : principal.organizationId);
+    const docs = await documentsStore.getDocumentsAsync(botId, isSuperAdmin ? null : principal.organizationId);
     return NextResponse.json({ success: true, documents: docs });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -163,12 +163,12 @@ export async function PUT(request, { params }) {
       });
     }
 
-    const existing = documentsStore.getDocumentById(id);
+    const existing = await documentsStore.getDocumentByIdAsync(id);
     if (!existing || existing.botId !== botId) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
 
-    const updated = documentsStore.updateDocument(id, {
+    const updated = await documentsStore.updateDocumentAsync(id, {
       name: name?.trim() || existing.name,
       content: content !== undefined ? content.trim() : existing.content,
       type: type || existing.type,
@@ -208,12 +208,12 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: "Document id query parameter is required" }, { status: 400 });
     }
 
-    const existing = documentsStore.getDocumentById(docId);
+    const existing = await documentsStore.getDocumentByIdAsync(docId);
     if (existing && existing.botId !== botId && !isSuperAdmin) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
 
-    documentsStore.deleteDocument(docId);
+    await documentsStore.deleteDocumentAsync(docId);
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

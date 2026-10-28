@@ -8,6 +8,9 @@
 import fs from "fs";
 import path from "path";
 
+import os from "os";
+import { isTestMode } from "./dataDir.js";
+
 function findDataFile(filename) {
   const directPath = path.join(process.cwd(), "data", filename);
   if (fs.existsSync(directPath)) return directPath;
@@ -16,7 +19,7 @@ function findDataFile(filename) {
   return directPath;
 }
 
-export function auditAndMigrateJsonData() {
+export function auditAndMigrateJsonData(options = {}) {
   console.log("=================================================");
   console.log("📦 STARTING IDEMPOTENT JSON -> POSTGRES MIGRATION");
   console.log("=================================================");
@@ -314,13 +317,29 @@ ON CONFLICT ("id") DO NOTHING;
   // Finalize transaction
   report.sqlStatements.push("COMMIT;");
 
-  // Write out idempotent migration SQL file
-  const outSqlPath = path.join(process.cwd(), "frontend", "data", "idempotent_migration.sql");
-  try {
-    fs.writeFileSync(outSqlPath, report.sqlStatements.join("\n\n"), "utf8");
-    report.outputSqlPath = outSqlPath;
-  } catch (e) {
-    fs.writeFileSync(path.join(process.cwd(), "data", "idempotent_migration.sql"), report.sqlStatements.join("\n\n"), "utf8");
+  // Write out idempotent migration SQL file (isolated in test mode or custom outPath)
+  let outSqlPath = options.outPath || process.env.MIGRATION_OUT_FILE;
+  if (!outSqlPath) {
+    if (isTestMode()) {
+      outSqlPath = path.join(os.tmpdir(), "idempotent_migration_test.sql");
+    } else {
+      outSqlPath = path.join(process.cwd(), "frontend", "data", "idempotent_migration.sql");
+    }
+  }
+
+  if (options.writeToFile !== false) {
+    try {
+      const parentDir = path.dirname(outSqlPath);
+      if (!fs.existsSync(parentDir)) fs.mkdirSync(parentDir, { recursive: true });
+      fs.writeFileSync(outSqlPath, report.sqlStatements.join("\n\n"), "utf8");
+      report.outputSqlPath = outSqlPath;
+    } catch (e) {
+      const fallbackPath = path.join(process.cwd(), "data", "idempotent_migration.sql");
+      try {
+        fs.writeFileSync(fallbackPath, report.sqlStatements.join("\n\n"), "utf8");
+        report.outputSqlPath = fallbackPath;
+      } catch (err) {}
+    }
   }
 
   console.log(`✅ Audited Bots: ${report.bots.valid}/${report.bots.read} valid.`);

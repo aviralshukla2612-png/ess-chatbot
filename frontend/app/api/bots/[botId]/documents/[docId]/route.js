@@ -31,7 +31,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
-    const doc = documentsStore.getDocumentById(docId);
+    const doc = await documentsStore.getDocumentByIdAsync(docId);
     if (!doc || doc.botId !== botId) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
@@ -63,7 +63,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
-    const existing = documentsStore.getDocumentById(docId);
+    const existing = await documentsStore.getDocumentByIdAsync(docId);
     if (!existing || existing.botId !== botId) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
@@ -75,7 +75,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ success: false, error: "Document content cannot be empty" }, { status: 400 });
     }
 
-    const updated = documentsStore.updateDocument(docId, {
+    const updated = await documentsStore.updateDocumentAsync(docId, {
       name: name?.trim() || existing.name,
       content: content?.trim() || existing.content,
       type: type || existing.type,
@@ -108,12 +108,12 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
-    const existing = documentsStore.getDocumentById(docId);
+    const existing = await documentsStore.getDocumentByIdAsync(docId);
     if (existing && existing.botId !== botId && !isSuperAdmin) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
 
-    documentsStore.deleteDocument(docId);
+    await documentsStore.deleteDocumentAsync(docId);
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

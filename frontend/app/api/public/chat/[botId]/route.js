@@ -287,13 +287,16 @@ export async function POST(request, { params }) {
     }
 
     const botName = bot?.name || "AI Assistant";
+    const botOrgId = bot?.organizationId || null;
+    const tenantId = botOrgId || botId;
+    const isEssBot = Boolean(
+      botOrgId === "org_ess_default" &&
+      (bot?.id === "bot_aa" || bot?.isEss || bot?.isEssTenant || bot?.company === "Emperor Smart Solutions")
+    );
     const businessName =
-      bot?.company && bot?.company !== "My Organization"
-        ? bot.company
-        : (bot?.id === "bot_aa" ? "Emperor Smart Solutions" : (bot?.name || "Business"));
-    const isEssBot = bot?.id === "bot_aa" || businessName === "Emperor Smart Solutions";
-    const tenantId = bot?.organizationId || botId;
-    const botOrgId = bot?.organizationId || (isEssBot ? "org_ess_default" : null);
+      (isEssBot && (!bot?.company || bot?.company === "My Organization"))
+        ? "Emperor Smart Solutions"
+        : (bot?.company && bot?.company !== "My Organization" ? bot.company : (bot?.name || "Business"));
 
     // --- SAAS BILLING & QUOTA ENFORCEMENT ---
     if (!isPreviewMode) {
@@ -317,7 +320,15 @@ export async function POST(request, { params }) {
     let lang = detectLanguage(message);
 
     // Step 2: Input Safety and Scope Check (Backend Guardrails)
-    const safetyCheck = checkInputScopeAndSafety(message, businessName, lang);
+    const safetyCheck = checkInputScopeAndSafety(message, {
+      businessName,
+      bot,
+      isEss: isEssBot,
+      allowedTopics: bot?.allowedTopics,
+      prohibitedTopics: bot?.prohibitedTopics,
+      outOfScopeFallback: bot?.outOfScopeFallback,
+      lang,
+    });
     if (safetyCheck.blocked) {
       return corsResponse(
         NextResponse.json({
@@ -476,7 +487,7 @@ export async function POST(request, { params }) {
     let relevantChunks = [];
     if (!isPreviewMode || bot.id !== "preview_bot") {
       try {
-        relevantChunks = await searchWebsiteKnowledge(botId, message, 4);
+        relevantChunks = await searchWebsiteKnowledge(botId, message, 4, { organizationId: botOrgId });
       } catch (err) {
         console.warn("[SEARCH_WEBSITE_WARN]", err.message);
       }
@@ -513,9 +524,25 @@ export async function POST(request, { params }) {
     const sessionLead = currentMsgLead;
     const leadDetails = sessionLead;
 
-    const isCompanyEmail = (em) =>
-      /emperorsmartsolutions\.com|emperorsmartsolutions@gmail\.com|^contact@|^sales@|^info@|^support@|^careers@/i.test(em || "");
-    const isCompanyPhone = (ph) => /63591\s*20081/.test((ph || "").replace(/\D/g, ""));
+    const isCompanyEmail = (em) => {
+      if (!em) return false;
+      const lowerEm = em.toLowerCase();
+      if (bot?.contactEmail && lowerEm === bot.contactEmail.toLowerCase()) return true;
+      if (bot?.email && lowerEm === bot.email.toLowerCase()) return true;
+      if (isEssBot) {
+        return /emperorsmartsolutions\.com|emperorsmartsolutions@gmail\.com|^contact@|^sales@|^info@|^support@|^careers@/i.test(em);
+      }
+      return false;
+    };
+    const isCompanyPhone = (ph) => {
+      if (!ph) return false;
+      const digits = (ph || "").replace(/\D/g, "");
+      if (bot?.phoneNumber && digits === bot.phoneNumber.replace(/\D/g, "")) return true;
+      if (isEssBot) {
+        return /63591\s*20081/.test(digits);
+      }
+      return false;
+    };
     const isPlaceholderName = (n) => !n || n === "Website Visitor" || n === "Website Prospect";
 
     // 1. Phone Resolution (Current message has top priority!)
@@ -607,6 +634,8 @@ export async function POST(request, { params }) {
 
     // Build Master System Prompt with personalized visitorName
     const masterSystemPrompt = buildMasterSystemPrompt({
+      bot,
+      isEss: isEssBot,
       assistantName: botName,
       businessName: businessName,
       tenantId: tenantId,
@@ -620,6 +649,9 @@ export async function POST(request, { params }) {
       businessPhone: bot?.phoneNumber || "",
       websiteUrl: bot?.websiteUrl || "",
       botDescription: bot?.description || "",
+      allowedTopics: bot?.allowedTopics || null,
+      prohibitedTopics: bot?.prohibitedTopics || null,
+      outOfScopeFallback: bot?.outOfScopeFallback || "",
     });
 
     const llmMessages = [
@@ -1141,7 +1173,7 @@ export async function POST(request, { params }) {
       } else if (lang === "hinglish") {
         deterministicReply = `Emperor Smart Solutions ek AI aur digital engineering provider hai jo ${businessName} ke is chatbot platform ko power karta hai. Main yahan specifically ${businessName} aur uske products ke liye assist karta hoon. Kya main ${businessName} ke regarding aapki help kar sakta hoon?`;
       } else {
-        deterministicReply = `Emperor Smart Solutions is the technology provider and AI platform that powers this chatbot for ${businessName}. As the AI assistant for ${businessName}, my focus is on assisting you with our timepieces and business inquiries. How can I help you with ${businessName} today?`;
+        deterministicReply = `Emperor Smart Solutions is the technology provider and AI platform that powers this chatbot for ${businessName}. As the AI assistant for ${businessName}, my focus is on assisting you with ${businessName}'s products, services, and business inquiries. How can I help you with ${businessName} today?`;
       }
     } else if (isFirstMessageQuery) {
       let firstUserMsg = "";

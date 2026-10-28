@@ -6,11 +6,25 @@
 
 import crypto from "crypto";
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "ess_dev_secret_replace_in_prod_minimum_32_chars_long_123456";
 const DEFAULT_TTL_SECONDS = 7 * 24 * 3600; // 7 days
 
 export function getSessionSecret() {
-  return process.env.SESSION_SECRET || SESSION_SECRET;
+  const secret = process.env.SESSION_SECRET;
+  if (process.env.NODE_ENV === "production") {
+    if (
+      !secret ||
+      secret.trim().length < 32 ||
+      secret.includes("ess_dev_secret") ||
+      secret.includes("replace_") ||
+      secret.includes("placeholder") ||
+      secret.includes("changeme") ||
+      secret.includes("secret_key_here")
+    ) {
+      return null;
+    }
+    return secret.trim();
+  }
+  return secret ? secret.trim() : "ess_dev_secret_replace_in_prod_minimum_32_chars_long_123456";
 }
 
 /**
@@ -40,13 +54,16 @@ function base64UrlDecode(str) {
  */
 export function signSessionToken(payload, ttlSeconds = DEFAULT_TTL_SECONDS) {
   const secret = getSessionSecret();
+  if (!secret) {
+    throw new Error("[AUTH_CONFIG_ERROR] Cannot sign session: SESSION_SECRET is missing or insecure in production mode.");
+  }
   const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
 
   const fullPayload = {
     ...payload,
     iat: now,
-    exp: now + ttlSeconds,
+    exp: typeof payload.exp === "number" ? payload.exp : now + ttlSeconds,
   };
 
   const encodedHeader = base64UrlEncode(JSON.stringify(header));
@@ -75,17 +92,23 @@ export function verifySessionToken(token) {
 
   const [encodedHeader, encodedPayload, signature] = parts;
   const secret = getSessionSecret();
-
-  const dataToSign = `${encodedHeader}.${encodedPayload}`;
-  const expectedSig = crypto
-    .createHmac("sha256", secret)
-    .update(dataToSign)
-    .digest("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+  if (!secret) return null;
 
   try {
+    const header = JSON.parse(base64UrlDecode(encodedHeader));
+    if (header.alg !== "HS256" || header.typ !== "JWT") {
+      return null;
+    }
+
+    const dataToSign = `${encodedHeader}.${encodedPayload}`;
+    const expectedSig = crypto
+      .createHmac("sha256", secret)
+      .update(dataToSign)
+      .digest("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+
     const sigBuffer = Buffer.from(signature);
     const expectedBuffer = Buffer.from(expectedSig);
 
@@ -100,8 +123,13 @@ export function verifySessionToken(token) {
     const payload = JSON.parse(base64UrlDecode(encodedPayload));
     const now = Math.floor(Date.now() / 1000);
 
-    if (payload.exp && payload.exp < now) {
-      return null; // Expired
+    // Require valid numeric expiry claim
+    if (typeof payload.exp !== "number" || isNaN(payload.exp) || payload.exp < now) {
+      return null;
+    }
+
+    if (!payload.userId) {
+      return null;
     }
 
     return payload;

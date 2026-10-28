@@ -2,38 +2,30 @@ import fs from "fs";
 import path from "path";
 import { sseBroker } from "./sseBroker.js";
 import { queryDb } from "./dbPool.js";
+import { getDataFilePath } from "./dataDir.js";
 
-function resolveDataFile() {
-  const frontendPath = path.join(process.cwd(), "frontend", "data", "conversations.json");
-  if (fs.existsSync(frontendPath)) return frontendPath;
-  const directPath = path.join(process.cwd(), "data", "conversations.json");
-  if (fs.existsSync(directPath)) return directPath;
-  if (process.cwd().endsWith("frontend")) return directPath;
-  return frontendPath;
-}
-
-const DATA_FILE = resolveDataFile();
 const SEED_CONVERSATIONS = [];
 let memoryCache = null;
 
 const DEFAULT_HISTORY_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 Hours
 
 function loadFromDisk() {
+  const dataFile = getDataFilePath("conversations.json");
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dataFile)) {
+      const dir = path.dirname(dataFile);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(DATA_FILE, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
+      fs.writeFileSync(dataFile, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
       memoryCache = [...SEED_CONVERSATIONS];
       return memoryCache;
     }
-    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    const raw = fs.readFileSync(dataFile, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       memoryCache = parsed;
       return memoryCache;
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
+    fs.writeFileSync(dataFile, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
     memoryCache = [...SEED_CONVERSATIONS];
     return memoryCache;
   } catch (err) {
@@ -43,11 +35,12 @@ function loadFromDisk() {
 }
 
 function saveToDisk(data) {
+  const dataFile = getDataFilePath("conversations.json");
   try {
     memoryCache = data;
-    const dir = path.dirname(DATA_FILE);
+    const dir = path.dirname(dataFile);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf8");
   } catch (err) {
     console.error("Error saving conversations store:", err);
   }

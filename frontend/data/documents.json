@@ -1,5 +1,1506 @@
 [
   {
+    "id": "doc_prod_fail_1793018245273",
+    "botId": "bot_pers_int_1793018244876",
+    "organizationId": "org_pers_int_1793018244876",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:37:25.273Z",
+    "updatedAt": "2026-10-26T12:37:25.276Z"
+  },
+  {
+    "id": "doc_embed_fail_1793018245135",
+    "botId": "bot_pers_int_1793018244876",
+    "organizationId": "org_pers_int_1793018244876",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:37:25.136Z",
+    "updatedAt": "2026-10-26T12:37:25.361Z"
+  },
+  {
+    "id": "doc_pers_1_1793018244966",
+    "botId": "bot_pers_int_1793018244876",
+    "organizationId": "org_pers_int_1793018244876",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:37:24.967Z",
+    "updatedAt": "2026-10-26T12:37:25.652Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793018209325",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.325Z",
+    "updatedAt": "2026-10-26T12:36:49.330Z"
+  },
+  {
+    "id": "doc_retry_test_1793018209308",
+    "botId": "bot_retry_1793018209308",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.308Z",
+    "updatedAt": "2026-10-26T12:36:49.321Z"
+  },
+  {
+    "id": "doc_failed_1793018209302",
+    "botId": "bot_retrieval_guard_1793018209293",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.302Z",
+    "updatedAt": "2026-10-26T12:36:49.317Z"
+  },
+  {
+    "id": "doc_ready_1793018209293",
+    "botId": "bot_retrieval_guard_1793018209293",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.293Z",
+    "updatedAt": "2026-10-26T12:36:49.299Z"
+  },
+  {
+    "id": "doc_test_fail_1793018209281",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.281Z",
+    "updatedAt": "2026-10-26T12:36:49.296Z"
+  },
+  {
+    "id": "doc_test_success_1793018209253",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.253Z",
+    "updatedAt": "2026-10-26T12:36:49.278Z"
+  },
+  {
+    "id": "doc_test_init_1793018209243",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:36:49.245Z",
+    "updatedAt": "2026-10-26T12:36:49.276Z"
+  },
+  {
+    "id": "doc_prod_fail_1793018124907",
+    "botId": "bot_pers_int_1793018124617",
+    "organizationId": "org_pers_int_1793018124617",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:35:24.907Z",
+    "updatedAt": "2026-10-26T12:35:24.909Z"
+  },
+  {
+    "id": "doc_embed_fail_1793018124818",
+    "botId": "bot_pers_int_1793018124617",
+    "organizationId": "org_pers_int_1793018124617",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:35:24.819Z",
+    "updatedAt": "2026-10-26T12:35:24.955Z"
+  },
+  {
+    "id": "doc_pers_1_1793018124670",
+    "botId": "bot_pers_int_1793018124617",
+    "organizationId": "org_pers_int_1793018124617",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:35:24.671Z",
+    "updatedAt": "2026-10-26T12:35:25.136Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793018088089",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.089Z",
+    "updatedAt": "2026-10-26T12:34:48.093Z"
+  },
+  {
+    "id": "doc_retry_test_1793018088077",
+    "botId": "bot_retry_1793018088077",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.077Z",
+    "updatedAt": "2026-10-26T12:34:48.086Z"
+  },
+  {
+    "id": "doc_failed_1793018088072",
+    "botId": "bot_retrieval_guard_1793018088063",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.072Z",
+    "updatedAt": "2026-10-26T12:34:48.083Z"
+  },
+  {
+    "id": "doc_ready_1793018088064",
+    "botId": "bot_retrieval_guard_1793018088063",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.064Z",
+    "updatedAt": "2026-10-26T12:34:48.070Z"
+  },
+  {
+    "id": "doc_test_fail_1793018088051",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.051Z",
+    "updatedAt": "2026-10-26T12:34:48.067Z"
+  },
+  {
+    "id": "doc_test_success_1793018088025",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.025Z",
+    "updatedAt": "2026-10-26T12:34:48.048Z"
+  },
+  {
+    "id": "doc_test_init_1793018088017",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:48.018Z",
+    "updatedAt": "2026-10-26T12:34:48.045Z"
+  },
+  {
+    "id": "doc_prod_fail_1793018049873",
+    "botId": "bot_pers_int_1793018049350",
+    "organizationId": "org_pers_int_1793018049350",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:34:09.873Z",
+    "updatedAt": "2026-10-26T12:34:09.876Z"
+  },
+  {
+    "id": "doc_embed_fail_1793018049743",
+    "botId": "bot_pers_int_1793018049350",
+    "organizationId": "org_pers_int_1793018049350",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:09.744Z",
+    "updatedAt": "2026-10-26T12:34:09.961Z"
+  },
+  {
+    "id": "doc_pers_1_1793018049491",
+    "botId": "bot_pers_int_1793018049350",
+    "organizationId": "org_pers_int_1793018049350",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:34:09.493Z",
+    "updatedAt": "2026-10-26T12:34:10.262Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793017899139",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:39.139Z",
+    "updatedAt": "2026-10-26T12:31:39.146Z"
+  },
+  {
+    "id": "doc_retry_test_1793017899119",
+    "botId": "bot_retry_1793017899119",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:39.119Z",
+    "updatedAt": "2026-10-26T12:31:39.134Z"
+  },
+  {
+    "id": "doc_failed_1793017899110",
+    "botId": "bot_retrieval_guard_1793017899078",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:39.110Z",
+    "updatedAt": "2026-10-26T12:31:39.129Z"
+  },
+  {
+    "id": "doc_ready_1793017899078",
+    "botId": "bot_retrieval_guard_1793017899078",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:39.078Z",
+    "updatedAt": "2026-10-26T12:31:39.100Z"
+  },
+  {
+    "id": "doc_test_fail_1793017899066",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:39.067Z",
+    "updatedAt": "2026-10-26T12:31:39.087Z"
+  },
+  {
+    "id": "doc_test_success_1793017899012",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:39.012Z",
+    "updatedAt": "2026-10-26T12:31:39.061Z"
+  },
+  {
+    "id": "doc_test_init_1793017898988",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:38.994Z",
+    "updatedAt": "2026-10-26T12:31:39.056Z"
+  },
+  {
+    "id": "doc_prod_fail_1793017882791",
+    "botId": "bot_pers_int_1793017882473",
+    "organizationId": "org_pers_int_1793017882473",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:31:22.791Z",
+    "updatedAt": "2026-10-26T12:31:22.794Z"
+  },
+  {
+    "id": "doc_embed_fail_1793017882709",
+    "botId": "bot_pers_int_1793017882473",
+    "organizationId": "org_pers_int_1793017882473",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:22.710Z",
+    "updatedAt": "2026-10-26T12:31:22.846Z"
+  },
+  {
+    "id": "doc_pers_1_1793017882545",
+    "botId": "bot_pers_int_1793017882473",
+    "organizationId": "org_pers_int_1793017882473",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:22.546Z",
+    "updatedAt": "2026-10-26T12:31:23.063Z"
+  },
+  {
+    "id": "doc_prod_fail_1793017868985",
+    "botId": "bot_pers_int_1793017868305",
+    "organizationId": "org_pers_int_1793017868305",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:31:08.985Z",
+    "updatedAt": "2026-10-26T12:31:08.990Z"
+  },
+  {
+    "id": "doc_embed_fail_1793017868865",
+    "botId": "bot_pers_int_1793017868305",
+    "organizationId": "org_pers_int_1793017868305",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:08.867Z",
+    "updatedAt": "2026-10-26T12:31:09.078Z"
+  },
+  {
+    "id": "doc_pers_1_1793017868520",
+    "botId": "bot_pers_int_1793017868305",
+    "organizationId": "org_pers_int_1793017868305",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:31:08.522Z",
+    "updatedAt": "2026-10-26T12:31:09.386Z"
+  },
+  {
+    "id": "doc_prod_fail_1793017772005",
+    "botId": "bot_pers_int_1793017771525",
+    "organizationId": "org_pers_int_1793017771525",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:29:32.005Z",
+    "updatedAt": "2026-10-26T12:29:32.008Z"
+  },
+  {
+    "id": "doc_embed_fail_1793017771912",
+    "botId": "bot_pers_int_1793017771525",
+    "organizationId": "org_pers_int_1793017771525",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:29:31.913Z",
+    "updatedAt": "2026-10-26T12:29:32.066Z"
+  },
+  {
+    "id": "doc_pers_1_1793017771673",
+    "botId": "bot_pers_int_1793017771525",
+    "organizationId": "org_pers_int_1793017771525",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:29:31.676Z",
+    "updatedAt": "2026-10-26T12:29:32.317Z"
+  },
+  {
+    "id": "doc_prod_fail_1793017630904",
+    "botId": "bot_pers_int_1793017630145",
+    "organizationId": "org_pers_int_1793017630145",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T12:27:10.904Z",
+    "updatedAt": "2026-10-26T12:27:10.908Z"
+  },
+  {
+    "id": "doc_embed_fail_1793017630789",
+    "botId": "bot_pers_int_1793017630145",
+    "organizationId": "org_pers_int_1793017630145",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:27:10.790Z",
+    "updatedAt": "2026-10-26T12:27:10.966Z"
+  },
+  {
+    "id": "doc_pers_1_1793017630353",
+    "botId": "bot_pers_int_1793017630145",
+    "organizationId": "org_pers_int_1793017630145",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:27:10.355Z",
+    "updatedAt": "2026-10-26T12:27:11.188Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793017590993",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.993Z",
+    "updatedAt": "2026-10-26T12:26:31.000Z"
+  },
+  {
+    "id": "doc_retry_test_1793017590970",
+    "botId": "bot_retry_1793017590970",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.970Z",
+    "updatedAt": "2026-10-26T12:26:30.983Z"
+  },
+  {
+    "id": "doc_failed_1793017590963",
+    "botId": "bot_retrieval_guard_1793017590949",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.963Z",
+    "updatedAt": "2026-10-26T12:26:30.980Z"
+  },
+  {
+    "id": "doc_ready_1793017590949",
+    "botId": "bot_retrieval_guard_1793017590949",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.949Z",
+    "updatedAt": "2026-10-26T12:26:30.958Z"
+  },
+  {
+    "id": "doc_test_fail_1793017590938",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.938Z",
+    "updatedAt": "2026-10-26T12:26:30.952Z"
+  },
+  {
+    "id": "doc_test_success_1793017590889",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.889Z",
+    "updatedAt": "2026-10-26T12:26:30.934Z"
+  },
+  {
+    "id": "doc_test_init_1793017590866",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:26:30.868Z",
+    "updatedAt": "2026-10-26T12:26:30.931Z"
+  },
+  {
+    "id": "doc_dental_1793017540470",
+    "botId": "bot_dental_1793017540376",
+    "organizationId": "org_dental_clinic_1793017540376",
+    "name": "Dental Confidential Pricing",
+    "type": "Document",
+    "content": "Smile Dental Clinic VIP implants cost $2,400 with proprietary ceramic crowns and nitrous oxide sedation.",
+    "chunks": [
+      "Smile Dental Clinic VIP implants cost $2,400 with proprietary ceramic crowns and nitrous oxide sedation."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:25:40.476Z",
+    "updatedAt": "2026-10-26T12:25:40.509Z"
+  },
+  {
+    "id": "doc_watches_1793017540470",
+    "botId": "bot_watches_1793017540376",
+    "organizationId": "org_retail_watches_1793017540376",
+    "name": "Watch Warranty Policy",
+    "type": "Document",
+    "content": "Apex Luxury Watches provides a 5-year Swiss certified warranty on all automatic calibers and chronographs.",
+    "chunks": [
+      "Apex Luxury Watches provides a 5-year Swiss certified warranty on all automatic calibers and chronographs."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T12:25:40.472Z",
+    "updatedAt": "2026-10-26T12:25:40.507Z"
+  },
+  {
+    "id": "doc_prod_fail_1793015682379",
+    "botId": "bot_pers_int_1793015681728",
+    "organizationId": "org_pers_int_1793015681728",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T11:54:42.379Z",
+    "updatedAt": "2026-10-26T11:54:42.382Z"
+  },
+  {
+    "id": "doc_embed_fail_1793015682229",
+    "botId": "bot_pers_int_1793015681728",
+    "organizationId": "org_pers_int_1793015681728",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:42.230Z",
+    "updatedAt": "2026-10-26T11:54:42.491Z"
+  },
+  {
+    "id": "doc_pers_1_1793015681895",
+    "botId": "bot_pers_int_1793015681728",
+    "organizationId": "org_pers_int_1793015681728",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:41.896Z",
+    "updatedAt": "2026-10-26T11:54:42.885Z"
+  },
+  {
+    "id": "doc_prod_fail_1793015665708",
+    "botId": "bot_pers_int_1793015664831",
+    "organizationId": "org_pers_int_1793015664831",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T11:54:25.708Z",
+    "updatedAt": "2026-10-26T11:54:25.710Z"
+  },
+  {
+    "id": "doc_embed_fail_1793015665601",
+    "botId": "bot_pers_int_1793015664831",
+    "organizationId": "org_pers_int_1793015664831",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:25.601Z",
+    "updatedAt": "2026-10-26T11:54:25.787Z"
+  },
+  {
+    "id": "doc_pers_1_1793015665264",
+    "botId": "bot_pers_int_1793015664831",
+    "organizationId": "org_pers_int_1793015664831",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:25.265Z",
+    "updatedAt": "2026-10-26T11:54:26.220Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793015641764",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.764Z",
+    "updatedAt": "2026-10-26T11:54:01.769Z"
+  },
+  {
+    "id": "doc_retry_test_1793015641731",
+    "botId": "bot_retry_1793015641731",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.731Z",
+    "updatedAt": "2026-10-26T11:54:01.744Z"
+  },
+  {
+    "id": "doc_failed_1793015641719",
+    "botId": "bot_retrieval_guard_1793015641712",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.719Z",
+    "updatedAt": "2026-10-26T11:54:01.740Z"
+  },
+  {
+    "id": "doc_ready_1793015641712",
+    "botId": "bot_retrieval_guard_1793015641712",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.712Z",
+    "updatedAt": "2026-10-26T11:54:01.717Z"
+  },
+  {
+    "id": "doc_test_fail_1793015641700",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.700Z",
+    "updatedAt": "2026-10-26T11:54:01.715Z"
+  },
+  {
+    "id": "doc_test_success_1793015641632",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.632Z",
+    "updatedAt": "2026-10-26T11:54:01.694Z"
+  },
+  {
+    "id": "doc_test_init_1793015641616",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:54:01.618Z",
+    "updatedAt": "2026-10-26T11:54:01.679Z"
+  },
+  {
+    "id": "doc_prod_fail_1793014697289",
+    "botId": "bot_pers_int_1793014696587",
+    "organizationId": "org_pers_int_1793014696587",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T11:38:17.289Z",
+    "updatedAt": "2026-10-26T11:38:17.293Z"
+  },
+  {
+    "id": "doc_embed_fail_1793014697165",
+    "botId": "bot_pers_int_1793014696587",
+    "organizationId": "org_pers_int_1793014696587",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:17.167Z",
+    "updatedAt": "2026-10-26T11:38:17.386Z"
+  },
+  {
+    "id": "doc_pers_1_1793014696843",
+    "botId": "bot_pers_int_1793014696587",
+    "organizationId": "org_pers_int_1793014696587",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:16.845Z",
+    "updatedAt": "2026-10-26T11:38:17.775Z"
+  },
+  {
+    "id": "doc_failed_1793014684440",
+    "botId": "bot_retrieval_guard_1793014684392",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Processing",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:04.440Z",
+    "updatedAt": "2026-10-26T11:38:04.440Z"
+  },
+  {
+    "id": "doc_ready_1793014684392",
+    "botId": "bot_retrieval_guard_1793014684392",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:04.392Z",
+    "updatedAt": "2026-10-26T11:38:04.406Z"
+  },
+  {
+    "id": "doc_test_fail_1793014684354",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:04.354Z",
+    "updatedAt": "2026-10-26T11:38:04.402Z"
+  },
+  {
+    "id": "doc_test_success_1793014684220",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:04.221Z",
+    "updatedAt": "2026-10-26T11:38:04.336Z"
+  },
+  {
+    "id": "doc_test_init_1793014684161",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:38:04.163Z",
+    "updatedAt": "2026-10-26T11:38:04.329Z"
+  },
+  {
+    "id": "doc_prod_fail_1793014639838",
+    "botId": "bot_pers_int_1793014638756",
+    "organizationId": "org_pers_int_1793014638756",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T11:37:19.838Z",
+    "updatedAt": "2026-10-26T11:37:19.847Z"
+  },
+  {
+    "id": "doc_embed_fail_1793014639701",
+    "botId": "bot_pers_int_1793014638756",
+    "organizationId": "org_pers_int_1793014638756",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:19.703Z",
+    "updatedAt": "2026-10-26T11:37:19.917Z"
+  },
+  {
+    "id": "doc_pers_1_1793014639106",
+    "botId": "bot_pers_int_1793014638756",
+    "organizationId": "org_pers_int_1793014638756",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:19.110Z",
+    "updatedAt": "2026-10-26T11:37:20.224Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793014627750",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.750Z",
+    "updatedAt": "2026-10-26T11:37:07.755Z"
+  },
+  {
+    "id": "doc_retry_test_1793014627717",
+    "botId": "bot_retry_1793014627717",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.717Z",
+    "updatedAt": "2026-10-26T11:37:07.734Z"
+  },
+  {
+    "id": "doc_failed_1793014627708",
+    "botId": "bot_retrieval_guard_1793014627698",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.708Z",
+    "updatedAt": "2026-10-26T11:37:07.723Z"
+  },
+  {
+    "id": "doc_ready_1793014627698",
+    "botId": "bot_retrieval_guard_1793014627698",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.698Z",
+    "updatedAt": "2026-10-26T11:37:07.706Z"
+  },
+  {
+    "id": "doc_test_fail_1793014627684",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.684Z",
+    "updatedAt": "2026-10-26T11:37:07.703Z"
+  },
+  {
+    "id": "doc_test_success_1793014627636",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.637Z",
+    "updatedAt": "2026-10-26T11:37:07.680Z"
+  },
+  {
+    "id": "doc_test_init_1793014627617",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:37:07.618Z",
+    "updatedAt": "2026-10-26T11:37:07.676Z"
+  },
+  {
+    "id": "doc_tenant_iso_1793014540790",
+    "botId": "bot_tenant_a",
+    "organizationId": "org_tenant_a",
+    "name": "Internal Strategy",
+    "type": "Document",
+    "content": "Confidential financial roadmap for Tenant A.",
+    "chunks": [
+      "Confidential financial roadmap for Tenant A."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.790Z",
+    "updatedAt": "2026-10-26T11:35:40.810Z"
+  },
+  {
+    "id": "doc_retry_test_1793014540754",
+    "botId": "bot_retry_1793014540754",
+    "organizationId": "org_retry_tenant",
+    "name": "Pricing Guide",
+    "type": "Document",
+    "content": "Standard Tier is $49/mo and Enterprise Tier is $199/mo.",
+    "chunks": [
+      "Standard Tier is $49/mo and Enterprise Tier is $199/mo."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.754Z",
+    "updatedAt": "2026-10-26T11:35:40.777Z"
+  },
+  {
+    "id": "doc_failed_1793014540735",
+    "botId": "bot_retrieval_guard_1793014540721",
+    "organizationId": "org_test",
+    "name": "Draft Unverified Doc",
+    "type": "Document",
+    "content": "The founder of the company is John Doe who started it in 1990.",
+    "chunks": [
+      "The founder of the company is John Doe who started it in 1990."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.735Z",
+    "updatedAt": "2026-10-26T11:35:40.764Z"
+  },
+  {
+    "id": "doc_ready_1793014540721",
+    "botId": "bot_retrieval_guard_1793014540721",
+    "organizationId": "org_test",
+    "name": "Founder Bio",
+    "type": "Document",
+    "content": "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024.",
+    "chunks": [
+      "The founder and CEO of Emperor Smart Solutions is Heet. He founded the company in 2024."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.721Z",
+    "updatedAt": "2026-10-26T11:35:40.729Z"
+  },
+  {
+    "id": "doc_test_fail_1793014540677",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text for simulated failure test",
+    "chunks": [
+      "Sample text for simulated failure test"
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.677Z",
+    "updatedAt": "2026-10-26T11:35:40.726Z"
+  },
+  {
+    "id": "doc_test_success_1793014540441",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Warranty Policy",
+    "type": "Document",
+    "content": "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures.",
+    "chunks": [
+      "All hardware purchases include a 2-year warranty covering manufacturing defects and hardware failures."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.442Z",
+    "updatedAt": "2026-10-26T11:35:40.659Z"
+  },
+  {
+    "id": "doc_test_init_1793014540395",
+    "botId": "bot_rag_test_1",
+    "organizationId": "org_rag_tenant_1",
+    "name": "Product Catalog",
+    "type": "Document",
+    "content": "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations.",
+    "chunks": [
+      "Emperor Cloud ERP is an enterprise management system designed for logistics and supply chain operations."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:40.397Z",
+    "updatedAt": "2026-10-26T11:35:40.601Z"
+  },
+  {
+    "id": "doc_pers_1_1793014536371",
+    "botId": "bot_pers_int_1793014536112",
+    "organizationId": "org_pers_int_1793014536112",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Processing",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:35:36.374Z",
+    "updatedAt": "2026-10-26T11:35:36.376Z"
+  },
+  {
+    "id": "doc_prod_fail_1793014465396",
+    "botId": "bot_pers_int_1793014464142",
+    "organizationId": "org_pers_int_1793014464142",
+    "name": "Prod Failure Doc",
+    "type": "Document",
+    "content": "Testing that production mode fails safely when PostgreSQL is unavailable.",
+    "chunks": [
+      "Testing that production mode fails safely when PostgreSQL is unavailable."
+    ],
+    "chunksCount": 1,
+    "status": "Failed",
+    "errorMessage": "PostgreSQL authoritative store unavailable: Cannot process or persist document.",
+    "createdAt": "2026-10-26T11:34:25.396Z",
+    "updatedAt": "2026-10-26T11:34:25.582Z"
+  },
+  {
+    "id": "doc_embed_fail_1793014465158",
+    "botId": "bot_pers_int_1793014464142",
+    "organizationId": "org_pers_int_1793014464142",
+    "name": "Broken File",
+    "type": "Document",
+    "content": "Sample text that should fail embedding inference.",
+    "chunks": [
+      "Sample text that should fail embedding inference."
+    ],
+    "chunksCount": 1,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:34:25.159Z",
+    "updatedAt": "2026-10-26T11:34:26.209Z"
+  },
+  {
+    "id": "doc_pers_1_1793014464571",
+    "botId": "bot_pers_int_1793014464142",
+    "organizationId": "org_pers_int_1793014464142",
+    "name": "Enterprise Architecture Guide",
+    "type": "PDF",
+    "content": "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances.",
+    "chunks": [
+      "Emperor Cloud operates redundant multi-region clusters with zero-downtime failover and automated state replication across three independent availability zones to guarantee high availability and fault tolerance for enterprise customers running mission-critical workloads.",
+      "for enterprise customers running mission-critical workloads.\n\nAutomated daily snapshots are encrypted with AES-256 both in transit and at rest, maintaining strict compliance with SOC 2 Type II and ISO 27001 standards across all managed storage volumes and database instances."
+    ],
+    "chunksCount": 2,
+    "status": "Ready",
+    "errorMessage": null,
+    "createdAt": "2026-10-26T11:34:24.575Z",
+    "updatedAt": "2026-10-26T11:34:26.710Z"
+  },
+  {
     "id": "doc_tenant_iso_1792761975325",
     "botId": "bot_tenant_a",
     "organizationId": "org_tenant_a",

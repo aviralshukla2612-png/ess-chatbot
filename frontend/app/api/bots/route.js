@@ -65,6 +65,23 @@ export async function POST(request) {
       body.websiteUrl = validatedBaseUrl;
     }
 
+    // Validate bot ID: Disallow non-ESS organizations from claiming reserved system IDs or foreign bot IDs
+    if (body.id) {
+      if ((body.id === "bot_aa" || body.id === "bot_aa_primary") && principal.organizationId !== "org_ess_default") {
+        return NextResponse.json(
+          { success: false, error: "Reserved system bot ID 'bot_aa' cannot be claimed by tenant." },
+          { status: 400 }
+        );
+      }
+      const existing = (await botsStore.getBotAsync(body.id)) || botsStore.getBot(body.id);
+      if (existing && existing.organizationId !== principal.organizationId) {
+        return NextResponse.json(
+          { success: false, error: "Bot ID already in use by another organization." },
+          { status: 409 }
+        );
+      }
+    }
+
     const bot = botsStore.upsertBot(body, principal.organizationId);
 
     // If documents were uploaded during wizard creation, persist them durably into documentsStore

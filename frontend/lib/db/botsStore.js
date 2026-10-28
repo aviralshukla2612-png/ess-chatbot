@@ -2,17 +2,8 @@ import fs from "fs";
 import path from "path";
 import { queryDb } from "./dbPool.js";
 import { sseBroker } from "./sseBroker.js";
+import { getDataFilePath } from "./dataDir.js";
 
-function resolveDataFile() {
-  const frontendPath = path.join(process.cwd(), "frontend", "data", "bots.json");
-  if (fs.existsSync(frontendPath)) return frontendPath;
-  const directPath = path.join(process.cwd(), "data", "bots.json");
-  if (fs.existsSync(directPath)) return directPath;
-  if (process.cwd().endsWith("frontend")) return directPath;
-  return frontendPath;
-}
-
-const DATA_FILE = resolveDataFile();
 const DEFAULT_ORG_ID = "org_ess_default";
 
 // Default seed bot matching user's created bot 'aa'
@@ -49,17 +40,18 @@ const DEFAULT_BOTS = [
 let memoryBotsCache = null;
 
 function loadBotsFromDisk() {
+  const dataFile = getDataFilePath("bots.json");
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dataFile)) {
+      const dir = path.dirname(dataFile);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_BOTS, null, 2), "utf8");
+      fs.writeFileSync(dataFile, JSON.stringify(DEFAULT_BOTS, null, 2), "utf8");
       memoryBotsCache = [...DEFAULT_BOTS];
       return memoryBotsCache;
     }
-    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    const raw = fs.readFileSync(dataFile, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       memoryBotsCache = parsed.map((b) => ({
@@ -68,7 +60,7 @@ function loadBotsFromDisk() {
       }));
       return memoryBotsCache;
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), "utf8");
+    fs.writeFileSync(dataFile, JSON.stringify([], null, 2), "utf8");
     memoryBotsCache = [];
     return memoryBotsCache;
   } catch (err) {
@@ -78,13 +70,14 @@ function loadBotsFromDisk() {
 }
 
 function saveBotsToDisk(bots) {
+  const dataFile = getDataFilePath("bots.json");
   try {
     memoryBotsCache = bots;
-    const dir = path.dirname(DATA_FILE);
+    const dir = path.dirname(dataFile);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(bots, null, 2), "utf8");
+    fs.writeFileSync(dataFile, JSON.stringify(bots, null, 2), "utf8");
   } catch (err) {
     console.error("Error saving bots store:", err);
   }
@@ -210,8 +203,15 @@ export const botsStore = {
    */
   upsertBot(botData, targetOrgId = null) {
     const bots = loadBotsFromDisk();
-    const id = botData.id || `bot_${Date.now()}`;
     const orgId = targetOrgId || botData.organizationId || DEFAULT_ORG_ID;
+
+    // Disallow non-ESS organizations from claiming or impersonating reserved system bots
+    let id = botData.id;
+    if ((id === "bot_aa" || id === "bot_aa_primary") && orgId !== DEFAULT_ORG_ID) {
+      id = `bot_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    } else if (!id) {
+      id = `bot_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    }
 
     const existingIndex = bots.findIndex(
       (b) => b.id === id && (!targetOrgId || b.organizationId === orgId)

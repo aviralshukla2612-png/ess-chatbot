@@ -115,9 +115,15 @@ export function classifyMessageIntent({
   const trimmed = (message || "").trim();
   const lower = trimmed.toLowerCase();
 
-  const businessName = passedBusinessName || bot?.company || "Emperor Smart Solutions";
-  const botName = bot?.name || "AI Assistant";
-  const isEss = !businessName || businessName === "Emperor Smart Solutions" || businessName === "My Organization";
+  const isEss = Boolean(
+    bot?.isEss ||
+    bot?.isEssTenant ||
+    bot?.id === "bot_aa" ||
+    ((passedBusinessName === "Emperor Smart Solutions" || bot?.company === "Emperor Smart Solutions") && (!bot?.organizationId || bot?.organizationId === "org_ess_default" || !bot?.organizationId?.startsWith("org_tenant_"))) ||
+    (!passedBusinessName && !bot?.company && !bot?.id) // default fallback when called with only { message } in standalone tests
+  );
+  const businessName = passedBusinessName || bot?.company || (isEss ? "Emperor Smart Solutions" : (bot?.name || "Our Company"));
+  const botName = bot?.name || (isEss ? "Emperor AI" : "AI Assistant");
 
   // 1. Check for UNSAFE_OR_UNAUTHORIZED: Cross-Tenant Access Attempts
   for (const pattern of CROSS_TENANT_EXFILTRATION_PATTERNS) {
@@ -240,14 +246,17 @@ export function classifyMessageIntent({
   // "Help me build a dating app", "Build an AI chatbot for a hospital", "What is the cost of an Android app?",
   // "Explain AI in simple terms", "Can you build an e-commerce website for shoes?"
   // As required: determine the intent of the full question rather than blocking solely because of a word like 'dating' or 'hospital'.
+  const isSoftwareCompany = isEss || Boolean(bot?.isSoftwareAgency || bot?.services?.some?.((s) => /software|web|app|mobile|dev/i.test(s)));
   const isSoftwareProjectIntent =
-    (/\b(?:build|develop|create|make|design|engineer|launch|quote|cost|pricing|price|budget|estimate|timeline|sprint|proposal|hire|integrate|integration)\b/i.test(trimmed) &&
-     /\b(?:app|application|apps|website|web|portal|platform|saas|software|bot|chatbot|ai|system|dashboard|mvp|prototype|solution|ecommerce|store|crm|erp)\b/i.test(trimmed)) ||
-    /\b(?:build|develop|create|make)\s+(?:an?\s+)?(?:app|application|website|web|software|portal|platform|saas|ai|bot|chatbot|ecommerce|store)\b/i.test(trimmed);
+    isSoftwareCompany &&
+    ((/\b(?:build|develop|create|make|design|engineer|launch|quote|cost|pricing|price|budget|estimate|timeline|sprint|proposal|hire|integrate|integration)\b/i.test(trimmed) &&
+      /\b(?:app|application|apps|website|web|portal|platform|saas|software|bot|chatbot|ai|system|dashboard|mvp|prototype|solution|ecommerce|store|crm|erp)\b/i.test(trimmed)) ||
+      /\b(?:build|develop|create|make)\s+(?:an?\s+)?(?:app|application|website|web|software|portal|platform|saas|ai|bot|chatbot|ecommerce|store)\b/i.test(trimmed));
 
   const isTechSoftwareQuery =
-    isSecurityDefense ||
-    /\b(?:flutter|react|native|next\.?js|node|python|backend|frontend|fullstack|api|graphql|rest|database|postgres|pgvector|docker|kubernetes|aws|cloud|ai|rag|llm|agent|chatbot|architecture|microservices|integration|webhook|android|ios|website|web\s*(?:app|application|platform|dev|development|portal)|software)\b/i.test(trimmed);
+    isSoftwareCompany &&
+    (isSecurityDefense ||
+      /\b(?:flutter|react|native|next\.?js|node|python|backend|frontend|fullstack|api|graphql|rest|database|postgres|pgvector|docker|kubernetes|aws|cloud|ai|rag|llm|agent|chatbot|architecture|microservices|integration|webhook|android|ios|website|web\s*(?:app|application|platform|dev|development|portal)|software)\b/i.test(trimmed));
 
   const isServicesOrOfferings =
     /\b(?:services?|offerings?|solutions?|products?|items?|models?|watches|collection|catalog|what\s+can\s+you\s+(?:do|build|make|sell)|what\s+(?:do\s+you|they|does\s+company)\s+(?:do|provide|offer|sell)|capabilities|expertise)\b/i.test(trimmed) ||

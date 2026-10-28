@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { auditAndMigrateJsonData } from "../../frontend/lib/db/migrateJsonToDb.js";
 
 test("Database Migration - Validates flat JSON datasets and generates valid SQL", () => {
-  const report = auditAndMigrateJsonData();
+  const tempSqlFile = path.join(os.tmpdir(), `idempotent_migration_test_${Date.now()}.sql`);
+  const report = auditAndMigrateJsonData({ outPath: tempSqlFile });
 
   // Verify non-empty data read
   assert.ok(report.bots.read >= 1, "Must read at least 1 bot from data store");
@@ -29,4 +31,8 @@ test("Database Migration - Validates flat JSON datasets and generates valid SQL"
   assert.ok(fullSql.includes("INSERT INTO \"Bot\""), "Must contain Bot insert");
   assert.ok(fullSql.includes("INSERT INTO \"Lead\""), "Must contain Lead insert");
   assert.ok(fullSql.includes("INSERT INTO \"KnowledgeDocument\""), "Must contain KnowledgeDocument insert");
+
+  try {
+    if (fs.existsSync(tempSqlFile)) fs.unlinkSync(tempSqlFile);
+  } catch {}
 });

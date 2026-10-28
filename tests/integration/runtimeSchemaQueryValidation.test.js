@@ -214,9 +214,6 @@ test("Runtime Schema Validation Suite", async (t) => {
   });
 
   await t.test("9. Vector Cosine Distance on Next.js 'KnowledgeChunk'", async () => {
-    // Clean up previous test chunks
-    await queryDb('DELETE FROM "KnowledgeChunk" WHERE "chunkIndex" = 99;');
-
     // Generate a test 768-dim vector
     const testVector = Array.from({ length: 768 }, (_, i) => (i === 0 ? 1.0 : 0.0));
     const vectorStr = `[${testVector.join(",")}]`;
@@ -230,19 +227,23 @@ test("Runtime Schema Validation Suite", async (t) => {
     );
     assert.equal(insertRes.ok, true);
 
-    // Search using <=> cosine distance operator
-    const searchRes = await queryDb(
-      `SELECT "id", "content", ("embedding" <=> $1::vector) AS distance
-       FROM "KnowledgeChunk"
-       WHERE "organizationId" = $2 AND "botId" = $3 AND "embedding" IS NOT NULL
-       ORDER BY distance ASC
-       LIMIT 1;`,
-      [vectorStr, "org_default", "bot_aa"]
-    );
-    assert.equal(searchRes.ok, true);
-    assert.equal(searchRes.rows.length, 1);
-    assert.equal(searchRes.rows[0].id, chunkId);
-    assert.ok(searchRes.rows[0].distance < 0.001, "Distance to self should be near 0");
+    try {
+      // Search using <=> cosine distance operator
+      const searchRes = await queryDb(
+        `SELECT "id", "content", ("embedding" <=> $1::vector) AS distance
+         FROM "KnowledgeChunk"
+         WHERE "organizationId" = $2 AND "botId" = $3 AND "embedding" IS NOT NULL
+         ORDER BY distance ASC
+         LIMIT 1;`,
+        [vectorStr, "org_default", "bot_aa"]
+      );
+      assert.equal(searchRes.ok, true);
+      assert.equal(searchRes.rows.length, 1);
+      assert.equal(searchRes.rows[0].id, chunkId);
+      assert.ok(searchRes.rows[0].distance < 0.001, "Distance to self should be near 0");
+    } finally {
+      await queryDb('DELETE FROM "KnowledgeChunk" WHERE "id" = $1;', [chunkId]);
+    }
   });
 
   await t.test("10. Vector Cosine Distance on FastAPI 'knowledge_chunks'", async () => {
@@ -258,19 +259,23 @@ test("Runtime Schema Validation Suite", async (t) => {
     assert.equal(insertRes.ok, true);
     const newId = insertRes.rows[0].id;
 
-    // Search using <=> operator as in app/rag.py
-    const searchRes = await queryDb(
-      `SELECT id, title, content, (embedding <=> $1::vector) AS distance
-       FROM knowledge_chunks
-       WHERE embedding IS NOT NULL
-       ORDER BY distance ASC
-       LIMIT 1;`,
-      [vectorStr]
-    );
-    assert.equal(searchRes.ok, true);
-    assert.equal(searchRes.rows.length, 1);
-    assert.equal(searchRes.rows[0].id, newId);
-    assert.ok(searchRes.rows[0].distance < 0.001);
+    try {
+      // Search using <=> operator as in app/rag.py
+      const searchRes = await queryDb(
+        `SELECT id, title, content, (embedding <=> $1::vector) AS distance
+         FROM knowledge_chunks
+         WHERE embedding IS NOT NULL
+         ORDER BY distance ASC
+         LIMIT 1;`,
+        [vectorStr]
+      );
+      assert.equal(searchRes.ok, true);
+      assert.equal(searchRes.rows.length, 1);
+      assert.equal(searchRes.rows[0].id, newId);
+      assert.ok(searchRes.rows[0].distance < 0.001);
+    } finally {
+      await queryDb("DELETE FROM knowledge_chunks WHERE id = $1;", [newId]);
+    }
   });
 
   t.after(async () => {
