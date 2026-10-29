@@ -42,10 +42,18 @@ export default function TrialOnboardingModal({
       })
       .catch(() => {});
 
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -110,10 +118,10 @@ export default function TrialOnboardingModal({
 
         const options = {
           key: checkout.keyId,
-          ...(checkout.subscriptionId ? { subscription_id: checkout.subscriptionId } : {}),
           ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
+          ...(checkout.subscriptionId && !checkout.subscriptionId.startsWith("sub_trial_") ? { subscription_id: checkout.subscriptionId } : {}),
           name: "NexusAI",
-          description: "7-Day Free Trial (₹0 today, auto-debits on Day 8)",
+          description: `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹0 Today)`,
           image: "/e-logoicon.webp",
           handler: async function (response) {
             try {
@@ -124,6 +132,7 @@ export default function TrialOnboardingModal({
                   subscriptionId: response.razorpay_subscription_id || checkout.subscriptionId || `sub_order_${response.razorpay_order_id || Date.now()}`,
                   paymentId: response.razorpay_payment_id || "",
                   orderId: response.razorpay_order_id || checkout.orderId || "",
+                  signature: response.razorpay_signature || "",
                   planId: selectedPlan?.id || planId,
                   isTrial: true,
                 }),
@@ -160,7 +169,7 @@ export default function TrialOnboardingModal({
         const rzp = new window.Razorpay(options);
         rzp.on("payment.failed", function (resp) {
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          setError(resp.error?.description || "Autopay authorization failed.");
+          setError(resp.error?.description || "Payment authorization cancelled or failed.");
           setLoading(false);
         });
         rzp.open();
@@ -199,7 +208,7 @@ export default function TrialOnboardingModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
       onClick={() => {
-        if (!isMandatory && onClose) onClose();
+        if (onClose) onClose();
       }}
     >
       <div
@@ -210,12 +219,16 @@ export default function TrialOnboardingModal({
         <div className="relative bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 p-6 border-b border-indigo-500/20">
           <div className="absolute top-0 right-0 w-64 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {!isMandatory && onClose && (
+          {/* Close (X) button - Always visible and clickable */}
+          {onClose && (
             <button
+              type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+              aria-label="Close modal"
+              className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer z-30 border border-slate-700/80 shadow-md group"
+              title="Close modal (Esc)"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 transition-transform group-hover:scale-110" />
             </button>
           )}
 
