@@ -82,6 +82,17 @@ const DEFAULT_USERS = [
     lastLogin: "Active now",
     createdAt: "2026-10-28T05:12:00.000Z",
   },
+  {
+    id: "usr_panjabi_01",
+    name: "Panjabi Parvindar",
+    email: "panjabiparvindar77@gmail.com",
+    organization: "Panjabi's Workspace",
+    role: "Workspace Owner",
+    status: "Active",
+    bots: 1,
+    lastLogin: "Active now",
+    createdAt: "2026-10-28T08:30:00.000Z",
+  },
 ];
 
 let cachedUsers = null;

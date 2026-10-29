@@ -15,7 +15,19 @@ export async function GET(request) {
   const baseUrl = `${proto}://${host}`;
   const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const isJson =
+    request.headers.get("accept")?.includes("application/json") ||
+    searchParams.get("format") === "json" ||
+    searchParams.get("action") === "accounts";
+
+  if (isJson) {
+    const accounts = await authStore.listSystemAccounts();
+    return NextResponse.json({
+      success: true,
+      accounts,
+      hasGoogleConfig: Boolean(clientId),
+    });
+  }
 
   if (!clientId) {
     return NextResponse.redirect(

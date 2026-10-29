@@ -25,6 +25,7 @@ import {
   Globe,
   ArrowLeft,
 } from "lucide-react";
+import GoogleAccountChooserModal from "@/components/auth/GoogleAccountChooserModal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -396,8 +398,9 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-center">
-                <a
-                  href={redirectPath ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}` : "/api/auth/google"}
+                <button
+                  type="button"
+                  onClick={() => setGoogleChooserOpen(true)}
                   className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs group text-xs font-semibold text-slate-700"
                   title="Continue with Google"
                 >
@@ -420,8 +423,18 @@ export default function LoginPage() {
                     />
                   </svg>
                   <span>Continue with Google</span>
-                </a>
+                </button>
               </div>
+
+              {/* Google Account Chooser Modal */}
+              <GoogleAccountChooserModal
+                isOpen={googleChooserOpen}
+                onClose={() => setGoogleChooserOpen(false)}
+                onSuccess={(data) => {
+                  const isSuper = data.user?.role === "SUPER_ADMIN" || data.orgRole === "SUPER_ADMIN";
+                  window.location.replace(isSuper ? "/admin" : (redirectPath || "/dashboard"));
+                }}
+              />
             </>
           )}
 
