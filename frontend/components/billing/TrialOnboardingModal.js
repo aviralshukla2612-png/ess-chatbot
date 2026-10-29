@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   ShieldCheck,
@@ -12,6 +12,7 @@ import {
   Lock,
   X,
   AlertCircle,
+  Check,
 } from "lucide-react";
 
 export default function TrialOnboardingModal({
@@ -24,21 +25,39 @@ export default function TrialOnboardingModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [planId, setPlanId] = useState("STARTER");
+  const [availablePlans, setAvailablePlans] = useState([]);
+  const [planId, setPlanId] = useState("PLAN_STARTER_MONTHLY");
+
+  useEffect(() => {
+    fetch("/api/billing/plans")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && Array.isArray(d.plans) && d.plans.length > 0) {
+          setAvailablePlans(d.plans);
+          const def = d.plans.find((p) => p.isDefault) || d.plans[0];
+          if (def) setPlanId(def.id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (!isOpen) return null;
+
+  const selectedPlan = availablePlans.find((p) => p.id === planId) || availablePlans[0] || null;
+  const trialDays = selectedPlan?.trialDays ?? 7;
+  const recurringAmountText = selectedPlan ? `${selectedPlan.priceMonthly} ${selectedPlan.periodLabel}` : "₹2,500 / month";
 
   const handleStartTrial = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // 1. Create checkout with 7-day trial and future start_at on backend
+      // 1. Create checkout with trial and future start_at on backend
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId,
+          planId: selectedPlan?.id || planId,
           isTrial: true,
         }),
       });
@@ -182,6 +201,56 @@ export default function TrialOnboardingModal({
             </div>
           )}
 
+          {/* Plan Selector (Super Admin configured pricing options) */}
+          {availablePlans.length > 1 && (
+            <div className="space-y-1.5">
+              <label className="font-bold text-neutral-700 dark:text-neutral-300 block text-[11px]">
+                Select Plan & Billing Interval:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {availablePlans.map((p) => {
+                  const isSelected = p.id === selectedPlan?.id;
+                  return (
+                    <button
+                      type="button"
+                      key={p.id}
+                      onClick={() => setPlanId(p.id)}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                        isSelected
+                          ? "border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/40 ring-2 ring-indigo-600/30"
+                          : "border-neutral-200 dark:border-neutral-800 bg-neutral-50/40 dark:bg-neutral-800/40 hover:border-neutral-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-neutral-900 dark:text-white">
+                          {p.name}
+                        </span>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                            <Check className="w-2.5 h-2.5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-baseline gap-1">
+                        <span className="text-base font-extrabold text-indigo-600 dark:text-indigo-400">
+                          {p.priceMonthly}
+                        </span>
+                        <span className="text-[10px] text-neutral-500">
+                          /{p.periodLabel?.replace(/^per\s+/i, "") || "cycle"}
+                        </span>
+                      </div>
+                      {p.intervalCount === 6 && (
+                        <span className="mt-1 inline-block text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
+                          Best Value (6-Month Pass)
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Autopay Mechanism Explainer */}
           <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-indigo-100/80 dark:border-indigo-900/60">
@@ -190,11 +259,11 @@ export default function TrialOnboardingModal({
             </div>
             <div className="flex items-center justify-between pb-2 border-b border-indigo-100/80 dark:border-indigo-900/60">
               <span className="font-semibold text-neutral-600 dark:text-neutral-400">Trial Period</span>
-              <span className="font-bold text-neutral-900 dark:text-white">7 Full Days</span>
+              <span className="font-bold text-neutral-900 dark:text-white">{trialDays} Full Days</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-neutral-600 dark:text-neutral-400">Auto-Debit Starting Day 8</span>
-              <span className="font-bold text-indigo-600 dark:text-indigo-400">₹2,499 / month</span>
+              <span className="font-semibold text-neutral-600 dark:text-neutral-400">Auto-Debit Starting Day {trialDays + 1}</span>
+              <span className="font-bold text-indigo-600 dark:text-indigo-400">{recurringAmountText}</span>
             </div>
           </div>
 
