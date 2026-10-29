@@ -280,7 +280,7 @@ export default function LoginPage() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jane Doe"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:bg-white outline-hidden focus:border-indigo-600 text-xs text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
                   />
                 </div>
 
@@ -294,7 +294,7 @@ export default function LoginPage() {
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     placeholder="Acme Innovations"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:bg-white outline-hidden focus:border-indigo-600 text-xs text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
                   />
                 </div>
               </>
@@ -313,7 +313,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:bg-white outline-hidden focus:border-indigo-600 text-xs text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
                 />
               </div>
             </div>
@@ -339,7 +339,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white focus:bg-white outline-hidden focus:border-indigo-600 text-xs text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
                 />
                 <button
                   type="button"

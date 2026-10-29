@@ -23,17 +23,11 @@ body {
     --background: #09090b;
     --foreground: #f8fafc;
   }
+}
 
-  input,
-  select,
-  textarea {
-    color: #f8fafc;
-  }
-
-  select option {
-    background-color: #18181b;
-    color: #f8fafc;
-  }
+/* Ensure inputs respect surrounding card background text color */
+input, select, textarea {
+  color: inherit;
 }
 
 .dark input,
@@ -45,6 +39,36 @@ body {
 .dark select option {
   background-color: #18181b;
   color: #f8fafc;
+}
+
+/* Light form surfaces must always have high-contrast dark text */
+.bg-white input,
+input.text-slate-900,
+input.text-slate-800 {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Chrome / Edge autofill styles */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc !important;
+  -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
 }
 
 /* Hide scrollbar completely for modern sidebar aesthetics */
