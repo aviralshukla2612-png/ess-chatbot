@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { queryDb } from "../db/dbPool.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { usersStore, isDummyOrTestAccount } from "../db/usersStore.js";
+import { sseBroker } from "../db/sseBroker.js";
 
 // In-memory fallback stores for test/offline environments
 const memoryUsers = new Map();
@@ -136,6 +137,10 @@ export const authStore = {
         organization: orgName,
         role: userRole === "SUPER_ADMIN" ? "Platform Super Admin" : "Workspace Owner",
         status: "Active",
+      });
+      sseBroker.broadcast("USER_CREATED", {
+        user: { id: userId, name: cleanName, email: cleanEmail, role: userRole },
+        organizationId: orgId,
       });
     } catch (e) {}
 
@@ -557,6 +562,10 @@ export const authStore = {
         organization: isSuper ? "Emperor Smart Solutions" : (primaryMembership?.orgName || `${user.name || cleanName}'s Workspace`),
         role: isSuper ? "Platform Super Admin" : "Workspace Owner",
         status: "Active",
+      });
+      sseBroker.broadcast("USER_LOGIN", {
+        user: { id: user.id, name: user.name || cleanName, email: user.email },
+        organizationId: orgId,
       });
     } catch (e) {}
 

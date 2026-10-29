@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { adminApi } from "@/lib/api/admin";
+import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
@@ -73,6 +74,28 @@ export default function AdminUsersPage() {
     return () => clearTimeout(handler);
   }, [searchTerm, roleFilter, statusFilter, pageSize, loadData]);
 
+  // Background realtime sync (SSE + adaptive background polling)
+  const syncBackground = useCallback(async () => {
+    try {
+      const res = await adminApi.getUsers({
+        page,
+        limit: pageSize,
+        search: searchTerm,
+        role: roleFilter,
+        status: statusFilter,
+      });
+      if (res && res.success) {
+        setUsers(res.data || []);
+        if (res.pagination) setPagination(res.pagination);
+        if (res.stats) setStats(res.stats);
+      }
+    } catch (e) {}
+  }, [page, pageSize, searchTerm, roleFilter, statusFilter]);
+
+  const { isLive } = useRealtimeSync(syncBackground, {
+    pollingInterval: 3000,
+  });
+
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       {/* Header */}
@@ -86,13 +109,19 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => loadData(page, searchTerm, roleFilter, statusFilter, pageSize)}
-          className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-xs transition-colors self-start md:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Realtime Live</span>
+          </span>
+          <button
+            onClick={() => loadData(page, searchTerm, roleFilter, statusFilter, pageSize)}
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-xs transition-colors self-start md:self-auto cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Control Bar: Search & Role Filters */}
