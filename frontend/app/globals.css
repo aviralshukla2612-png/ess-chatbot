@@ -23,54 +23,52 @@ body {
     --background: #09090b;
     --foreground: #f8fafc;
   }
+
+  input,
+  textarea,
+  select {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-color: #18181b !important;
+    border-color: #3f3f46 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #a1a1aa !important;
+    -webkit-text-fill-color: #a1a1aa !important;
+    opacity: 1 !important;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 }
 
-/* Ensure inputs respect surrounding card background text color */
-input, select, textarea {
-  color: inherit;
-}
-
+/* Fallback for explicit class="dark" */
 .dark input,
 .dark select,
 .dark textarea {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
+  background-color: #18181b !important;
+  border-color: #3f3f46 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #a1a1aa !important;
+  -webkit-text-fill-color: #a1a1aa !important;
+  opacity: 1 !important;
 }
 
 .dark select option {
   background-color: #18181b;
   color: #ffffff;
-}
-
-/* Light form surfaces must have high-contrast dark text */
-:not(.dark) .bg-white input,
-:not(.dark) input.text-slate-900,
-:not(.dark) input.text-slate-800,
-:not(.dark) textarea.text-slate-900 {
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #94a3b8 !important;
-  -webkit-text-fill-color: #94a3b8 !important;
-  opacity: 1 !important;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #94a3b8 !important;
-  -webkit-text-fill-color: #94a3b8 !important;
-  opacity: 1 !important;
-}
-
-/* Chrome / Edge autofill styles */
-:not(.dark) input:-webkit-autofill,
-:not(.dark) input:-webkit-autofill:hover, 
-:not(.dark) input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #0f172a !important;
-  transition: background-color 5000s ease-in-out 0s;
 }
 
 .dark input:-webkit-autofill,
@@ -79,6 +77,25 @@ textarea::placeholder {
   -webkit-text-fill-color: #ffffff !important;
   -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Dedicated company profile input high-contrast styles */
+.company-profile-input {
+  color: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .company-profile-input {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-color: #18181b !important;
+  }
+}
+
+.dark .company-profile-input {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-color: #18181b !important;
 }
 
 .dark input:-webkit-autofill,

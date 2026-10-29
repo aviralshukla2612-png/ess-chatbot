@@ -97,7 +97,7 @@ const SAMPLE_PROFILE = {
 };
 
 const inputClass =
-  "w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-hidden transition-all shadow-2xs placeholder:text-neutral-400 dark:placeholder:text-neutral-500";
+  "company-profile-input w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-hidden transition-all shadow-2xs placeholder:text-neutral-400 dark:placeholder:text-neutral-500";
 
 const labelClass = "font-bold text-xs text-slate-800 dark:text-neutral-200 block mb-1.5";
 
