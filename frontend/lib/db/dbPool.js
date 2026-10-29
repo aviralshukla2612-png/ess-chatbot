@@ -494,6 +494,9 @@ export async function queryDb(sql, params = []) {
     if (!p) {
       return { ok: false, error: "Database pool unavailable", rows: [], rowCount: 0 };
     }
+    if (!initPromise && process.env.NODE_ENV !== "test") {
+      await initPostgresTables().catch(() => {});
+    }
     const result = await p.query(sql, params);
     isConnected = true;
     return { ok: true, rows: result.rows, rowCount: result.rowCount };
