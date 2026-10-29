@@ -1,6 +1,30 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 /**
+ * Sanitizes input text so it is 100% compatible with standard PDF fonts (WinAnsi encoding).
+ * Converts symbols like ₹ (Indian Rupee), em-dashes, curly quotes, and bullets into standard WinAnsi chars.
+ */
+export function sanitizeForPdf(text) {
+  if (text === null || text === undefined) return "";
+  return String(text)
+    .replace(/₹/g, "Rs. ")
+    .replace(/[\u20B9]/g, "Rs. ")
+    .replace(/[—–]/g, "-")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/•/g, "-")
+    .replace(/…/g, "...")
+    .replace(/©/g, "(c)")
+    .replace(/®/g, "(R)")
+    .replace(/™/g, "(TM)")
+    .replace(/[^\x00-\x7F]/g, (char) => {
+      const code = char.charCodeAt(0);
+      if (code >= 160 && code <= 255) return char;
+      return " ";
+    });
+}
+
+/**
  * Compiles company profile form data into a well-structured plain text document
  * suitable for vector chunking and LLM RAG ingestion.
  */
@@ -95,10 +119,43 @@ export async function generateCompanyProfilePdfBytes(data) {
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
+  const safeData = {
+    companyName: sanitizeForPdf(data.companyName || "Company Profile"),
+    tagline: sanitizeForPdf(data.tagline || ""),
+    industry: sanitizeForPdf(data.industry || ""),
+    founders: sanitizeForPdf(data.founders || ""),
+    description: sanitizeForPdf(data.description || ""),
+    workingDays: sanitizeForPdf(data.workingDays || ""),
+    openingTime: sanitizeForPdf(data.openingTime || ""),
+    closingTime: sanitizeForPdf(data.closingTime || ""),
+    timezone: sanitizeForPdf(data.timezone || ""),
+    weekendPolicy: sanitizeForPdf(data.weekendPolicy || ""),
+    holidayNote: sanitizeForPdf(data.holidayNote || ""),
+    startingPrice: sanitizeForPdf(data.startingPrice || ""),
+    pricingTiers: sanitizeForPdf(data.pricingTiers || ""),
+    paymentTerms: sanitizeForPdf(data.paymentTerms || ""),
+    freeConsultation: sanitizeForPdf(data.freeConsultation || ""),
+    officeAddress: sanitizeForPdf(data.officeAddress || ""),
+    serviceAreas: sanitizeForPdf(data.serviceAreas || ""),
+    phone: sanitizeForPdf(data.phone || ""),
+    whatsapp: sanitizeForPdf(data.whatsapp || ""),
+    email: sanitizeForPdf(data.email || ""),
+    website: sanitizeForPdf(data.website || ""),
+    services: (data.services || []).map((s) => ({
+      name: sanitizeForPdf(s.name),
+      description: sanitizeForPdf(s.description),
+      timeline: sanitizeForPdf(s.timeline),
+      pricing: sanitizeForPdf(s.pricing),
+    })),
+    faqs: (data.faqs || []).map((f) => ({
+      question: sanitizeForPdf(f.question),
+      answer: sanitizeForPdf(f.answer),
+    })),
+  };
+
   const primaryColor = rgb(0.12, 0.22, 0.45); // Deep Indigo
   const textColor = rgb(0.15, 0.2, 0.25);
   const mutedColor = rgb(0.45, 0.5, 0.55);
-  const highlightColor = rgb(0.2, 0.4, 0.8);
 
   const pageWidth = 595.28; // A4
   const pageHeight = 841.89;
@@ -126,7 +183,7 @@ export async function generateCompanyProfilePdfBytes(data) {
     color: primaryColor,
   });
 
-  currentPage.drawText(data.companyName || "Company Profile", {
+  currentPage.drawText(safeData.companyName.slice(0, 45), {
     x: margin + 16,
     y: y - 28,
     size: 16,
@@ -134,7 +191,7 @@ export async function generateCompanyProfilePdfBytes(data) {
     color: rgb(1, 1, 1),
   });
 
-  const subtitle = data.tagline || "Official Company Business Profile & Knowledge Document";
+  const subtitle = safeData.tagline || "Official Company Business Profile & Knowledge Document";
   currentPage.drawText(subtitle.slice(0, 70), {
     x: margin + 16,
     y: y - 42,
@@ -159,6 +216,7 @@ export async function generateCompanyProfilePdfBytes(data) {
 
   // Helper to draw section header
   const drawSectionHeader = (title) => {
+    const cleanTitle = sanitizeForPdf(title);
     checkPageBreak(35);
     currentPage.drawRectangle({
       x: margin,
@@ -167,7 +225,7 @@ export async function generateCompanyProfilePdfBytes(data) {
       height: 20,
       color: rgb(0.94, 0.96, 0.99),
     });
-    currentPage.drawText(title, {
+    currentPage.drawText(cleanTitle, {
       x: margin + 8,
       y: y - 14,
       size: 11,
@@ -180,8 +238,9 @@ export async function generateCompanyProfilePdfBytes(data) {
   // Helper to draw text block with automatic line wrapping
   const drawWrappedText = (text, fontSize = 9, isBold = false, indent = 0) => {
     if (!text) return;
+    const cleanText = sanitizeForPdf(text);
     const font = isBold ? fontBold : fontRegular;
-    const lines = text.split("\n");
+    const lines = cleanText.split("\n");
 
     for (const rawLine of lines) {
       const words = rawLine.split(" ");
@@ -222,28 +281,28 @@ export async function generateCompanyProfilePdfBytes(data) {
 
   // 1. Company Identity
   drawSectionHeader("1. COMPANY IDENTITY & MISSION");
-  drawWrappedText(`Company: ${data.companyName || "N/A"}`, 9, true);
-  if (data.industry) drawWrappedText(`Industry: ${data.industry}`, 9);
-  if (data.founders) drawWrappedText(`Founders / Leadership: ${data.founders}`, 9);
-  if (data.description) {
+  drawWrappedText(`Company: ${safeData.companyName || "N/A"}`, 9, true);
+  if (safeData.industry) drawWrappedText(`Industry: ${safeData.industry}`, 9);
+  if (safeData.founders) drawWrappedText(`Founders / Leadership: ${safeData.founders}`, 9);
+  if (safeData.description) {
     y -= 4;
     drawWrappedText(`Overview:`, 9, true);
-    drawWrappedText(data.description, 9, false, 8);
+    drawWrappedText(safeData.description, 9, false, 8);
   }
   y -= 12;
 
   // 2. Business Hours
   drawSectionHeader("2. BUSINESS HOURS & SCHEDULE");
-  drawWrappedText(`• Operating Days: ${data.workingDays || "Monday to Saturday"}`, 9);
-  drawWrappedText(`• Working Hours: ${data.openingTime || "09:00 AM"} – ${data.closingTime || "06:00 PM"} (${data.timezone || "IST"})`, 9);
-  drawWrappedText(`• Weekend Policy: ${data.weekendPolicy || "Closed on Sundays. Online support active."}`, 9);
-  if (data.holidayNote) drawWrappedText(`• Holiday Schedule: ${data.holidayNote}`, 9);
+  drawWrappedText(`- Operating Days: ${safeData.workingDays || "Monday to Saturday"}`, 9);
+  drawWrappedText(`- Working Hours: ${safeData.openingTime || "09:00 AM"} - ${safeData.closingTime || "06:00 PM"} (${safeData.timezone || "IST"})`, 9);
+  drawWrappedText(`- Weekend Policy: ${safeData.weekendPolicy || "Closed on Sundays. Online support active."}`, 9);
+  if (safeData.holidayNote) drawWrappedText(`- Holiday Schedule: ${safeData.holidayNote}`, 9);
   y -= 12;
 
   // 3. Services & Products
   drawSectionHeader("3. PRODUCTS & SERVICES");
-  if (Array.isArray(data.services) && data.services.length > 0) {
-    data.services.forEach((s, idx) => {
+  if (Array.isArray(safeData.services) && safeData.services.length > 0) {
+    safeData.services.forEach((s, idx) => {
       checkPageBreak(25);
       drawWrappedText(`${idx + 1}. ${s.name || "Service Item"}`, 9, true);
       if (s.description) drawWrappedText(s.description, 8.5, false, 12);
@@ -260,26 +319,26 @@ export async function generateCompanyProfilePdfBytes(data) {
 
   // 4. Pricing & Policies
   drawSectionHeader("4. PRICING & PAYMENT POLICIES");
-  if (data.startingPrice) drawWrappedText(`• Starting Price: ${data.startingPrice}`, 9);
-  if (data.pricingTiers) drawWrappedText(`• Budget Tiers: ${data.pricingTiers}`, 9);
-  if (data.paymentTerms) drawWrappedText(`• Payment Terms: ${data.paymentTerms}`, 9);
-  if (data.freeConsultation) drawWrappedText(`• Discovery Consultation: ${data.freeConsultation}`, 9);
+  if (safeData.startingPrice) drawWrappedText(`- Starting Price: ${safeData.startingPrice}`, 9);
+  if (safeData.pricingTiers) drawWrappedText(`- Budget Tiers: ${safeData.pricingTiers}`, 9);
+  if (safeData.paymentTerms) drawWrappedText(`- Payment Terms: ${safeData.paymentTerms}`, 9);
+  if (safeData.freeConsultation) drawWrappedText(`- Discovery Consultation: ${safeData.freeConsultation}`, 9);
   y -= 12;
 
   // 5. Office Location & Contact
   drawSectionHeader("5. OFFICE LOCATION & CONTACT DETAILS");
-  if (data.officeAddress) drawWrappedText(`• Head Office: ${data.officeAddress}`, 9);
-  if (data.serviceAreas) drawWrappedText(`• Service Regions: ${data.serviceAreas}`, 9);
-  if (data.phone) drawWrappedText(`• Phone: ${data.phone}`, 9);
-  if (data.whatsapp) drawWrappedText(`• WhatsApp: ${data.whatsapp}`, 9);
-  if (data.email) drawWrappedText(`• Email: ${data.email}`, 9);
-  if (data.website) drawWrappedText(`• Website: ${data.website}`, 9);
+  if (safeData.officeAddress) drawWrappedText(`- Head Office: ${safeData.officeAddress}`, 9);
+  if (safeData.serviceAreas) drawWrappedText(`- Service Regions: ${safeData.serviceAreas}`, 9);
+  if (safeData.phone) drawWrappedText(`- Phone: ${safeData.phone}`, 9);
+  if (safeData.whatsapp) drawWrappedText(`- WhatsApp: ${safeData.whatsapp}`, 9);
+  if (safeData.email) drawWrappedText(`- Email: ${safeData.email}`, 9);
+  if (safeData.website) drawWrappedText(`- Website: ${safeData.website}`, 9);
   y -= 12;
 
   // 6. Frequently Asked Questions
-  if (Array.isArray(data.faqs) && data.faqs.length > 0) {
+  if (Array.isArray(safeData.faqs) && safeData.faqs.length > 0) {
     drawSectionHeader("6. FREQUENTLY ASKED QUESTIONS");
-    data.faqs.forEach((faq, idx) => {
+    safeData.faqs.forEach((faq, idx) => {
       checkPageBreak(30);
       drawWrappedText(`Q${idx + 1}: ${faq.question}`, 9, true);
       drawWrappedText(`A${idx + 1}: ${faq.answer}`, 8.5, false, 8);
@@ -290,7 +349,7 @@ export async function generateCompanyProfilePdfBytes(data) {
   // Footer on each page
   const pages = pdfDoc.getPages();
   pages.forEach((p, idx) => {
-    p.drawText(`Page ${idx + 1} of ${pages.length}  |  Official Knowledge Base for ${data.companyName || "AI Chatbot"}`, {
+    p.drawText(`Page ${idx + 1} of ${pages.length}  |  Official Knowledge Base for ${safeData.companyName || "AI Chatbot"}`, {
       x: margin,
       y: margin - 15,
       size: 7.5,
