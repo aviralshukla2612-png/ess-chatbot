@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   Mail,
   Lock,
+  Eye,
+  EyeOff,
   ArrowRight,
   ShieldAlert,
   Building,
@@ -29,6 +31,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -327,9 +330,10 @@ export default function LoginPage() {
                 <input
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@yourcompany.com"
+                  placeholder="name@company.com"
                   className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
                 />
               </div>
@@ -350,13 +354,26 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
+                  autoComplete={activeTab === "login" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 outline-hidden focus:border-indigo-600 text-xs text-slate-800"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-hidden transition-colors cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
