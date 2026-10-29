@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
+import { usersStore } from "@/lib/db/usersStore";
 
 // Single authoritative default platform organization (No dummy data)
 function getDefaultPlatformOrgs() {
@@ -83,7 +84,32 @@ export async function GET(request) {
       }
     }
 
-    // 2. Clean fallback if database table is empty (Zero dummy data, only real platform org)
+    // 2. Merge with persistent usersStore organizations (survives rebuilds)
+    const diskUsers = usersStore.getUsers();
+    const seenOrgNames = new Set(dbOrgs.map((o) => (o.name || "").toLowerCase()));
+
+    for (const u of diskUsers) {
+      const orgName = u.organization || `${u.name}'s Workspace`;
+      if (!seenOrgNames.has(orgName.toLowerCase())) {
+        seenOrgNames.add(orgName.toLowerCase());
+        dbOrgs.push({
+          id: `org_${(u.email || "").replace(/[^a-z0-9]/gi, "_")}`,
+          name: orgName,
+          slug: (u.email || "").split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "-"),
+          owner: u.name,
+          ownerEmail: u.email,
+          plan: "Starter (Trial)",
+          status: "ACTIVE",
+          botsCount: u.bots || 1,
+          usersCount: 1,
+          conversationsCount: 0,
+          leadsCount: 0,
+          createdAt: u.createdAt || new Date().toISOString(),
+          lastActive: "Active now",
+        });
+      }
+    }
+
     let items = dbOrgs;
     if (items.length === 0 && totalCount === 0) {
       let pool = getDefaultPlatformOrgs();
@@ -105,6 +131,8 @@ export async function GET(request) {
 
       totalCount = pool.length;
       items = pool.slice(offset, offset + limit);
+    } else {
+      totalCount = items.length;
     }
 
     const totalPages = Math.ceil(totalCount / limit) || 1;

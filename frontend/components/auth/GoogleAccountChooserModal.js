@@ -25,13 +25,7 @@ function getProfileAvatarStyle(name) {
 }
 
 const FORBIDDEN_MOCK_EMAILS = new Set([
-  "aniketshukla2211@gmail.com",
-  "essnewfinal@gmail.com",
-  "mdzzzzzzzzz23@gmail.com",
-  "srajanshukla011005@gmail.com",
-  "aviralshukla2612@gmail.com",
   "admin@company.com",
-  "admin@emperorsmartsolutions.com",
 ]);
 
 export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }) {
