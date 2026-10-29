@@ -22,6 +22,9 @@ import {
   X,
   ShieldAlert,
   Share2,
+  CreditCard,
+  ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,14 +37,27 @@ const navItems = [
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Integrations", href: "/integrations", icon: Puzzle },
   { name: "Team", href: "/team", icon: UserPlus },
+  { name: "Billing & Plans", href: "/settings?tab=billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export default function Sidebar({ isOpen, onClose }) {
+export default function Sidebar({ isOpen, onClose, subscription: initialSub, onOpenCheckout }) {
   const pathname = usePathname();
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [currentOrg, setCurrentOrg] = useState("My Workspace");
   const [currentUser, setCurrentUser] = useState(null);
+  const [subData, setSubData] = useState(null);
+
+  const fetchSubscription = () => {
+    fetch("/api/billing/subscription", { cache: "no-store", headers: { Pragma: "no-cache" } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success) {
+          setSubData(d);
+        }
+      })
+      .catch(() => {});
+  };
 
   React.useEffect(() => {
     fetch("/api/auth/me")
@@ -54,7 +70,24 @@ export default function Sidebar({ isOpen, onClose }) {
         }
       })
       .catch(() => {});
+
+    fetchSubscription();
+
+    const handleSubUpdate = () => fetchSubscription();
+    window.addEventListener("subscription-updated", handleSubUpdate);
+    return () => window.removeEventListener("subscription-updated", handleSubUpdate);
   }, []);
+
+  React.useEffect(() => {
+    if (initialSub) {
+      setSubData((prev) => ({
+        ...prev,
+        subscription: initialSub,
+        hasActiveSubscription: Boolean(initialSub.hasAutopay),
+        isTrial: initialSub.status === "trialing",
+      }));
+    }
+  }, [initialSub]);
 
   return (
     <>
@@ -214,15 +247,112 @@ export default function Sidebar({ isOpen, onClose }) {
                 <div className="flex-1 min-h-4" />
 
                 {/* Workspace / Bot status card */}
+                {/* Razorpay Subscription Widget for Sub Admin */}
                 <div className="pt-2">
-                  <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-between text-[11px]">
+                  <div className="p-3 rounded-2xl bg-linear-to-b from-slate-800/90 to-slate-900 border border-slate-700/70 shadow-lg relative overflow-hidden group">
+                    <div
+                      className={cn(
+                        "absolute -top-8 -right-8 w-20 h-20 rounded-full blur-xl pointer-events-none transition-opacity",
+                        subData?.hasActiveSubscription
+                          ? "bg-indigo-500/20 group-hover:bg-indigo-500/30"
+                          : "bg-rose-500/20 group-hover:bg-rose-500/30"
+                      )}
+                    />
+
+                    {/* Header: Razorpay & Status */}
+                    <div className="flex items-center justify-between gap-1 mb-2 relative z-10">
+                      <div className="flex items-center gap-1.5">
+                        <CreditCard className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-slate-300">
+                          Razorpay Plan
+                        </span>
+                      </div>
+                      {subData?.isTrial ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                          {subData.trialDaysRemaining ?? 7}d Trial
+                        </span>
+                      ) : subData?.hasActiveSubscription ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          Active Plan
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                          Action Req
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Plan Details */}
+                    <div className="mb-2.5 relative z-10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white truncate">
+                          {subData?.isTrial
+                            ? "Starter (7-Day Trial)"
+                            : subData?.subscription?.plan?.name
+                            ? `${subData.subscription.plan.name} Plan`
+                            : "No Active Plan"}
+                        </span>
+                        <span className="text-[10px] font-mono text-indigo-300 font-semibold shrink-0 ml-1">
+                          {subData?.isTrial
+                            ? "₹0 upfront"
+                            : subData?.hasActiveSubscription
+                            ? "₹2,499/mo"
+                            : "₹2,499/mo"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                        {subData?.isTrial
+                          ? `Autopay kicks in ${subData?.autopayDate || "Day 8"}. Cancel anytime.`
+                          : subData?.hasActiveSubscription
+                          ? "Unlimited bots, lead capture & vector search active."
+                          : "Autopay inactive. Subscribe to unlock and keep AI bots online."}
+                      </p>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="relative z-10">
+                      {subData?.hasActiveSubscription ? (
+                        <Link
+                          href="/settings?tab=billing"
+                          onClick={onClose}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-slate-200 text-[11px] font-semibold transition-colors"
+                        >
+                          <span>Manage Subscription</span>
+                          <ArrowRight className="w-3 h-3 text-slate-400" />
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (onOpenCheckout) {
+                              onOpenCheckout();
+                            } else {
+                              window.dispatchEvent(new CustomEvent("open-subscription-modal"));
+                            }
+                            if (onClose) onClose();
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-linear-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-[11px] font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer group-hover:scale-[1.01]"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Subscribe Now 🚀</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Workspace / Bot status card */}
+                <div className="pt-2">
+                  <div className="p-2 rounded-xl bg-slate-800/40 border border-slate-700/40 flex items-center justify-between text-[11px]">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="font-semibold text-slate-200">
+                      <span className="font-medium text-slate-300 text-[10px]">
                         {activeBotId ? "Bot Console Active" : "AI Platform Online"}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                    <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1 py-0.2 rounded border border-indigo-500/20">
                       LIVE
                     </span>
                   </div>

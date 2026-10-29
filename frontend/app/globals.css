@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -18,11 +20,30 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.dark {
+  --background: #09090b;
+  --foreground: #f8fafc;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #09090b;
     --foreground: #f8fafc;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #f8fafc;
+  }
+
 
   input,
   textarea,

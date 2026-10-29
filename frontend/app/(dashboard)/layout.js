@@ -38,13 +38,26 @@ export default function DashboardLayout({ children }) {
       .finally(() => {
         fetchSubscription();
       });
+
+    const handleOpenModal = () => setTrialModalOpen(true);
+    window.addEventListener("open-subscription-modal", handleOpenModal);
+    window.addEventListener("open-trial-modal", handleOpenModal);
+    return () => {
+      window.removeEventListener("open-subscription-modal", handleOpenModal);
+      window.removeEventListener("open-trial-modal", handleOpenModal);
+    };
   }, []);
 
   return (
     <div className="min-h-screen bg-neutral-50/70 dark:bg-neutral-950 flex flex-col">
       <div className="flex flex-1 min-h-screen">
         <Suspense fallback={<aside className="w-64 hidden lg:block bg-[#111827] border-r border-slate-800/80 sticky top-0 h-screen shrink-0" />}>
-          <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <Sidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            subscription={subscription}
+            onOpenCheckout={() => setTrialModalOpen(true)}
+          />
         </Suspense>
         <div className="flex-1 flex flex-col min-w-0">
           <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />

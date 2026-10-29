@@ -27,7 +27,28 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var m = window.matchMedia('(prefers-color-scheme: dark)');
+                  if (m.matches) {
+                    document.documentElement.classList.add('dark');
+                  }
+                  m.addEventListener('change', function(e) {
+                    if (e.matches) document.documentElement.classList.add('dark');
+                    else document.documentElement.classList.remove('dark');
+                  });
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />

@@ -44,7 +44,24 @@ export default function DashboardPage() {
   const [conversations, setConversations] = useState([]);
   const [leads, setLeads] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.user) setCurrentUser(d.user);
+      })
+      .catch(() => {});
+  }, []);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
 
   const loadData = async () => {
     try {
@@ -121,23 +138,23 @@ export default function DashboardPage() {
     : [{ name: "No Active Bots", value: 100, color: "#cbd5e1" }];
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in text-slate-800 font-sans">
+    <div className="space-y-6 pb-12 animate-fade-in text-slate-800 dark:text-slate-100 font-sans">
       {/* Top Greeting Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <Sun className="w-5 h-5 text-amber-500 fill-amber-400" />
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Good morning, Srajan
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white dark:!text-white [color:var(--foreground)] tracking-tight">
+              {getGreeting()}, {currentUser?.name?.split(" ")[0] || "there"}
             </h1>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-300 dark:!text-slate-300 mt-0.5">
             Here&apos;s what&apos;s happening across your live assistants in real-time.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 shadow-2xs font-medium cursor-pointer">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 shadow-2xs font-medium cursor-pointer">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <span>Last 30 days</span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -158,18 +175,18 @@ export default function DashboardPage() {
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-2xs hover:shadow-xs transition-shadow"
+            className="bg-white dark:bg-slate-900/90 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-shadow"
           >
-            <span className="text-[11px] font-medium text-slate-500 block truncate">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block truncate">
               {kpi.title}
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-900">
+              <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                 {kpi.value}
               </span>
               <span
                 className={`text-[11px] font-semibold flex items-center ${
-                  kpi.pos ? "text-emerald-600" : "text-rose-600"
+                  kpi.pos ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                 }`}
               >
                 {kpi.pos ? (

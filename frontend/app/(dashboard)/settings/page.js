@@ -46,6 +46,18 @@ export default function SettingsPage() {
       .catch(() => {});
 
     loadBilling();
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["general", "profile", "security", "notifications", "billing"].includes(tab)) {
+        setActiveSection(tab);
+      }
+    }
+
+    const handleUpdated = () => loadBilling();
+    window.addEventListener("subscription-updated", handleUpdated);
+    return () => window.removeEventListener("subscription-updated", handleUpdated);
   }, []);
 
   const handleCancelAutopay = async () => {
@@ -222,6 +234,26 @@ export default function SettingsPage() {
                 </div>
               )}
 
+              {!billingData?.hasActiveSubscription && (
+                <div className="p-4 rounded-xl border border-rose-300 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h5 className="font-bold text-rose-900 dark:text-rose-200 text-xs">
+                      No Active Plan or Autopay Inactive
+                    </h5>
+                    <p className="text-[11px] text-rose-700 dark:text-rose-300/80 mt-0.5">
+                      Your assistants require an active subscription. Set up autopay via Razorpay to activate unlimited AI chatbots.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent("open-subscription-modal"))}
+                    className="px-4 py-2 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Subscribe Now (₹2,499/mo)</span>
+                  </button>
+                </div>
+              )}
+
               <div className="p-5 rounded-2xl bg-linear-to-tr from-indigo-900 to-violet-900 text-white shadow-lg space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
@@ -230,22 +262,28 @@ export default function SettingsPage() {
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-white/20 backdrop-blur-md">
                     {billingData?.isTrial
                       ? "7-Day Free Trial"
+                      : billingData?.hasActiveSubscription
+                      ? "Active Plan"
                       : billingData?.subscription?.status === "cancelled"
                       ? "Cancelled"
-                      : billingData?.subscription?.status?.toUpperCase() || "Active"}
+                      : "Inactive"}
                   </span>
                 </div>
 
                 <h4 className="text-xl font-bold">
                   {billingData?.isTrial
                     ? "Starter Plan (7-Day Trial Active)"
-                    : `${billingData?.subscription?.plan?.name || "Starter"} Plan`}
+                    : billingData?.hasActiveSubscription
+                    ? `${billingData?.subscription?.plan?.name || "Starter"} Plan`
+                    : "No Active Plan (Action Required)"}
                 </h4>
 
                 <p className="text-xs opacity-85 leading-relaxed">
                   {billingData?.isTrial
                     ? `Full access to custom AI Chatbots, Vector Knowledge, and Leads CRM. ₹0 was charged upfront.`
-                    : "Unlimited AI messages, lead CRM workflows, and vector retrieval."}
+                    : billingData?.hasActiveSubscription
+                    ? "Unlimited AI messages, lead CRM workflows, and vector retrieval."
+                    : "Subscription has expired or autopay was cancelled. Re-subscribe to restore unlimited live assistant access."}
                 </p>
 
                 <div className="mt-4 pt-4 border-t border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
@@ -254,8 +292,10 @@ export default function SettingsPage() {
                       <span>
                         Automatic recurring deduction of <strong>{billingData?.autopayAmount || "₹2,499"}</strong> begins on <strong>{billingData?.autopayDate || "Day 8"}</strong>.
                       </span>
-                    ) : (
+                    ) : billingData?.hasActiveSubscription ? (
                       <span>Renews automatically every month via Razorpay.</span>
+                    ) : (
+                      <span>Plan inactive. ₹2,499/month upon reactivation.</span>
                     )}
                   </div>
 
@@ -266,6 +306,15 @@ export default function SettingsPage() {
                       className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 font-semibold transition-colors cursor-pointer self-start sm:self-auto disabled:opacity-50"
                     >
                       {cancelLoading ? "Cancelling..." : "Cancel Autopay"}
+                    </button>
+                  )}
+
+                  {!billingData?.hasActiveSubscription && (
+                    <button
+                      onClick={() => window.dispatchEvent(new CustomEvent("open-subscription-modal"))}
+                      className="px-3.5 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer self-start sm:self-auto flex items-center gap-1.5"
+                    >
+                      <span>Subscribe Again 🚀</span>
                     </button>
                   )}
                 </div>
