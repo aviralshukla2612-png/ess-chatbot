@@ -39,6 +39,8 @@ export default function BotsPage() {
   const [deployModalBot, setDeployModalBot] = useState(null);
   const [deployWebsiteBot, setDeployWebsiteBot] = useState(null);
   const [copiedScript, setCopiedScript] = useState(false);
+  const [copiedConsole, setCopiedConsole] = useState(false);
+  const [modalEmbedTab, setModalEmbedTab] = useState("html"); // "html" | "console"
   const [modalCmsTab, setModalCmsTab] = useState("html");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -104,11 +106,30 @@ export default function BotsPage() {
 ></script>`;
   };
 
+  const getConsoleSnippet = (bot) => {
+    if (!bot) return "";
+    const idToUse = bot.id || "bot_aa";
+    return `const s = document.createElement("script");
+s.src = "${appOrigin}/widget.js";
+s.setAttribute("data-bot-id", "${idToUse}");
+s.setAttribute("data-color", "${bot.primaryColor || "#4f46e5"}");
+s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
+document.body.appendChild(s);
+console.log("Chatbot widget loaded successfully!");`;
+  };
+
   const handleCopyScript = (bot) => {
     const code = getEmbedSnippet(bot);
     navigator.clipboard.writeText(code);
     setCopiedScript(true);
     setTimeout(() => setCopiedScript(false), 2000);
+  };
+
+  const handleCopyConsole = (bot) => {
+    const code = getConsoleSnippet(bot);
+    navigator.clipboard.writeText(code);
+    setCopiedConsole(true);
+    setTimeout(() => setCopiedConsole(false), 2000);
   };
 
   const handleDownloadSampleHtml = (bot) => {
@@ -468,38 +489,90 @@ export default function BotsPage() {
             {/* Modal Body */}
             <div className="p-6 space-y-5 text-xs">
               {/* Embed Code Snippet Card */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <Code className="w-4 h-4 text-indigo-600" />
-                    HTML Embed Snippet
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Paste before closing <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;/body&gt;</code>
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <pre className="p-4 rounded-2xl bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
-                    {getEmbedSnippet(deployModalBot)}
-                  </pre>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
                   <button
-                    onClick={() => handleCopyScript(deployModalBot)}
-                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    type="button"
+                    onClick={() => setModalEmbedTab("html")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      modalEmbedTab === "html"
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
                   >
-                    {copiedScript ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-300" />
-                        <span>Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copy Code</span>
-                      </>
-                    )}
+                    <Code className="w-3.5 h-3.5" />
+                    <span>HTML Embed Tag</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalEmbedTab("console")}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      modalEmbedTab === "console"
+                        ? "bg-slate-900 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <span>🖥️</span>
+                    <span>DevTools Console Test (JS)</span>
                   </button>
                 </div>
+
+                {modalEmbedTab === "html" ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Add to website source code:</span>
+                      <span>Paste before closing <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-700">&lt;/body&gt;</code></span>
+                    </div>
+                    <div className="relative">
+                      <pre className="p-4 rounded-2xl bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
+                        {getEmbedSnippet(deployModalBot)}
+                      </pre>
+                      <button
+                        onClick={() => handleCopyScript(deployModalBot)}
+                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                      >
+                        {copiedScript ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-300" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy HTML</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+                      <strong>💡 Quick Console Testing:</strong> Open any website, press <kbd className="bg-white px-1 py-0.5 rounded border border-amber-300 font-mono font-bold">F12</kbd> (Console), paste this JS code and press <kbd className="bg-white px-1 py-0.5 rounded border border-amber-300 font-mono font-bold">Enter</kbd>.
+                    </div>
+                    <div className="relative">
+                      <pre className="p-4 rounded-2xl bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
+                        {getConsoleSnippet(deployModalBot)}
+                      </pre>
+                      <button
+                        onClick={() => handleCopyConsole(deployModalBot)}
+                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer border border-slate-600"
+                      >
+                        {copiedConsole ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-300" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy JS Code</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quick Actions Bar */}

@@ -101,10 +101,27 @@ function DeployBotContent() {
 
   const sshSedCommand = `sed -i 's|</body>|<script src="${effectiveHost}/widget.js" data-bot-id="${bot?.id || botId}" defer></script></body>|' /var/www/html/index.html`;
 
+  const [embedTab, setEmbedTab] = useState("html"); // "html" | "console"
+  const [copiedConsole, setCopiedConsole] = useState(false);
+
+  const consoleSnippet = `const s = document.createElement("script");
+s.src = "${effectiveHost}/widget.js";
+s.setAttribute("data-bot-id", "${bot?.id || botId}");
+s.setAttribute("data-color", "${widgetColor}");
+s.setAttribute("data-position", "${launcherPosition}");
+document.body.appendChild(s);
+console.log("Chatbot widget loaded successfully!");`;
+
   const handleCopyScript = () => {
     navigator.clipboard.writeText(scriptTag);
     setCopiedScript(true);
     setTimeout(() => setCopiedScript(false), 2000);
+  };
+
+  const handleCopyConsole = () => {
+    navigator.clipboard.writeText(consoleSnippet);
+    setCopiedConsole(true);
+    setTimeout(() => setCopiedConsole(false), 2000);
   };
 
   const handleCopySsh = () => {
@@ -361,27 +378,88 @@ function DeployBotContent() {
               </span>
             </div>
 
-            <div className="relative">
-              <pre className="p-4 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
-                {scriptTag}
-              </pre>
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <button
-                onClick={handleCopyScript}
-                className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                type="button"
+                onClick={() => setEmbedTab("html")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  embedTab === "html"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
               >
-                {copiedScript ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-300" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Code</span>
-                  </>
-                )}
+                <Code className="w-3.5 h-3.5" />
+                <span>HTML Embed Tag (Website Code)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmbedTab("console")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  embedTab === "console"
+                    ? "bg-slate-900 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <span>🖥️</span>
+                <span>DevTools Console Test (JavaScript)</span>
               </button>
             </div>
+
+            {embedTab === "html" ? (
+              <div className="space-y-3">
+                <div className="relative">
+                  <pre className="p-4 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
+                    {scriptTag}
+                  </pre>
+                  <button
+                    onClick={handleCopyScript}
+                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                  >
+                    {copiedScript ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-300" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy HTML</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Paste this into your HTML file right above the closing <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-slate-700">&lt;/body&gt;</code> tag.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                  <strong>💡 How to test in browser console:</strong> Open any website, press <kbd className="bg-white px-1.5 py-0.5 rounded border border-amber-300 font-mono font-bold">F12</kbd> (or right-click &rarr; Inspect &rarr; <strong>Console</strong>), paste this JavaScript code and press <kbd className="bg-white px-1.5 py-0.5 rounded border border-amber-300 font-mono font-bold">Enter</kbd>. The widget will load immediately on the page!
+                </div>
+                <div className="relative">
+                  <pre className="p-4 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
+                    {consoleSnippet}
+                  </pre>
+                  <button
+                    onClick={handleCopyConsole}
+                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs border border-slate-600"
+                  >
+                    {copiedConsole ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-300" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy JS Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Quick Testing Options */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
