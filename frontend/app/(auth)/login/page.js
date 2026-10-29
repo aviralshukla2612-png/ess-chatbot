@@ -38,13 +38,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [redirectPath, setRedirectPath] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const err = params.get("error");
       if (err) {
-        setErrorMessage(decodeURIComponent(err));
+        setErrorMessage(decodeURIComponent(err.replace(/\+/g, " ")));
+      }
+      const redir = params.get("redirect");
+      if (redir) {
+        setRedirectPath(redir);
       }
     }
   }, []);
@@ -99,7 +104,7 @@ export default function LoginPage() {
           throw new Error(data.error || "Registration failed");
         }
 
-        window.location.replace("/dashboard");
+        window.location.replace(redirectPath || "/dashboard");
         return;
       }
 
@@ -122,7 +127,7 @@ export default function LoginPage() {
       }
 
       const isSuper = data.user?.role === "SUPER_ADMIN" || data.orgRole === "SUPER_ADMIN" || isPlatformAdmin;
-      const destination = isSuper ? "/admin" : "/dashboard";
+      const destination = isSuper ? "/admin" : (redirectPath || "/dashboard");
       window.location.replace(destination);
     } catch (err) {
       setErrorMessage(err.message || "Authentication failed.");
@@ -389,7 +394,7 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-center">
                 <a
-                  href="/api/auth/google"
+                  href={redirectPath ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}` : "/api/auth/google"}
                   className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs group text-xs font-semibold text-slate-700"
                   title="Continue with Google"
                 >

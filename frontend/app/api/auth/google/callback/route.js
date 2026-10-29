@@ -11,6 +11,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
+    const state = searchParams.get("state") || "/dashboard";
 
     const proto = request.headers.get("x-forwarded-proto") || "https";
     const host = request.headers.get("host") || "localhost:3000";
@@ -78,7 +79,8 @@ export async function GET(request) {
     });
 
     const isSuper = user.role === "SUPER_ADMIN" || orgRole === "SUPER_ADMIN";
-    const destination = isSuper ? `${baseUrl}/admin` : `${baseUrl}/dashboard`;
+    const targetPath = state.startsWith("/") ? state : `/${state}`;
+    const destination = isSuper ? `${baseUrl}/admin` : `${baseUrl}${targetPath}`;
 
     const response = NextResponse.redirect(destination);
     response.cookies.set({

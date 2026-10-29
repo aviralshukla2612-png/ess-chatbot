@@ -45,8 +45,24 @@ export function middleware(request) {
   const sessionCookie = request.cookies.get("ess_session")?.value;
   const session = sessionCookie ? decodeEdgeSession(sessionCookie) : null;
 
-  // 3. Protect /dashboard and /dashboard/*
-  if (pathname.startsWith("/dashboard")) {
+  // 3. Protect all tenant dashboard & workspace routes
+  const protectedRoutes = [
+    "/dashboard",
+    "/bots",
+    "/knowledge",
+    "/conversations",
+    "/leads",
+    "/analytics",
+    "/integrations",
+    "/team",
+    "/settings",
+  ];
+
+  const isTenantRoute = protectedRoutes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+  );
+
+  if (isTenantRoute) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
@@ -84,6 +100,14 @@ export function middleware(request) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/bots/:path*",
+    "/knowledge/:path*",
+    "/conversations/:path*",
+    "/leads/:path*",
+    "/analytics/:path*",
+    "/integrations/:path*",
+    "/team/:path*",
+    "/settings/:path*",
     "/admin/:path*",
   ],
 };

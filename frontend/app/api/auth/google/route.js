@@ -7,6 +7,9 @@ import { signSessionToken } from "@/lib/auth/session";
  * Redirects the user directly to official Google OAuth 2.0 consent screen
  */
 export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const redirectTarget = searchParams.get("redirect") || "/dashboard";
+
   const proto = request.headers.get("x-forwarded-proto") || "https";
   const host = request.headers.get("host") || "localhost:3000";
   const baseUrl = `${proto}://${host}`;
@@ -27,6 +30,7 @@ export async function GET(request) {
   googleUrl.searchParams.set("scope", "openid email profile");
   googleUrl.searchParams.set("prompt", "select_account");
   googleUrl.searchParams.set("access_type", "offline");
+  googleUrl.searchParams.set("state", redirectTarget);
 
   return NextResponse.redirect(googleUrl.toString());
 }
