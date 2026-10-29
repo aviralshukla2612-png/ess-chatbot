@@ -39,7 +39,19 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-  const [currentOrg, setCurrentOrg] = useState("Acme Healthcare");
+  const [currentOrg, setCurrentOrg] = useState("My Workspace");
+
+  React.useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && d?.user) {
+          const name = d.user.name || d.user.email.split("@")[0];
+          setCurrentOrg(`${name}'s Workspace`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -64,7 +76,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
               </div>
               <span className="font-bold text-lg text-white tracking-tight">
-                ChatPilot
+                NexusAI
               </span>
             </Link>
             <button

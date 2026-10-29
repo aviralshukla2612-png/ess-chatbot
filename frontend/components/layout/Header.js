@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Menu,
@@ -18,7 +18,30 @@ import { mockCurrentUser } from "@/lib/mock/data";
 
 export default function Header({ onToggleSidebar }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && d?.user) {
+          setCurrentUser(d.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const initials = currentUser?.name
+    ? currentUser.name
+        .split(" ")
+        .map((p) => p[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : currentUser?.email
+    ? currentUser.email.slice(0, 2).toUpperCase()
+    : "U";
 
   const notifications = [
     {
@@ -154,9 +177,10 @@ export default function Header({ onToggleSidebar }) {
         <Link
           href="/settings"
           className="flex items-center gap-2 pl-2 border-l border-neutral-200 dark:border-neutral-800"
+          title={currentUser ? `${currentUser.name} (${currentUser.email})` : "Account Settings"}
         >
           <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-            ESS
+            {initials}
           </div>
         </Link>
       </div>

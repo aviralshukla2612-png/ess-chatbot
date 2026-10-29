@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Settings,
   Building,
@@ -16,6 +16,23 @@ import { mockCurrentUser, mockOrganizations } from "@/lib/mock/data";
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("general");
   const [savedNotice, setSavedNotice] = useState(false);
+  const [userProfile, setUserProfile] = useState({ name: "", email: "", orgName: "" });
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && d?.user) {
+          const userName = d.user.name || d.user.email.split("@")[0];
+          setUserProfile({
+            name: userName,
+            email: d.user.email,
+            orgName: `${userName}'s Workspace`,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -85,7 +102,8 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  defaultValue="Emperor Smart Solutions"
+                  key={`org_${userProfile.orgName}`}
+                  defaultValue={userProfile.orgName || "My Workspace"}
                   className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
                 />
               </div>
@@ -133,7 +151,8 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  defaultValue={mockCurrentUser.name}
+                  key={`name_${userProfile.name}`}
+                  defaultValue={userProfile.name || "Workspace Member"}
                   className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
                 />
               </div>
@@ -144,7 +163,8 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="email"
-                  defaultValue={mockCurrentUser.email}
+                  key={`email_${userProfile.email}`}
+                  defaultValue={userProfile.email || ""}
                   className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
                 />
               </div>

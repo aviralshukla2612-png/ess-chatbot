@@ -1,14 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
-import { UserPlus, Mail, Shield, Check, Trash2, Plus } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { UserPlus, Mail, Shield, Check, Trash2, Plus, Loader2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import { mockTeamMembers } from "@/lib/mock/data";
 
 export default function TeamPage() {
-  const [members, setMembers] = useState(mockTeamMembers);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [newMember, setNewMember] = useState({ name: "", email: "", role: "Member" });
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && d?.user) {
+          const primaryRole = d.activeOrgRole === "ORG_OWNER" || d.user.role === "SUPER_ADMIN" ? "Owner" : "Admin";
+          const me = {
+            id: d.user.id || `tm_${Date.now()}`,
+            name: d.user.name || d.user.email.split("@")[0],
+            email: d.user.email,
+            role: primaryRole,
+            status: "Active",
+            addedDate: new Date().toISOString().split("T")[0],
+          };
+          setMembers([me]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleInvite = (e) => {
     e.preventDefault();
@@ -71,10 +92,12 @@ export default function TeamPage() {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-600 to-violet-600 text-white font-bold flex items-center justify-center text-xs">
-                        {m.name
+                        {(m.name || m.email || "U")
                           .split(" ")
                           .map((n) => n[0])
-                          .join("")}
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)}
                       </div>
                       <div>
                         <p className="font-bold text-neutral-900 dark:text-white">{m.name}</p>
