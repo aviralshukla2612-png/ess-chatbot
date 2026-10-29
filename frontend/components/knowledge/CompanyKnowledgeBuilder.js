@@ -124,18 +124,17 @@ export default function CompanyKnowledgeBuilder({
         const list = await botsApi.getBots();
         if (Array.isArray(list) && list.length > 0) {
           setBots(list);
-          if (!selectedBotId) {
-            setSelectedBotId(initialBotId || list[0].id);
-          }
-        } else if (!selectedBotId) {
+          const matched = list.find((b) => b.id === initialBotId || b.name === initialBotId);
+          setSelectedBotId(matched ? matched.id : list[0].id);
+        } else {
           setSelectedBotId(initialBotId || "bot_aa");
         }
       } catch (err) {
-        if (!selectedBotId) setSelectedBotId(initialBotId || "bot_aa");
+        setSelectedBotId(initialBotId || "bot_aa");
       }
     }
     loadBots();
-  }, [initialBotId, selectedBotId]);
+  }, [initialBotId]);
 
   const handleFieldChange = (field, val) => {
     setForm((prev) => ({ ...prev, [field]: val }));

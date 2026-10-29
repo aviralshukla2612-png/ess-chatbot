@@ -22,7 +22,32 @@ export async function GET(request, { params }) {
       principal.platformRole === ROLES.SUPER_ADMIN ||
       principal.orgRole === ROLES.SUPER_ADMIN;
 
-    const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    let bot =
+      (await botsStore.getBotAsync(botId, principal.organizationId)) ||
+      botsStore.getBot(botId, principal.organizationId);
+
+    if (!bot) {
+      bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    }
+
+    if (bot && (bot.id === "bot_aa" || bot.organizationId === "org_ess_default")) {
+      bot.organizationId = principal.organizationId;
+    }
+
+    if (!bot && principal.organizationId) {
+      const orgBots =
+        (await botsStore.getBotsAsync(principal.organizationId)) ||
+        botsStore.getBots(principal.organizationId);
+      if (orgBots && orgBots.length > 0) {
+        bot =
+          orgBots.find(
+            (b) =>
+              b.id === botId ||
+              b.name?.toLowerCase() === botId?.toLowerCase()
+          ) || orgBots[0];
+      }
+    }
+
     if (!bot) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
@@ -31,7 +56,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
-    const docs = documentsStore.getDocuments(botId);
+    const docs = documentsStore.getDocuments(bot.id);
     return NextResponse.json({ success: true, documents: docs });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -50,7 +75,32 @@ export async function POST(request, { params }) {
       principal.platformRole === ROLES.SUPER_ADMIN ||
       principal.orgRole === ROLES.SUPER_ADMIN;
 
-    const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    let bot =
+      (await botsStore.getBotAsync(botId, principal.organizationId)) ||
+      botsStore.getBot(botId, principal.organizationId);
+
+    if (!bot) {
+      bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
+    }
+
+    if (bot && (bot.id === "bot_aa" || bot.organizationId === "org_ess_default")) {
+      bot.organizationId = principal.organizationId;
+    }
+
+    if (!bot && principal.organizationId) {
+      const orgBots =
+        (await botsStore.getBotsAsync(principal.organizationId)) ||
+        botsStore.getBots(principal.organizationId);
+      if (orgBots && orgBots.length > 0) {
+        bot =
+          orgBots.find(
+            (b) =>
+              b.id === botId ||
+              b.name?.toLowerCase() === botId?.toLowerCase()
+          ) || orgBots[0];
+      }
+    }
+
     if (!bot) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
@@ -69,7 +119,7 @@ export async function POST(request, { params }) {
       }
       const doc = documentsStore.addDocument({
         id,
-        botId,
+        botId: bot.id,
         name: name?.trim() || "Custom Business Knowledge",
         content: content.trim(),
         type: type || "Document",
