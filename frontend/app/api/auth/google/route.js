@@ -7,44 +7,53 @@ import { signSessionToken } from "@/lib/auth/session";
  * Redirects the user directly to official Google OAuth 2.0 consent screen
  */
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const redirectTarget = searchParams.get("redirect") || "/dashboard";
+  try {
+    const { searchParams } = new URL(request.url);
+    const redirectTarget = searchParams.get("redirect") || "/dashboard";
 
-  const proto = request.headers.get("x-forwarded-proto") || "https";
-  const host = request.headers.get("host") || "localhost:3000";
-  const baseUrl = `${proto}://${host}`;
-  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const host = request.headers.get("host") || "localhost:3000";
+    const baseUrl = `${proto}://${host}`;
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
-  const isJson =
-    request.headers.get("accept")?.includes("application/json") ||
-    searchParams.get("format") === "json" ||
-    searchParams.get("action") === "accounts";
+    const clientId = process.env.GOOGLE_CLIENT_ID;
 
-  if (isJson) {
-    const accounts = await authStore.listSystemAccounts();
-    return NextResponse.json({
-      success: true,
-      accounts,
-      hasGoogleConfig: Boolean(clientId),
-    });
+    const isJson =
+      request.headers.get("accept")?.includes("application/json") ||
+      searchParams.get("format") === "json" ||
+      searchParams.get("action") === "accounts";
+
+    if (isJson) {
+      const accounts = await authStore.listSystemAccounts();
+      return NextResponse.json({
+        success: true,
+        accounts,
+        hasGoogleConfig: Boolean(clientId),
+      });
+    }
+
+    if (!clientId) {
+      return NextResponse.redirect(
+        `${baseUrl}/login?error=Google+OAuth+not+yet+configured.+Please+set+GOOGLE_CLIENT_ID+in+server+env.`
+      );
+    }
+
+    const googleUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    googleUrl.searchParams.set("client_id", clientId);
+    googleUrl.searchParams.set("redirect_uri", redirectUri);
+    googleUrl.searchParams.set("response_type", "code");
+    googleUrl.searchParams.set("scope", "openid email profile");
+    googleUrl.searchParams.set("prompt", "select_account");
+    googleUrl.searchParams.set("access_type", "offline");
+    googleUrl.searchParams.set("state", redirectTarget);
+
+    return NextResponse.redirect(googleUrl.toString());
+  } catch (err) {
+    console.error("[GOOGLE_OAUTH_GET_ERROR]", err);
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    const host = request.headers.get("host") || "localhost:3000";
+    return NextResponse.redirect(`${proto}://${host}/login?error=${encodeURIComponent(err.message || "Failed to initiate Google OAuth")}`);
   }
-
-  if (!clientId) {
-    return NextResponse.redirect(
-      `${baseUrl}/login?error=Google+OAuth+not+yet+configured.+Please+set+GOOGLE_CLIENT_ID+in+server+env.`
-    );
-  }
-
-  const googleUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  googleUrl.searchParams.set("client_id", clientId);
-  googleUrl.searchParams.set("redirect_uri", redirectUri);
-  googleUrl.searchParams.set("response_type", "code");
-  googleUrl.searchParams.set("scope", "openid email profile");
-  googleUrl.searchParams.set("prompt", "select_account");
-  googleUrl.searchParams.set("access_type", "offline");
-  googleUrl.searchParams.set("state", redirectTarget);
-
-  return NextResponse.redirect(googleUrl.toString());
 }
 
 /**
