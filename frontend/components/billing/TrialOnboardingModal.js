@@ -127,14 +127,10 @@ export default function TrialOnboardingModal({
         const options = {
           key: checkout.keyId,
           ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
-          ...(checkout.subscriptionId && !checkout.subscriptionId.startsWith("sub_trial_") ? { subscription_id: checkout.subscriptionId } : {}),
           name: "Emperor Smart Solutions",
-          description: !isTrialExhausted
+          description: checkout.isTrial
             ? `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹1 Verification)`
-            : `${selectedPlan?.name || "Starter"} Plan Subscription (${selectedPlan?.priceMonthly || "₹2,500"})`,
-          image: typeof window !== "undefined" ? `${window.location.origin}/e-logoicon.webp` : "https://ess-chatbot.vardaansmartsolutions.com/e-logoicon.webp",
-          currency: "INR",
-          amount: checkout.amountToday ? checkout.amountToday * 100 : (checkout.isTrial ? 100 : Math.round((selectedPlan?.priceINR || 2499) * 100)),
+            : `${selectedPlan?.name || "Starter"} Plan (${selectedPlan?.priceMonthly || "₹2,500"})`,
           handler: async function (response) {
             try {
               const verifyRes = await fetch("/api/billing/verify", {
@@ -146,7 +142,7 @@ export default function TrialOnboardingModal({
                   orderId: response.razorpay_order_id || checkout.orderId || "",
                   signature: response.razorpay_signature || "",
                   planId: selectedPlan?.id || planId,
-                  isTrial: true,
+                  isTrial: Boolean(checkout.isTrial),
                 }),
               });
               const verifyData = await verifyRes.json();
@@ -155,10 +151,10 @@ export default function TrialOnboardingModal({
                 if (onActivated) onActivated(verifyData.subscription);
                 if (onClose) onClose();
               } else {
-                setError(verifyData.error || "Failed to verify mandate.");
+                setError(verifyData.error || "Payment verification failed.");
               }
             } catch (err) {
-              setError("Verification request failed. Please check your connection.");
+              setError("Payment verification request failed. Please check your connection.");
             } finally {
               setLoading(false);
             }
@@ -268,11 +264,33 @@ export default function TrialOnboardingModal({
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
               <div className="flex-1">
                 <p className="font-semibold">{error}</p>
-                <p className="text-[11px] text-amber-400 mt-1">
-                  {isTrialExhausted
-                    ? "Choose a subscription plan below to unlock your bot creation."
-                    : "Please check your network connection or try again."}
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-[11px] text-amber-400">
+                    {isTrialExhausted
+                      ? "Choose a subscription plan below to unlock your bot creation."
+                      : "Please check your payment details or try again."}
+                  </p>
+                  {isTrialExhausted && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch("/api/billing/reset-trial", { method: "POST" });
+                          const d = await res.json();
+                          if (d.success) {
+                            setIsTrialExhausted(false);
+                            setError("");
+                          }
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 underline font-semibold cursor-pointer"
+                    >
+                      🔄 Reset Trial (Testing Mode)
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
