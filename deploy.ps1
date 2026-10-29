@@ -57,7 +57,7 @@ if (-not (Test-Path "frontend/data")) {
     New-Item -ItemType Directory -Path "frontend/data" -Force | Out-Null
 }
 
-docker compose up -d --build --remove-orphans
+docker compose up -d --build --remove-orphans frontend postgres ollama
 
 Write-Host "`n========================================================" -ForegroundColor Cyan
 Write-Host "⏳ [3/5] Waiting for PostgreSQL readiness..." -ForegroundColor Cyan

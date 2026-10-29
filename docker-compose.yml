@@ -87,6 +87,7 @@ services:
       start_period: 15s
 
   fastapi:
+    profiles: ["extra"]
     build:
       context: .
       dockerfile: Dockerfile

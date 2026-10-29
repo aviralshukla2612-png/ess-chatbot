@@ -91,7 +91,7 @@ mkdir -p frontend/data
 docker stop ollama postgres-vector nexus-frontend open-webui fastapi-rag 2>/dev/null || true
 docker rm ollama postgres-vector nexus-frontend open-webui fastapi-rag 2>/dev/null || true
 
-docker compose up -d --build --remove-orphans
+docker compose up -d --build --remove-orphans frontend postgres ollama
 
 echo ""
 echo "========================================================"
