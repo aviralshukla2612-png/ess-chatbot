@@ -93,6 +93,9 @@ export async function GET(request) {
 
     return response;
   } catch (err) {
+    if (err?.digest?.startsWith("NEXT_") || err?.message?.includes("bail out")) {
+      throw err;
+    }
     console.error("[GOOGLE_CALLBACK_ERROR]", err);
     const host = request.headers.get("host") || "localhost:3000";
     return NextResponse.redirect(`https://${host}/login?error=Authentication+exception`);
