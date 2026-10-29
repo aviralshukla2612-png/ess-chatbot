@@ -140,7 +140,7 @@ export default function SettingsPage() {
                   type="text"
                   key={`org_${userProfile.orgName}`}
                   defaultValue={userProfile.orgName || "My Workspace"}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs"
                 />
               </div>
 
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                 <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
                   Default Currency
                 </label>
-                <select className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40">
+                <select className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs">
                   <option>Indian Rupee (INR / ₹)</option>
                   <option>US Dollar (USD / $)</option>
                   <option>Euro (EUR / €)</option>
@@ -162,13 +162,13 @@ export default function SettingsPage() {
                 <input
                   type="text"
                   defaultValue="India (GST applicable)"
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs"
                 />
               </div>
 
               <button
                 type="submit"
-                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
+                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl cursor-pointer"
               >
                 Save Changes
               </button>
@@ -189,7 +189,7 @@ export default function SettingsPage() {
                   type="text"
                   key={`name_${userProfile.name}`}
                   defaultValue={userProfile.name || "Workspace Member"}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs font-medium"
                 />
               </div>
 
@@ -201,13 +201,13 @@ export default function SettingsPage() {
                   type="email"
                   key={`email_${userProfile.email}`}
                   defaultValue={userProfile.email || ""}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs font-medium"
                 />
               </div>
 
               <button
                 type="submit"
-                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
+                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl cursor-pointer"
               >
                 Update Profile
               </button>
@@ -311,7 +311,7 @@ export default function SettingsPage() {
                 <input
                   type="password"
                   placeholder="••••••••••••"
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs"
                 />
               </div>
               <div>
@@ -321,12 +321,12 @@ export default function SettingsPage() {
                 <input
                   type="password"
                   placeholder="••••••••••••"
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 transition-colors shadow-2xs"
                 />
               </div>
               <button
                 type="submit"
-                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
+                className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl cursor-pointer"
               >
                 Change Password
               </button>

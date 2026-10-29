@@ -158,7 +158,7 @@ export default function TeamPage() {
               placeholder="e.g. Rahul Sharma"
               value={newMember.name}
               onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 shadow-2xs"
             />
           </div>
 
@@ -172,7 +172,7 @@ export default function TeamPage() {
               placeholder="rahul@company.com"
               value={newMember.email}
               onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 shadow-2xs"
             />
           </div>
 
@@ -183,7 +183,7 @@ export default function TeamPage() {
             <select
               value={newMember.role}
               onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
-              className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white text-xs outline-hidden focus:border-indigo-500 shadow-2xs"
             >
               <option value="Admin">Admin (Can edit bots and train knowledge)</option>
               <option value="Member">Member (Can view conversations & leads)</option>
