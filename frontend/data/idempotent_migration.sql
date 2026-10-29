@@ -242,22 +242,6 @@ INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "pri
 VALUES ('bot_aa', 'org_default', 'aa', 'Official AI assistant for Emperor Smart Solutions.', '⚡', '#4f46e5', 'Active', 'You are the official AI assistant for Emperor Smart Solutions (ESS), founded by Yash Sharma (Founder) and Karan Makwana (Co-Founder). Provide verified facts about services, founders, developer hiring, office location in Ahmedabad, and budget tiers. Never fabricate or invent facts.', 'Hello! I am the AI assistant for Emperor Smart Solutions. How can I help you today?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
-INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791787975361_b7dj', 'org_default', 'bot_aa', 'Vikram Joshi', 'vikram@enterprise.in', '+91 99887 76655', 'Direct Inbound', 'High', 'New', 'Full Stack Next.js + Flutter development quote', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791608783809_j20l', 'org_default', 'bot_aa', 'Sarah Connor', 'sarah@sky.net', '+1 555-0199', 'Website Embed Visitor', 'High', 'New', 'Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791608185636_9oft', 'org_default', 'bot_aa', 'John Doe', 'john.doe@innovate.io', '+91 99999 88888', 'Website Embed Visitor', 'High', 'New', 'Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_seed_01', 'org_default', 'bot_aa', 'Rohan Varma', 'rohan.v@techlogix.co', '+91 98200 12345', 'TechLogix Global', 'High', 'New', 'Interested in custom ERP & CRM automation pipeline with real-time vector search.', '₹1,50,000', 'Web Chatbot Widget', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
 INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
 VALUES ('doc_emperor_smart_solutions_01', 'org_default', 'bot_aa', 'Emperor_Smart_Solutions_Company_Profile.pdf', 'PDF', 5601, 'Ready', 5, NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
@@ -309,18 +293,6 @@ VALUES ('chk_doc_emperor_smart_solutions_01_4', 'doc_emperor_smart_solutions_01'
 • FinTech & Trading (AI loan approval engine: reduced latency from 48h to under 3 min)
 • Healthcare (HIPAA Telehealth & WebRTC platform serving 50,000+ monthly appointments)
 • Logistics, Real Estate, HR Tech (Silver One), GIS Analytics, Education & Non-Profit.', NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('test_deploy_1791608783005', 'org_default', 'bot_aa', 'Sarah Connor', 'sarah@sky.net', '+1 555-0199', 'Active', true, 'Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('session_bot_aa_1791608185637', 'org_default', 'bot_aa', 'John Doe', 'john.doe@innovate.io', '+91 99999 88888', 'Active', true, 'Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_seed_01', 'org_default', 'bot_aa', 'Acme Logistics Inquiry', 'contact@acmelogistics.com', '+91 98765 43210', 'Active', true, 'Can we schedule a live demo of the ERP integration modules?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 -- Seed Real Users
