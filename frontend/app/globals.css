@@ -17,3 +17,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #09090b;
+    --foreground: #f8fafc;
+  }
+
+  input,
+  select,
+  textarea {
+    color: #f8fafc;
+  }
+
+  select option {
+    background-color: #18181b;
+    color: #f8fafc;
+  }
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  color: #f8fafc;
+}
+
+.dark select option {
+  background-color: #18181b;
+  color: #f8fafc;
+}
+
