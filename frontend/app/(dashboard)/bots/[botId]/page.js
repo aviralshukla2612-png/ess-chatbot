@@ -179,9 +179,9 @@ function BotDetailContent() {
 
           <button
             onClick={() => handleTabClick("test")}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-colors cursor-pointer"
           >
-            <Play className="w-3.5 h-3.5 text-indigo-600" />
+            <Play className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
             <span>Test Bot {!hasCompanyProfile && "🔒"}</span>
           </button>
 
