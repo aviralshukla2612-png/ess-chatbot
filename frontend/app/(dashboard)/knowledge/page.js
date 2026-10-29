@@ -14,11 +14,13 @@ import {
   CheckCircle2,
   Sparkles,
   ExternalLink,
+  Building2,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import Modal from "@/components/ui/Modal";
 import KnowledgeGapsModal from "@/components/knowledge/KnowledgeGapsModal";
 import WebsiteKnowledgeManager from "@/components/knowledge/WebsiteKnowledgeManager";
+import CompanyKnowledgeBuilder from "@/components/knowledge/CompanyKnowledgeBuilder";
 import { knowledgeApi } from "@/lib/api/knowledge";
 
 export default function KnowledgePage() {
@@ -171,12 +173,29 @@ export default function KnowledgePage() {
               <Plus className="w-4 h-4" /> Add Website URL
             </button>
           )}
+          <button
+            onClick={() => setActiveTab("company-profile")}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              activeTab === "company-profile"
+                ? "bg-indigo-600 text-white shadow-xs"
+                : "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100"
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>Company Profile Intake</span>
+          </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold">
+      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto">
         {[
+          {
+            id: "company-profile",
+            label: "Company Profile Intake",
+            icon: Building2,
+            badge: "✨ Auto-PDF & Train",
+          },
           { id: "documents", label: "Documents", icon: FileText, count: documents.length },
           { id: "qa", label: "Questions & Answers", icon: HelpCircle, count: qas.length },
           { id: "websites", label: "Websites", icon: Globe, count: websites.length },
@@ -192,7 +211,7 @@ export default function KnowledgePage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 pb-3.5 relative transition-colors ${
+              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap ${
                 activeTab === t.id
                   ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
@@ -201,7 +220,7 @@ export default function KnowledgePage() {
               <Icon className="w-4 h-4" />
               <span>{t.label}</span>
               {t.badge ? (
-                <span className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
                   {t.badge}
                 </span>
               ) : t.count !== undefined ? (
@@ -211,6 +230,15 @@ export default function KnowledgePage() {
           );
         })}
       </div>
+
+      {/* TAB: Company Profile Intake & Approval */}
+      {activeTab === "company-profile" && (
+        <CompanyKnowledgeBuilder
+          onDocumentTrained={(doc) => {
+            knowledgeApi.getDocuments().then(setDocuments);
+          }}
+        />
+      )}
 
       {/* TAB 1: Documents */}
       {activeTab === "documents" && (
