@@ -890,9 +890,9 @@ export default function CompanyKnowledgeBuilder({
                 <a
                   href={pdfUrl}
                   download={`${(form.companyName || "Company").replace(/[^a-zA-Z0-9_-]/g, "_")}_Knowledge_Profile.pdf`}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-neutral-50 shadow-2xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-slate-700 text-xs font-bold shadow-xs transition-colors"
                 >
-                  <Download className="w-3.5 h-3.5 text-indigo-600" />
+                  <Download className="w-3.5 h-3.5 text-indigo-400" />
                   <span>Download PDF</span>
                 </a>
               )}
@@ -1100,9 +1100,9 @@ export default function CompanyKnowledgeBuilder({
             <button
               type="button"
               onClick={() => setStep("form")}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 text-slate-700 dark:text-slate-300 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 text-indigo-400" />
               <span>&larr; Back to Edit Answers</span>
             </button>
 
@@ -1178,8 +1178,9 @@ export default function CompanyKnowledgeBuilder({
             <button
               type="button"
               onClick={() => setStep("form")}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-neutral-50 transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
             >
+              <RefreshCw className="w-3.5 h-3.5 text-indigo-400" />
               <span>Create / Update Another Profile</span>
             </button>
 
