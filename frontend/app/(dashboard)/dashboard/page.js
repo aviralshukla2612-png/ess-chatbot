@@ -137,9 +137,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Live Real-time Indicator */}
-          <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
-
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 shadow-2xs font-medium cursor-pointer">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <span>Last 30 days</span>
