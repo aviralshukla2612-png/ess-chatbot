@@ -189,7 +189,7 @@ export default function LoginPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-                    <Building className="w-4 h-4" />
+                    <LayoutDashboard className="w-4 h-4" />
                   </div>
                   <div>
                     <span className="font-bold text-white block text-xs">Enter Workspace Demo</span>
@@ -205,7 +205,7 @@ export default function LoginPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4" />
+                    <Globe className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                   </div>
                   <div>
                     <span className="font-bold text-white block text-xs">Public Website</span>
