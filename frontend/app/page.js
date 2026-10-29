@@ -20,6 +20,19 @@ import {
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 
 export default function HomePage() {
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success && d?.user) {
+          setIsAuthenticated(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
@@ -35,12 +48,21 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-102"
-            >
-              Sign In
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-102"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-102"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -65,20 +87,41 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
-            <Link
-              href="/dashboard"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 font-bold text-sm text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-102"
-            >
-              Launch Organization Dashboard
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 font-bold text-sm text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-102"
+                >
+                  Launch Organization Dashboard
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
 
-            <Link
-              href="/bots/create"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 font-bold text-sm text-neutral-200 transition-colors"
-            >
-              + Create Bot Wizard
-            </Link>
+                <Link
+                  href="/bots/create"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 font-bold text-sm text-neutral-200 transition-colors"
+                >
+                  + Create Bot Wizard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 font-bold text-sm text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-102"
+                >
+                  Sign In to Get Started
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <Link
+                  href="/login?redirect=/bots/create"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 font-bold text-sm text-neutral-200 transition-colors"
+                >
+                  + Create Bot Wizard
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -112,10 +155,11 @@ export default function HomePage() {
 
             <div className="pt-4">
               <Link
-                href="/dashboard"
+                href={isAuthenticated ? "/dashboard" : "/login"}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300"
               >
-                Explore Organization Workspace <ChevronRight className="w-4 h-4" />
+                {isAuthenticated ? "Explore Organization Workspace" : "Sign In to Access Workspace"}{" "}
+                <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
