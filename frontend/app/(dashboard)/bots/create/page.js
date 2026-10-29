@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import CreateBotWizard from "@/components/bots/CreateBotWizard";
 import Link from "next/link";
-import { ArrowLeft, ShieldAlert, Bot, ArrowRight, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Bot, ArrowRight, Lock, Sparkles, CreditCard } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
 import TrialOnboardingModal from "@/components/billing/TrialOnboardingModal";
 
@@ -95,7 +95,7 @@ export default function CreateBotPage() {
               onClick={() => setTrialModalOpen(true)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
+              <CreditCard className="w-4 h-4" />
               <span>Set Up Autopay & Unlock Bot Creation</span>
               <ArrowRight className="w-4 h-4" />
             </button>

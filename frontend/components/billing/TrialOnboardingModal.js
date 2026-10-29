@@ -391,8 +391,9 @@ export default function TrialOnboardingModal({
               </>
             ) : (
               <>
+                <CreditCard className="w-4 h-4 shrink-0" />
                 <span>{isMandatory ? "Set Up Autopay (₹0 Today) & Unlock Bot Creation" : "Set Up Autopay & Start 7-Day Free Trial"}</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </>
             )}
           </button>
