@@ -180,13 +180,18 @@ export default function Sidebar({ isOpen, onClose }) {
           </Link>
 
           {/* Help link */}
-          <a
-            href="#help"
-            className="flex items-center gap-2.5 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          <Link
+            href="/support"
+            className={cn(
+              "flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors rounded-xl",
+              pathname === "/support"
+                ? "bg-indigo-600/20 text-indigo-300 font-semibold"
+                : "text-slate-400 hover:text-slate-200"
+            )}
           >
-            <HelpCircle className="w-4 h-4 text-slate-500" />
+            <HelpCircle className={cn("w-4 h-4", pathname === "/support" ? "text-indigo-400" : "text-slate-500")} />
             <span>Help & Support</span>
-          </a>
+          </Link>
 
           {/* User Profile */}
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/40 border border-slate-700/40">
