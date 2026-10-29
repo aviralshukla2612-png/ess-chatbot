@@ -40,12 +40,14 @@ export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [currentOrg, setCurrentOrg] = useState("My Workspace");
+  const [currentUser, setCurrentUser] = useState(null);
 
   React.useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
         if (d?.success && d?.user) {
+          setCurrentUser(d.user);
           const name = d.user.name || d.user.email.split("@")[0];
           setCurrentOrg(`${name}'s Workspace`);
         }
@@ -190,22 +192,33 @@ export default function Sidebar({ isOpen, onClose }) {
           <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/40 border border-slate-700/40">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-7 h-7 rounded-full bg-linear-to-tr from-indigo-500 to-violet-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                A
+                {currentUser?.name
+                  ? currentUser.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+                  : currentUser?.email
+                  ? currentUser.email.slice(0, 2).toUpperCase()
+                  : "U"}
               </div>
               <div className="truncate">
                 <p className="text-xs font-semibold text-white truncate">
-                  Administrator
+                  {currentUser?.name || "Administrator"}
                 </p>
-                <p className="text-[10px] text-indigo-400 font-medium">Workspace Owner</p>
+                <p className="text-[10px] text-indigo-400 font-medium truncate">
+                  {currentUser?.email || "Workspace Owner"}
+                </p>
               </div>
             </div>
-            <Link
-              href="/login"
+            <button
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                } catch {}
+                window.location.replace("/login");
+              }}
               title="Sign Out"
-              className="p-1.5 text-slate-400 hover:text-white transition-colors"
+              className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

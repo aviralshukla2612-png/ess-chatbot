@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +59,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
               <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
             </div>
             <span className="font-bold text-lg text-white tracking-tight">
-              ChatPilot
+              NexusAI
             </span>
           </div>
 
@@ -130,12 +131,24 @@ export default function AdminSidebar({ isOpen, onClose }) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-slate-100 truncate">
-                Emperor Smart Solution
+                Admin
               </p>
               <p className="text-[11px] text-indigo-400 font-medium truncate">
                 Super Admin
               </p>
             </div>
+            <button
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                } catch {}
+                window.location.replace("/login");
+              }}
+              title="Sign Out"
+              className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

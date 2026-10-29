@@ -10,16 +10,25 @@ export async function GET(request) {
   const user = await authStore.getUserById(principal.userId);
   const memberships = await authStore.getUserMemberships(principal.userId);
 
-  return NextResponse.json({
-    success: true,
-    user: {
-      id: principal.userId,
-      email: principal.email,
-      name: user?.name || principal.email.split("@")[0],
-      role: principal.platformRole,
+  return NextResponse.json(
+    {
+      success: true,
+      user: {
+        id: principal.userId,
+        email: principal.email,
+        name: user?.name || principal.email.split("@")[0],
+        role: principal.platformRole,
+      },
+      activeOrganizationId: principal.organizationId,
+      activeOrgRole: principal.orgRole,
+      memberships,
     },
-    activeOrganizationId: principal.organizationId,
-    activeOrgRole: principal.orgRole,
-    memberships,
-  });
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    }
+  );
 }

@@ -150,7 +150,7 @@ export default function LoginPage() {
             </div>
             <div>
               <span className="font-extrabold text-2xl tracking-tight text-white">
-                ChatPilot
+                NexusAI
               </span>
               <p className="text-[11px] text-slate-400 font-medium">
                 Autonomous AI Chatbot & Lead Generation
@@ -235,7 +235,7 @@ export default function LoginPage() {
         <div className="relative z-10 pt-4 flex items-center justify-between text-xs text-slate-400">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            © 2026 ChatPilot. All rights reserved.
+            © 2026 NexusAI. All rights reserved.
           </span>
         </div>
       </div>

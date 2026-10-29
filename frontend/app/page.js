@@ -23,14 +23,18 @@ export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
 
   React.useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { cache: "no-store", headers: { Pragma: "no-cache" } })
       .then((r) => r.json())
       .then((d) => {
         if (d?.success && d?.user) {
           setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setIsAuthenticated(false);
+      });
   }, []);
 
   return (
