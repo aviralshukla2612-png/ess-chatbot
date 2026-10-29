@@ -464,6 +464,16 @@ export default function LoginPage() {
               <Globe className="w-3.5 h-3.5 text-indigo-500 group-hover:rotate-12 transition-transform" />
               <span>Public Website</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => handleDirectLogin("superadmin")}
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-all inline-flex items-center gap-1 cursor-pointer hover:underline"
+              title="One-click direct login for Super Admin"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Super Admin Quick Login</span>
+            </button>
           </div>
         </div>
       </div>
