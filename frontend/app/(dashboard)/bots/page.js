@@ -97,16 +97,7 @@ export default function BotsPage() {
   const getEmbedSnippet = (bot) => {
     if (!bot) return "";
     const idToUse = bot.id || "bot_aa";
-    return `<script>
-(() => {
-  const s = document.createElement("script");
-  s.src = "${appOrigin}/widget.js";
-  s.setAttribute("data-bot-id", "${idToUse}");
-  s.setAttribute("data-color", "${bot.primaryColor || "#4f46e5"}");
-  s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
-  document.body.appendChild(s);
-})();
-</script>`;
+    return `<script src="${appOrigin}/widget.js" data-bot-id="${idToUse}" defer></script>`;
   };
 
   const getConsoleSnippet = (bot) => {

@@ -91,16 +91,7 @@ function DeployBotContent() {
 
   const effectiveHost = customHost.trim() || appOrigin;
 
-  const scriptTag = `<script>
-(() => {
-  const s = document.createElement("script");
-  s.src = "${effectiveHost}/widget.js";
-  s.setAttribute("data-bot-id", "${bot?.id || botId}");
-  s.setAttribute("data-color", "${widgetColor}");
-  s.setAttribute("data-position", "${launcherPosition}");
-  document.body.appendChild(s);
-})();
-</script>`;
+  const scriptTag = `<script src="${effectiveHost}/widget.js" data-bot-id="${bot?.id || botId}" defer></script>`;
 
   const sshSedCommand = `sed -i 's|</body>|<script src="${effectiveHost}/widget.js" data-bot-id="${bot?.id || botId}" defer></script></body>|' /var/www/html/index.html`;
 
