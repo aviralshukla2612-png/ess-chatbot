@@ -4,10 +4,31 @@ import { signSessionToken } from "@/lib/auth/session";
 
 /**
  * GET /api/auth/google
- * Returns authenticated session accounts (no hardcoded fallback defaults)
+ * Redirects the user directly to official Google OAuth 2.0 consent screen
  */
-export async function GET() {
-  return NextResponse.json({ success: true, accounts: [] });
+export async function GET(request) {
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host = request.headers.get("host") || "localhost:3000";
+  const baseUrl = `${proto}://${host}`;
+  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    return NextResponse.redirect(
+      `${baseUrl}/login?error=Google+OAuth+not+yet+configured.+Please+set+GOOGLE_CLIENT_ID+in+server+env.`
+    );
+  }
+
+  const googleUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  googleUrl.searchParams.set("client_id", clientId);
+  googleUrl.searchParams.set("redirect_uri", redirectUri);
+  googleUrl.searchParams.set("response_type", "code");
+  googleUrl.searchParams.set("scope", "openid email profile");
+  googleUrl.searchParams.set("prompt", "select_account");
+  googleUrl.searchParams.set("access_type", "offline");
+
+  return NextResponse.redirect(googleUrl.toString());
 }
 
 /**
