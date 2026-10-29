@@ -23,6 +23,7 @@ import {
   Download,
   ShieldCheck,
   BookOpen,
+  Building2,
 } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
@@ -377,6 +378,16 @@ export default function BotsPage() {
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Open</span>
+                </Link>
+
+                {/* Mandatory Company Profile Intake Form Button */}
+                <Link
+                  href={`/bots/${bot.id}?tab=company-profile`}
+                  className="px-3.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Complete mandatory Company Profile Intake & Business Hours form"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Company Profile Intake 🏢</span>
                 </Link>
 
                 {/* Direct Add Information / Knowledge Button */}

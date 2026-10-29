@@ -20,6 +20,7 @@ import {
   Eye,
   RefreshCw,
   Send,
+  ShieldAlert,
 } from "lucide-react";
 import { formatCompanyProfileText, generateCompanyProfilePdfBytes } from "@/lib/utils/pdfGenerator";
 import { botsApi } from "@/lib/api/bots";
@@ -95,9 +96,18 @@ const SAMPLE_PROFILE = {
   ],
 };
 
-export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
+const inputClass =
+  "w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-hidden transition-all shadow-2xs placeholder:text-neutral-400 dark:placeholder:text-neutral-500";
+
+const labelClass = "font-bold text-xs text-slate-800 dark:text-neutral-200 block mb-1.5";
+
+export default function CompanyKnowledgeBuilder({
+  initialBotId = "",
+  isMandatory = false,
+  onDocumentTrained,
+}) {
   const [bots, setBots] = useState([]);
-  const [selectedBotId, setSelectedBotId] = useState("");
+  const [selectedBotId, setSelectedBotId] = useState(initialBotId || "");
   const [form, setForm] = useState(SAMPLE_PROFILE);
   const [step, setStep] = useState("form"); // "form" | "review" | "success"
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -114,16 +124,18 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
         const list = await botsApi.getBots();
         if (Array.isArray(list) && list.length > 0) {
           setBots(list);
-          setSelectedBotId(list[0].id);
-        } else {
-          setSelectedBotId("bot_aa");
+          if (!selectedBotId) {
+            setSelectedBotId(initialBotId || list[0].id);
+          }
+        } else if (!selectedBotId) {
+          setSelectedBotId(initialBotId || "bot_aa");
         }
       } catch (err) {
-        setSelectedBotId("bot_aa");
+        if (!selectedBotId) setSelectedBotId(initialBotId || "bot_aa");
       }
     }
     loadBots();
-  }, []);
+  }, [initialBotId, selectedBotId]);
 
   const handleFieldChange = (field, val) => {
     setForm((prev) => ({ ...prev, [field]: val }));
@@ -207,7 +219,8 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
 
   // Step 3: User Approves and Triggers Training
   const handleApproveAndTrain = async () => {
-    if (!selectedBotId) {
+    const targetBot = selectedBotId || initialBotId || "bot_aa";
+    if (!targetBot) {
       setApprovalError("Please select a target chatbot to train.");
       return;
     }
@@ -219,7 +232,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
       const sanitizedName = (form.companyName || "Company").replace(/[^a-zA-Z0-9_-]/g, "_");
       const fileName = `${sanitizedName}_Business_Knowledge_Profile.pdf`;
 
-      const doc = await knowledgeApi.addDocument(selectedBotId, {
+      const doc = await knowledgeApi.addDocument(targetBot, {
         name: fileName,
         content: compiledText,
         type: "PDF",
@@ -236,13 +249,35 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
     }
   };
 
-  const selectedBot = bots.find((b) => b.id === selectedBotId) || {
-    id: selectedBotId,
-    name: selectedBotId === "bot_aa" ? "Official AI Assistant (bot_aa)" : selectedBotId,
+  const selectedBot = bots.find((b) => b.id === (selectedBotId || initialBotId)) || {
+    id: selectedBotId || initialBotId || "bot_aa",
+    name: (selectedBotId || initialBotId) === "bot_aa" ? "Official AI Assistant (bot_aa)" : (selectedBotId || initialBotId),
   };
 
   return (
     <div className="space-y-6">
+      {/* Mandatory Notification Alert */}
+      {isMandatory && (
+        <div className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-900 dark:text-amber-200 flex items-center justify-between gap-4 shadow-sm animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-300 shrink-0">
+              <ShieldAlert className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs uppercase tracking-wider text-amber-950 dark:text-amber-100">
+                Mandatory Setup Required Before Bot Activation
+              </h4>
+              <p className="text-xs text-amber-900/90 dark:text-amber-200/90 mt-0.5">
+                Every bot requires an approved Company Profile Intake so it can answer visitor inquiries about business hours, services, pricing, and office address.
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-500 text-slate-950 shrink-0 shadow-xs">
+            Mandatory Gate
+          </span>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="bg-linear-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-xl border border-indigo-500/30">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -271,7 +306,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
               <button
                 type="button"
                 onClick={() => setForm(SAMPLE_PROFILE)}
-                className="px-3.5 py-2 rounded-xl bg-indigo-600/40 hover:bg-indigo-600/60 border border-indigo-400/30 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-indigo-600/40 hover:bg-indigo-600/60 border border-indigo-400/30 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>Fill Sample Data</span>
@@ -333,10 +368,10 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                 <Bot className="w-5 h-5" />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                <label className="text-xs font-bold text-slate-900 dark:text-white">
                   Target Chatbot to Train
                 </label>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                   Select which chatbot will ingest and memorize this approved company knowledge.
                 </p>
               </div>
@@ -345,7 +380,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
             <select
               value={selectedBotId}
               onChange={(e) => setSelectedBotId(e.target.value)}
-              className="px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+              className="px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
             >
               {bots.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -360,75 +395,65 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
           <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xs space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-neutral-100 dark:border-neutral-800">
               <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                 1. Company Identity & Leadership
               </h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Company / Organization Name *
-                </label>
+                <label className={labelClass}>Company / Organization Name *</label>
                 <input
                   type="text"
                   required
                   value={form.companyName}
                   onChange={(e) => handleFieldChange("companyName", e.target.value)}
                   placeholder="e.g. Acme Corporation"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Tagline / Motto
-                </label>
+                <label className={labelClass}>Tagline / Motto</label>
                 <input
                   type="text"
                   value={form.tagline}
                   onChange={(e) => handleFieldChange("tagline", e.target.value)}
                   placeholder="e.g. Next-Gen AI Automation for Enterprises"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Industry / Business Domain
-                </label>
+                <label className={labelClass}>Industry / Business Domain</label>
                 <input
                   type="text"
                   value={form.industry}
                   onChange={(e) => handleFieldChange("industry", e.target.value)}
                   placeholder="e.g. Healthcare, IT Software, Real Estate, E-Commerce"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Founders / Leadership Names
-                </label>
+                <label className={labelClass}>Founders / Leadership Names</label>
                 <input
                   type="text"
                   value={form.founders}
                   onChange={(e) => handleFieldChange("founders", e.target.value)}
                   placeholder="e.g. Yash Sharma (Founder) & Karan Makwana (Co-Founder)"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Detailed Company Overview & Mission
-                </label>
+                <label className={labelClass}>Detailed Company Overview & Mission</label>
                 <textarea
                   rows={3}
                   value={form.description}
                   onChange={(e) => handleFieldChange("description", e.target.value)}
                   placeholder="Briefly describe what your company does, its certifications, accomplishments, and value proposition..."
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -439,10 +464,10 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
             <div className="flex items-center gap-2.5 pb-3 border-b border-neutral-100 dark:border-neutral-800">
               <Clock className="w-4 h-4 text-amber-500" />
               <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                   2. Business Hours & Opening Schedule
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                   Your chatbot will use these exact timings when visitors ask "When do you open?" or "Are you open on Saturdays?".
                 </p>
               </div>
@@ -450,80 +475,68 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Operating Days
-                </label>
+                <label className={labelClass}>Operating Days</label>
                 <input
                   type="text"
                   value={form.workingDays}
                   onChange={(e) => handleFieldChange("workingDays", e.target.value)}
                   placeholder="e.g. Monday to Saturday"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Opening Time
-                </label>
+                <label className={labelClass}>Opening Time</label>
                 <input
                   type="text"
                   value={form.openingTime}
                   onChange={(e) => handleFieldChange("openingTime", e.target.value)}
                   placeholder="e.g. 10:00 AM"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Closing Time
-                </label>
+                <label className={labelClass}>Closing Time</label>
                 <input
                   type="text"
                   value={form.closingTime}
                   onChange={(e) => handleFieldChange("closingTime", e.target.value)}
                   placeholder="e.g. 07:00 PM"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Timezone
-                </label>
+                <label className={labelClass}>Timezone</label>
                 <input
                   type="text"
                   value={form.timezone}
                   onChange={(e) => handleFieldChange("timezone", e.target.value)}
                   placeholder="e.g. IST (UTC+5:30) or EST"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Sunday & Weekend Policy
-                </label>
+                <label className={labelClass}>Sunday & Weekend Policy</label>
                 <input
                   type="text"
                   value={form.weekendPolicy}
                   onChange={(e) => handleFieldChange("weekendPolicy", e.target.value)}
                   placeholder="e.g. Closed on Sundays. 24/7 AI chat active."
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Public Holidays Policy
-                </label>
+                <label className={labelClass}>Public Holidays Policy</label>
                 <input
                   type="text"
                   value={form.holidayNote}
                   onChange={(e) => handleFieldChange("holidayNote", e.target.value)}
                   placeholder="e.g. Closed on National Gazetted Holidays"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -535,10 +548,10 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
               <div className="flex items-center gap-2.5">
                 <Briefcase className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                     3. Products & Services Provided
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                     Detail the offerings your chatbot will recommend to prospects.
                   </p>
                 </div>
@@ -578,55 +591,47 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="sm:col-span-1">
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                        Service Name *
-                      </label>
+                      <label className={labelClass}>Service Name *</label>
                       <input
                         type="text"
                         required
                         value={s.name}
                         onChange={(e) => updateService(s.id, "name", e.target.value)}
                         placeholder="e.g. Web & Mobile App Development"
-                        className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        className={inputClass}
                       />
                     </div>
 
                     <div className="sm:col-span-1">
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                        Timeline / Turnaround
-                      </label>
+                      <label className={labelClass}>Timeline / Turnaround</label>
                       <input
                         type="text"
                         value={s.timeline}
                         onChange={(e) => updateService(s.id, "timeline", e.target.value)}
                         placeholder="e.g. 2 to 4 weeks"
-                        className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        className={inputClass}
                       />
                     </div>
 
                     <div className="sm:col-span-1">
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                        Pricing / Rates
-                      </label>
+                      <label className={labelClass}>Pricing / Rates</label>
                       <input
                         type="text"
                         value={s.pricing}
                         onChange={(e) => updateService(s.id, "pricing", e.target.value)}
                         placeholder="e.g. Starting from ₹50,000"
-                        className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        className={inputClass}
                       />
                     </div>
 
                     <div className="sm:col-span-3">
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                        Deliverables & Details
-                      </label>
+                      <label className={labelClass}>Deliverables & Details</label>
                       <input
                         type="text"
                         value={s.description}
                         onChange={(e) => updateService(s.id, "description", e.target.value)}
                         placeholder="e.g. Full-stack development using Next.js, Flutter, scalable cloud backend and CI/CD pipelines"
-                        className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                        className={inputClass}
                       />
                     </div>
                   </div>
@@ -639,61 +644,53 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
           <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xs space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-neutral-100 dark:border-neutral-800">
               <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                 4. Pricing, Budget Tiers & Payment Policies
               </h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Starting / Minimum Project Budget
-                </label>
+                <label className={labelClass}>Starting / Minimum Project Budget</label>
                 <input
                   type="text"
                   value={form.startingPrice}
                   onChange={(e) => handleFieldChange("startingPrice", e.target.value)}
                   placeholder="e.g. ₹25,000 / $500"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Standard Budget Tiers
-                </label>
+                <label className={labelClass}>Standard Budget Tiers</label>
                 <input
                   type="text"
                   value={form.pricingTiers}
                   onChange={(e) => handleFieldChange("pricingTiers", e.target.value)}
                   placeholder="e.g. Basic: ₹25k–₹50k | Pro: ₹50k–₹1.5L | Enterprise: Custom"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Payment Milestones & Terms
-                </label>
+                <label className={labelClass}>Payment Milestones & Terms</label>
                 <input
                   type="text"
                   value={form.paymentTerms}
                   onChange={(e) => handleFieldChange("paymentTerms", e.target.value)}
                   placeholder="e.g. 50% upfront deposit, 50% upon final sign-off"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Free Consultation / Discovery Call Offer
-                </label>
+                <label className={labelClass}>Free Consultation / Discovery Call Offer</label>
                 <input
                   type="text"
                   value={form.freeConsultation}
                   onChange={(e) => handleFieldChange("freeConsultation", e.target.value)}
                   placeholder="e.g. Free 30-minute discovery call & architecture plan"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -703,74 +700,64 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
           <div className="p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xs space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-neutral-100 dark:border-neutral-800">
               <MapPin className="w-4 h-4 text-rose-500" />
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                 5. Location & Official Contact Channels
               </h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="md:col-span-2">
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Head Office Address
-                </label>
+                <label className={labelClass}>Head Office Address</label>
                 <input
                   type="text"
                   value={form.officeAddress}
                   onChange={(e) => handleFieldChange("officeAddress", e.target.value)}
                   placeholder="e.g. 202, Shitiratna Complex, Panchvati, Ahmedabad, Gujarat, India"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Service Coverage Areas
-                </label>
+                <label className={labelClass}>Service Coverage Areas</label>
                 <input
                   type="text"
                   value={form.serviceAreas}
                   onChange={(e) => handleFieldChange("serviceAreas", e.target.value)}
                   placeholder="e.g. Ahmedabad, Mumbai, Delhi, Remote Worldwide"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Official Phone / WhatsApp
-                </label>
+                <label className={labelClass}>Official Phone / WhatsApp</label>
                 <input
                   type="text"
                   value={form.phone}
                   onChange={(e) => handleFieldChange("phone", e.target.value)}
                   placeholder="e.g. +91 63591 20081"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Support & Sales Email
-                </label>
+                <label className={labelClass}>Support & Sales Email</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => handleFieldChange("email", e.target.value)}
                   placeholder="e.g. contact@emperorsmartsolutions.com"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  Official Website URL
-                </label>
+                <label className={labelClass}>Official Website URL</label>
                 <input
                   type="url"
                   value={form.website}
                   onChange={(e) => handleFieldChange("website", e.target.value)}
                   placeholder="e.g. https://emperorsmartsolutions.com"
-                  className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -782,10 +769,10 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
               <div className="flex items-center gap-2.5">
                 <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                     6. Frequently Asked Questions (FAQs)
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-neutral-400">
                     Specific answers the chatbot will draw from to give precise answers.
                   </p>
                 </div>
@@ -830,7 +817,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                       value={faq.question}
                       onChange={(e) => updateFaq(faq.id, "question", e.target.value)}
                       placeholder="e.g. Do you offer ongoing maintenance?"
-                      className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className={inputClass}
                     />
 
                     <textarea
@@ -839,7 +826,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                       value={faq.answer}
                       onChange={(e) => updateFaq(faq.id, "answer", e.target.value)}
                       placeholder="e.g. Yes, we provide 24/7 SLA maintenance and monthly retainer support."
-                      className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -849,7 +836,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
 
           {/* Form Action Buttons */}
           <div className="flex items-center justify-between pt-4">
-            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <div className="text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span>Next step: You will review the generated PDF before training your chatbot.</span>
             </div>
@@ -949,7 +936,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                 </button>
               </div>
 
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+              <span className="text-[11px] text-slate-500 dark:text-neutral-400 font-mono">
                 Target Bot: <strong className="text-indigo-600 dark:text-indigo-400">{selectedBot.name}</strong>
               </span>
             </div>
@@ -1000,19 +987,19 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-800">
                       <span className="text-slate-400 block">Working Days</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.workingDays}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.workingDays}</strong>
                     </div>
                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-800">
                       <span className="text-slate-400 block">Hours</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.openingTime} – {form.closingTime}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.openingTime} – {form.closingTime}</strong>
                     </div>
                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-800">
                       <span className="text-slate-400 block">Timezone</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.timezone}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.timezone}</strong>
                     </div>
                     <div className="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-800">
                       <span className="text-slate-400 block">Sundays</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.weekendPolicy}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.weekendPolicy}</strong>
                     </div>
                   </div>
                 </div>
@@ -1029,7 +1016,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                         className="p-3 rounded-lg border border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40"
                       >
                         <div className="flex items-center justify-between">
-                          <strong className="text-xs text-slate-900 dark:text-slate-100">
+                          <strong className="text-xs text-slate-900 dark:text-white">
                             {idx + 1}. {s.name}
                           </strong>
                           {s.pricing && (
@@ -1039,7 +1026,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                           )}
                         </div>
                         {s.description && (
-                          <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-1">
+                          <p className="text-[11px] text-slate-600 dark:text-neutral-300 mt-1">
                             {s.description}
                           </p>
                         )}
@@ -1061,19 +1048,19 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
                     <div>
                       <span className="text-slate-400 block">Office Address:</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.officeAddress}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.officeAddress}</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block">Service Areas:</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.serviceAreas}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.serviceAreas}</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block">Phone & WhatsApp:</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.phone}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.phone}</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block">Email & Website:</span>
-                      <strong className="text-slate-900 dark:text-slate-100">{form.email} | {form.website}</strong>
+                      <strong className="text-slate-900 dark:text-white">{form.email} | {form.website}</strong>
                     </div>
                   </div>
                 </div>
@@ -1089,10 +1076,10 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
                         key={f.id}
                         className="p-3 rounded-lg border border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/40"
                       >
-                        <div className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                        <div className="font-bold text-xs text-slate-900 dark:text-white">
                           Q{idx + 1}: {f.question}
                         </div>
-                        <div className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 pl-3 border-l-2 border-indigo-400">
+                        <div className="text-[11px] text-slate-600 dark:text-neutral-300 mt-1 pl-3 border-l-2 border-indigo-400">
                           {f.answer}
                         </div>
                       </div>
@@ -1121,7 +1108,7 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
             </button>
 
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-500 dark:text-slate-400 hidden md:inline">
+              <span className="text-xs text-slate-500 dark:text-neutral-400 hidden md:inline">
                 Clicking approve will immediately chunk & index this PDF into {selectedBot.name}.
               </span>
 
@@ -1159,10 +1146,10 @@ export default function CompanyKnowledgeBuilder({ onDocumentTrained }) {
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Training Complete
             </span>
-            <h3 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+            <h3 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
               Your Company Knowledge is Live in Chatbot!
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 max-w-lg mx-auto leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-neutral-400 mt-2 max-w-lg mx-auto leading-relaxed">
               <strong>{form.companyName}</strong>'s business profile has been approved and ingested into <strong>{selectedBot.name}</strong> ({trainedDocResult?.chunksCount || 6} knowledge chunks indexed).
             </p>
           </div>

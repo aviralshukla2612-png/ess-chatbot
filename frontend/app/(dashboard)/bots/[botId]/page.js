@@ -20,12 +20,15 @@ import {
   ArrowLeft,
   Sparkles,
   Trash2,
+  Building2,
+  ShieldAlert,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import StatCard from "@/components/ui/StatCard";
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 import WebsiteKnowledgeManager from "@/components/knowledge/WebsiteKnowledgeManager";
 import DocumentKnowledgeManager from "@/components/knowledge/DocumentKnowledgeManager";
+import CompanyKnowledgeBuilder from "@/components/knowledge/CompanyKnowledgeBuilder";
 import { botsApi } from "@/lib/api/bots";
 import { knowledgeApi } from "@/lib/api/knowledge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
@@ -56,10 +59,21 @@ function BotDetailContent() {
       setBot(b);
       setDocuments(docs);
       setQas(qList);
+
+      const hasProfile = docs.some(
+        (d) =>
+          d.name?.toLowerCase().includes("knowledge_profile") ||
+          d.name?.toLowerCase().includes("company_profile") ||
+          d.name?.toLowerCase().includes("business_knowledge") ||
+          d.name?.toLowerCase().includes("profile.pdf")
+      );
+      if (!hasProfile && !queryTab) {
+        setActiveTab("company-profile");
+      }
       setLoading(false);
     }
     loadBotData();
-  }, [botId]);
+  }, [botId, queryTab]);
 
   const router = useRouter();
 
@@ -83,8 +97,16 @@ function BotDetailContent() {
     );
   }
 
+  const hasCompanyProfile = documents.some(
+    (d) =>
+      d.name?.toLowerCase().includes("knowledge_profile") ||
+      d.name?.toLowerCase().includes("company_profile") ||
+      d.name?.toLowerCase().includes("business_knowledge") ||
+      d.name?.toLowerCase().includes("profile.pdf")
+  );
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-16 font-sans">
       {/* Bot Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -168,9 +190,41 @@ function BotDetailContent() {
         </div>
       </div>
 
+      {/* Mandatory Company Profile Banner if Not Configured */}
+      {!hasCompanyProfile && (
+        <div className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-600 dark:text-amber-300 shrink-0">
+              <Building2 className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs uppercase tracking-wider text-amber-950 dark:text-amber-100">
+                Mandatory Setup Step: Company Profile & Business Hours Required
+              </h4>
+              <p className="text-xs text-amber-900/90 dark:text-amber-200/90 mt-0.5">
+                Before this bot can answer visitor questions on your live site, complete and approve your company profile form below.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab("company-profile")}
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 shadow-xs cursor-pointer transition-colors"
+          >
+            Complete Profile Now &rarr;
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold">
+      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto">
         {[
+          {
+            id: "company-profile",
+            label: "Company Profile Intake",
+            icon: Building2,
+            badge: !hasCompanyProfile ? "Mandatory ⚠️" : "Approved ✅",
+          },
           { id: "overview", label: "Overview", icon: BarChart3 },
           { id: "knowledge", label: "Knowledge Base", icon: BookOpen },
           { id: "test", label: "Interactive Playground", icon: Sparkles },
@@ -181,26 +235,48 @@ function BotDetailContent() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 pb-3.5 relative transition-colors ${
+              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap ${
                 activeTab === t.id
                   ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
               }`}
             >
               <Icon className="w-4 h-4" />
-              {t.label}
+              <span>{t.label}</span>
+              {t.badge && (
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    t.badge.includes("Mandatory")
+                      ? "bg-amber-500 text-slate-950"
+                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  }`}
+                >
+                  {t.badge}
+                </span>
+              )}
             </button>
           );
         })}
 
         <Link
           href={`/bots/${bot.id}/deploy`}
-          className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors ml-auto"
+          className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors ml-auto whitespace-nowrap"
         >
           <Share2 className="w-4 h-4 text-indigo-600" />
           <span>External Site Deploy &rarr;</span>
         </Link>
       </div>
+
+      {/* Tab: Company Profile Intake (Mandatory Setup) */}
+      {activeTab === "company-profile" && (
+        <CompanyKnowledgeBuilder
+          initialBotId={bot.id}
+          isMandatory={!hasCompanyProfile}
+          onDocumentTrained={(doc) => {
+            knowledgeApi.getDocuments(bot.id).then(setDocuments);
+          }}
+        />
+      )}
 
       {/* Tab: Overview */}
       {activeTab === "overview" && (
