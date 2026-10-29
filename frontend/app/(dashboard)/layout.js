@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-neutral-50/70 dark:bg-neutral-950 flex flex-col">
       <div className="flex flex-1 min-h-screen">
-        <Suspense fallback={<aside className="w-72 hidden lg:block bg-white dark:bg-neutral-900 border-r border-neutral-200" />}>
+        <Suspense fallback={<aside className="w-64 hidden lg:block bg-[#111827] border-r border-slate-800/80 sticky top-0 h-screen shrink-0" />}>
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         </Suspense>
         <div className="flex-1 flex flex-col min-w-0">

@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#111827] text-slate-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto border-r border-slate-800/80",
+          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#111827] text-slate-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 border-r border-slate-800/80 shrink-0 select-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -132,7 +132,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
