@@ -13,6 +13,8 @@ export async function GET(request) {
     const subscription = await billingService.getSubscription(principal.organizationId);
     const plan = getPlan(subscription?.planId);
     const periodKey = getCurrentPeriodKey();
+    const messagesUsed = await quotaGuard.getOrganizationUsage(principal.organizationId, "message", periodKey);
+    const pagesCrawled = await quotaGuard.getOrganizationUsage(principal.organizationId, "knowledge_page", periodKey);
 
     let trialDaysRemaining = 0;
     let isTrial = false;

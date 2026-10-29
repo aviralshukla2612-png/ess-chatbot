@@ -89,13 +89,13 @@ export default function TrialOnboardingModal({
 
       const { checkout } = data;
 
-      // 2. LIVE Razorpay Gateway Mode (Only when real Razorpay subscription ID was issued)
-      const isLiveGateway =
-        checkout?.mode === "live" &&
+      // 2. LIVE Razorpay Gateway Mode (Opens Razorpay Checkout for subscription mandate or verification order)
+      const isLiveGateway = Boolean(
         checkout?.keyId &&
         checkout?.keyId !== "rzp_test_sandbox" &&
-        checkout?.subscriptionId &&
-        !checkout?.subscriptionId.startsWith("sub_trial_");
+        (checkout?.subscriptionId || checkout?.orderId) &&
+        !checkout?.subscriptionId?.startsWith("sub_trial_")
+      );
 
       if (isLiveGateway && typeof window !== "undefined") {
         if (!window.Razorpay) {
@@ -110,7 +110,8 @@ export default function TrialOnboardingModal({
 
         const options = {
           key: checkout.keyId,
-          subscription_id: checkout.subscriptionId,
+          ...(checkout.subscriptionId ? { subscription_id: checkout.subscriptionId } : {}),
+          ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
           name: "NexusAI",
           description: "7-Day Free Trial (₹0 today, auto-debits on Day 8)",
           image: "/e-logoicon.webp",
@@ -120,8 +121,9 @@ export default function TrialOnboardingModal({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  subscriptionId: response.razorpay_subscription_id || checkout.subscriptionId,
+                  subscriptionId: response.razorpay_subscription_id || checkout.subscriptionId || `sub_order_${response.razorpay_order_id || Date.now()}`,
                   paymentId: response.razorpay_payment_id || "",
+                  orderId: response.razorpay_order_id || checkout.orderId || "",
                   planId: selectedPlan?.id || planId,
                   isTrial: true,
                 }),

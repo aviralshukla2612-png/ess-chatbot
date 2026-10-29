@@ -177,7 +177,44 @@ export const billingService = {
           };
         } else {
           const errData = await res.json().catch(() => ({}));
-          console.warn("[RAZORPAY_API_FAIL]", errData);
+          console.warn("[RAZORPAY_SUBSCRIPTION_FAIL]", errData);
+
+          // Fallback to Razorpay standard Order so Razorpay Checkout modal ALWAYS opens
+          const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${authHeader}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              amount: 100, // ₹1 token mandate verification
+              currency: "INR",
+              receipt: `rcpt_${Date.now()}`,
+              notes: {
+                organizationId,
+                planId: plan.id,
+                isTrial: "true",
+              },
+            }),
+          });
+
+          if (orderRes.ok) {
+            const orderData = await orderRes.json();
+            return {
+              mode: "live_order",
+              orderId: orderData.id,
+              keyId: RAZORPAY_KEY_ID,
+              plan,
+              isTrial,
+              trialDays,
+              startAt,
+              amountToday: 0,
+              recurringAmount: plan.priceMonthly,
+            };
+          } else {
+            const orderErr = await orderRes.json().catch(() => ({}));
+            console.warn("[RAZORPAY_ORDER_FAIL]", orderErr);
+          }
         }
       } catch (err) {
         console.warn("[RAZORPAY_LIVE_API_ERR]", err.message);

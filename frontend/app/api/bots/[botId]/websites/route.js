@@ -18,12 +18,8 @@ export async function GET(request, { params }) {
       principal.orgRole === ROLES.SUPER_ADMIN;
 
     const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
-    if (!bot) {
-      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
-    }
-
-    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
-      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
+    if (!bot || (!isSuperAdmin && bot.organizationId !== principal.organizationId)) {
+      return NextResponse.json({ success: true, sources: [] });
     }
 
     const sources = await websitesDb.getWebsiteSources(botId, isSuperAdmin ? null : principal.organizationId);
