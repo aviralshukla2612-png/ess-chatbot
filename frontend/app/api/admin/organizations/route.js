@@ -110,30 +110,60 @@ export async function GET(request) {
       }
     }
 
-    let items = dbOrgs;
-    if (items.length === 0 && totalCount === 0) {
-      let pool = getDefaultPlatformOrgs();
+    // 3. Strict Real-Organization Filter (Purges synthetic test orgs)
+    const DUMMY_DOMAINS = [
+      "@company-a.com",
+      "@company-b.com",
+      "@company.com",
+      "@alpha.com",
+      "@example.com",
+      "@test.com",
+      "@eval.test",
+      "@mock.com",
+      "@dummy.com",
+    ];
 
-      if (status !== "ALL") {
-        pool = pool.filter((o) => o.status === status);
+    const realOrgsOnly = dbOrgs.filter((org) => {
+      if (!org) return false;
+      const name = (org.name || "").toLowerCase().trim();
+      const email = (org.ownerEmail || "").toLowerCase().trim();
+
+      // Protected real platform and workspace orgs
+      if (
+        org.id === "org_ess_01" ||
+        org.id === "org_ess_default" ||
+        name === "emperor smart solutions" ||
+        email === "admin@emperorsmartsolutions.com" ||
+        email.includes("aviral") ||
+        email.endsWith("@gmail.com") ||
+        email.endsWith("@emperorsmartsolutions.com") ||
+        email.endsWith("@vardaansmartsolutions.com")
+      ) {
+        return true;
       }
 
-      if (search) {
-        pool = pool.filter(
-          (o) =>
-            o.name.toLowerCase().includes(search) ||
-            o.slug.toLowerCase().includes(search) ||
-            o.owner.toLowerCase().includes(search) ||
-            o.ownerEmail.toLowerCase().includes(search) ||
-            o.id.toLowerCase().includes(search)
-        );
+      for (const d of DUMMY_DOMAINS) {
+        if (email.endsWith(d)) return false;
       }
 
-      totalCount = pool.length;
-      items = pool.slice(offset, offset + limit);
-    } else {
-      totalCount = items.length;
-    }
+      if (
+        name.includes("company a") ||
+        name.includes("company b") ||
+        name.includes("alpha corp") ||
+        name.startsWith("user 1") ||
+        name.includes("security") ||
+        name.includes("audit") ||
+        name.includes("dummy") ||
+        name.startsWith("test")
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    let items = realOrgsOnly;
+    totalCount = items.length;
 
     const totalPages = Math.ceil(totalCount / limit) || 1;
 
