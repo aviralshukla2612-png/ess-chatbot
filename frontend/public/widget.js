@@ -74,6 +74,7 @@
       (scriptTag && scriptTag.getAttribute("data-position")) || "bottom-right",
     brandingEnabled:
       scriptTag && scriptTag.getAttribute("data-branding") === "false" ? false : true,
+    quickReplies: [],
   };
 
   let messages = [];
@@ -93,6 +94,7 @@
           primaryColor: (scriptTag && scriptTag.getAttribute("data-color")) || data.bot.primaryColor || "#4f46e5",
           welcomeMessage: (scriptTag && scriptTag.getAttribute("data-welcome")) || data.bot.welcomeMessage || "Hello! How can I help you today?",
           launcherPosition: (scriptTag && scriptTag.getAttribute("data-position")) || data.bot.launcherPosition || "bottom-right",
+          quickReplies: Array.isArray(data.bot.quickReplies) ? data.bot.quickReplies : [],
         };
         applyTheme();
         renderMessages();
@@ -696,29 +698,37 @@
       welcomeEl.className = "nexus-msg nexus-msg-bot";
       welcomeEl.textContent = botConfig.welcomeMessage;
 
-      const defaultServices = [
-        "Website Development",
-        "Mobile Application",
-        "AI Chatbot",
-        "Custom Software",
-        "UI/UX Design",
-        "Cloud & DevOps",
-        "SEO & Marketing",
-      ];
-      const qrContainer = document.createElement("div");
-      qrContainer.className = "nexus-quick-replies";
-      defaultServices.forEach((serviceText) => {
-        const qrBtn = document.createElement("button");
-        qrBtn.type = "button";
-        qrBtn.className = "nexus-quick-reply-btn";
-        qrBtn.textContent = serviceText;
-        qrBtn.addEventListener("click", () => {
-          qrContainer.querySelectorAll("button").forEach((b) => (b.disabled = true));
-          sendMessage(serviceText);
+      const servicesToShow =
+        Array.isArray(botConfig.quickReplies) && botConfig.quickReplies.length > 0
+          ? botConfig.quickReplies
+          : (botConfig.id === "bot_aa" || botConfig.id === "aa"
+              ? [
+                  "Website Development",
+                  "Mobile Application",
+                  "AI Chatbot",
+                  "Custom Software",
+                  "UI/UX Design",
+                  "Cloud & DevOps",
+                  "SEO & Marketing",
+                ]
+              : []);
+
+      if (servicesToShow.length > 0) {
+        const qrContainer = document.createElement("div");
+        qrContainer.className = "nexus-quick-replies";
+        servicesToShow.forEach((serviceText) => {
+          const qrBtn = document.createElement("button");
+          qrBtn.type = "button";
+          qrBtn.className = "nexus-quick-reply-btn";
+          qrBtn.textContent = serviceText;
+          qrBtn.addEventListener("click", () => {
+            qrContainer.querySelectorAll("button").forEach((b) => (b.disabled = true));
+            sendMessage(serviceText);
+          });
+          qrContainer.appendChild(qrBtn);
         });
-        qrContainer.appendChild(qrBtn);
-      });
-      welcomeEl.appendChild(qrContainer);
+        welcomeEl.appendChild(qrContainer);
+      }
       list.appendChild(welcomeEl);
     }
 

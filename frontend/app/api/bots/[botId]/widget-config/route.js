@@ -36,6 +36,7 @@ export async function GET(request, { params }) {
           launcherPosition: bot.launcherPosition || "bottom-right",
           brandingEnabled: bot.brandingEnabled !== false,
           placeholderText: bot.placeholderText || "Type your message...",
+          quickReplies: Array.isArray(bot.quickReplies) ? bot.quickReplies : [],
         },
       })
     );
