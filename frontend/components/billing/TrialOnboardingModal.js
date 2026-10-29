@@ -101,8 +101,7 @@ export default function TrialOnboardingModal({
       const isLiveGateway = Boolean(
         checkout?.keyId &&
         checkout?.keyId !== "rzp_test_sandbox" &&
-        (checkout?.subscriptionId || checkout?.orderId) &&
-        !checkout?.subscriptionId?.startsWith("sub_trial_")
+        (checkout?.orderId || checkout?.mode === "live")
       );
 
       if (isLiveGateway && typeof window !== "undefined") {
@@ -120,9 +119,11 @@ export default function TrialOnboardingModal({
           key: checkout.keyId,
           ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
           ...(checkout.subscriptionId && !checkout.subscriptionId.startsWith("sub_trial_") ? { subscription_id: checkout.subscriptionId } : {}),
-          name: "NexusAI",
-          description: `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹0 Today)`,
+          name: "Emperor Smart Solutions",
+          description: `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹1 Verification)`,
           image: "/e-logoicon.webp",
+          currency: "INR",
+          amount: 100,
           handler: async function (response) {
             try {
               const verifyRes = await fetch("/api/billing/verify", {
