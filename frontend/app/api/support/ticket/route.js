@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/guard";
+import { ticketsStore } from "@/lib/db/ticketsStore";
 
 export async function POST(request) {
   try {
@@ -29,28 +30,23 @@ export async function POST(request) {
       );
     }
 
-    const ticketId = `TK-${Math.floor(100000 + Math.random() * 900000)}`;
-    const ticket = {
-      id: ticketId,
+    const ticket = ticketsStore.createTicket({
       organizationId: principal.organizationId,
       userEmail: principal.email,
       userName: principal.name || "Customer",
-      subject: subject.trim(),
+      subject,
       category,
       priority,
-      message: message.trim(),
-      status: "OPEN",
-      createdAt: new Date().toISOString(),
-    };
+      message,
+    });
 
-    // In production this can notify Zendesk, Slack, or support email
-    console.log(`[SUPPORT_TICKET_SUBMITTED] Ticket ${ticketId} from ${principal.email}: ${subject}`);
+    console.log(`[SUPPORT_TICKET_SUBMITTED] Ticket #${ticket.id} from ${principal.email}: ${subject}`);
 
     return NextResponse.json({
       success: true,
-      ticketId,
+      ticketId: ticket.id,
       ticket,
-      message: `Your support ticket #${ticketId} has been registered. Our support team will reply to ${principal.email} shortly.`,
+      message: `Your support ticket #${ticket.id} has been registered and forwarded to Super Admin. Our support team will reply to ${principal.email} shortly.`,
     });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

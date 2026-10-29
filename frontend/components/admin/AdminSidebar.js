@@ -20,6 +20,7 @@ import {
   Sparkles,
   LogOut,
   CreditCard,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const adminNavItems = [
   { name: "Conversations", href: "/admin/conversations", icon: MessageSquare },
   { name: "Leads", href: "/admin/leads", icon: Users2 },
   { name: "Plans & Pricing", href: "/admin/plans", icon: CreditCard },
+  { name: "Support Tickets", href: "/admin/tickets", icon: LifeBuoy },
   { name: "Usage", href: "/admin/usage", icon: HardDrive },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
