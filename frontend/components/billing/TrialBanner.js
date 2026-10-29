@@ -5,7 +5,31 @@ import Link from "next/link";
 import { Sparkles, Calendar, ArrowRight, ShieldAlert } from "lucide-react";
 
 export default function TrialBanner({ subscription, onOpenCheckout }) {
-  if (!subscription) return null;
+  if (!subscription || !subscription.hasAutopay || subscription.status === "pending_autopay") {
+    return (
+      <div className="mb-6 p-4 rounded-2xl bg-linear-to-r from-indigo-900/90 via-violet-900/90 to-indigo-950 border border-indigo-500/40 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-indigo-950/40 text-xs animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-indigo-300" />
+          </div>
+          <div>
+            <span className="font-extrabold text-white text-xs sm:text-sm block sm:inline">
+              Start Your 7-Day Free Trial (₹0 Today)
+            </span>
+            <span className="sm:ml-1 text-white/80 block sm:inline">
+              Set up Razorpay autopay to get full access to AI Chatbots, live lead capture & vector knowledge.
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={onOpenCheckout}
+          className="px-4 py-2.5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 hover:from-indigo-400 hover:to-violet-400 font-bold text-white text-xs shadow-md shadow-indigo-500/30 transition-all shrink-0 cursor-pointer"
+        >
+          Activate 7-Day Trial
+        </button>
+      </div>
+    );
+  }
 
   const isTrial = subscription.status === "trialing";
   const isExpired = subscription.status === "expired";

@@ -29,9 +29,18 @@ export async function GET(request) {
       });
     }
 
+    // Autopay is only configured if an official Razorpay subscription ID is present
+    const hasAutopay = Boolean(
+      subscription &&
+      subscription.providerSubscriptionId &&
+      !subscription.providerSubscriptionId.startsWith("sub_reg_") &&
+      (subscription.status === "active" || subscription.status === "trialing")
+    );
+
     return NextResponse.json({
       success: true,
-      hasActiveSubscription: Boolean(subscription && (subscription.status === "active" || subscription.status === "trialing")),
+      hasActiveSubscription: hasAutopay,
+      requiresAutopaySetup: !hasAutopay,
       isTrial,
       trialDaysRemaining,
       autopayDate,
@@ -39,6 +48,7 @@ export async function GET(request) {
       subscription: subscription ? {
         ...subscription,
         plan,
+        hasAutopay,
       } : null,
       usage: {
         periodKey,

@@ -13,12 +13,11 @@ export default function DashboardLayout({ children }) {
   const [trialModalOpen, setTrialModalOpen] = useState(false);
 
   const fetchSubscription = () => {
-    fetch("/api/billing/subscription")
+    fetch("/api/billing/subscription", { cache: "no-store", headers: { Pragma: "no-cache" } })
       .then((r) => r.json())
       .then((d) => {
         if (d?.success) {
           setSubscription(d.subscription);
-          // If no active subscription or trial exists, prompt to start 7-day trial
           if (!d.hasActiveSubscription) {
             setTrialModalOpen(true);
           }
@@ -28,18 +27,17 @@ export default function DashboardLayout({ children }) {
   };
 
   useEffect(() => {
-    fetch("/api/auth/me")
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d?.success && d?.user) {
           setCurrentUser(d.user);
-          // Superadmins do not need personal trial prompts
-          if (d.user.role !== "SUPER_ADMIN") {
-            fetchSubscription();
-          }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        fetchSubscription();
+      });
   }, []);
 
   return (

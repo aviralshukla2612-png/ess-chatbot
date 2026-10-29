@@ -97,15 +97,15 @@ export const authStore = {
       organizationId: orgId,
       provider: "razorpay",
       planId: "STARTER",
-      status: "active",
+      status: "pending_autopay",
       currentPeriodStart: new Date().toISOString(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
+      currentPeriodEnd: new Date(Date.now() + 7 * 86400000).toISOString(),
     };
 
     // 3. Persist to PostgreSQL if available
     const dbOrg = await queryDb(
       'INSERT INTO "Organization" ("id", "name", "slug", "plan", "status") VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING;',
-      [orgId, orgName, slug, "Starter", "ACTIVE"]
+      [orgId, orgName, slug, "Starter (Trial Pending)", "ACTIVE"]
     );
     if (dbOrg.ok) {
       await queryDb(
@@ -118,7 +118,7 @@ export const authStore = {
       );
       await queryDb(
         'INSERT INTO "Subscription" ("id", "organizationId", "provider", "planId", "status", "currentPeriodStart", "currentPeriodEnd") VALUES ($1, $2, $3, $4, $5, $6, $7);',
-        [subscriptionId, orgId, "razorpay", "STARTER", "active", subObj.currentPeriodStart, subObj.currentPeriodEnd]
+        [subscriptionId, orgId, "razorpay", "STARTER", "pending_autopay", subObj.currentPeriodStart, subObj.currentPeriodEnd]
       );
     }
 
