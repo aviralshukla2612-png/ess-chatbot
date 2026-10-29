@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
-import { usersStore } from "@/lib/db/usersStore";
+import { usersStore, isDummyOrTestAccount } from "@/lib/db/usersStore";
 
 export async function GET(request) {
   const auth = await requireSuperAdmin(request);
@@ -71,52 +71,12 @@ export async function GET(request) {
     }
 
     // 3. Strict Real-User Filter (Purges all synthetic test and dummy test-suite accounts)
-    const DUMMY_DOMAINS = [
-      "@company-a.com",
-      "@company-b.com",
-      "@company.com",
-      "@alpha.com",
-      "@example.com",
-      "@test.com",
-      "@eval.test",
-      "@mock.com",
-      "@dummy.com",
-    ];
-
     const realUsersOnly = merged.filter((u) => {
       if (!u || !u.email) return false;
       const email = u.email.toLowerCase().trim();
       const name = (u.name || "").toLowerCase().trim();
 
-      // Protected real platform accounts
-      if (
-        email === "admin@emperorsmartsolutions.com" ||
-        email.includes("aviral") ||
-        email.endsWith("@gmail.com") ||
-        email.endsWith("@emperorsmartsolutions.com") ||
-        email.endsWith("@vardaansmartsolutions.com")
-      ) {
-        return true;
-      }
-
-      for (const d of DUMMY_DOMAINS) {
-        if (email.endsWith(d)) return false;
-      }
-
-      if (
-        email.startsWith("duplicate@") ||
-        email.startsWith("test_") ||
-        email.startsWith("mock_") ||
-        email.startsWith("dummy_") ||
-        name.startsWith("test ") ||
-        name.startsWith("user ") ||
-        name.includes("founder") ||
-        name.includes("cto") ||
-        name === "alice" ||
-        name === "bob" ||
-        name === "security" ||
-        name.includes("audit")
-      ) {
+      if (isDummyOrTestAccount(email, name)) {
         return false;
       }
 

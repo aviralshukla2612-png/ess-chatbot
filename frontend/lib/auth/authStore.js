@@ -7,7 +7,7 @@
 import crypto from "crypto";
 import { queryDb } from "../db/dbPool.js";
 import { hashPassword, verifyPassword } from "./password.js";
-import { usersStore } from "../db/usersStore.js";
+import { usersStore, isDummyOrTestAccount } from "../db/usersStore.js";
 
 // In-memory fallback stores for test/offline environments
 const memoryUsers = new Map();
@@ -474,7 +474,11 @@ export const authStore = {
 
     // Filter out dummy placeholder accounts so only real user accounts are displayed
     const realAccounts = accounts.filter(
-      (a) => a.email && a.email.toLowerCase() !== "admin@company.com" && a.email.toLowerCase() !== "admin@emperorsmartsolutions.com"
+      (a) =>
+        a.email &&
+        a.email.toLowerCase() !== "admin@company.com" &&
+        a.email.toLowerCase() !== "admin@emperorsmartsolutions.com" &&
+        !isDummyOrTestAccount(a.email, a.name)
     );
 
     return realAccounts;

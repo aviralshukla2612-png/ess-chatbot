@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
-import { usersStore } from "@/lib/db/usersStore";
+import { usersStore, isDummyOrTestAccount } from "@/lib/db/usersStore";
 
 // Single authoritative default platform organization (No dummy data)
 function getDefaultPlatformOrgs() {
@@ -111,39 +111,18 @@ export async function GET(request) {
     }
 
     // 3. Strict Real-Organization Filter (Purges synthetic test orgs)
-    const DUMMY_DOMAINS = [
-      "@company-a.com",
-      "@company-b.com",
-      "@company.com",
-      "@alpha.com",
-      "@example.com",
-      "@test.com",
-      "@eval.test",
-      "@mock.com",
-      "@dummy.com",
-    ];
-
     const realOrgsOnly = dbOrgs.filter((org) => {
       if (!org) return false;
       const name = (org.name || "").toLowerCase().trim();
       const email = (org.ownerEmail || "").toLowerCase().trim();
 
-      // Protected real platform and workspace orgs
-      if (
-        org.id === "org_ess_01" ||
-        org.id === "org_ess_default" ||
-        name === "emperor smart solutions" ||
-        email === "admin@emperorsmartsolutions.com" ||
-        email.includes("aviral") ||
-        email.endsWith("@gmail.com") ||
-        email.endsWith("@emperorsmartsolutions.com") ||
-        email.endsWith("@vardaansmartsolutions.com")
-      ) {
+      // Protected platform default org
+      if (org.id === "org_ess_01" || org.id === "org_ess_default") {
         return true;
       }
 
-      for (const d of DUMMY_DOMAINS) {
-        if (email.endsWith(d)) return false;
+      if (isDummyOrTestAccount(email, name)) {
+        return false;
       }
 
       if (
