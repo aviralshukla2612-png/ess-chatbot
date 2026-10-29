@@ -30,6 +30,8 @@ services:
       - CHAT_MODEL=${CHAT_MODEL:-llama3.2:1b}
       - LEAD_WEBHOOK_URL=${LEAD_WEBHOOK_URL:-}
       - LEAD_WEBHOOK_SECRET=${LEAD_WEBHOOK_SECRET:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
     volumes:
       - ./frontend/data:/app/data
     networks:
