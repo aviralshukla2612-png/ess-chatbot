@@ -133,7 +133,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll flex flex-col">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 no-scrollbar sidebar-scroll flex flex-col">
           {(() => {
             const botMatch = pathname.match(/^\/bots\/([^/?]+)/);
             const activeBotId = botMatch && botMatch[1] !== "create" ? botMatch[1] : null;

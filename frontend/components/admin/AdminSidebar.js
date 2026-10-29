@@ -89,7 +89,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 sidebar-scroll">
+        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 no-scrollbar sidebar-scroll">
           {adminNavItems.map((item) => {
             const isActive =
               pathname === item.href ||
