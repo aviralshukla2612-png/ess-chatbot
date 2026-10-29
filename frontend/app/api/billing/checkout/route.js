@@ -9,12 +9,13 @@ export async function POST(request) {
 
     const { principal } = auth;
     const body = await request.json().catch(() => ({}));
-    const { planId = "GROWTH" } = body;
+    const { planId = "STARTER", isTrial = true } = body;
 
     const checkout = await billingService.createSubscriptionCheckout({
       organizationId: principal.organizationId,
       planId,
       customerEmail: principal.email,
+      isTrial: Boolean(isTrial),
     });
 
     return NextResponse.json({

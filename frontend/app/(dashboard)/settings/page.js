@@ -17,6 +17,18 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("general");
   const [savedNotice, setSavedNotice] = useState(false);
   const [userProfile, setUserProfile] = useState({ name: "", email: "", orgName: "" });
+  const [billingData, setBillingData] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelSuccessMsg, setCancelSuccessMsg] = useState("");
+
+  const loadBilling = () => {
+    fetch("/api/billing/subscription")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.success) setBillingData(d);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -32,7 +44,31 @@ export default function SettingsPage() {
         }
       })
       .catch(() => {});
+
+    loadBilling();
   }, []);
+
+  const handleCancelAutopay = async () => {
+    if (!confirm("Are you sure you want to cancel autopay? You will not be charged when the trial ends, but your subscription will lapse.")) {
+      return;
+    }
+    setCancelLoading(true);
+    setCancelSuccessMsg("");
+    try {
+      const res = await fetch("/api/billing/cancel", { method: "POST" });
+      const d = await res.json();
+      if (d.success) {
+        setCancelSuccessMsg(d.message || "Autopay has been cancelled.");
+        loadBilling();
+      } else {
+        alert(d.error || "Failed to cancel autopay");
+      }
+    } catch {
+      alert("Network error while cancelling autopay");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -180,29 +216,76 @@ export default function SettingsPage() {
 
           {activeSection === "billing" && (
             <div className="space-y-6 text-xs">
-              <div className="p-4 rounded-xl bg-linear-to-tr from-indigo-900 to-violet-900 text-white">
-                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
-                  Current Subscription
-                </span>
-                <h4 className="text-xl font-bold mt-1">Enterprise Plan</h4>
-                <p className="text-xs opacity-80 mt-1">
-                  Unlimited vector chunks, autonomous lead qualification, and 24/7 dedicated support.
+              {cancelSuccessMsg && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium">
+                  ✓ {cancelSuccessMsg}
+                </div>
+              )}
+
+              <div className="p-5 rounded-2xl bg-linear-to-tr from-indigo-900 to-violet-900 text-white shadow-lg space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
+                    Razorpay Subscription & Mandate
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-white/20 backdrop-blur-md">
+                    {billingData?.isTrial
+                      ? "7-Day Free Trial"
+                      : billingData?.subscription?.status === "cancelled"
+                      ? "Cancelled"
+                      : billingData?.subscription?.status?.toUpperCase() || "Active"}
+                  </span>
+                </div>
+
+                <h4 className="text-xl font-bold">
+                  {billingData?.isTrial
+                    ? "Starter Plan (7-Day Trial Active)"
+                    : `${billingData?.subscription?.plan?.name || "Starter"} Plan`}
+                </h4>
+
+                <p className="text-xs opacity-85 leading-relaxed">
+                  {billingData?.isTrial
+                    ? `Full access to custom AI Chatbots, Vector Knowledge, and Leads CRM. ₹0 was charged upfront.`
+                    : "Unlimited AI messages, lead CRM workflows, and vector retrieval."}
                 </p>
-                <div className="mt-4 pt-4 border-t border-white/20 flex justify-between items-center text-xs">
-                  <span>Renews on May 15, 2026</span>
-                  <span className="font-bold">Active</span>
+
+                <div className="mt-4 pt-4 border-t border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div>
+                    {billingData?.isTrial ? (
+                      <span>
+                        Automatic recurring deduction of <strong>{billingData?.autopayAmount || "₹2,499"}</strong> begins on <strong>{billingData?.autopayDate || "Day 8"}</strong>.
+                      </span>
+                    ) : (
+                      <span>Renews automatically every month via Razorpay.</span>
+                    )}
+                  </div>
+
+                  {billingData?.isTrial && billingData?.subscription?.status !== "cancelled" && (
+                    <button
+                      onClick={handleCancelAutopay}
+                      disabled={cancelLoading}
+                      className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 font-semibold transition-colors cursor-pointer self-start sm:self-auto disabled:opacity-50"
+                    >
+                      {cancelLoading ? "Cancelling..." : "Cancel Autopay"}
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-2">
                 <span className="font-bold text-neutral-900 dark:text-white block">
-                  Usage & Bot Limits
+                  Autopay & Quota Details
                 </span>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between items-center text-neutral-500">
-                    <span>Bot Creation Allocation:</span>
+                    <span>Payment Gateway:</span>
                     <span className="font-semibold text-neutral-900 dark:text-white">
-                      1 Bot Allowed (Active)
+                      Razorpay Subscriptions (UPI Autopay / Card)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-neutral-500">
+                    <span>Trial Remaining:</span>
+                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                      {billingData?.trialDaysRemaining ?? 7} Days Remaining
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-neutral-500">

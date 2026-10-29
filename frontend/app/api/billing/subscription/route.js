@@ -14,15 +14,32 @@ export async function GET(request) {
     const plan = getPlan(subscription?.planId);
     const periodKey = getCurrentPeriodKey();
 
-    const messagesUsed = await quotaGuard.getOrganizationUsage(principal.organizationId, "message", periodKey);
-    const pagesCrawled = await quotaGuard.getOrganizationUsage(principal.organizationId, "crawl_page", periodKey);
+    let trialDaysRemaining = 0;
+    let isTrial = false;
+    let autopayDate = null;
+
+    if (subscription?.status === "trialing" && subscription?.currentPeriodEnd) {
+      isTrial = true;
+      const msLeft = new Date(subscription.currentPeriodEnd).getTime() - Date.now();
+      trialDaysRemaining = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+      autopayDate = new Date(subscription.currentPeriodEnd).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      subscription: {
+      hasActiveSubscription: Boolean(subscription && (subscription.status === "active" || subscription.status === "trialing")),
+      isTrial,
+      trialDaysRemaining,
+      autopayDate,
+      autopayAmount: plan.priceMonthly,
+      subscription: subscription ? {
         ...subscription,
         plan,
-      },
+      } : null,
       usage: {
         periodKey,
         messages: {
