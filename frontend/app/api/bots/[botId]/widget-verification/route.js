@@ -107,9 +107,10 @@ export async function POST(request, { params }) {
 
     const hasWidgetJs = /widget\.js/i.test(html);
     const hasDataBotId = validIds.some((id) =>
-      new RegExp(`data-bot-id=["']${id}["']`, "i").test(html)
+      new RegExp(`data-bot-id=["']${id}["']`, "i").test(html) ||
+      new RegExp(`["']data-bot-id["'],\\s*["']${id}["']`, "i").test(html)
     );
-    const hasGeneralBotId = /data-bot-id=/i.test(html);
+    const hasGeneralBotId = /data-bot-id/i.test(html);
 
     if (hasWidgetJs && hasDataBotId) {
       await websitesDb.saveWidgetInstallation({

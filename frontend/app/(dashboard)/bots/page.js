@@ -97,25 +97,29 @@ export default function BotsPage() {
   const getEmbedSnippet = (bot) => {
     if (!bot) return "";
     const idToUse = bot.id || "bot_aa";
-    return `<script
-  src="${appOrigin}/widget.js"
-  data-bot-id="${idToUse}"
-  data-color="${bot.primaryColor || "#4f46e5"}"
-  data-position="${bot.launcherPosition || "bottom-right"}"
-  defer
-></script>`;
+    return `<script>
+(() => {
+  const s = document.createElement("script");
+  s.src = "${appOrigin}/widget.js";
+  s.setAttribute("data-bot-id", "${idToUse}");
+  s.setAttribute("data-color", "${bot.primaryColor || "#4f46e5"}");
+  s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
+  document.body.appendChild(s);
+})();
+</script>`;
   };
 
   const getConsoleSnippet = (bot) => {
     if (!bot) return "";
     const idToUse = bot.id || "bot_aa";
-    return `const s = document.createElement("script");
-s.src = "${appOrigin}/widget.js";
-s.setAttribute("data-bot-id", "${idToUse}");
-s.setAttribute("data-color", "${bot.primaryColor || "#4f46e5"}");
-s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
-document.body.appendChild(s);
-console.log("Chatbot widget loaded successfully!");`;
+    return `(() => {
+  const s = document.createElement("script");
+  s.src = "${appOrigin}/widget.js";
+  s.setAttribute("data-bot-id", "${idToUse}");
+  s.setAttribute("data-color", "${bot.primaryColor || "#4f46e5"}");
+  s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
+  document.body.appendChild(s);
+})();`;
   };
 
   const handleCopyScript = (bot) => {

@@ -91,26 +91,30 @@ function DeployBotContent() {
 
   const effectiveHost = customHost.trim() || appOrigin;
 
-  const scriptTag = `<script
-  src="${effectiveHost}/widget.js"
-  data-bot-id="${bot?.id || botId}"
-  data-color="${widgetColor}"
-  data-position="${launcherPosition}"
-  defer
-></script>`;
+  const scriptTag = `<script>
+(() => {
+  const s = document.createElement("script");
+  s.src = "${effectiveHost}/widget.js";
+  s.setAttribute("data-bot-id", "${bot?.id || botId}");
+  s.setAttribute("data-color", "${widgetColor}");
+  s.setAttribute("data-position", "${launcherPosition}");
+  document.body.appendChild(s);
+})();
+</script>`;
 
   const sshSedCommand = `sed -i 's|</body>|<script src="${effectiveHost}/widget.js" data-bot-id="${bot?.id || botId}" defer></script></body>|' /var/www/html/index.html`;
 
   const [embedTab, setEmbedTab] = useState("html"); // "html" | "console"
   const [copiedConsole, setCopiedConsole] = useState(false);
 
-  const consoleSnippet = `const s = document.createElement("script");
-s.src = "${effectiveHost}/widget.js";
-s.setAttribute("data-bot-id", "${bot?.id || botId}");
-s.setAttribute("data-color", "${widgetColor}");
-s.setAttribute("data-position", "${launcherPosition}");
-document.body.appendChild(s);
-console.log("Chatbot widget loaded successfully!");`;
+  const consoleSnippet = `(() => {
+  const s = document.createElement("script");
+  s.src = "${effectiveHost}/widget.js";
+  s.setAttribute("data-bot-id", "${bot?.id || botId}");
+  s.setAttribute("data-color", "${widgetColor}");
+  s.setAttribute("data-position", "${launcherPosition}");
+  document.body.appendChild(s);
+})();`;
 
   const handleCopyScript = () => {
     navigator.clipboard.writeText(scriptTag);
