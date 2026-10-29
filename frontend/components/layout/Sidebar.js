@@ -37,7 +37,7 @@ const navItems = [
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Integrations", href: "/integrations", icon: Puzzle },
   { name: "Team", href: "/team", icon: UserPlus },
-  { name: "Billing & Plans", href: "/settings?tab=billing", icon: CreditCard },
+  { name: "Billing & Plans", href: "/billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -316,7 +316,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                     <div className="relative z-10">
                       {subData?.hasActiveSubscription ? (
                         <Link
-                          href="/settings?tab=billing"
+                          href="/billing"
                           onClick={onClose}
                           className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 text-slate-200 text-[11px] font-semibold transition-colors"
                         >

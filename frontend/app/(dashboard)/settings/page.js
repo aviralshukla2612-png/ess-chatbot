@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Settings,
   Building2,
@@ -38,10 +39,13 @@ import { leadsApi } from "@/lib/api/leads";
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState("general");
   const [savedNotice, setSavedNotice] = useState(false);
-  const [userProfile, setUserProfile] = useState({ name: "", email: "", orgName: "", role: "Workspace Owner", organizationId: "" });
-  const [billingData, setBillingData] = useState(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [cancelSuccessMsg, setCancelSuccessMsg] = useState("");
+  const [userProfile, setUserProfile] = useState({
+    name: "",
+    email: "",
+    orgName: "",
+    role: "Workspace Owner",
+    organizationId: "",
+  });
   const [copiedTenantId, setCopiedTenantId] = useState(false);
   const [botsCount, setBotsCount] = useState(0);
   const [leadsCount, setLeadsCount] = useState(0);
@@ -61,16 +65,20 @@ export default function SettingsPage() {
     whatsappAlerts: true,
   });
 
-  const loadBilling = () => {
-    fetch("/api/billing/subscription", { cache: "no-store", headers: { Pragma: "no-cache" } })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.success) setBillingData(d);
-      })
-      .catch(() => {});
-  };
-
   useEffect(() => {
+    // If user clicked or bookmarked ?tab=billing, redirect directly to dedicated /billing page
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "billing") {
+        window.location.replace("/billing");
+        return;
+      }
+      if (tab && ["general", "profile", "security", "notifications"].includes(tab)) {
+        setActiveSection(tab);
+      }
+    }
+
     fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
@@ -89,24 +97,9 @@ export default function SettingsPage() {
       })
       .catch(() => {});
 
-    loadBilling();
-
     // Fetch live workspace stats
     botsApi.getBots().then((list) => setBotsCount(Array.isArray(list) ? list.length : 0)).catch(() => {});
     leadsApi.getLeads().then((list) => setLeadsCount(Array.isArray(list) ? list.length : 0)).catch(() => {});
-
-    // Read ?tab= from URL query params
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab");
-      if (tab && ["general", "profile", "security", "notifications", "billing"].includes(tab)) {
-        setActiveSection(tab);
-      }
-    }
-
-    const handleUpdated = () => loadBilling();
-    window.addEventListener("subscription-updated", handleUpdated);
-    return () => window.removeEventListener("subscription-updated", handleUpdated);
   }, []);
 
   const handleCopyTenant = () => {
@@ -114,28 +107,6 @@ export default function SettingsPage() {
       navigator.clipboard.writeText(userProfile.organizationId);
       setCopiedTenantId(true);
       setTimeout(() => setCopiedTenantId(false), 2000);
-    }
-  };
-
-  const handleCancelAutopay = async () => {
-    if (!confirm("Are you sure you want to cancel autopay? You will not be charged when the trial ends, but your subscription will lapse.")) {
-      return;
-    }
-    setCancelLoading(true);
-    setCancelSuccessMsg("");
-    try {
-      const res = await fetch("/api/billing/cancel", { method: "POST" });
-      const d = await res.json();
-      if (d.success) {
-        setCancelSuccessMsg(d.message || "Autopay has been cancelled.");
-        loadBilling();
-      } else {
-        alert(d.error || "Failed to cancel autopay");
-      }
-    } catch {
-      alert("Network error while cancelling autopay");
-    } finally {
-      setCancelLoading(false);
     }
   };
 
@@ -150,22 +121,6 @@ export default function SettingsPage() {
     { id: "profile", label: "My Profile", icon: User, desc: "Account details & admin credentials" },
     { id: "security", label: "Security & Passwords", icon: Shield, desc: "Access credentials & session control" },
     { id: "notifications", label: "Notifications & Alerts", icon: Bell, desc: "Lead triggers & report automation" },
-    {
-      id: "billing",
-      label: "Subscription & Billing",
-      icon: CreditCard,
-      desc: "Razorpay autopay & plan entitlements",
-      badge: billingData?.isTrial
-        ? `${billingData.trialDaysRemaining ?? 7}d Trial`
-        : billingData?.hasActiveSubscription
-        ? "Active"
-        : "Action Req",
-      badgeColor: billingData?.isTrial
-        ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
-        : billingData?.hasActiveSubscription
-        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-        : "bg-rose-500/20 text-rose-300 border-rose-500/30",
-    },
   ];
 
   return (
@@ -186,26 +141,19 @@ export default function SettingsPage() {
             Account & Workspace Settings
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Configure organization profiles, technical specs, Razorpay subscriptions, and team security.
+            Configure organization profiles, technical specs, security credentials, and event triggers.
           </p>
         </div>
 
-        {/* Workspace Quick Status Pill */}
-        <div className="flex items-center gap-3 self-start sm:self-auto p-2 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-indigo-500/20 shrink-0">
-            {userProfile.orgName?.slice(0, 2).toUpperCase() || "WS"}
-          </div>
-          <div className="pr-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[140px]">
-                {userProfile.orgName || "Enterprise Workspace"}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-              {billingData?.isTrial ? "Trialing Tier" : billingData?.hasActiveSubscription ? "Starter Plan" : "Inactive Tier"}
-            </p>
-          </div>
-        </div>
+        {/* Quick link to dedicated Billing page */}
+        <Link
+          href="/billing"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-600 dark:text-indigo-300 transition-colors text-xs font-bold shrink-0 self-start sm:self-auto"
+        >
+          <CreditCard className="w-4 h-4 text-indigo-400" />
+          <span>Go to Billing & Plans</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
       {/* Success Notification Bar */}
@@ -262,27 +210,17 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {s.badge ? (
-                    <span
-                      className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
-                        isActive ? "bg-white/20 text-white border-white/30" : s.badgeColor
-                      }`}
-                    >
-                      {s.badge}
-                    </span>
-                  ) : (
-                    <ChevronRight
-                      className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
-                        isActive ? "text-white/80" : "text-slate-300 dark:text-slate-600"
-                      }`}
-                    />
-                  )}
+                  <ChevronRight
+                    className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
+                      isActive ? "text-white/80" : "text-slate-300 dark:text-slate-600"
+                    }`}
+                  />
                 </button>
               );
             })}
           </div>
 
-          {/* Mini Cloud System Info Card */}
+          {/* Infrastructure Specs Card */}
           <div className="p-4 rounded-2xl bg-linear-to-br from-slate-900/90 to-slate-950 border border-slate-800 text-white shadow-lg space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -527,220 +465,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* TAB 2: SUBSCRIPTION & BILLING */}
-          {activeSection === "billing" && (
-            <div className="space-y-6">
-              {cancelSuccessMsg && (
-                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>{cancelSuccessMsg}</span>
-                </div>
-              )}
-
-              {/* Action Required Banner if Inactive */}
-              {!billingData?.hasActiveSubscription && (
-                <div className="p-5 rounded-3xl border border-rose-300 dark:border-rose-900/60 bg-linear-to-r from-rose-500/10 via-rose-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-rose-500/5">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                      <h4 className="font-bold text-rose-900 dark:text-rose-200 text-sm">
-                        Autopay Inactive or Trial Expired
-                      </h4>
-                    </div>
-                    <p className="text-xs text-rose-700 dark:text-rose-300/80 leading-relaxed">
-                      Your assistants require an active subscription to answer customer inquiries. Subscribe via Razorpay to keep all AI bots online.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent("open-subscription-modal"))}
-                    className="px-5 py-2.5 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] cursor-pointer shrink-0 flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Subscribe Now (₹2,499/mo)</span>
-                  </button>
-                </div>
-              )}
-
-              {/* Executive Razorpay Subscription Card */}
-              <div className="relative overflow-hidden rounded-3xl bg-linear-to-tr from-slate-900 via-indigo-950 to-slate-900 border border-slate-700/80 p-6 sm:p-8 text-white shadow-2xl space-y-6">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center">
-                      <CreditCard className="w-4 h-4 text-indigo-300" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-300 block">
-                        Official Payment Gateway
-                      </span>
-                      <span className="text-sm font-extrabold text-white">
-                        Razorpay Subscriptions (UPI Autopay & Cards)
-                      </span>
-                    </div>
-                  </div>
-
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase border ${
-                      billingData?.isTrial
-                        ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
-                        : billingData?.hasActiveSubscription
-                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                        : "bg-rose-500/20 text-rose-300 border-rose-500/30"
-                    }`}
-                  >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        billingData?.isTrial
-                          ? "bg-amber-400 animate-pulse"
-                          : billingData?.hasActiveSubscription
-                          ? "bg-emerald-400"
-                          : "bg-rose-400"
-                      }`}
-                    />
-                    {billingData?.isTrial
-                      ? "7-Day Free Trial Active"
-                      : billingData?.hasActiveSubscription
-                      ? "Active Subscription"
-                      : "Cancelled / Action Req"}
-                  </span>
-                </div>
-
-                <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-2xl font-black tracking-tight text-white">
-                      {billingData?.isTrial
-                        ? "Starter Plan (7-Day Trial)"
-                        : billingData?.hasActiveSubscription
-                        ? `${billingData?.subscription?.plan?.name || "Starter"} Plan`
-                        : "No Active Plan"}
-                    </h3>
-                    <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                      {billingData?.isTrial
-                        ? "Enjoy unrestricted access to AI Bot creation, vector crawling, and lead capture. ₹0 was charged upfront."
-                        : billingData?.hasActiveSubscription
-                        ? "Full production tier with zero message caps, WhatsApp bridge, and lead qualification workflows."
-                        : "Autopay has lapsed. Reactivate your subscription to unlock all live AI assistants."}
-                    </p>
-                  </div>
-
-                  <div className="sm:text-right flex flex-col justify-center sm:items-end">
-                    <div className="text-3xl font-black text-indigo-300 font-mono">
-                      {billingData?.isTrial ? "₹0.00" : "₹2,499"}
-                      <span className="text-xs font-normal text-slate-400 font-sans">
-                        {billingData?.isTrial ? " (Upfront)" : " / month"}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      {billingData?.isTrial
-                        ? `Recurring deduction of ₹2,499/mo begins on ${billingData?.autopayDate || "Day 8"}.`
-                        : "Billed monthly via automatic bank mandate."}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Trial Countdown Bar if on trial */}
-                {billingData?.isTrial && (
-                  <div className="relative z-10 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-amber-300 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        Trial Period Progress
-                      </span>
-                      <span className="font-bold font-mono text-white">
-                        {billingData?.trialDaysRemaining ?? 7} Days Remaining
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-linear-to-r from-amber-400 to-indigo-400 h-2 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.max(
-                            10,
-                            Math.min(100, Math.round(((7 - (billingData?.trialDaysRemaining ?? 7)) / 7) * 100))
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="relative z-10 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs text-slate-400">
-                    Mandate ID: <span className="font-mono text-slate-300">{billingData?.subscription?.providerSubscriptionId || "sub_unregistered"}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {billingData?.isTrial && billingData?.subscription?.status !== "cancelled" && (
-                      <button
-                        onClick={handleCancelAutopay}
-                        disabled={cancelLoading}
-                        className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
-                      >
-                        {cancelLoading ? "Cancelling..." : "Cancel Autopay"}
-                      </button>
-                    )}
-
-                    {!billingData?.hasActiveSubscription && (
-                      <button
-                        onClick={() => window.dispatchEvent(new CustomEvent("open-subscription-modal"))}
-                        className="px-5 py-2 rounded-xl bg-linear-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer flex items-center gap-1.5"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Re-subscribe Plan 🚀</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Included Plan Entitlements Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Unlimited AI Conversations</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Zero hard tokens cap. Visitors can engage in unlimited multi-turn sales and support interactions.
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Custom Vector Knowledge (RAG)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Upload price sheets, FAQs, and crawl web pages up to 50 URLs per assistant with instant re-indexing.
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Real-time Lead CRM & Export</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Automatic capture of visitor phone, email, and intent scores with one-click CSV export and webhook push.
-                  </p>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span>Meta WhatsApp Cloud Gateway</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Official WhatsApp business integration to deploy your trained bot directly on your company WhatsApp number.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: MY PROFILE */}
+          {/* TAB 2: MY PROFILE */}
           {activeSection === "profile" && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
@@ -805,7 +530,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* TAB 4: SECURITY & PASSWORDS */}
+          {/* TAB 3: SECURITY & PASSWORDS */}
           {activeSection === "security" && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
@@ -888,7 +613,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* TAB 5: NOTIFICATIONS & ALERTS */}
+          {/* TAB 4: NOTIFICATIONS & ALERTS */}
           {activeSection === "notifications" && (
             <div className="space-y-6">
               <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
