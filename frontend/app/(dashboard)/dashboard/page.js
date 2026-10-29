@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -54,14 +55,12 @@ export default function DashboardPage() {
         if (d?.user) setCurrentUser(d.user);
       })
       .catch(() => {});
-  }, []);
 
-  const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
 
   const loadData = async () => {
     try {
@@ -145,7 +144,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <Sun className="w-5 h-5 text-amber-500 fill-amber-400" />
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white dark:!text-white [color:var(--foreground)] tracking-tight">
-              {getGreeting()}, {currentUser?.name?.split(" ")[0] || "there"}
+              {greeting}, {currentUser?.name?.split(" ")[0] || "there"}
             </h1>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-300 dark:!text-slate-300 mt-0.5">
