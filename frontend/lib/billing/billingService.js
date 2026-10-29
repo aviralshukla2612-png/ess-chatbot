@@ -93,8 +93,48 @@ export const billingService = {
     if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
       try {
         const authHeader = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+        // Ensure plan exists on Razorpay or create it dynamically
+        let activePlanId = plan.razorpayPlanId;
+        if (!activePlanId || activePlanId.startsWith("plan_starter_") || activePlanId.startsWith("plan_pro_") || activePlanId.startsWith("plan_annual_")) {
+          try {
+            const period = plan.interval === "yearly" ? "yearly" : "monthly";
+            const interval = Number(plan.intervalCount) || (period === "yearly" ? 1 : 1);
+            const amountInPaise = Math.round((plan.priceInr || 2500) * 100);
+
+            const planRes = await fetch("https://api.razorpay.com/v1/plans", {
+              method: "POST",
+              headers: {
+                Authorization: `Basic ${authHeader}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                period,
+                interval,
+                item: {
+                  name: plan.name || "NexusAI Subscription",
+                  amount: amountInPaise,
+                  currency: "INR",
+                  description: `${plan.name} - NexusAI AI Chatbot Platform`,
+                },
+              }),
+            });
+
+            if (planRes.ok) {
+              const createdPlan = await planRes.json();
+              if (createdPlan?.id) {
+                activePlanId = createdPlan.id;
+              }
+            } else {
+              const err = await planRes.json().catch(() => ({}));
+              console.warn("[RAZORPAY_PLAN_CREATE_FAIL]", err);
+            }
+          } catch (pe) {
+            console.warn("[RAZORPAY_PLAN_CREATE_ERR]", pe.message);
+          }
+        }
+
         const payload = {
-          plan_id: plan.razorpayPlanId,
+          plan_id: activePlanId,
           total_count: 12,
           quantity: 1,
           customer_notify: 1,
@@ -144,19 +184,19 @@ export const billingService = {
       }
     }
 
-    // Sandbox / Test fallback (if Razorpay credentials are not yet set in environment)
+    // Sandbox / Test fallback (if Razorpay credentials are not yet set or API subscription creation failed)
     const mockSubId = `sub_trial_${Date.now()}`;
     return {
       mode: "sandbox",
       subscriptionId: mockSubId,
-      keyId: RAZORPAY_KEY_ID || "rzp_test_sandbox",
+      keyId: "rzp_test_sandbox",
       plan,
       isTrial,
       trialDays,
       startAt: startAt || Math.floor(Date.now() / 1000) + (7 * 24 * 3600),
       amountToday: 0,
       recurringAmount: plan.priceMonthly,
-      notice: "Sandbox trial mode. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in server .env for live banking payments.",
+      notice: "Sandbox trial mode. Live banking mandate requires active Razorpay test/live credentials.",
     };
   },
 

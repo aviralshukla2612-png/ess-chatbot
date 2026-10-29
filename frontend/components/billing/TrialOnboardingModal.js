@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
   ShieldCheck,
@@ -13,6 +13,7 @@ import {
   X,
   AlertCircle,
   Check,
+  Zap,
 } from "lucide-react";
 
 export default function TrialOnboardingModal({
@@ -27,6 +28,7 @@ export default function TrialOnboardingModal({
   const [error, setError] = useState("");
   const [availablePlans, setAvailablePlans] = useState([]);
   const [planId, setPlanId] = useState("PLAN_STARTER_MONTHLY");
+  const timeoutRef = useRef(null);
 
   useEffect(() => {
     fetch("/api/billing/plans")
@@ -39,17 +41,35 @@ export default function TrialOnboardingModal({
         }
       })
       .catch(() => {});
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, []);
 
   if (!isOpen) return null;
 
   const selectedPlan = availablePlans.find((p) => p.id === planId) || availablePlans[0] || null;
   const trialDays = selectedPlan?.trialDays ?? 7;
-  const recurringAmountText = selectedPlan ? `${selectedPlan.priceMonthly} ${selectedPlan.periodLabel}` : "₹2,500 / month";
+  const recurringAmountText = selectedPlan
+    ? `${selectedPlan.priceMonthly} ${selectedPlan.periodLabel || "per month"}`
+    : "₹2,500 per month";
 
   const handleStartTrial = async () => {
     setLoading(true);
     setError("");
+
+    // Safety timeout: Never leave the user stuck on loading if an external script hangs
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setLoading((curr) => {
+        if (curr) {
+          setError("Gateway response timed out. Please try again or contact support.");
+          return false;
+        }
+        return false;
+      });
+    }, 12000);
 
     try {
       // 1. Create checkout with trial and future start_at on backend
@@ -62,22 +82,28 @@ export default function TrialOnboardingModal({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to initiate trial checkout");
       }
 
       const { checkout } = data;
 
-      // 2. If live Razorpay key is present, open Razorpay Checkout SDK
-      if (checkout.keyId && checkout.keyId !== "rzp_test_sandbox" && typeof window !== "undefined") {
-        // Load Razorpay script if not loaded
+      // 2. LIVE Razorpay Gateway Mode (Only when real Razorpay subscription ID was issued)
+      const isLiveGateway =
+        checkout?.mode === "live" &&
+        checkout?.keyId &&
+        checkout?.keyId !== "rzp_test_sandbox" &&
+        checkout?.subscriptionId &&
+        !checkout?.subscriptionId.startsWith("sub_trial_");
+
+      if (isLiveGateway && typeof window !== "undefined") {
         if (!window.Razorpay) {
           await new Promise((resolve, reject) => {
             const script = document.createElement("script");
             script.src = "https://checkout.razorpay.com/v1/checkout.js";
             script.onload = resolve;
-            script.onerror = () => reject(new Error("Failed to load Razorpay payment gateway SDK"));
+            script.onerror = () => reject(new Error("Failed to load Razorpay payment gateway"));
             document.body.appendChild(script);
           });
         }
@@ -89,23 +115,28 @@ export default function TrialOnboardingModal({
           description: "7-Day Free Trial (₹0 today, auto-debits on Day 8)",
           image: "/e-logoicon.webp",
           handler: async function (response) {
-            // Verify mandate activation on backend
-            const verifyRes = await fetch("/api/billing/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                subscriptionId: response.razorpay_subscription_id || checkout.subscriptionId,
-                paymentId: response.razorpay_payment_id || "",
-                planId,
-                isTrial: true,
-              }),
-            });
-            const verifyData = await verifyRes.json();
-            if (verifyData.success) {
-              if (onActivated) onActivated(verifyData.subscription);
-              if (onClose) onClose();
-            } else {
-              setError(verifyData.error || "Failed to verify mandate.");
+            try {
+              const verifyRes = await fetch("/api/billing/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  subscriptionId: response.razorpay_subscription_id || checkout.subscriptionId,
+                  paymentId: response.razorpay_payment_id || "",
+                  planId: selectedPlan?.id || planId,
+                  isTrial: true,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                if (onActivated) onActivated(verifyData.subscription);
+                if (onClose) onClose();
+              } else {
+                setError(verifyData.error || "Failed to verify mandate.");
+              }
+            } catch (err) {
+              setError("Verification request failed. Please check your connection.");
+            } finally {
               setLoading(false);
             }
           },
@@ -118,6 +149,7 @@ export default function TrialOnboardingModal({
           },
           modal: {
             ondismiss: function () {
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
               setLoading(false);
             },
           },
@@ -125,6 +157,7 @@ export default function TrialOnboardingModal({
 
         const rzp = new window.Razorpay(options);
         rzp.on("payment.failed", function (resp) {
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
           setError(resp.error?.description || "Autopay authorization failed.");
           setLoading(false);
         });
@@ -132,184 +165,214 @@ export default function TrialOnboardingModal({
         return;
       }
 
-      // 3. Sandbox / Fallback mode (if Razorpay keys not yet configured in server environment)
+      // 3. Fallback Instant Trial Activation (Sandbox or Test environment)
       const verifyRes = await fetch("/api/billing/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscriptionId: checkout.subscriptionId,
-          planId,
+          planId: selectedPlan?.id || planId,
           isTrial: true,
         }),
       });
 
-      const verifyData = await verifyRes.json();
+      const verifyData = await verifyRes.json().catch(() => ({}));
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
       if (verifyData.success) {
         if (onActivated) onActivated(verifyData.subscription);
         if (onClose) onClose();
       } else {
-        throw new Error(verifyData.error || "Verification failed");
+        throw new Error(verifyData.error || "Instant trial verification failed");
       }
     } catch (err) {
-      setError(err.message || "An unexpected error occurred.");
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setError(err.message || "An unexpected error occurred during setup.");
+    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
       onClick={() => {
         if (!isMandatory && onClose) onClose();
       }}
     >
       <div
-        className="relative w-full max-w-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl overflow-hidden text-neutral-900 dark:text-white"
+        className="relative w-full max-w-xl bg-[#0b0f19] border border-slate-800 rounded-3xl shadow-2xl overflow-hidden text-slate-100 my-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Badge */}
-        <div className="bg-linear-to-r from-indigo-600 via-violet-600 to-indigo-700 p-6 text-white relative">
+        {/* Top Header */}
+        <div className="relative bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 p-6 border-b border-indigo-500/20">
+          <div className="absolute top-0 right-0 w-64 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
           {!isMandatory && onClose && (
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           )}
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider mb-2">
-            {isMandatory ? <Lock className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
-            {isMandatory ? "Mandatory Setup • Required to Create Bot" : "7-Day Full Access Free Trial"}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2.5">
+            {isMandatory ? <Lock className="w-3.5 h-3.5 text-indigo-400" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-400" />}
+            <span>7-Day Free Trial • ₹0 Charged Today</span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight">
+
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
             {isMandatory ? "Activate 7-Day Free Trial (₹0 Today)" : "Start Your Free Trial with Autopay"}
           </h2>
-          <p className="text-xs text-white/80 mt-1">
+          <p className="text-xs text-slate-400 mt-1 max-w-lg leading-relaxed">
             {isMandatory
-              ? "Razorpay autopay mandate is required before you can create and launch your AI chatbots. ₹0 charged upfront today."
-              : "Experience unlimited AI conversations and sales automation. Set up autopay today with ₹0 charged upfront."}
+              ? "Set up your Razorpay autopay mandate to create and deploy your AI chatbots. No money is deducted from your account today."
+              : "Unlock full AI conversation and lead qualification capabilities. Zero charges today."}
           </p>
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-5 text-xs">
+        <div className="p-5 sm:p-6 space-y-4 text-xs">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
-              <span>{error}</span>
+            <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-900/80 text-rose-300 flex items-start gap-2.5 text-xs animate-shake">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+              <div className="flex-1">
+                <p className="font-semibold">{error}</p>
+                <p className="text-[11px] text-rose-400/80 mt-0.5">Please check your network connection or try again.</p>
+              </div>
             </div>
           )}
 
-          {/* Plan Selector (Super Admin configured pricing options) */}
-          {availablePlans.length > 1 && (
-            <div className="space-y-1.5">
-              <label className="font-bold text-neutral-700 dark:text-neutral-300 block text-[11px]">
-                Select Plan & Billing Interval:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {availablePlans.map((p) => {
-                  const isSelected = p.id === selectedPlan?.id;
-                  return (
-                    <button
-                      type="button"
-                      key={p.id}
-                      onClick={() => setPlanId(p.id)}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative ${
-                        isSelected
-                          ? "border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/40 ring-2 ring-indigo-600/30"
-                          : "border-neutral-200 dark:border-neutral-800 bg-neutral-50/40 dark:bg-neutral-800/40 hover:border-neutral-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-neutral-900 dark:text-white">
+          {/* Plan Selector Grid */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-300 text-[11px] uppercase tracking-wider">
+                Select Your Plan & Billing Interval
+              </span>
+              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                ₹0 Today
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {availablePlans.map((p) => {
+                const isSelected = p.id === selectedPlan?.id;
+                const isSixMonths = p.intervalCount === 6 || p.id.includes("6M");
+                const isAnnual = p.interval === "yearly" || p.id.includes("ANNUAL");
+
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    onClick={() => setPlanId(p.id)}
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                      isSelected
+                        ? "border-indigo-500 bg-gradient-to-b from-indigo-950/50 to-slate-900 ring-2 ring-indigo-500/40 shadow-lg shadow-indigo-950/50"
+                        : "border-slate-800/80 bg-slate-900/40 hover:bg-slate-800/50 hover:border-slate-700"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-bold text-xs text-white truncate">
                           {p.name}
                         </span>
                         {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                          <div className="w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center shrink-0">
                             <Check className="w-2.5 h-2.5" />
                           </div>
                         )}
                       </div>
-                      <div className="mt-1 flex items-baseline gap-1">
-                        <span className="text-base font-extrabold text-indigo-600 dark:text-indigo-400">
+
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="text-base font-black text-indigo-300">
                           {p.priceMonthly}
                         </span>
-                        <span className="text-[10px] text-neutral-500">
-                          /{p.periodLabel?.replace(/^per\s+/i, "") || "cycle"}
+                        <span className="text-[10px] text-slate-400">
+                          /{p.periodLabel?.replace(/^per\s+/i, "") || "mo"}
                         </span>
                       </div>
-                      {p.intervalCount === 6 && (
-                        <span className="mt-1 inline-block text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
-                          Best Value (6-Month Pass)
+                    </div>
+
+                    <div className="mt-2.5">
+                      {isSixMonths ? (
+                        <span className="inline-block text-[9px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded-md">
+                          Best Value (6-Mo)
+                        </span>
+                      ) : isAnnual ? (
+                        <span className="inline-block text-[9px] font-bold text-violet-400 bg-violet-950/80 border border-violet-500/30 px-1.5 py-0.5 rounded-md">
+                          VIP Annual Pass
+                        </span>
+                      ) : (
+                        <span className="inline-block text-[9px] font-medium text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded-md">
+                          Monthly Flexible
                         </span>
                       )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Autopay Mechanism Explainer */}
-          <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-indigo-100/80 dark:border-indigo-900/60">
-              <span className="font-semibold text-neutral-600 dark:text-neutral-400">Due Today</span>
-              <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">₹0 (Zero)</span>
-            </div>
-            <div className="flex items-center justify-between pb-2 border-b border-indigo-100/80 dark:border-indigo-900/60">
-              <span className="font-semibold text-neutral-600 dark:text-neutral-400">Trial Period</span>
-              <span className="font-bold text-neutral-900 dark:text-white">{trialDays} Full Days</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-neutral-600 dark:text-neutral-400">Auto-Debit Starting Day {trialDays + 1}</span>
-              <span className="font-bold text-indigo-600 dark:text-indigo-400">{recurringAmountText}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Feature Highlights */}
-          <div className="space-y-2">
-            <p className="font-bold text-neutral-700 dark:text-neutral-300">
-              Unlocked with your 7-day trial:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-neutral-600 dark:text-neutral-400">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>AI Bot creation & training</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Unlimited AI sales messages</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>50 Website & PDF pages indexed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Automated CRM lead extraction</span>
-              </div>
+          {/* Autopay Schedule Breakdown */}
+          <div className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800/80 space-y-2">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
+              <span className="text-slate-400">Due Today</span>
+              <span className="text-sm font-extrabold text-emerald-400 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                ₹0 (Zero Charged Today)
+              </span>
+            </div>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
+              <span className="text-slate-400">Trial Access</span>
+              <span className="font-semibold text-slate-200">{trialDays} Full Days Unlimited</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400">Recurring Billing Starts</span>
+              <span className="font-bold text-indigo-400">Day {trialDays + 1} ({recurringAmountText})</span>
+            </div>
+          </div>
+
+          {/* Feature Checklist */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Full AI Bot creation & training</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Unlimited customer sales messages</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Full website & PDF scraping</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Automated CRM lead extraction</span>
             </div>
           </div>
 
           {/* Guarantee / Cancel info */}
-          <div className="flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400 bg-neutral-100/80 dark:bg-neutral-800/60 p-3 rounded-xl">
-            <ShieldCheck className="w-4 h-4 text-indigo-500 shrink-0" />
+          <div className="flex items-center gap-2.5 text-[11px] text-slate-300 bg-indigo-950/30 border border-indigo-500/20 p-2.5 rounded-xl">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
-              <strong>Cancel anytime with 1 click:</strong> If you cancel before Day 7 in Settings, zero money will be deducted from your account.
+              <strong>1-Click Cancel Guarantee:</strong> Cancel anytime in Settings before Day {trialDays}. Zero money will ever be deducted from your account.
             </span>
           </div>
 
           {/* Action Button */}
           <button
+            type="button"
             onClick={handleStartTrial}
             disabled={loading}
-            className="w-full py-3.5 px-4 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Setting up Razorpay Autopay...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>Connecting to Razorpay Autopay...</span>
               </>
             ) : (
               <>
@@ -319,11 +382,12 @@ export default function TrialOnboardingModal({
             )}
           </button>
 
-          <p className="text-[10px] text-center text-neutral-400">
-            🔒 Secured by Razorpay • UPI Autopay (GPay/PhonePe), Debit & Credit Cards supported
+          <p className="text-[10px] text-center text-slate-500">
+            🔒 Secured with 256-bit encryption • Supports UPI Autopay (Google Pay, PhonePe, Paytm), Debit & Credit Cards
           </p>
         </div>
       </div>
     </div>
   );
 }
+
