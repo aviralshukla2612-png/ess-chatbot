@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Building2,
   Sparkles,
+  Globe,
   LogOut,
   X,
   ShieldAlert,
@@ -156,7 +157,7 @@ export default function Sidebar({ isOpen, onClose }) {
             className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <Globe className="w-3.5 h-3.5 text-emerald-400" />
               <span>Public Website</span>
             </div>
             <span className="text-[9px] font-mono bg-emerald-400/20 px-1 rounded-sm">

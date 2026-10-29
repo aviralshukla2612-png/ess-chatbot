@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Zap,
   ShieldCheck,
+  Globe,
+  ArrowLeft,
 } from "lucide-react";
 import GoogleAccountChooserModal from "@/components/auth/GoogleAccountChooserModal";
 
@@ -454,24 +456,12 @@ export default function LoginPage() {
           <div className="text-center pt-3 border-t border-slate-100 flex items-center justify-between">
             <Link
               href="/"
-              className="text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1.5"
+              className="text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-all inline-flex items-center gap-1.5 group"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              <span>← Public Website</span>
+              <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 group-hover:-translate-x-0.5 transition-transform" />
+              <Globe className="w-3.5 h-3.5 text-indigo-500 group-hover:rotate-12 transition-transform" />
+              <span>Public Website</span>
             </Link>
-
-            {/* Subtle Platform Operator Access */}
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("admin@emperorsmartsolutions.com");
-                setPassword("AdminAccess2026!");
-              }}
-              title="Platform Operator Mode"
-              className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-            >
-              Platform Access
-            </button>
           </div>
         </div>
       </div>
