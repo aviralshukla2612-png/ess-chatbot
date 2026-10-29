@@ -67,7 +67,7 @@ function BotDetailContent() {
           d.name?.toLowerCase().includes("business_knowledge") ||
           d.name?.toLowerCase().includes("profile.pdf")
       );
-      if (!hasProfile && !queryTab) {
+      if (!hasProfile) {
         setActiveTab("company-profile");
       }
       setLoading(false);
@@ -105,6 +105,15 @@ function BotDetailContent() {
       d.name?.toLowerCase().includes("profile.pdf")
   );
 
+  const handleTabClick = (tabId) => {
+    if (!hasCompanyProfile && tabId !== "company-profile") {
+      alert("⚠️ Mandatory Setup: Please complete and approve your Company Profile Intake form before accessing this section.");
+      setActiveTab("company-profile");
+      return;
+    }
+    setActiveTab(tabId);
+  };
+
   return (
     <div className="space-y-8 animate-fade-in pb-16 font-sans">
       {/* Bot Header */}
@@ -139,7 +148,14 @@ function BotDetailContent() {
           {/* Direct Live Website Deploy Button */}
           <button
             type="button"
-            onClick={() => setDeployModalOpen(true)}
+            onClick={() => {
+              if (!hasCompanyProfile) {
+                alert("⚠️ Mandatory Setup: Complete and approve your Company Profile Intake form first.");
+                setActiveTab("company-profile");
+                return;
+              }
+              setDeployModalOpen(true);
+            }}
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
             title="Configure and open live website with chatbot active"
           >
@@ -151,7 +167,7 @@ function BotDetailContent() {
           <button
             type="button"
             onClick={() => {
-              setActiveTab("knowledge");
+              handleTabClick("knowledge");
               setKnowledgeSubtab("documents");
             }}
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-xs transition-colors cursor-pointer"
@@ -162,20 +178,32 @@ function BotDetailContent() {
           </button>
 
           <button
-            onClick={() => setActiveTab("test")}
+            onClick={() => handleTabClick("test")}
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 transition-colors cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 text-indigo-600" />
-            Test Bot
+            <span>Test Bot {!hasCompanyProfile && "🔒"}</span>
           </button>
 
-          <Link
-            href={`/bots/${bot.id}/deploy`}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer"
-          >
-            <Share2 className="w-4 h-4" />
-            Deploy Widget
-          </Link>
+          {!hasCompanyProfile ? (
+            <button
+              type="button"
+              onClick={() => handleTabClick("deploy")}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-200 dark:bg-neutral-800 text-slate-500 cursor-not-allowed"
+              title="Complete Company Profile First"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Deploy Widget 🔒</span>
+            </button>
+          ) : (
+            <Link
+              href={`/bots/${bot.id}/deploy`}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer"
+            >
+              <Share2 className="w-4 h-4" />
+              Deploy Widget
+            </Link>
+          )}
 
           {/* Delete Bot Button */}
           <button
@@ -234,12 +262,12 @@ function BotDetailContent() {
           return (
             <button
               key={t.id}
-              onClick={() => setActiveTab(t.id)}
+              onClick={() => handleTabClick(t.id)}
               className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap ${
                 activeTab === t.id
                   ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
-              }`}
+              } ${!hasCompanyProfile && t.id !== "company-profile" ? "opacity-60 cursor-not-allowed" : ""}`}
             >
               <Icon className="w-4 h-4" />
               <span>{t.label}</span>
@@ -253,6 +281,9 @@ function BotDetailContent() {
                 >
                   {t.badge}
                 </span>
+              )}
+              {!hasCompanyProfile && t.id !== "company-profile" && (
+                <span className="text-[10px] text-amber-500 font-mono">🔒</span>
               )}
             </button>
           );

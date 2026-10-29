@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Building2,
   Clock,
@@ -1175,14 +1176,13 @@ export default function CompanyKnowledgeBuilder({
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
-            <button
-              type="button"
-              onClick={() => setStep("form")}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+            <Link
+              href={`/bots/${selectedBot.id || selectedBotId}?tab=test`}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Create / Update Another Profile</span>
-            </button>
+              <Bot className="w-4 h-4" />
+              <span>Go to Bot & Start Process 🚀</span>
+            </Link>
 
             {pdfUrl && (
               <a
@@ -1194,6 +1194,15 @@ export default function CompanyKnowledgeBuilder({
                 <span>Download Approved PDF</span>
               </a>
             )}
+
+            <button
+              type="button"
+              onClick={() => setStep("form")}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Create / Update Another Profile</span>
+            </button>
           </div>
         </div>
       )}

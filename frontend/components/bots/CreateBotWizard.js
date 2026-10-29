@@ -150,7 +150,7 @@ export default function CreateBotWizard() {
         sourcesCount: documents.length,
       });
       if (created?.id) {
-        router.push(`/bots/${created.id}?tab=knowledge`);
+        router.push(`/bots/${created.id}?tab=company-profile`);
       } else {
         router.push("/bots");
       }
