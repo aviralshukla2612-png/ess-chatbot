@@ -23,12 +23,18 @@ export default function TrialOnboardingModal({
   userEmail,
   userName,
   isMandatory = false,
+  hasUsedTrial = false,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [availablePlans, setAvailablePlans] = useState([]);
   const [planId, setPlanId] = useState("PLAN_STARTER_MONTHLY");
+  const [isTrialExhausted, setIsTrialExhausted] = useState(Boolean(hasUsedTrial));
   const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (hasUsedTrial) setIsTrialExhausted(true);
+  }, [hasUsedTrial]);
 
   useEffect(() => {
     fetch("/api/billing/plans")
@@ -86,12 +92,15 @@ export default function TrialOnboardingModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: selectedPlan?.id || planId,
-          isTrial: true,
+          isTrial: !isTrialExhausted,
         }),
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
+        if (data.code === "TRIAL_ALREADY_USED") {
+          setIsTrialExhausted(true);
+        }
         throw new Error(data.error || "Failed to initiate trial checkout");
       }
 
@@ -234,15 +243,17 @@ export default function TrialOnboardingModal({
           )}
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2.5">
-            {isMandatory ? <Lock className="w-3.5 h-3.5 text-indigo-400" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-400" />}
-            <span>7-Day Free Trial • ₹0 Charged Today</span>
+            {isTrialExhausted ? <Lock className="w-3.5 h-3.5 text-amber-400" /> : isMandatory ? <Lock className="w-3.5 h-3.5 text-indigo-400" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-400" />}
+            <span>{isTrialExhausted ? "1-Time Free Trial Already Used • Subscribe to Continue" : "7-Day Free Trial • ₹0 Charged Today"}</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            {isMandatory ? "Activate 7-Day Free Trial (₹0 Today)" : "Start Your Free Trial with Autopay"}
+            {isTrialExhausted ? "Choose a Plan to Activate Chatbot" : isMandatory ? "Activate 7-Day Free Trial (₹0 Today)" : "Start Your Free Trial with Autopay"}
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-lg leading-relaxed">
-            {isMandatory
+            {isTrialExhausted
+              ? "Your 1-time 7-day free trial has expired or was cancelled. Select a plan below to unlock your bot and resume live chat."
+              : isMandatory
               ? "Set up your Razorpay autopay mandate to create and deploy your AI chatbots. No money is deducted from your account today."
               : "Unlock full AI conversation and lead qualification capabilities. Zero charges today."}
           </p>
@@ -393,7 +404,13 @@ export default function TrialOnboardingModal({
             ) : (
               <>
                 <CreditCard className="w-4 h-4 shrink-0" />
-                <span>{isMandatory ? "Set Up Autopay (₹0 Today) & Unlock Bot Creation" : "Set Up Autopay & Start 7-Day Free Trial"}</span>
+                <span>
+                  {isTrialExhausted
+                    ? `Subscribe to ${selectedPlan?.name || "Starter"} (${selectedPlan?.priceMonthly || "₹2,499"})`
+                    : isMandatory
+                    ? "Set Up Autopay (₹0 Today) & Unlock Bot Creation"
+                    : "Set Up Autopay & Start 7-Day Free Trial"}
+                </span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </>
             )}

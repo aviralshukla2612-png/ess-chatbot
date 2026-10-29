@@ -23,6 +23,16 @@ export async function POST(request) {
       checkout,
     });
   } catch (err) {
+    if (err.code === "TRIAL_ALREADY_USED") {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "TRIAL_ALREADY_USED",
+          error: "Your organization has already used its 1-time 7-day free trial. Please subscribe to a paid plan to continue.",
+        },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

@@ -384,9 +384,11 @@ export async function initPostgresTables() {
             "currentPeriodStart" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             "currentPeriodEnd" TIMESTAMP WITH TIME ZONE,
             "cancelAtPeriodEnd" BOOLEAN DEFAULT FALSE,
+            "trialUsed" BOOLEAN DEFAULT FALSE,
             "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
+          ALTER TABLE "Subscription" ADD COLUMN IF NOT EXISTS "trialUsed" BOOLEAN DEFAULT FALSE;
         `);
 
         // 14. UsageRecord Table

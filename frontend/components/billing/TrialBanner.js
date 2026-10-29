@@ -6,18 +6,21 @@ import { Sparkles, Calendar, ArrowRight, ShieldAlert } from "lucide-react";
 
 export default function TrialBanner({ subscription, onOpenCheckout }) {
   if (!subscription || !subscription.hasAutopay || subscription.status === "pending_autopay") {
+    const trialUsed = Boolean(subscription?.hasUsedTrial);
     return (
       <div className="mb-6 p-4 rounded-2xl bg-linear-to-r from-indigo-900/90 via-violet-900/90 to-indigo-950 border border-indigo-500/40 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-indigo-950/40 text-xs animate-fade-in">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-indigo-300" />
+            {trialUsed ? <ShieldAlert className="w-5 h-5 text-amber-300" /> : <Sparkles className="w-5 h-5 text-indigo-300" />}
           </div>
           <div>
             <span className="font-extrabold text-white text-xs sm:text-sm block sm:inline">
-              Mandatory Setup: Start Your 7-Day Free Trial (₹0 Today)
+              {trialUsed ? "Subscription Required: 1-Time Free Trial Already Used" : "Mandatory Setup: Start Your 7-Day Free Trial (₹0 Today)"}
             </span>
             <span className="sm:ml-1 text-white/80 block sm:inline">
-              Set up Razorpay autopay to unlock AI Bot Creation, live lead capture & vector knowledge.
+              {trialUsed
+                ? "Your 1-time 7-day trial has ended or was cancelled. Choose a plan to unlock AI Bot Creation & live deployment."
+                : "Set up Razorpay autopay to unlock AI Bot Creation, live lead capture & vector knowledge."}
             </span>
           </div>
         </div>
@@ -25,7 +28,7 @@ export default function TrialBanner({ subscription, onOpenCheckout }) {
           onClick={onOpenCheckout}
           className="px-4 py-2.5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 hover:from-indigo-400 hover:to-violet-400 font-bold text-white text-xs shadow-md shadow-indigo-500/30 transition-all shrink-0 cursor-pointer"
         >
-          Activate Trial to Create Bot
+          {trialUsed ? "Choose a Plan & Subscribe" : "Activate Trial to Create Bot"}
         </button>
       </div>
     );

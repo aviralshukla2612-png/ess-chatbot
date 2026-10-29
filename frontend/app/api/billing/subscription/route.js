@@ -39,10 +39,13 @@ export async function GET(request) {
       (subscription.status === "active" || subscription.status === "trialing")
     );
 
+    const hasUsedTrial = await billingService.hasOrganizationUsedTrial(principal.organizationId);
+
     return NextResponse.json({
       success: true,
       hasActiveSubscription: hasAutopay,
       requiresAutopaySetup: !hasAutopay,
+      hasUsedTrial,
       isTrial,
       trialDaysRemaining,
       autopayDate,
@@ -51,6 +54,7 @@ export async function GET(request) {
         ...subscription,
         plan,
         hasAutopay,
+        hasUsedTrial,
       } : null,
       usage: {
         periodKey,

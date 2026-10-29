@@ -61,6 +61,7 @@ export default function DashboardLayout({ children }) {
       <TrialOnboardingModal
         isOpen={trialModalOpen}
         isMandatory={(!subscription || !subscription.hasAutopay) && currentUser?.role !== "SUPER_ADMIN"}
+        hasUsedTrial={subscription?.hasUsedTrial || false}
         onClose={() => setTrialModalOpen(false)}
         onActivated={(newSub) => {
           setSubscription(newSub);

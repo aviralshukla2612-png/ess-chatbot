@@ -81,10 +81,18 @@ export const billingService = {
     return sub;
   },
 
-  /**
-   * Create a checkout session / subscription link with 7-day trial and autopay mandate.
-   */
   async createSubscriptionCheckout({ organizationId, planId = "STARTER", customerEmail, customerName, isTrial = true }) {
+    // 1. Strict 1-Time 7-Day Free Trial Guard
+    if (isTrial) {
+      const trialAlreadyUsed = await this.hasOrganizationUsedTrial(organizationId);
+      if (trialAlreadyUsed) {
+        const err = new Error("TRIAL_ALREADY_USED: Your organization has already used its 1-time 7-day free trial. Please subscribe to a paid plan to continue.");
+        err.code = "TRIAL_ALREADY_USED";
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
     const plan = getPlan(planId);
     const trialDays = isTrial ? 7 : 0;
     const startAt = isTrial ? Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60) : undefined;
@@ -160,6 +168,16 @@ export const billingService = {
    * Activate or verify a subscription (e.g. after customer authorises Razorpay autopay mandate).
    */
   async activateSubscription({ organizationId, subscriptionId, paymentId, planId = "STARTER", isTrial = true }) {
+    if (isTrial) {
+      const trialAlreadyUsed = await this.hasOrganizationUsedTrial(organizationId);
+      if (trialAlreadyUsed) {
+        const err = new Error("TRIAL_ALREADY_USED: Your organization has already used its 1-time 7-day free trial. Please subscribe to a paid plan to continue.");
+        err.code = "TRIAL_ALREADY_USED";
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
     const plan = getPlan(planId);
     const currentPeriodStart = new Date().toISOString();
     const trialDays = isTrial ? 7 : 30;
@@ -177,15 +195,16 @@ export const billingService = {
       currentPeriodStart,
       currentPeriodEnd,
       cancelAtPeriodEnd: false,
+      trialUsed: true,
     };
 
     memorySubscriptions.set(organizationId, subRecord);
 
     await queryDb(
-      `INSERT INTO "Subscription" ("id", "organizationId", "provider", "providerSubscriptionId", "planId", "status", "currentPeriodStart", "currentPeriodEnd")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT ("id") DO UPDATE SET "planId" = EXCLUDED."planId", "status" = EXCLUDED."status", "currentPeriodEnd" = EXCLUDED."currentPeriodEnd", "updatedAt" = CURRENT_TIMESTAMP;`,
-      [subId, organizationId, "razorpay", subId, plan.id, status, currentPeriodStart, currentPeriodEnd]
+      `INSERT INTO "Subscription" ("id", "organizationId", "provider", "providerSubscriptionId", "planId", "status", "currentPeriodStart", "currentPeriodEnd", "trialUsed")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT ("id") DO UPDATE SET "planId" = EXCLUDED."planId", "status" = EXCLUDED."status", "currentPeriodEnd" = EXCLUDED."currentPeriodEnd", "trialUsed" = EXCLUDED."trialUsed", "updatedAt" = CURRENT_TIMESTAMP;`,
+      [subId, organizationId, "razorpay", subId, plan.id, status, currentPeriodStart, currentPeriodEnd, true]
     );
 
     await queryDb('UPDATE "Organization" SET "plan" = $1 WHERE "id" = $2;', [isTrial ? `${plan.name} (7-Day Trial)` : plan.name, organizationId]);
@@ -283,11 +302,52 @@ export const billingService = {
   },
 
   /**
+   * Check if an organization has already claimed / consumed their 1-time 7-day free trial.
+   */
+  async hasOrganizationUsedTrial(organizationId) {
+    if (!organizationId) return false;
+
+    // Check memory store
+    const memSub = memorySubscriptions.get(organizationId);
+    if (memSub) {
+      if (
+        memSub.trialUsed === true ||
+        memSub.status === "trialing" ||
+        memSub.status === "cancelled" ||
+        memSub.status === "expired"
+      ) {
+        return true;
+      }
+    }
+
+    // Check PostgreSQL database
+    try {
+      const dbRes = await queryDb(
+        'SELECT "status", "trialUsed" FROM "Subscription" WHERE "organizationId" = $1 ORDER BY "createdAt" DESC LIMIT 5;',
+        [organizationId]
+      );
+      if (dbRes.ok && dbRes.rows.length > 0) {
+        return dbRes.rows.some(
+          (row) =>
+            row.trialUsed === true ||
+            row.status === "trialing" ||
+            row.status === "cancelled" ||
+            row.status === "expired"
+        );
+      }
+    } catch (e) {
+      console.warn("[CHECK_TRIAL_FAIL]", e.message);
+    }
+
+    return false;
+  },
+
+  /**
    * Cancel an active subscription.
    */
   async cancelSubscription(organizationId) {
     await queryDb(
-      'UPDATE "Subscription" SET "status" = \'cancelled\', "cancelAtPeriodEnd" = TRUE WHERE "organizationId" = $1;',
+      'UPDATE "Subscription" SET "status" = \'cancelled\', "cancelAtPeriodEnd" = TRUE, "trialUsed" = TRUE WHERE "organizationId" = $1;',
       [organizationId]
     );
 
@@ -295,8 +355,9 @@ export const billingService = {
     if (sub) {
       sub.status = "cancelled";
       sub.cancelAtPeriodEnd = true;
+      sub.trialUsed = true;
     }
 
-    return { success: true, message: "Subscription will cancel at the end of the current billing cycle." };
+    return { success: true, message: "Subscription cancelled successfully. Free trial has ended." };
   },
 };
