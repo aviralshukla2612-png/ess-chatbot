@@ -384,4 +384,129 @@ export const authStore = {
 
     return memoryApiKeys.get(keyHash) || null;
   },
+
+  /**
+   * List available system accounts for OAuth account chooser.
+   */
+  async listSystemAccounts() {
+    const accounts = [];
+    const seenEmails = new Set();
+
+    try {
+      const dbRes = await queryDb('SELECT "id", "name", "email", "role" FROM "User" WHERE "status" = \'ACTIVE\' ORDER BY "createdAt" DESC LIMIT 15;');
+      if (dbRes.ok && Array.isArray(dbRes.rows)) {
+        for (const row of dbRes.rows) {
+          if (!seenEmails.has(row.email.toLowerCase())) {
+            seenEmails.add(row.email.toLowerCase());
+            accounts.push({
+              id: row.id,
+              name: row.name || row.email.split("@")[0],
+              email: row.email,
+              role: row.role,
+              isSuperAdmin: row.role === "SUPER_ADMIN" || row.email.toLowerCase() === DEFAULT_ADMIN_EMAIL,
+            });
+          }
+        }
+      }
+    } catch (e) {}
+
+    // Add memory users
+    for (const u of memoryUsers.values()) {
+      if (u.email && !seenEmails.has(u.email.toLowerCase())) {
+        seenEmails.add(u.email.toLowerCase());
+        accounts.push({
+          id: u.id,
+          name: u.name || u.email.split("@")[0],
+          email: u.email,
+          role: u.role,
+          isSuperAdmin: u.role === "SUPER_ADMIN" || u.email.toLowerCase() === DEFAULT_ADMIN_EMAIL,
+        });
+      }
+    }
+
+    // Filter out dummy placeholder accounts so only real user accounts are displayed
+    const realAccounts = accounts.filter(
+      (a) => a.email && a.email.toLowerCase() !== "admin@company.com" && a.email.toLowerCase() !== "admin@emperorsmartsolutions.com"
+    );
+
+    return realAccounts;
+  },
+
+  /**
+   * Log in or sign up via Google / OAuth provider.
+   */
+  async loginWithOAuth({ email, name, avatar, provider = "google" }) {
+    if (!email || !email.includes("@")) {
+      throw new Error("Valid email address is required for Google Sign-In");
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = (name || cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, l => l.toUpperCase())).trim();
+
+    let user = null;
+    const dbRes = await queryDb('SELECT * FROM "User" WHERE "email" = $1;', [cleanEmail]);
+    if (dbRes.ok && dbRes.rows.length > 0) {
+      user = dbRes.rows[0];
+    } else {
+      user = memoryUsers.get(cleanEmail);
+    }
+
+    const isSuper = cleanEmail === DEFAULT_ADMIN_EMAIL;
+
+    if (!user) {
+      // Auto-register new OAuth user
+      const userRole = isSuper ? "SUPER_ADMIN" : "MEMBER";
+      const orgRole = isSuper ? "SUPER_ADMIN" : "ORG_OWNER";
+      const registered = await this.register({
+        email: cleanEmail,
+        password: `OAuth_${crypto.randomBytes(16).toString("hex")}!2026`,
+        name: cleanName,
+        organizationName: `${cleanName}'s Workspace`,
+        role: userRole,
+      });
+
+      user = {
+        id: registered.user.id,
+        name: registered.user.name,
+        email: cleanEmail,
+        role: registered.user.role,
+      };
+
+      return {
+        user,
+        organizationId: registered.organization.id,
+        orgRole,
+        memberships: [
+          {
+            id: `mem_${registered.organization.id}`,
+            organizationId: registered.organization.id,
+            role: orgRole,
+            orgName: registered.organization.name,
+          },
+        ],
+      };
+    }
+
+    // User already exists, resolve memberships
+    const memberships = await this.getUserMemberships(user.id);
+    const primaryMembership = memberships[0] || null;
+    const orgId = primaryMembership?.organizationId || DEFAULT_ORG_ID;
+    const orgRole = isSuper ? "SUPER_ADMIN" : (primaryMembership?.role || "ORG_ADMIN");
+
+    if (isSuper) {
+      user.name = "Emperor Smart Solution";
+      user.role = "SUPER_ADMIN";
+    }
+
+    return {
+      user: {
+        id: user.id,
+        name: isSuper ? "Emperor Smart Solution" : (user.name || cleanName),
+        email: user.email,
+        role: isSuper ? "SUPER_ADMIN" : (user.role || "MEMBER"),
+      },
+      organizationId: orgId,
+      orgRole,
+      memberships,
+    };
+  },
 };

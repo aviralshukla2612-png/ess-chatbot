@@ -112,7 +112,7 @@ export const visitorsStore = {
    */
   createVisitor({
     organizationId = "org_ess_default",
-    botId = "bot_aa",
+    botId = "unknown_bot",
     token = null,
     name = "",
     email = "",
@@ -137,7 +137,7 @@ export const visitorsStore = {
     const newVisitor = {
       id,
       organizationId: organizationId || "org_ess_default",
-      botId: botId || "bot_aa",
+      botId: botId || "unknown_bot",
       visitorTokenHash: tokenHash,
       leadId: leadId || null,
       name: name || "",

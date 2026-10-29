@@ -61,7 +61,7 @@ export const quotaGuard = {
       botId === "bot_aa" ||
       String(botId || "").toLowerCase().includes("aa")
     ) {
-      return { allowed: true, currentUsage: 0, limit: 999999 };
+      return { allowed: true, currentUsage: 0, limit: Infinity };
     }
 
     // 1. Resolve subscription & plan
@@ -82,12 +82,12 @@ export const quotaGuard = {
     const periodKey = getCurrentPeriodKey();
     const currentUsage = await this.getOrganizationUsage(organizationId, metric, periodKey);
 
-    let maxLimit = plan.maxMessagesPerMonth;
+    let maxLimit = plan.maxMessagesPerMonth ?? Infinity;
     if (metric === "crawl_page") {
-      maxLimit = plan.maxKnowledgePages;
+      maxLimit = plan.maxKnowledgePages ?? 50;
     }
 
-    if (currentUsage + quantity > maxLimit) {
+    if (maxLimit !== Infinity && currentUsage + quantity > maxLimit) {
       return {
         allowed: false,
         reason: "QUOTA_EXCEEDED",

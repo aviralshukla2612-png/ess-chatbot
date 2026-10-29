@@ -62,8 +62,8 @@ export const leadsStore = {
     // Auto-enrich answers, qualification, and inquiry from conversationsStore if missing
     list.forEach((l) => {
       const cleanDigits = (p) => (p || "").replace(/\D/g, "");
-      const conv = (l.sessionId && conversationsStore.getConversation(l.sessionId)) ||
-        conversationsStore.getConversations().find((c) =>
+      const conv = (l.sessionId && conversationsStore.getConversation(l.sessionId, l.organizationId)) ||
+        conversationsStore.getConversations({ organizationId: l.organizationId, botId: l.botId }).find((c) =>
           (l.phone && c.visitorPhone && cleanDigits(c.visitorPhone) === cleanDigits(l.phone)) ||
           (l.name && l.name !== "Website Prospect" && l.name !== "Website Visitor" && c.visitorName && c.visitorName.toLowerCase() === l.name.toLowerCase())
         );
@@ -99,8 +99,11 @@ export const leadsStore = {
     if (filters.score && filters.score !== "All") {
       list = list.filter((l) => l.score?.toLowerCase() === filters.score.toLowerCase());
     }
-    if (filters.bot && filters.bot !== "All Bots") {
-      list = list.filter((l) => l.bot?.toLowerCase() === filters.bot.toLowerCase());
+    if (filters.botId && filters.botId !== "All") {
+      list = list.filter((l) => l.botId === filters.botId || l.bot === filters.botId);
+    }
+    if (filters.bot && filters.bot !== "All Bots" && filters.bot !== "All") {
+      list = list.filter((l) => l.bot?.toLowerCase() === filters.bot.toLowerCase() || l.botId?.toLowerCase() === filters.bot.toLowerCase());
     }
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -136,6 +139,10 @@ export const leadsStore = {
         params.push(filters.status);
         conditions.push(`LOWER("status") = LOWER($${params.length})`);
       }
+      if (filters.botId && filters.botId !== "All") {
+        params.push(filters.botId);
+        conditions.push(`"botId" = $${params.length}`);
+      }
       if (filters.score && filters.score !== "All") {
         params.push(filters.score);
         conditions.push(`LOWER("score") = LOWER($${params.length})`);
@@ -161,15 +168,16 @@ export const leadsStore = {
     const targetOrgId = data.organizationId || "org_ess_default";
     data.organizationId = targetOrgId;
 
-    // Check if lead already exists by visitorId, sessionId, verified email, or verified phone
+    // Check if lead already exists within this bot and organization
     const cleanDigits = (p) => (p || "").replace(/\D/g, "");
     const existing = list.find(
       (l) =>
-        (data.visitorId && l.visitorId && l.visitorId === data.visitorId) ||
-        (data.sessionId && l.sessionId && l.sessionId === data.sessionId) ||
-        (data.email && l.email && l.email.toLowerCase() === data.email.toLowerCase()) ||
-        (data.phone && l.phone && cleanDigits(l.phone) === cleanDigits(data.phone) && cleanDigits(data.phone).length >= 10) ||
-        (data.sessionId && l.sessionId === data.sessionId && data.name && l.name && l.name.toLowerCase() === data.name.toLowerCase())
+        (l.organizationId === targetOrgId) &&
+        (l.botId === data.botId || !l.botId) &&
+        ((data.visitorId && l.visitorId && l.visitorId === data.visitorId) ||
+         (data.sessionId && l.sessionId && l.sessionId === data.sessionId) ||
+         (data.email && l.email && l.email.toLowerCase() === data.email.toLowerCase()) ||
+         (data.phone && l.phone && cleanDigits(l.phone) === cleanDigits(data.phone) && cleanDigits(data.phone).length >= 10))
     );
     if (existing) {
       if (data.visitorId && !existing.visitorId) existing.visitorId = data.visitorId;
@@ -247,7 +255,8 @@ export const leadsStore = {
       email: data.email || "",
       phone: data.phone || "",
       company: data.company || "Direct Inbound",
-      bot: data.bot || "aa",
+      botId: data.botId || data.bot || "bot_default",
+      bot: data.bot || data.botId || "AI Assistant",
       score: data.score || (data.phone && data.email ? "High" : "Medium"),
       status: data.status || "New",
       created: now.toLocaleDateString("en-US", {

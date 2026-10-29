@@ -157,7 +157,7 @@ export const conversationsStore = {
     const newConv = {
       id,
       organizationId: data.organizationId || "org_ess_default",
-      botId: data.botId || "bot_aa",
+      botId: data.botId || "unknown_bot",
       botName: data.botName || "AI Assistant",
       visitorId: data.visitorId || null,
       leadId: data.leadId || null,
@@ -232,11 +232,17 @@ export const conversationsStore = {
     if (!conv) {
       conv = this.createConversation({
         id: conversationId,
+        botId: options.botId || message.botId || "unknown_bot",
+        botName: options.botName || message.botName || "AI Assistant",
+        organizationId: options.organizationId || message.organizationId || "org_ess_default",
         visitorId: options.visitorId || null,
-        visitorName: message.role === "user" ? "Website Visitor" : "AI Assistant",
+        visitorName: message.role === "user" ? "Website Visitor" : (options.botName || "AI Assistant"),
         messages: [],
         now,
       });
+      if (!list.some((c) => c.id === conversationId)) {
+        list.unshift(conv);
+      }
     }
 
     const newMsg = {

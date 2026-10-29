@@ -110,40 +110,33 @@ export const botsApi = {
   },
 
   async createBot(botData) {
-    const bots = getStoredBots();
-    const newBot = {
-      ...botData,
-      id: botData.id || `bot_${Date.now()}`,
-      status: "Active",
-      conversationsCount: 0,
-      questionsCount: 0,
-      leadsCount: 0,
-      answerRate: 100,
-      sourcesCount: botData.documents?.length || 0,
-      createdDate: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      lastActive: "Just now",
-    };
-
     if (typeof window !== "undefined") {
-      const updated = [newBot, ...bots];
-      saveStoredBots(updated);
-
-      // Persist to server
-      fetch("/api/bots", {
+      const res = await fetch("/api/bots", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newBot),
-      }).catch(() => {});
+        body: JSON.stringify(botData),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to create bot. Limit may have been reached.");
+      }
+
+      const created = data.bot || {
+        ...botData,
+        id: botData.id || `bot_${Date.now()}`,
+        status: "Active",
+      };
+
+      const bots = getStoredBots();
+      const updated = [created, ...bots.filter((b) => b.id !== created.id)];
+      saveStoredBots(updated);
+      return created;
     } else {
       const store = getServerStore();
-      if (store) store.upsertBot(newBot);
+      if (store) return store.upsertBot(botData);
     }
-
-    return newBot;
+    return null;
   },
 
   async updateBot(id, updates) {

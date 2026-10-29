@@ -230,7 +230,7 @@ export async function POST(request, { params }) {
       bot?.company && bot?.company !== "My Organization"
         ? bot.company
         : (bot?.id === "bot_aa" ? "Emperor Smart Solutions" : (bot?.name || "Business"));
-    const isEssBot = bot?.id === "bot_aa" || businessName === "Emperor Smart Solutions";
+    const isEssBot = bot?.id === "bot_aa";
     const tenantId = bot?.organizationId || botId;
 
     // --- SAAS BILLING & QUOTA ENFORCEMENT ---
@@ -291,6 +291,11 @@ export async function POST(request, { params }) {
     // 3. Step 3: Resolve Persistent Database Conversation Memory (24-Hour Inactivity Window)
     let currentSessionId = sessionId;
     let existingConv = currentSessionId ? conversationsStore.getConversation(currentSessionId) : null;
+    if (existingConv && existingConv.botId && existingConv.botId !== bot.id) {
+      // Discard conversation belonging to a different bot to prevent cross-bot mix-up
+      existingConv = null;
+      currentSessionId = null;
+    }
 
     // If no session or conversation not found by ID, look up the active conversation within 24h for this visitor
     if (!existingConv && persistentVisitor) {
@@ -1411,12 +1416,20 @@ Here are our official contact details to speak with our engineering leadership:
 
     if (isSseRequested) {
       if (deterministicReply) {
-        conversationsStore.addMessage(currentSessionId, { role: "user", content: message });
-        conversationsStore.addMessage(currentSessionId, {
-          role: "assistant",
-          content: deterministicReply,
-          quickReplies: quickReplies || [],
-        });
+        conversationsStore.addMessage(
+          currentSessionId,
+          { role: "user", content: message },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+        );
+        conversationsStore.addMessage(
+          currentSessionId,
+          {
+            role: "assistant",
+            content: deterministicReply,
+            quickReplies: quickReplies || [],
+          },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+        );
         if (resolvedName || resolvedPhone || resolvedEmail) {
           conversationsStore.updateConversation(currentSessionId, {
             ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
@@ -1435,7 +1448,7 @@ Here are our official contact details to speak with our engineering leadership:
           const leadData = {
             sessionId: currentSessionId,
             visitorId: persistentVisitor?.id || null,
-            botId: bot?.id || "bot_aa",
+            botId: bot.id,
             organizationId: bot?.organizationId || "org_ess_default",
             name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
             email: resolvedEmail,
@@ -1532,8 +1545,16 @@ Here are our official contact details to speak with our engineering leadership:
           }
 
           // Save message to conversation store
-          conversationsStore.addMessage(currentSessionId, { role: "user", content: message });
-          conversationsStore.addMessage(currentSessionId, { role: "assistant", content: validated });
+          conversationsStore.addMessage(
+            currentSessionId,
+            { role: "user", content: message },
+            { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+          );
+          conversationsStore.addMessage(
+            currentSessionId,
+            { role: "assistant", content: validated },
+            { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+          );
 
           if (resolvedName || resolvedPhone || resolvedEmail) {
             conversationsStore.updateConversation(currentSessionId, {
@@ -1554,7 +1575,7 @@ Here are our official contact details to speak with our engineering leadership:
             const leadData = {
               sessionId: currentSessionId,
               visitorId: persistentVisitor?.id || null,
-              botId: bot?.id || "bot_aa",
+              botId: bot.id,
               organizationId: bot?.organizationId || "org_ess_default",
               name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
               email: resolvedEmail,
@@ -1619,7 +1640,7 @@ Here are our official contact details to speak with our engineering leadership:
       const leadData = {
         sessionId: currentSessionId,
         visitorId: persistentVisitor?.id || null,
-        botId: bot?.id || "bot_aa",
+        botId: bot.id,
         organizationId: bot?.organizationId || "org_ess_default",
         name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
         email: resolvedEmail,
@@ -1640,11 +1661,19 @@ Here are our official contact details to speak with our engineering leadership:
     // Store conversation
     const reloadedConv = conversationsStore.getConversation(currentSessionId);
     if (reloadedConv) {
-      conversationsStore.addMessage(currentSessionId, { role: "user", content: message }, { visitorId: persistentVisitor?.id });
-      conversationsStore.addMessage(currentSessionId, {
-        role: "assistant",
-        content: botReply,
-      }, { visitorId: persistentVisitor?.id });
+      conversationsStore.addMessage(
+        currentSessionId,
+        { role: "user", content: message },
+        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+      );
+      conversationsStore.addMessage(
+        currentSessionId,
+        {
+          role: "assistant",
+          content: botReply,
+        },
+        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+      );
       if (resolvedName || resolvedPhone || resolvedEmail || persistentVisitor?.id) {
         conversationsStore.updateConversation(currentSessionId, {
           ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
@@ -1658,7 +1687,7 @@ Here are our official contact details to speak with our engineering leadership:
       conversationsStore.createConversation({
         id: currentSessionId,
         visitorId: persistentVisitor?.id || null,
-        botId: bot?.id || botId,
+        botId: bot.id,
         botName: botName,
         visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "Website Visitor",
         visitorEmail: resolvedEmail,

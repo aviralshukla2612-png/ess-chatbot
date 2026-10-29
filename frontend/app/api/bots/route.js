@@ -43,6 +43,21 @@ export async function POST(request) {
     const { principal } = auth;
     const body = await request.json();
 
+    const isSuperAdmin = principal.platformRole === ROLES.SUPER_ADMIN || principal.orgRole === ROLES.SUPER_ADMIN;
+    if (!isSuperAdmin) {
+      const existingBots = await botsStore.getBotsAsync(principal.organizationId);
+      if (existingBots && existingBots.length >= 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Bot creation limit reached: User and Sub-Admin accounts are restricted to creating 1 bot.",
+            code: "BOT_LIMIT_EXCEEDED",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Enforce tenant boundary: bot belongs to caller's organizationId
     body.organizationId = principal.organizationId;
 

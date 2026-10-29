@@ -1,6 +1,7 @@
 /**
  * SaaS Subscription Plans & Quota Configuration
  * Currency: INR (India-First default)
+ * Policy: Unlimited Tokens / Messages, Strict 1 Bot Limit per User/Sub-Admin
  */
 
 export const PLANS = {
@@ -12,12 +13,12 @@ export const PLANS = {
     priceMonthly: "₹2,499",
     currency: "INR",
     maxBots: 1,
-    maxMessagesPerMonth: 500,
-    maxKnowledgePages: 10,
+    maxMessagesPerMonth: Infinity,
+    maxKnowledgePages: 50,
     features: [
-      "1 AI Sales Bot",
-      "500 qualified messages / month",
-      "10 Website knowledge pages",
+      "1 AI Sales Bot (Strict Limit)",
+      "Unlimited Messages & Token Inquiries",
+      "50 Website knowledge pages",
       "Lead capture with email/phone",
       "Standard email support",
     ],
@@ -31,13 +32,13 @@ export const PLANS = {
     priceINR: 7999,
     priceMonthly: "₹7,999",
     currency: "INR",
-    maxBots: 5,
-    maxMessagesPerMonth: 5000,
-    maxKnowledgePages: 50,
+    maxBots: 1,
+    maxMessagesPerMonth: Infinity,
+    maxKnowledgePages: 100,
     features: [
-      "5 AI Sales Bots",
-      "5,000 qualified messages / month",
-      "50 Website knowledge pages",
+      "1 AI Sales Bot (Strict Limit)",
+      "Unlimited Messages & Token Inquiries",
+      "100 Website knowledge pages",
       "WhatsApp Cloud API integration",
       "Custom domain locking & branding",
       "Priority webhook dispatching",
@@ -52,12 +53,12 @@ export const PLANS = {
     priceINR: 24999,
     priceMonthly: "₹24,999",
     currency: "INR",
-    maxBots: 999,
-    maxMessagesPerMonth: 50000,
+    maxBots: 1,
+    maxMessagesPerMonth: Infinity,
     maxKnowledgePages: 500,
     features: [
-      "Unlimited AI Sales Bots",
-      "50,000 qualified messages / month",
+      "1 AI Sales Bot (Strict Limit)",
+      "Unlimited Messages & Token Inquiries",
       "500 Website knowledge pages",
       "Fine-tuned custom LoRA weights",
       "Dedicated account manager",

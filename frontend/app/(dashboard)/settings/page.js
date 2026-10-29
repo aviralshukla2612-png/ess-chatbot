@@ -176,17 +176,20 @@ export default function SettingsPage() {
 
               <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-2">
                 <span className="font-bold text-neutral-900 dark:text-white block">
-                  Usage Quotas
+                  Usage & Bot Limits
                 </span>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-neutral-500">
-                    <span>Monthly Questions:</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center text-neutral-500">
+                    <span>Bot Creation Allocation:</span>
                     <span className="font-semibold text-neutral-900 dark:text-white">
-                      3,892 / 50,000
+                      1 Bot Allowed (Active)
                     </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-                    <div className="h-full bg-indigo-600 rounded-full w-[8%]" />
+                  <div className="flex justify-between items-center text-neutral-500">
+                    <span>Token & Message Limit:</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      Unlimited (No Limits)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -236,7 +239,7 @@ export default function SettingsPage() {
                 { title: "Immediate notification on qualified lead", def: true },
                 { title: "Weekly bot performance report", def: true },
                 { title: "Alert when knowledge gap is detected (>10 inquiries)", def: true },
-                { title: "Monthly quota limit warning (>80%)", def: false },
+                { title: "System status and performance alerts", def: false },
               ].map((item, idx) => (
                 <label
                   key={idx}

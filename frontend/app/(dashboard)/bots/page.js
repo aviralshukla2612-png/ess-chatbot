@@ -40,6 +40,18 @@ export default function BotsPage() {
   const [deployWebsiteBot, setDeployWebsiteBot] = useState(null);
   const [copiedScript, setCopiedScript] = useState(false);
   const [modalCmsTab, setModalCmsTab] = useState("html");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.role === "SUPER_ADMIN" || d?.activeOrgRole === "SUPER_ADMIN") {
+          setIsSuperAdmin(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const loadBots = async () => {
     try {
@@ -165,15 +177,23 @@ export default function BotsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
-
-          <Link
-            href="/bots/create"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition-all w-fit cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create AI Bot</span>
-          </Link>
+          {!loading && !isSuperAdmin && bots.length >= 1 ? (
+            <div
+              title="User and Sub-Admin accounts are restricted to creating 1 bot."
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold cursor-not-allowed select-none"
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>Limit Reached (1/1 Bot)</span>
+            </div>
+          ) : (
+            <Link
+              href="/bots/create"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition-all w-fit cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create AI Bot</span>
+            </Link>
+          )}
         </div>
       </div>
 

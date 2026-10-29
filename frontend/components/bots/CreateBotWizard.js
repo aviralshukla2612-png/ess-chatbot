@@ -40,6 +40,7 @@ export default function CreateBotWizard() {
   const fileInputRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1); // Start at step 1 for fresh bot creation
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [isDragging, setIsDragging] = useState(false);
 
   // Form State - Fresh empty fields for user's own bot
@@ -128,28 +129,35 @@ export default function CreateBotWizard() {
 
   const handleFinish = async () => {
     setIsSubmitting(true);
-    const finalName = botName.trim() || "My AI Assistant";
-    const created = await botsApi.createBot({
-      name: finalName,
-      company: companyName,
-      websiteUrl: websiteUrl.trim(),
-      phoneNumber: phoneNumber.trim(),
-      description: description || "Custom AI chatbot assistant.",
-      avatar: avatarsList[avatarIndex],
-      primaryColor,
-      welcomeMessage,
-      placeholderText,
-      personality,
-      responseLength,
-      instructions,
-      collectLeads,
-      documents,
-      sourcesCount: documents.length,
-    });
-    if (created?.id) {
-      router.push(`/bots/${created.id}?tab=knowledge`);
-    } else {
-      router.push("/bots");
+    setErrorMessage("");
+    try {
+      const finalName = botName.trim() || "My AI Assistant";
+      const created = await botsApi.createBot({
+        name: finalName,
+        company: companyName,
+        websiteUrl: websiteUrl.trim(),
+        phoneNumber: phoneNumber.trim(),
+        description: description || "Custom AI chatbot assistant.",
+        avatar: avatarsList[avatarIndex],
+        primaryColor,
+        welcomeMessage,
+        placeholderText,
+        personality,
+        responseLength,
+        instructions,
+        collectLeads,
+        documents,
+        sourcesCount: documents.length,
+      });
+      if (created?.id) {
+        router.push(`/bots/${created.id}?tab=knowledge`);
+      } else {
+        router.push("/bots");
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err.message || "Failed to create bot. Limit may have been reached.");
+      setIsSubmitting(false);
     }
   };
 
@@ -1010,6 +1018,13 @@ export default function CreateBotWizard() {
               </div>
             </div>
           </div>
+
+          {errorMessage && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <button
             type="button"

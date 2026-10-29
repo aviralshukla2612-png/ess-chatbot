@@ -111,7 +111,7 @@ export const documentsStore = {
 
     const doc = {
       id: docId,
-      botId: botId || "bot_sales_01",
+      botId: botId || "default_bot",
       name: name || "Untitled Document",
       type: type || "Document",
       content: content || "",

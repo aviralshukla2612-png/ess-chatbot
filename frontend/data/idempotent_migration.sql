@@ -1,6 +1,6 @@
 -- =========================================================
 -- ESS CHATBOT SaaS — COMPLETE POSTGRESQL & PGVECTOR MIGRATION
--- Generated: 2026-10-23T06:27:28.591Z
+-- Generated: 2026-10-29T05:36:07.951Z
 -- =========================================================
 BEGIN;
 
@@ -147,128 +147,29 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_hnsw
 ON "KnowledgeChunk" USING hnsw ("embedding" vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
--- Organization & Bot: Beta Tech Support (bot_beta_valid)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_reg_beta_222', 'Default Org', 'org-bot_beta_valid', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_beta_valid', 'org_reg_beta_222', 'Beta Tech Support', '', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Tech Support. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Beta Assistant (bot_test_b_1792736767300)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_b_1792736767300', 'Beta Retailers', 'org-bot_test_b_1792736767300', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_b_1792736767300', 'org_tenant_b_1792736767300', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Alpha Assistant (bot_test_a_1792736767300)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_a_1792736767300', 'Alpha Dynamics', 'org-bot_test_a_1792736767300', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_a_1792736767300', 'org_tenant_a_1792736767300', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Beta Assistant (bot_test_b_1792734618120)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_b_1792734618120', 'Beta Retailers', 'org-bot_test_b_1792734618120', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_b_1792734618120', 'org_tenant_b_1792734618120', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Alpha Assistant (bot_test_a_1792734618120)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_a_1792734618120', 'Alpha Dynamics', 'org-bot_test_a_1792734618120', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_a_1792734618120', 'org_tenant_a_1792734618120', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Beta Assistant (bot_test_b_1792734604697)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_b_1792734604697', 'Beta Retailers', 'org-bot_test_b_1792734604697', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_b_1792734604697', 'org_tenant_b_1792734604697', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Alpha Assistant (bot_test_a_1792734604697)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_a_1792734604697', 'Alpha Dynamics', 'org-bot_test_a_1792734604697', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_a_1792734604697', 'org_tenant_a_1792734604697', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Beta Assistant (bot_test_b_1792734482158)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_b_1792734482158', 'Beta Retailers', 'org-bot_test_b_1792734482158', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_b_1792734482158', 'org_tenant_b_1792734482158', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Alpha Assistant (bot_test_a_1792734482158)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_a_1792734482158', 'Alpha Dynamics', 'org-bot_test_a_1792734482158', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_a_1792734482158', 'org_tenant_a_1792734482158', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Beta Assistant (bot_test_b_1792734359773)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_b_1792734359773', 'Beta Retailers', 'org-bot_test_b_1792734359773', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_b_1792734359773', 'org_tenant_b_1792734359773', 'Beta Assistant', 'Direct-to-consumer sustainable apparel company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Beta Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
--- Organization & Bot: Alpha Assistant (bot_test_a_1792734359773)
-INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_tenant_a_1792734359773', 'Alpha Dynamics', 'org-bot_test_a_1792734359773', 'Enterprise', 'ACTIVE', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_test_a_1792734359773', 'org_tenant_a_1792734359773', 'Alpha Assistant', 'Autonomous robotics and warehouse automation company.', '🤖', '#4f46e5', 'Active', '', 'Hello! I am Alpha Assistant. How can I help you today?', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
 -- Organization & Bot: aa (bot_aa)
 INSERT INTO "Organization" ("id", "name", "slug", "plan", "status", "createdAt", "updatedAt")
-VALUES ('org_ess_default', 'Emperor Smart Solutions', 'org-bot_aa', 'Enterprise', 'ACTIVE', NOW(), NOW())
+VALUES ('org_default', 'Emperor Smart Solutions', 'org-bot_aa', 'Enterprise', 'ACTIVE', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Bot" ("id", "organizationId", "name", "description", "avatar", "primaryColor", "status", "systemPrompt", "welcomeMessage", "createdAt", "updatedAt")
-VALUES ('bot_aa', 'org_ess_default', 'aa', 'Official AI Sales Representative for Emperor Smart Solutions.', '🤖', '#4f46e5', 'Active', 'You are Emperor AI, the official AI Sales Consultant for Emperor Smart Solutions. Assist visitors with Web, Mobile, ERP, and AI solutions.', 'Hello! I am Emperor AI, your AI Sales Consultant. How can I help you today?', NOW(), NOW())
+VALUES ('bot_aa', 'org_default', 'aa', 'Official AI assistant for Emperor Smart Solutions.', '⚡', '#4f46e5', 'Active', 'You are the official AI assistant for Emperor Smart Solutions (ESS), founded by Yash Sharma (Founder) and Karan Makwana (Co-Founder). Provide verified facts about services, founders, developer hiring, office location in Ahmedabad, and budget tiers. Never fabricate or invent facts.', 'Hello! I am the AI assistant for Emperor Smart Solutions. How can I help you today?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1792666528752_mh5r', 'org_default', 'bot_aa', 'Siddharth Mehta', 'siddharth.new@logistics.in', '+91 99000 88776', 'Mehta Freight Solutions', 'Hot', 'New', 'Custom ERP & GPS fleet tracking application', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_1791787975361_b7dj', 'org_default', 'bot_aa', 'Vikram Joshi', 'vikram@enterprise.in', '+91 99887 76655', 'Direct Inbound', 'High', 'New', 'Full Stack Next.js + Flutter development quote', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_master_eval_1792666527562', 'org_default', 'bot_aa', 'Enterprise Client', 'client@enterprise.com', '+919876543210', 'Direct Inbound', 'Hot', 'NEW', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_1791608783809_j20l', 'org_default', 'bot_aa', 'Sarah Connor', 'sarah@sky.net', '+1 555-0199', 'Website Embed Visitor', 'High', 'New', 'Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_alpha_confidential', 'org_default', 'bot_aa', 'VIP Buyer', 'vip@buyer.com', '', 'Direct Inbound', 'Medium', 'New', 'Inquired via live chat widget', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_1791608185636_9oft', 'org_default', 'bot_aa', 'John Doe', 'john.doe@innovate.io', '+91 99999 88888', 'Website Embed Visitor', 'High', 'New', 'Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Lead" ("id", "organizationId", "botId", "name", "email", "phone", "company", "score", "status", "inquiry", "budget", "source", "createdAt", "updatedAt")
-VALUES ('lead_1791889312212_yf2w', 'org_default', 'bot_aa', 'Aviral', '', '', 'Direct Inbound', 'Medium', 'New', 'Website Development: Business: Yes | Project: New website | Admin Panel: Yes | Online Payments: Yes', '₹50,000+', 'Web Chatbot Widget', NOW(), NOW())
+VALUES ('lead_seed_01', 'org_default', 'bot_aa', 'Rohan Varma', 'rohan.v@techlogix.co', '+91 98200 12345', 'TechLogix Global', 'High', 'New', 'Interested in custom ERP & CRM automation pipeline with real-time vector search.', '₹1,50,000', 'Web Chatbot Widget', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "KnowledgeDocument" ("id", "organizationId", "botId", "name", "type", "sizeBytes", "status", "chunksCount", "createdAt", "updatedAt")
@@ -325,111 +226,15 @@ VALUES ('chk_doc_emperor_smart_solutions_01_4', 'doc_emperor_smart_solutions_01'
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+VALUES ('test_deploy_1791608783005', 'org_default', 'bot_aa', 'Sarah Connor', 'sarah@sky.net', '+1 555-0199', 'Active', true, 'Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
+VALUES ('session_bot_aa_1791608185637', 'org_default', 'bot_aa', 'John Doe', 'john.doe@innovate.io', '+91 99999 88888', 'Active', true, 'Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('wa_919876543210', 'org_default', 'bot_aa', 'WhatsApp Lead', '', '919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('c_eval_test_30', 'org_default', 'bot_aa', 'Test Prospect', 'prospect@eval.com', '', 'Active', true, 'Need AI bot', NOW(), NOW())
-ON CONFLICT ("id") DO NOTHING;
-
-INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorName", "visitorEmail", "visitorPhone", "status", "isLead", "lastMessage", "createdAt", "updatedAt")
-VALUES ('conv_medical_secret', 'org_default', 'bot_aa', 'Patient John Doe', '', '+919876543210', 'Active', true, '', NOW(), NOW())
+VALUES ('c_seed_01', 'org_default', 'bot_aa', 'Acme Logistics Inquiry', 'contact@acmelogistics.com', '+91 98765 43210', 'Active', true, 'Can we schedule a live demo of the ERP integration modules?', NOW(), NOW())
 ON CONFLICT ("id") DO NOTHING;
 
 COMMIT;

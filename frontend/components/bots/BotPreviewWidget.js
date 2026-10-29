@@ -28,15 +28,7 @@ export default function BotPreviewWidget({
       id: "w_1",
       role: "assistant",
       content: welcomeMessage,
-      quickReplies: [
-        "Website Development",
-        "Mobile Application",
-        "AI Chatbot",
-        "Custom Software",
-        "UI/UX Design",
-        "Cloud & DevOps",
-        "SEO & Marketing",
-      ],
+      quickReplies: [],
       sources: [],
     },
   ]);
@@ -47,9 +39,22 @@ export default function BotPreviewWidget({
   const [showPromptLead, setShowPromptLead] = useState(false);
   const [sessionId, setSessionId] = useState("");
 
+  // Isolate conversation session when botId changes
   useEffect(() => {
-    setSessionId(`session_preview_${Date.now()}`);
-  }, []);
+    setSessionId(`session_preview_${botId || "bot"}_${Date.now()}`);
+    setMessages([
+      {
+        id: `w_1_${botId || "default"}`,
+        role: "assistant",
+        content: welcomeMessage || `Hello! I am ${botName}. How can I help you today?`,
+        quickReplies: [],
+        sources: [],
+      },
+    ]);
+    setLeadCaptured(false);
+    setInputText("");
+    setIsTyping(false);
+  }, [botId, welcomeMessage, botName]);
 
   const handleSend = async (e, explicitText) => {
     e?.preventDefault();

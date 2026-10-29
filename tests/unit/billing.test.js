@@ -11,16 +11,19 @@ describe("SaaS Subscription Billing & Quota Enforcement Suite", () => {
     quotaGuard._resetMemoryStore();
   });
 
-  it("1. Configures INR pricing and plan limits correctly", () => {
+  it("1. Configures INR pricing, 1-bot limit, and unlimited messages correctly", () => {
     assert.equal(PLANS.STARTER.currency, "INR");
     assert.equal(PLANS.STARTER.priceINR, 2499);
-    assert.equal(PLANS.STARTER.maxMessagesPerMonth, 500);
+    assert.equal(PLANS.STARTER.maxBots, 1);
+    assert.equal(PLANS.STARTER.maxMessagesPerMonth, Infinity);
 
     assert.equal(PLANS.GROWTH.priceINR, 7999);
-    assert.equal(PLANS.GROWTH.maxMessagesPerMonth, 5000);
+    assert.equal(PLANS.GROWTH.maxBots, 1);
+    assert.equal(PLANS.GROWTH.maxMessagesPerMonth, Infinity);
 
     assert.equal(PLANS.ENTERPRISE.priceINR, 24999);
-    assert.equal(PLANS.ENTERPRISE.maxMessagesPerMonth, 50000);
+    assert.equal(PLANS.ENTERPRISE.maxBots, 1);
+    assert.equal(PLANS.ENTERPRISE.maxMessagesPerMonth, Infinity);
 
     assert.equal(getPlan("unknown").id, "STARTER");
   });
@@ -73,7 +76,7 @@ describe("SaaS Subscription Billing & Quota Enforcement Suite", () => {
     assert.equal(secondDelivery.duplicate, true);
   });
 
-  it("4. Allows usage within quota and atomically increments counter", async () => {
+  it("4. Allows usage and atomically increments counter without token limits", async () => {
     const orgId = "org_quota_test_tenant";
 
     // 1st request -> Allowed
@@ -87,18 +90,17 @@ describe("SaaS Subscription Billing & Quota Enforcement Suite", () => {
     assert.equal(res2.currentUsage, 2);
   });
 
-  it("5. Rejects inference request when monthly message quota is exhausted", async () => {
-    const orgId = "org_quota_exhausted_tenant";
+  it("5. Supports unlimited token/message inference and never rejects with QUOTA_EXCEEDED", async () => {
+    const orgId = "org_unlimited_tokens_tenant";
 
-    // Reserve 500 messages (Starter limit)
-    const setup = await quotaGuard.checkAndReserveQuota(orgId, "message", 500);
-    assert.equal(setup.allowed, true);
-    assert.equal(setup.currentUsage, 500);
+    // Process high volume of messages
+    const highVol = await quotaGuard.checkAndReserveQuota(orgId, "message", 100000);
+    assert.equal(highVol.allowed, true);
+    assert.equal(highVol.currentUsage, 100000);
 
-    // 501st message -> REJECTED with QUOTA_EXCEEDED
-    const blocked = await quotaGuard.checkAndReserveQuota(orgId, "message", 1);
-    assert.equal(blocked.allowed, false);
-    assert.equal(blocked.reason, "QUOTA_EXCEEDED");
-    assert.ok(blocked.error.includes("Monthly quota exceeded"));
+    // Next message continues to be allowed (No Token/Message Limit)
+    const nextMsg = await quotaGuard.checkAndReserveQuota(orgId, "message", 1);
+    assert.equal(nextMsg.allowed, true);
+    assert.equal(nextMsg.currentUsage, 100001);
   });
 });
