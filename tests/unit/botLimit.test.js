@@ -79,4 +79,29 @@ describe("Bot Creation Limit Suite - Strict 1 Bot Limit for Users / Sub-Admins",
     assert.equal(data.code, "BOT_LIMIT_EXCEEDED");
     assert.ok(data.error.includes("restricted to creating 1 bot"));
   });
+
+  it("3. Strictly rejects bot creation with 402 TRIAL_AUTOPAY_MANDATORY when trial autopay is not configured", async () => {
+    // An organization that is not seeded with active autopay
+    const orgId = `org_unpaid_fresh_${Date.now()}`;
+    const token = signSessionToken({
+      userId: "user_unpaid_1",
+      email: "unpaid@test.com",
+      role: "MEMBER",
+      organizationId: orgId,
+      orgRole: "ORG_ADMIN",
+    });
+
+    const req = createMockRequest("http://localhost:3000/api/bots", {
+      method: "POST",
+      headers: { cookie: `ess_session=${token}` },
+      body: { name: "Blocked Assistant", company: "Unpaid Co" },
+    });
+
+    const res = await postBot(req);
+    const data = await res.json();
+    assert.equal(res.status, 402);
+    assert.equal(data.success, false);
+    assert.equal(data.code, "TRIAL_AUTOPAY_MANDATORY");
+    assert.ok(data.error.includes("TRIAL_AUTOPAY_MANDATORY"));
+  });
 });

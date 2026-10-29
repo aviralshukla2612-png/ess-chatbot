@@ -14,10 +14,10 @@ export default function TrialBanner({ subscription, onOpenCheckout }) {
           </div>
           <div>
             <span className="font-extrabold text-white text-xs sm:text-sm block sm:inline">
-              Start Your 7-Day Free Trial (₹0 Today)
+              Mandatory Setup: Start Your 7-Day Free Trial (₹0 Today)
             </span>
             <span className="sm:ml-1 text-white/80 block sm:inline">
-              Set up Razorpay autopay to get full access to AI Chatbots, live lead capture & vector knowledge.
+              Set up Razorpay autopay to unlock AI Bot Creation, live lead capture & vector knowledge.
             </span>
           </div>
         </div>
@@ -25,7 +25,7 @@ export default function TrialBanner({ subscription, onOpenCheckout }) {
           onClick={onOpenCheckout}
           className="px-4 py-2.5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 hover:from-indigo-400 hover:to-violet-400 font-bold text-white text-xs shadow-md shadow-indigo-500/30 transition-all shrink-0 cursor-pointer"
         >
-          Activate 7-Day Trial
+          Activate Trial to Create Bot
         </button>
       </div>
     );

@@ -48,6 +48,7 @@ export const billingService = {
       if (
         organizationId.startsWith("org_quota_test") ||
         organizationId.startsWith("org_unlimited") ||
+        organizationId.startsWith("org_limit_test") ||
         organizationId === "org_ess_default" ||
         organizationId === "org_ess_01"
       ) {
@@ -55,6 +56,7 @@ export const billingService = {
           id: `sub_${organizationId}`,
           organizationId,
           provider: "razorpay",
+          providerSubscriptionId: `sub_live_${organizationId}`,
           planId: "STARTER",
           status: "active",
           currentPeriodStart: new Date().toISOString(),

@@ -14,7 +14,14 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export default function TrialOnboardingModal({ isOpen, onClose, onActivated, userEmail, userName }) {
+export default function TrialOnboardingModal({
+  isOpen,
+  onClose,
+  onActivated,
+  userEmail,
+  userName,
+  isMandatory = false,
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [planId, setPlanId] = useState("STARTER");
@@ -77,7 +84,7 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
               if (onActivated) onActivated(verifyData.subscription);
-              onClose();
+              if (onClose) onClose();
             } else {
               setError(verifyData.error || "Failed to verify mandate.");
               setLoading(false);
@@ -120,7 +127,7 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
       const verifyData = await verifyRes.json();
       if (verifyData.success) {
         if (onActivated) onActivated(verifyData.subscription);
-        onClose();
+        if (onClose) onClose();
       } else {
         throw new Error(verifyData.error || "Verification failed");
       }
@@ -131,12 +138,19 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl overflow-hidden text-neutral-900 dark:text-white">
-        
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+      onClick={() => {
+        if (!isMandatory && onClose) onClose();
+      }}
+    >
+      <div
+        className="relative w-full max-w-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl shadow-2xl overflow-hidden text-neutral-900 dark:text-white"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Top Header Badge */}
         <div className="bg-linear-to-r from-indigo-600 via-violet-600 to-indigo-700 p-6 text-white relative">
-          {onClose && (
+          {!isMandatory && onClose && (
             <button
               onClick={onClose}
               className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
@@ -146,14 +160,16 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
           )}
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            7-Day Full Access Free Trial
+            {isMandatory ? <Lock className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {isMandatory ? "Mandatory Setup • Required to Create Bot" : "7-Day Full Access Free Trial"}
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight">
-            Start Your Free Trial with Autopay
+            {isMandatory ? "Activate 7-Day Free Trial (₹0 Today)" : "Start Your Free Trial with Autopay"}
           </h2>
           <p className="text-xs text-white/80 mt-1">
-            Experience unlimited AI conversations and sales automation. Set up autopay today with ₹0 charged upfront.
+            {isMandatory
+              ? "Razorpay autopay mandate is required before you can create and launch your AI chatbots. ₹0 charged upfront today."
+              : "Experience unlimited AI conversations and sales automation. Set up autopay today with ₹0 charged upfront."}
           </p>
         </div>
 
@@ -185,9 +201,13 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
           {/* Feature Highlights */}
           <div className="space-y-2">
             <p className="font-bold text-neutral-700 dark:text-neutral-300">
-              Included in your 7-day trial:
+              Unlocked with your 7-day trial:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-neutral-600 dark:text-neutral-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>AI Bot creation & training</span>
+              </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>Unlimited AI sales messages</span>
@@ -199,10 +219,6 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>Automated CRM lead extraction</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>Custom embeddable website widget</span>
               </div>
             </div>
           </div>
@@ -228,7 +244,7 @@ export default function TrialOnboardingModal({ isOpen, onClose, onActivated, use
               </>
             ) : (
               <>
-                <span>Set Up Autopay & Start 7-Day Free Trial</span>
+                <span>{isMandatory ? "Set Up Autopay (₹0 Today) & Unlock Bot Creation" : "Set Up Autopay & Start 7-Day Free Trial"}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

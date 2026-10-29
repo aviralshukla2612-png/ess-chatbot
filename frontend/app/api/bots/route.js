@@ -4,6 +4,7 @@ import { websitesDb } from "@/lib/db/websites";
 import { n8nClient } from "@/lib/n8n/client";
 import { validateUrlForSSRF } from "@/lib/security/ssrf";
 import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { billingService } from "@/lib/billing/billingService";
 
 // Helper to normalize phone numbers safely without changing meaning
 function normalizePhoneNumber(raw) {
@@ -45,6 +46,28 @@ export async function POST(request) {
 
     const isSuperAdmin = principal.platformRole === ROLES.SUPER_ADMIN || principal.orgRole === ROLES.SUPER_ADMIN;
     if (!isSuperAdmin) {
+      // 1. Mandatory 7-day free trial & autopay check
+      const sub = await billingService.getSubscription(principal.organizationId);
+      const hasAutopay = Boolean(
+        sub &&
+        sub.providerSubscriptionId &&
+        !sub.providerSubscriptionId.startsWith("sub_reg_") &&
+        (sub.status === "active" || sub.status === "trialing")
+      );
+
+      if (!hasAutopay) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "TRIAL_AUTOPAY_MANDATORY",
+            message: "Setting up your 7-day free trial with Razorpay autopay is mandatory before creating an AI chatbot.",
+            code: "TRIAL_AUTOPAY_MANDATORY",
+          },
+          { status: 402 }
+        );
+      }
+
+      // 2. Strict 1-bot limit for regular users and sub-admins
       const existingBots = await botsStore.getBotsAsync(principal.organizationId);
       if (existingBots && existingBots.length >= 1) {
         return NextResponse.json(
