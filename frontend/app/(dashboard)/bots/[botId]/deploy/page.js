@@ -40,7 +40,7 @@ function DeployBotContent() {
   const [brandingEnabled, setBrandingEnabled] = useState(true);
   const [activeCms, setActiveCms] = useState("html"); // html, wordpress, shopify, webflow, ssh
 
-  // Host URL (defaults to active server origin, e.g. http://187.127.158.24:3300)
+  // Host URL (defaults to active server origin, e.g. http://187.127.131.178:3300)
   const [customHost, setCustomHost] = useState("");
 
   useEffect(() => {

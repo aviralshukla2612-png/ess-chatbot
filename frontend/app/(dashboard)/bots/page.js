@@ -90,7 +90,7 @@ export default function BotsPage() {
   const draftCount = bots.filter((b) => b.status === "Draft").length;
 
   const appOrigin =
-    typeof window !== "undefined" ? window.location.origin : "http://187.127.158.24:3300";
+    typeof window !== "undefined" ? window.location.origin : "http://187.127.131.178:3300";
 
   const getEmbedSnippet = (bot) => {
     if (!bot) return "";
