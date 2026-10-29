@@ -129,10 +129,12 @@ export default function TrialOnboardingModal({
           ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
           ...(checkout.subscriptionId && !checkout.subscriptionId.startsWith("sub_trial_") ? { subscription_id: checkout.subscriptionId } : {}),
           name: "Emperor Smart Solutions",
-          description: `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹1 Verification)`,
-          image: "/e-logoicon.webp",
+          description: !isTrialExhausted
+            ? `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹1 Verification)`
+            : `${selectedPlan?.name || "Starter"} Plan Subscription (${selectedPlan?.priceMonthly || "₹2,500"})`,
+          image: typeof window !== "undefined" ? `${window.location.origin}/e-logoicon.webp` : "https://ess-chatbot.vardaansmartsolutions.com/e-logoicon.webp",
           currency: "INR",
-          amount: 100,
+          amount: checkout.amountToday ? checkout.amountToday * 100 : (checkout.isTrial ? 100 : Math.round((selectedPlan?.priceINR || 2499) * 100)),
           handler: async function (response) {
             try {
               const verifyRes = await fetch("/api/billing/verify", {
@@ -262,11 +264,15 @@ export default function TrialOnboardingModal({
         {/* Content Body */}
         <div className="p-5 sm:p-6 space-y-4 text-xs">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-900/80 text-rose-300 flex items-start gap-2.5 text-xs animate-shake">
+            <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-900/80 text-rose-300 flex items-start gap-2.5 text-xs animate-shake">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
               <div className="flex-1">
                 <p className="font-semibold">{error}</p>
-                <p className="text-[11px] text-rose-400/80 mt-0.5">Please check your network connection or try again.</p>
+                <p className="text-[11px] text-amber-400 mt-1">
+                  {isTrialExhausted
+                    ? "Choose a subscription plan below to unlock your bot creation."
+                    : "Please check your network connection or try again."}
+                </p>
               </div>
             </div>
           )}
@@ -278,7 +284,7 @@ export default function TrialOnboardingModal({
                 Select Your Plan & Billing Interval
               </span>
               <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                ₹0 Today
+                {isTrialExhausted ? (selectedPlan?.priceMonthly || "Paid Plan") : "₹0 Today"}
               </span>
             </div>
 
@@ -348,17 +354,28 @@ export default function TrialOnboardingModal({
               <span className="text-slate-400">Due Today</span>
               <span className="text-sm font-extrabold text-emerald-400 flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                ₹0 (Zero Charged Today)
+                {isTrialExhausted ? `${selectedPlan?.priceMonthly || "₹2,500"} (Paid Subscription)` : "₹0 (Zero Charged Today)"}
               </span>
             </div>
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
-              <span className="text-slate-400">Trial Access</span>
-              <span className="font-semibold text-slate-200">{trialDays} Full Days Unlimited</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400">Recurring Billing Starts</span>
-              <span className="font-bold text-indigo-400">Day {trialDays + 1} ({recurringAmountText})</span>
-            </div>
+            {!isTrialExhausted ? (
+              <>
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
+                  <span className="text-slate-400">Trial Access</span>
+                  <span className="font-semibold text-slate-200">{trialDays} Full Days Unlimited</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Recurring Billing Starts</span>
+                  <span className="font-bold text-indigo-400">Day {trialDays + 1} ({recurringAmountText})</span>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Billing Term</span>
+                <span className="font-bold text-emerald-400">
+                  {selectedPlan?.name} ({selectedPlan?.periodLabel || "per month"})
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Feature Checklist */}

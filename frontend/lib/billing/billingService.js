@@ -104,8 +104,7 @@ export const billingService = {
       try {
         const authHeader = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
 
-        // Create authorized Razorpay Order for trial checkout verification
-        // (100 paise = ₹1 token verification, guaranteed to return status 200 on this Razorpay test key)
+        const orderAmount = isTrial ? 100 : Math.round((plan.priceINR || 2499) * 100);
         const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
           method: "POST",
           headers: {
@@ -113,9 +112,9 @@ export const billingService = {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            amount: 100, // ₹1 auth token for autopay trial
+            amount: orderAmount,
             currency: "INR",
-            receipt: `rcpt_trial_${Date.now()}`,
+            receipt: isTrial ? `rcpt_trial_${Date.now()}` : `rcpt_paid_${Date.now()}`,
             notes: {
               organizationId,
               planId: plan.id,
@@ -130,13 +129,13 @@ export const billingService = {
           return {
             mode: "live",
             orderId: orderData.id,
-            subscriptionId: `sub_trial_${orderData.id}`,
+            subscriptionId: isTrial ? `sub_trial_${orderData.id}` : `sub_paid_${orderData.id}`,
             keyId,
             plan,
             isTrial,
             trialDays,
             startAt,
-            amountToday: 0,
+            amountToday: isTrial ? 0 : plan.priceINR,
             recurringAmount: plan.priceMonthly,
           };
         } else {
@@ -359,5 +358,19 @@ export const billingService = {
     }
 
     return { success: true, message: "Subscription cancelled successfully. Free trial has ended." };
+  },
+
+  /**
+   * Reset trial used status for an organization (for admin testing or special grants).
+   */
+  async resetTrialForOrganization(organizationId) {
+    if (!organizationId) return false;
+    const sub = memorySubscriptions.get(organizationId);
+    if (sub) {
+      sub.trialUsed = false;
+      sub.status = "pending_autopay";
+    }
+    await queryDb('UPDATE "Subscription" SET "trialUsed" = FALSE, "status" = \'pending_autopay\' WHERE "organizationId" = $1;', [organizationId]);
+    return true;
   },
 };
