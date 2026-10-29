@@ -13,7 +13,7 @@ export async function GET(request) {
 
     const proto = request.headers.get("x-forwarded-proto") || "https";
     const host = request.headers.get("host") || "localhost:3000";
-    const baseUrl = `${proto}://${host}`;
+    const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || `${proto}://${host}`;
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
