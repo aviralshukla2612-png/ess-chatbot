@@ -3,48 +3,36 @@
 import React, { useState, useEffect } from "react";
 import { User, Plus, X, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
-// Matches Google Chrome profile avatar styles from user's screenshot
+// Generates consistent avatar initial and vibrant color based on user name
 function getProfileAvatarStyle(name) {
-  const n = (name || "").toLowerCase().trim();
-  if (n === "aniket") {
-    return {
-      bg: "bg-neutral-800",
-      border: "border-neutral-700",
-      text: "text-white font-bold",
-      initial: "A",
-    };
-  }
-  if (n === "ess") {
-    return {
-      bg: "bg-teal-600",
-      border: "border-sky-500 border-2",
-      text: "text-white font-bold",
-      initial: "e",
-    };
-  }
-  if (n === "mdz") {
-    return {
-      bg: "bg-cyan-600",
-      border: "border-sky-500 border-2",
-      text: "text-white font-bold",
-      initial: "m",
-    };
-  }
-  if (n === "srajan") {
-    return {
-      bg: "bg-purple-600",
-      border: "border-indigo-400 border-2",
-      text: "text-white font-bold",
-      initial: "s",
-    };
-  }
+  const initial = (name || "U").trim().charAt(0).toUpperCase();
+  const palette = [
+    { bg: "bg-indigo-600", text: "text-white font-bold" },
+    { bg: "bg-teal-600", text: "text-white font-bold" },
+    { bg: "bg-sky-600", text: "text-white font-bold" },
+    { bg: "bg-purple-600", text: "text-white font-bold" },
+    { bg: "bg-emerald-600", text: "text-white font-bold" },
+    { bg: "bg-blue-600", text: "text-white font-bold" },
+  ];
+  const charCode = (name || "U").charCodeAt(0) || 0;
+  const color = palette[charCode % palette.length];
   return {
-    bg: "bg-blue-600",
-    border: "border-blue-400 border-2",
-    text: "text-white font-bold",
-    initial: (name || "U").charAt(0).toUpperCase(),
+    bg: color.bg,
+    border: "border-transparent",
+    text: color.text,
+    initial,
   };
 }
+
+const FORBIDDEN_MOCK_EMAILS = new Set([
+  "aniketshukla2211@gmail.com",
+  "essnewfinal@gmail.com",
+  "mdzzzzzzzzz23@gmail.com",
+  "srajanshukla011005@gmail.com",
+  "aviralshukla2612@gmail.com",
+  "admin@company.com",
+  "admin@emperorsmartsolutions.com",
+]);
 
 export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }) {
   const [accounts, setAccounts] = useState([]);
@@ -71,38 +59,51 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }
       setErrorMessage("");
       try {
         const res = await fetch("/api/auth/google");
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         let apiAccounts = data.success && Array.isArray(data.accounts) ? data.accounts : [];
 
-        // Also merge any extra saved accounts from localStorage
+        // Purge old mock accounts from browser localStorage
         let localSaved = [];
         try {
           const raw = localStorage.getItem("nexus_google_saved_accounts");
-          if (raw) localSaved = JSON.parse(raw);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              localSaved = parsed.filter(
+                (a) => a && a.email && !FORBIDDEN_MOCK_EMAILS.has(a.email.toLowerCase().trim())
+              );
+              localStorage.setItem("nexus_google_saved_accounts", JSON.stringify(localSaved));
+            }
+          }
         } catch (e) {}
 
         const seen = new Set();
         const merged = [];
 
-        // Primary: Real user Chrome profiles (Aniket, ess, mdz, Srajan) - exclude default profile
         for (const acc of [...apiAccounts, ...localSaved]) {
-          if (
-            acc &&
-            acc.email &&
-            acc.email.toLowerCase() !== "aviralshukla2612@gmail.com" &&
-            acc.email.toLowerCase() !== "admin@company.com" &&
-            acc.email.toLowerCase() !== "admin@emperorsmartsolutions.com" &&
-            !seen.has(acc.email.toLowerCase())
-          ) {
-            seen.add(acc.email.toLowerCase());
-            merged.push(acc);
+          if (acc && acc.email) {
+            const clean = acc.email.toLowerCase().trim();
+            if (!FORBIDDEN_MOCK_EMAILS.has(clean) && !seen.has(clean)) {
+              seen.add(clean);
+              merged.push({
+                name: acc.name || clean.split("@")[0],
+                email: clean,
+                role: acc.role || "MEMBER",
+              });
+            }
           }
         }
 
         setAccounts(merged);
-        setIsAddingNew(false);
+        // If no authenticated accounts exist on this device, go directly to clean sign-in
+        if (merged.length === 0) {
+          setIsAddingNew(true);
+        } else {
+          setIsAddingNew(false);
+        }
       } catch (err) {
         console.error("Error loading accounts:", err);
+        setIsAddingNew(true);
       } finally {
         setIsLoading(false);
       }
@@ -110,6 +111,25 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }
 
     loadAccounts();
   }, [isOpen]);
+
+  const handleRemoveAccount = (e, emailToRemove) => {
+    e.stopPropagation();
+    try {
+      const cleanTarget = emailToRemove.toLowerCase().trim();
+      const raw = localStorage.getItem("nexus_google_saved_accounts");
+      const list = raw ? JSON.parse(raw) : [];
+      const updated = list.filter((a) => a && a.email && a.email.toLowerCase().trim() !== cleanTarget);
+      localStorage.setItem("nexus_google_saved_accounts", JSON.stringify(updated));
+
+      const remaining = accounts.filter((a) => a.email.toLowerCase().trim() !== cleanTarget);
+      setAccounts(remaining);
+      if (remaining.length === 0) {
+        setIsAddingNew(true);
+      }
+    } catch (err) {
+      console.error("Failed to remove account:", err);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -242,15 +262,16 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }
                     const isSigningInThis = isSubmitting && selectedEmail === acc.email;
 
                     return (
-                      <button
+                      <div
                         key={acc.email}
-                        type="button"
-                        onClick={() => handleSelectAccount(acc)}
-                        disabled={isSubmitting}
-                        className="w-full py-3 px-3 rounded-2xl flex items-center justify-between text-left hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer group disabled:opacity-50"
+                        className="w-full py-2.5 px-3 rounded-2xl flex items-center justify-between text-left hover:bg-slate-50 transition-all group"
                       >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          {/* Profile Avatar Circle matching user's Chrome style */}
+                        <button
+                          type="button"
+                          onClick={() => handleSelectAccount(acc)}
+                          disabled={isSubmitting}
+                          className="flex items-center gap-3.5 min-w-0 flex-1 cursor-pointer disabled:opacity-50 text-left"
+                        >
                           <div
                             className={`w-10 h-10 rounded-full ${avatarStyle.bg} ${avatarStyle.border} ${avatarStyle.text} flex items-center justify-center text-sm shrink-0 shadow-2xs`}
                           >
@@ -265,17 +286,32 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }
                               {acc.email}
                             </span>
                           </div>
-                        </div>
+                        </button>
 
-                        {/* Loading / Action Indicator */}
-                        <div className="shrink-0 pl-2">
+                        <div className="shrink-0 flex items-center gap-1.5 pl-2">
                           {isSigningInThis ? (
                             <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                           ) : (
-                            <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => handleRemoveAccount(e, acc.email)}
+                                title="Remove account"
+                                className="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectAccount(acc)}
+                                className="p-1.5 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                              >
+                                <ArrowRight className="w-4 h-4" />
+                              </button>
+                            </>
                           )}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
 
@@ -307,17 +343,19 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }
           ) : (
             /* Add Another Google Account Form */
             <form onSubmit={handleAddNewSubmit} className="space-y-4 animate-fade-in">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAddingNew(false);
-                  setErrorMessage("");
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to account list</span>
-              </button>
+              {accounts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingNew(false);
+                    setErrorMessage("");
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back to saved accounts</span>
+                </button>
+              )}
 
               <div className="space-y-1">
                 <label className="block text-xs font-semibold text-slate-700">
@@ -342,7 +380,7 @@ export default function GoogleAccountChooserModal({ isOpen, onClose, onSuccess }
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. Aniket Shukla"
+                  placeholder="e.g. John Doe"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white outline-hidden focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-sm text-slate-900"
                 />
               </div>
