@@ -21,6 +21,7 @@ import {
   LogOut,
   X,
   ShieldAlert,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -132,35 +133,103 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll">
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            const Icon = item.icon;
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 sidebar-scroll flex flex-col">
+          {(() => {
+            const botMatch = pathname.match(/^\/bots\/([^/?]+)/);
+            const activeBotId = botMatch && botMatch[1] !== "create" ? botMatch[1] : null;
 
             return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group",
-                  isActive
-                    ? "bg-[#4f46e5] text-white shadow-md shadow-indigo-600/30 font-semibold"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "w-4 h-4 transition-transform group-hover:scale-105",
-                    isActive ? "text-white" : "text-slate-400"
-                  )}
-                />
-                <span>{item.name}</span>
-              </Link>
+              <>
+                <div className="space-y-1">
+                  {navItems.map((item) => {
+                    const isBotsItem = item.href === "/bots";
+                    const isActive =
+                      pathname === item.href ||
+                      (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                    const Icon = item.icon;
+
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <Link
+                          href={item.href}
+                          onClick={onClose}
+                          className={cn(
+                            "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group",
+                            isActive
+                              ? "bg-[#4f46e5] text-white shadow-md shadow-indigo-600/30 font-semibold"
+                              : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                          )}
+                        >
+                          <Icon
+                            className={cn(
+                              "w-4 h-4 transition-transform group-hover:scale-105",
+                              isActive ? "text-white" : "text-slate-400"
+                            )}
+                          />
+                          <span className="flex-1">{item.name}</span>
+                          {isBotsItem && activeBotId && (
+                            <span className="text-[9px] bg-indigo-400/20 text-indigo-300 px-1.5 py-0.5 rounded-md font-mono font-semibold">
+                              Open
+                            </span>
+                          )}
+                        </Link>
+
+                        {/* When inside a Bot, show nested Bot Sub-navigation */}
+                        {isBotsItem && activeBotId && (
+                          <div className="ml-5 pl-2.5 border-l border-indigo-500/30 space-y-1 my-1.5 py-1">
+                            {[
+                              { name: "Overview", href: `/bots/${activeBotId}`, icon: BarChart3 },
+                              { name: "Knowledge Base", href: `/bots/${activeBotId}?tab=knowledge`, icon: BookOpen },
+                              { name: "Playground", href: `/bots/${activeBotId}?tab=test`, icon: Sparkles },
+                              { name: "Deploy Widget", href: `/bots/${activeBotId}/deploy`, icon: Share2 },
+                              { name: "Bot Settings", href: `/bots/${activeBotId}?tab=settings`, icon: Settings },
+                            ].map((sub) => {
+                              const SubIcon = sub.icon;
+                              const isSubActive = pathname === sub.href;
+
+                              return (
+                                <Link
+                                  key={sub.name}
+                                  href={sub.href}
+                                  onClick={onClose}
+                                  className={cn(
+                                    "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all",
+                                    isSubActive
+                                      ? "bg-indigo-600/25 text-indigo-300 font-semibold"
+                                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                                  )}
+                                >
+                                  <SubIcon className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                                  <span>{sub.name}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex-1 min-h-4" />
+
+                {/* Workspace / Bot status card */}
+                <div className="pt-2">
+                  <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="font-semibold text-slate-200">
+                        {activeBotId ? "Bot Console Active" : "AI Platform Online"}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                      LIVE
+                    </span>
+                  </div>
+                </div>
+              </>
             );
-          })}
+          })()}
         </div>
 
         {/* Footer */}
