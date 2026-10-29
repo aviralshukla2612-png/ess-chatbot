@@ -14,6 +14,11 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "NexusAI — Multi-Tenant AI Chatbot SaaS Platform",
   description: "Autonomous enterprise sales and customer support AI assistant builder.",
+  icons: {
+    icon: "/e-logoicon.webp",
+    shortcut: "/e-logoicon.webp",
+    apple: "/e-logoicon.webp",
+  },
 };
 
 export default function RootLayout({ children }) {

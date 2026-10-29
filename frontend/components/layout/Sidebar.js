@@ -59,8 +59,8 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="p-5 border-b border-slate-800/60">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-indigo-500 via-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25">
-                <Sparkles className="w-4 h-4" />
+              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-slate-900 border border-slate-700/80 shadow-md shadow-indigo-500/15">
+                <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
               </div>
               <span className="font-bold text-lg text-white tracking-tight">
                 ChatPilot

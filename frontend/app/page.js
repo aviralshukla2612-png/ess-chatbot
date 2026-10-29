@@ -26,8 +26,8 @@ export default function HomePage() {
       <nav className="border-b border-neutral-800/80 bg-neutral-950/70 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-500 via-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center bg-neutral-900 border border-neutral-800 shadow-md">
+              <img src="/e-logoicon.webp" alt="NexusAI Logo" className="w-full h-full object-contain p-1" />
             </div>
             <span className="font-bold text-base tracking-tight text-white flex items-center gap-1.5">
               NexusAI <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-sm bg-indigo-950 text-indigo-400 border border-indigo-800">SaaS</span>

@@ -54,8 +54,8 @@ export default function AdminSidebar({ isOpen, onClose }) {
         {/* ChatPilot Logo & Super Admin Header */}
         <div className="p-5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-indigo-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-              <MessageSquare className="w-4 h-4 fill-white" />
+            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-slate-900 border border-slate-700/80 shadow-md shadow-indigo-500/15">
+              <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
             </div>
             <span className="font-bold text-lg text-white tracking-tight">
               ChatPilot

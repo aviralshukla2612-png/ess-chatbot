@@ -130,8 +130,8 @@ export default function LoginPage() {
         <div className="relative z-10 space-y-8">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-slate-900 border border-slate-700 shadow-lg shadow-indigo-500/20">
+              <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
             </div>
             <div>
               <span className="font-extrabold text-2xl tracking-tight text-white">
@@ -230,8 +230,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl border border-slate-200/80 shadow-xl space-y-6">
           {/* Header */}
           <div className="text-center">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center mx-auto mb-3 bg-slate-50 border border-slate-200/80 shadow-xs">
+              <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1.5" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
               {activeTab === "login" ? "Welcome back" : "Create your workspace"}
