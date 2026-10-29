@@ -1,22 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
-
-function getDefaultPlatformUsers() {
-  return [
-    {
-      id: "u_super_01",
-      name: "Emperor Smart Solution",
-      email: "admin@emperorsmartsolutions.com",
-      organization: "Emperor Smart Solutions",
-      role: "Platform Super Admin",
-      status: "Active",
-      bots: 1,
-      lastLogin: "Active now",
-      createdAt: "2026-01-15",
-    },
-  ];
-}
+import { usersStore } from "@/lib/db/usersStore";
 
 export async function GET(request) {
   const auth = await requireSuperAdmin(request);
@@ -32,22 +17,7 @@ export async function GET(request) {
 
     // 1. Query real PostgreSQL database
     let dbUsers = [];
-    let totalCount = 0;
-
-    const countSql = `
-      SELECT COUNT(*)::int as total
-      FROM "User" u
-      LEFT JOIN "OrganizationMembership" om ON om."userId" = u.id
-      LEFT JOIN "Organization" o ON o.id = om."organizationId"
-      WHERE ($1 = '' OR u.name ILIKE $2 OR u.email ILIKE $2 OR o.name ILIKE $2);
-    `;
-    const searchPattern = `%${search}%`;
-    const countRes = await queryDb(countSql, [search, searchPattern]);
-
-    if (countRes.ok && countRes.rows[0]?.total > 0) {
-      totalCount = countRes.rows[0].total;
-      const offset = (page - 1) * limit;
-
+    try {
       const dataSql = `
         SELECT 
           u.id,
@@ -69,40 +39,64 @@ export async function GET(request) {
         FROM "User" u
         LEFT JOIN "OrganizationMembership" om ON om."userId" = u.id
         LEFT JOIN "Organization" o ON o.id = om."organizationId"
-        WHERE ($1 = '' OR u.name ILIKE $2 OR u.email ILIKE $2 OR o.name ILIKE $2)
-        ORDER BY u."createdAt" DESC
-        LIMIT $3 OFFSET $4;
+        ORDER BY u."createdAt" DESC;
       `;
-      const dataRes = await queryDb(dataSql, [search, searchPattern, limit, offset]);
-      if (dataRes.ok) {
+      const dataRes = await queryDb(dataSql);
+      if (dataRes.ok && Array.isArray(dataRes.rows)) {
         dbUsers = dataRes.rows;
       }
+    } catch (e) {
+      console.warn("[ADMIN_USERS_QUERY_FAIL]", e.message);
     }
 
-    // 2. Fallback to clean platform defaults (Zero dummy users)
-    let items = dbUsers;
-    if (items.length === 0 && totalCount === 0) {
-      let pool = getDefaultPlatformUsers();
+    // 2. Merge with durable persistent usersStore (contains Aviral Shukla & verified users)
+    const diskUsers = usersStore.getUsers();
+    const seenEmails = new Set();
+    const merged = [];
 
-      if (search) {
-        pool = pool.filter(
-          (u) =>
-            u.name.toLowerCase().includes(search) ||
-            u.email.toLowerCase().includes(search) ||
-            u.organization.toLowerCase().includes(search)
-        );
+    // Add PostgreSQL users first
+    for (const u of dbUsers) {
+      if (u.email && !seenEmails.has(u.email.toLowerCase())) {
+        seenEmails.add(u.email.toLowerCase());
+        merged.push(u);
       }
-
-      totalCount = pool.length;
-      const offset = (page - 1) * limit;
-      items = pool.slice(offset, offset + limit);
     }
 
+    // Add disk persistent users
+    for (const u of diskUsers) {
+      if (u.email && !seenEmails.has(u.email.toLowerCase())) {
+        seenEmails.add(u.email.toLowerCase());
+        merged.push(u);
+      }
+    }
+
+    // 3. Filter by search, role, status
+    let filtered = merged;
+    if (search) {
+      filtered = filtered.filter(
+        (u) =>
+          (u.name && u.name.toLowerCase().includes(search)) ||
+          (u.email && u.email.toLowerCase().includes(search)) ||
+          (u.organization && u.organization.toLowerCase().includes(search))
+      );
+    }
+
+    if (role !== "ALL") {
+      filtered = filtered.filter((u) => u.role && u.role.toUpperCase().includes(role));
+    }
+
+    if (status !== "ALL") {
+      filtered = filtered.filter((u) => u.status && u.status.toUpperCase() === status);
+    }
+
+    const totalCount = filtered.length;
     const totalPages = Math.ceil(totalCount / limit) || 1;
+    const offset = (page - 1) * limit;
+    const paginated = filtered.slice(offset, offset + limit);
 
     return NextResponse.json({
       success: true,
-      data: items,
+      data: paginated,
       pagination: {
         page,
         limit,
@@ -113,7 +107,7 @@ export async function GET(request) {
       },
       stats: {
         totalUsers: totalCount,
-        activeUsers: items.filter((u) => u.status === "Active" || u.status === "ACTIVE").length,
+        activeUsers: filtered.filter((u) => u.status === "Active" || u.status === "ACTIVE").length,
       },
     });
   } catch (err) {

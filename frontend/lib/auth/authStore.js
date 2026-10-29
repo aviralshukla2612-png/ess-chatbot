@@ -7,6 +7,7 @@
 import crypto from "crypto";
 import { queryDb } from "../db/dbPool.js";
 import { hashPassword, verifyPassword } from "./password.js";
+import { usersStore } from "../db/usersStore.js";
 
 // In-memory fallback stores for test/offline environments
 const memoryUsers = new Map();
@@ -122,10 +123,21 @@ export const authStore = {
       );
     }
 
-    // Always mirror in memory cache
+    // Always mirror in memory and disk cache
     memoryUsers.set(cleanEmail, userObj);
     memoryOrgs.set(orgId, orgObj);
     memoryMemberships.set(`${orgId}_${userId}`, memObj);
+
+    try {
+      usersStore.upsertUser({
+        id: userId,
+        name: cleanName,
+        email: cleanEmail,
+        organization: orgName,
+        role: userRole === "SUPER_ADMIN" ? "Platform Super Admin" : "Workspace Owner",
+        status: "Active",
+      });
+    } catch (e) {}
 
     return {
       user: { id: userId, name: cleanName, email: cleanEmail, role: userRole },
@@ -532,6 +544,17 @@ export const authStore = {
       user.name = "Emperor Smart Solution";
       user.role = "SUPER_ADMIN";
     }
+
+    try {
+      usersStore.upsertUser({
+        id: user.id,
+        name: isSuper ? "Emperor Smart Solution" : (user.name || cleanName),
+        email: user.email,
+        organization: isSuper ? "Emperor Smart Solutions" : (primaryMembership?.orgName || `${user.name || cleanName}'s Workspace`),
+        role: isSuper ? "Platform Super Admin" : "Workspace Owner",
+        status: "Active",
+      });
+    } catch (e) {}
 
     return {
       user: {
