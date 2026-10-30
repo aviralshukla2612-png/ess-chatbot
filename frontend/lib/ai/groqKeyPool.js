@@ -348,9 +348,10 @@ export class GroqKeyPoolManager {
     const activeKeysCount = keys.filter((k) => k.isActive && k.status === "active").length;
     const rateLimitedKeysCount = keys.filter((k) => k.status === "rate_limited").length;
     const totalDailyRequests = keys.reduce((sum, k) => sum + (k.dailyRequests || 0), 0);
-    const totalDailyTokens = keys.reduce((sum, k) => sum + (k.dailyTokens || 0), 0);
     const totalAllTimeTokens = keys.reduce((sum, k) => sum + (k.totalTokens || 0), 0);
     const totalCapacityRequests = Math.max(14400, keys.filter((k) => k.isActive).length * 14400);
+    const totalDailyTokenCapacity = Math.max(500000, keys.filter((k) => k.isActive).length * 500000);
+    const remainingDailyTokens = Math.max(0, totalDailyTokenCapacity - totalDailyTokens);
 
     return {
       totalKeys: keys.length,
@@ -358,6 +359,9 @@ export class GroqKeyPoolManager {
       rateLimitedKeysCount,
       totalDailyRequests,
       totalDailyTokens,
+      totalDailyTokenCapacity,
+      remainingDailyTokens,
+      overallTokenPercent: Math.min(100, Math.round((totalDailyTokens / totalDailyTokenCapacity) * 100)),
       totalAllTimeTokens: Math.max(6100, totalAllTimeTokens),
       totalTokens: Math.max(6100, totalAllTimeTokens),
       groqConsoleTokens: Math.max(6100, totalAllTimeTokens),
