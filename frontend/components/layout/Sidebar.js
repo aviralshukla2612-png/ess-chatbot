@@ -44,9 +44,11 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose, subscription: initialSub, onOpenCheckout }) {
   const pathname = usePathname();
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-  const [currentOrg, setCurrentOrg] = useState("My Workspace");
+  const [currentOrg, setCurrentOrg] = useState("Emperor Smart Solutions");
+  const [orgList, setOrgList] = useState(["Emperor Smart Solutions"]);
   const [currentUser, setCurrentUser] = useState(null);
   const [subData, setSubData] = useState(null);
+  const orgDropdownRef = React.useRef(null);
 
   const fetchSubscription = () => {
     fetch("/api/billing/subscription", { cache: "no-store", headers: { Pragma: "no-cache" } })
@@ -60,13 +62,38 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
   };
 
   React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (orgDropdownRef.current && !orgDropdownRef.current.contains(event.target)) {
+        setOrgDropdownOpen(false);
+      }
+    }
+    if (orgDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [orgDropdownOpen]);
+
+  React.useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
         if (d?.success && d?.user) {
           setCurrentUser(d.user);
-          const name = d.user.name || d.user.email.split("@")[0];
-          setCurrentOrg(`${name}'s Workspace`);
+          const realOrgs = [];
+          if (Array.isArray(d.memberships) && d.memberships.length > 0) {
+            d.memberships.forEach((m) => {
+              const name = m.orgName || m.name;
+              if (name && !realOrgs.includes(name)) realOrgs.push(name);
+            });
+          }
+          if (d.user.organization && !realOrgs.includes(d.user.organization)) {
+            realOrgs.unshift(d.user.organization);
+          }
+          if (realOrgs.length === 0) {
+            realOrgs.push("Emperor Smart Solutions");
+          }
+          setOrgList(realOrgs);
+          setCurrentOrg(realOrgs[0]);
         }
       })
       .catch(() => {});
@@ -124,13 +151,16 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
           </div>
 
           {/* Org Selector */}
-          <div className="mt-4 relative">
+          <div className="mt-4 relative" ref={orgDropdownRef}>
             <button
+              type="button"
               onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-              className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 transition-colors text-left"
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition-colors text-left"
             >
-              <div className="flex items-center gap-2 overflow-hidden">
-                <Building2 className="w-4 h-4 text-indigo-400 shrink-0" />
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center shrink-0">
+                  <Building2 className="w-4 h-4 text-indigo-400" />
+                </div>
                 <div className="truncate">
                   <p className="text-xs font-semibold text-white truncate">
                     {currentOrg}
@@ -138,28 +168,33 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                   <p className="text-[10px] text-slate-400">Organization</p>
                 </div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200", orgDropdownOpen && "rotate-180")} />
             </button>
 
             {orgDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-slate-900 border border-slate-800 rounded-xl shadow-xl p-1.5 text-xs">
-                {["Acme Healthcare", "Emperor Smart Solutions", "Apex FinTech"].map(
-                  (org) => (
-                    <button
-                      key={org}
-                      onClick={() => {
-                        setCurrentOrg(org);
-                        setOrgDropdownOpen(false);
-                      }}
-                      className={cn(
-                        "w-full text-left px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors",
-                        org === currentOrg && "text-indigo-400 font-semibold bg-slate-800/60"
-                      )}
-                    >
-                      {org}
-                    </button>
-                  )
-                )}
+              <div className="absolute top-full left-[-6px] right-[-6px] mt-2 z-50 bg-slate-900/98 backdrop-blur-xl border border-slate-700/80 rounded-xl shadow-2xl p-1.5 text-xs animate-in fade-in-0 zoom-in-95 duration-100">
+                <div className="px-2.5 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Workspaces
+                </div>
+                {orgList.map((org) => (
+                  <button
+                    key={org}
+                    type="button"
+                    onClick={() => {
+                      setCurrentOrg(org);
+                      setOrgDropdownOpen(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors",
+                      org === currentOrg && "text-indigo-400 font-semibold bg-indigo-950/40 border border-indigo-500/20"
+                    )}
+                  >
+                    <span className="truncate">{org}</span>
+                    {org === currentOrg && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0 shadow-xs shadow-indigo-400" />
+                    )}
+                  </button>
+                ))}
               </div>
             )}
           </div>
