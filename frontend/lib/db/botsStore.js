@@ -53,6 +53,42 @@ const DEFAULT_BOTS = [
     lastActive: "Just now",
     documents: [],
   },
+  {
+    id: "bot_1791618269632",
+    organizationId: DEFAULT_ORG_ID,
+    name: "Emperor AI Assistant",
+    company: "Emperor Smart Solutions",
+    description: "Official AI Sales Representative for Emperor Smart Solutions & Daily Cashbook.",
+    avatar: "🤖",
+    status: "Active",
+    primaryColor: "#4f46e5",
+    welcomeMessage: "Hello! Welcome to Emperor Smart Solutions. How can I help you today?",
+    placeholderText: "Type a message...",
+    launcherPosition: "bottom-right",
+    brandingEnabled: true,
+    personality: "Helpful & Professional",
+    systemPrompt: "You are Emperor AI, the official AI Sales Consultant for Emperor Smart Solutions (ESS). Assist visitors with Website Development, Mobile Application, AI Chatbot & RAG, Custom Software, ERP, Cloud & DevOps, and hiring dedicated developers. Founder: Yash Sharma, Co-Founder: Karan Makwana.",
+    responseLength: "Balanced",
+    instructions: "Be courteous, clear, and direct. Explain services and pricing tiers accurately.",
+    collectLeads: true,
+    allowedDomains: ["*"],
+    quickReplies: [
+      "Website Development",
+      "Mobile Application",
+      "AI Chatbot & RAG",
+      "Custom Software & ERP",
+      "UI/UX Design",
+      "Cloud & DevOps",
+      "Hire Dedicated Developers",
+    ],
+    conversationsCount: 0,
+    questionsCount: 0,
+    leadsCount: 0,
+    sourcesCount: 0,
+    createdDate: "Oct 9, 2026",
+    lastActive: "Just now",
+    documents: [],
+  },
 ];
 
 let memoryBotsCache = null;
@@ -160,12 +196,12 @@ export const botsStore = {
     match = scopedBots.find((b) => b.name && b.name.trim().toLowerCase() === queryLower);
     if (match) return match;
 
-    // 4. Default seed bot fallback (ensure official default bot is always accessible)
+    // 4. Default seed bot fallback (ensure official default bot & Cashbook bot are always accessible)
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
-      if (queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
-        const def = DEFAULT_BOTS.find((b) => b.id === "bot_aa");
+      if (queryLower === "bot_1791618269632" || queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
+        const def = DEFAULT_BOTS.find((b) => b.id === query || b.id === queryLower) || DEFAULT_BOTS[0];
         if (def) {
-          if (!bots.some((b) => b.id === "bot_aa")) {
+          if (!bots.some((b) => b.id === def.id)) {
             bots.push(def);
             saveBotsToDisk(bots);
           }
@@ -228,8 +264,8 @@ export const botsStore = {
 
     // Default seed bot fallback
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
-      if (queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
-        return DEFAULT_BOTS.find((b) => b.id === "bot_aa") || null;
+      if (queryLower === "bot_1791618269632" || queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
+        return DEFAULT_BOTS.find((b) => b.id === query || b.id === queryLower) || DEFAULT_BOTS[0];
       }
     }
 

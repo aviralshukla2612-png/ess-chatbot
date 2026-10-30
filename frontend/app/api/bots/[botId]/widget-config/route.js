@@ -18,6 +18,9 @@ export async function GET(request, { params }) {
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
 
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
+    if (!bot) {
+      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
+    }
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       console.warn(`[WIDGET_CONFIG_404] botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status=${bot?.status}`);
       return corsResponse(

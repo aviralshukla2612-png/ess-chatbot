@@ -81,6 +81,9 @@ async function handleSession(request, { params }) {
     // Strict resolution: Only support exact botId or legacy alias 'aa' -> 'bot_aa', never fall back to default/random bots
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
+    if (!bot) {
+      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
+    }
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       console.warn(`[CHAT_SESSION_404] Bot not found or inactive. botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status='${bot?.status}'`);
       return corsResponse(
