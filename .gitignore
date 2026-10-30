@@ -127,3 +127,5 @@ htmlcov/
 # ------------------------------------------------------------------------------
 !frontend/lib/
 !frontend/data/
+*.persistent.json
+frontend/data/*.persistent.json

@@ -32,18 +32,68 @@ function maskApiKey(key) {
   return key.slice(0, 7) + "..." + key.slice(-4);
 }
 
+function resolvePersistentFile() {
+  const primary = resolveKeysFile();
+  const dir = path.dirname(primary);
+  return path.join(dir, "groq_keys_pool.persistent.json");
+}
+
 function loadPoolFromFile() {
+  const primaryFile = resolveKeysFile();
+  const persistentFile = resolvePersistentFile();
+
+  let primaryKeys = null;
+  let persistentKeys = null;
+
   try {
-    const file = resolveKeysFile();
-    if (fs.existsSync(file)) {
-      const raw = fs.readFileSync(file, "utf8");
+    if (fs.existsSync(persistentFile)) {
+      const raw = fs.readFileSync(persistentFile, "utf8");
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        persistentKeys = parsed;
       }
     }
-  } catch (err) {
-    console.warn("[GROQ_POOL] Could not read keys pool file:", err.message);
+  } catch (err) {}
+
+  try {
+    if (fs.existsSync(primaryFile)) {
+      const raw = fs.readFileSync(primaryFile, "utf8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        primaryKeys = parsed;
+      }
+    }
+  } catch (err) {}
+
+  // If persistent file has more keys (e.g. after a git reset restored default 1 key),
+  // preserve the user's added keys and self-heal primaryFile!
+  if (persistentKeys && (!primaryKeys || persistentKeys.length > primaryKeys.length)) {
+    try {
+      fs.writeFileSync(primaryFile, JSON.stringify(persistentKeys, null, 2), "utf8");
+    } catch {}
+    return persistentKeys;
+  }
+
+  if (primaryKeys && primaryKeys.length > 0) {
+    if (persistentKeys && persistentKeys.length > 0) {
+      // Merge by key ID / maskedKey so no user added keys are ever dropped
+      const merged = [...primaryKeys];
+      for (const pk of persistentKeys) {
+        if (!merged.some((k) => k.id === pk.id || k.maskedKey === pk.maskedKey)) {
+          merged.push(pk);
+        }
+      }
+      try {
+        fs.writeFileSync(primaryFile, JSON.stringify(merged, null, 2), "utf8");
+        fs.writeFileSync(persistentFile, JSON.stringify(merged, null, 2), "utf8");
+      } catch {}
+      return merged;
+    }
+    return primaryKeys;
+  }
+
+  if (persistentKeys && persistentKeys.length > 0) {
+    return persistentKeys;
   }
 
   // Always seed with primary key so the pool is NEVER 0/0 empty
@@ -73,6 +123,7 @@ function loadPoolFromFile() {
     const dir = path.dirname(file);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(file, JSON.stringify([defaultEntry], null, 2), "utf8");
+    fs.writeFileSync(resolvePersistentFile(), JSON.stringify([defaultEntry], null, 2), "utf8");
   } catch {}
   return [defaultEntry];
 }
@@ -85,6 +136,10 @@ function savePoolToFile(pool = keyPool) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(file, JSON.stringify(pool, null, 2), "utf8");
+
+    // Also persist to unversioned backup file (immune to git reset)
+    const persistentFile = resolvePersistentFile();
+    fs.writeFileSync(persistentFile, JSON.stringify(pool, null, 2), "utf8");
   } catch (err) {
     console.error("[GROQ_POOL_SAVE_ERROR] Failed to persist pool:", err.message);
   }
