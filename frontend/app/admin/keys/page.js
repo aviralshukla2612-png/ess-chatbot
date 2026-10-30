@@ -149,6 +149,23 @@ export default function AdminKeysPage() {
     }
   };
 
+  const handleResetUsage = async (id, label) => {
+    try {
+      const res = await fetch("/api/admin/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset-usage", id }),
+      });
+      if (res.ok) {
+        setNotification({ type: "success", message: `Daily quota reset to 0 for '${label}'.` });
+        loadStats();
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-12 font-sans">
       {/* Top Banner & Title */}
@@ -280,23 +297,26 @@ export default function AdminKeysPage() {
 
       {/* Aggregate Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Active Pool Capacity */}
+        {/* Card 1: Active Serving Key */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
             <span>Active Serving Key</span>
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-slate-900">
-              {stats?.activeKeysCount || 1}
-            </span>
-            <span className="text-xs text-slate-400">
-              active • {stats?.standbyKeysCount || 0} standby {stats?.standbyKeysCount === 1 ? 'backup' : 'backups'}
+            <span className="text-xl font-extrabold text-slate-900 truncate max-w-[190px]" title={stats?.activeServingKey?.label || "None"}>
+              {stats?.activeServingKey?.label || "Auto-Failover Active"}
             </span>
           </div>
-          <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+          <p className="text-[11px] text-slate-500 flex items-center justify-between">
+            <span>Standby: <b className="text-slate-700">{stats?.standbyKeysCount || 0}</b> backup keys</span>
+            {stats?.limitCompletedKeysCount > 0 && (
+              <span className="text-purple-600 font-semibold">{stats.limitCompletedKeysCount} limit completed</span>
+            )}
+          </p>
+          <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 pt-0.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Priority Failover (1 Live, Rest on Standby)</span>
+            <span>Auto-switches to backup on limit reached</span>
           </div>
         </div>
 
@@ -311,7 +331,7 @@ export default function AdminKeysPage() {
               {stats?.totalDailyRequests || 0}
             </span>
             <span className="text-xs text-slate-400">
-              used / {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k available
+              used / {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k pool cap
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -322,10 +342,10 @@ export default function AdminKeysPage() {
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
             <span>
-              Left: <b className="text-teal-600 font-semibold">{Math.max(0, (stats?.totalCapacityRequests || 14400) - (stats?.totalDailyRequests || 0)).toLocaleString()}</b> remaining
+              Active Key: <b className="text-teal-600 font-semibold">{Math.max(0, (stats?.activeServingKeyDailyCap || 14400) - (stats?.activeServingKeyRequests || 0)).toLocaleString()}</b> left
             </span>
             <span className="text-slate-400 font-medium">
-              {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k Limit ({stats?.activeKeysCount || 1} {stats?.activeKeysCount === 1 ? "key" : "keys"})
+              Pool: {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k ({stats?.totalKeys || 1} keys)
             </span>
           </p>
         </div>
@@ -338,10 +358,12 @@ export default function AdminKeysPage() {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {((stats?.totalDailyTokens || 0) / 1000).toFixed(1)}k
+              {stats?.totalDailyTokens >= 1000
+                ? `${(stats.totalDailyTokens / 1000).toFixed(1)}k`
+                : (stats?.totalDailyTokens || 0)}
             </span>
             <span className="text-xs text-slate-400">
-              used / {((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k available
+              used ({stats?.totalDailyTokens?.toLocaleString() || 0} tok)
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -354,10 +376,10 @@ export default function AdminKeysPage() {
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
             <span>
-              Left: <b className="text-emerald-600 font-semibold">{((Math.max(0, (stats?.totalDailyTokenCapacity || 500000) - (stats?.totalDailyTokens || 0))) / 1000).toFixed(1)}k</b> remaining
+              Active Key: <b className="text-emerald-600 font-semibold">{((Math.max(0, (stats?.activeServingKeyTokenCap || 500000) - (stats?.activeServingKeyTokens || 0))) / 1000).toFixed(1)}k</b> left
             </span>
             <span className="text-emerald-600 font-semibold">
-              Free Tier ({((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k/day)
+              Pool: {((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k
             </span>
           </p>
         </div>
@@ -440,6 +462,11 @@ export default function AdminKeysPage() {
                         <AlertTriangle className="w-3 h-3 text-rose-600" />
                         Auth Error
                       </span>
+                    ) : k.status === "limit_completed" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                        Limit Completed (Auto-Switched)
+                      </span>
                     ) : k.status === "active_serving" ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -493,6 +520,15 @@ export default function AdminKeysPage() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">
+                      {k.status === "limit_completed" && (
+                        <button
+                          onClick={() => handleResetUsage(k.id, k.label)}
+                          title="Reset daily usage to 0 and re-enable key"
+                          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
+                        >
+                          Reset Limit
+                        </button>
+                      )}
                       {k.status === "standby" && (
                         <button
                           onClick={() => handleSetPrimary(k.id, k.label)}

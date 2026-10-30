@@ -185,37 +185,17 @@ function syncPool() {
         calibrated = true;
       }
     }
-    if ((primaryKey.totalTokens || 0) < 6600) {
-      primaryKey.totalTokens = 6600;
-      calibrated = true;
-    }
-    if ((primaryKey.dailyTokens || 0) < 6600) {
-      primaryKey.dailyTokens = 6600;
-      calibrated = true;
-    }
     if (primaryKey.status === "error") {
       primaryKey.status = "active";
       primaryKey.lastError = null;
       calibrated = true;
     }
-    if (!primaryKey.totalRequests || primaryKey.totalRequests === 0) {
-      primaryKey.totalRequests = 5;
-      primaryKey.dailyRequests = 5;
-      calibrated = true;
-    }
   }
 
-  // Auto-clean any secondary keys that were accidentally seeded with the 6,600 token / 5 req bug
+  // Ensure default limits and auto-clean secondary keys
   for (const k of keyPool) {
-    if (primaryKey && k.id !== primaryKey.id) {
-      if (k.totalTokens === 6600 && k.dailyTokens === 6600 && k.dailyRequests === 5 && k.totalRequests === 5) {
-        k.totalTokens = 0;
-        k.dailyTokens = 0;
-        k.totalRequests = 0;
-        k.dailyRequests = 0;
-        calibrated = true;
-      }
-    }
+    if (!k.dailyCap) k.dailyCap = 14400;
+    if (!k.tokenCap) k.tokenCap = 500000;
   }
 
   if (calibrated) {
@@ -242,8 +222,8 @@ export class GroqKeyPoolManager {
   }
 
   /**
-   * Acquire the next valid, non-rate-limited API key
-   * Uses round-robin rotation across active keys
+   * Acquire the next valid, non-rate-limited API key with automatic failover
+   * When Key 1 completes its limit, it automatically changes to Key 2!
    */
   static getNextKey() {
     syncPool();
@@ -259,17 +239,39 @@ export class GroqKeyPoolManager {
       }
     }
 
-    const available = keyPool.filter((k) => k.isActive && k.status !== "rate_limited" && k.status !== "error");
+    // Filter available keys that have NOT completed their limit, are not rate-limited, and not in error
+    const available = keyPool.filter((k) => {
+      if (!k.isActive || k.status === "error") return false;
+      if (k.rateLimitedUntil && k.rateLimitedUntil > now) return false;
+      const dailyCap = k.dailyCap || 14400;
+      const tokenCap = k.tokenCap || 500000;
+      if ((k.dailyRequests || 0) >= dailyCap) {
+        k.status = "limit_completed";
+        return false;
+      }
+      if ((k.dailyTokens || 0) >= tokenCap) {
+        k.status = "limit_completed";
+        return false;
+      }
+      if (k.liveRemainingRequests !== null && k.liveRemainingRequests !== undefined && k.liveRemainingRequests <= 0) {
+        k.status = "limit_completed";
+        return false;
+      }
+      if (k.liveRemainingTokens !== null && k.liveRemainingTokens !== undefined && k.liveRemainingTokens <= 0) {
+        k.status = "limit_completed";
+        return false;
+      }
+      return true;
+    });
 
     if (available.length === 0) {
-      // Check if any key is just temporarily rate limited
+      // Check if any key is just temporarily rate limited or if all completed
       const rateLimited = keyPool.filter((k) => k.isActive && k.status === "rate_limited");
       if (rateLimited.length > 0) {
         rateLimited.sort((a, b) => (a.rateLimitedUntil || 0) - (b.rateLimitedUntil || 0));
         const earliest = rateLimited[0];
-        console.warn(`[GROQ_POOL] All active keys rate-limited. Earliest available key: ${earliest.label} in ${Math.max(0, Math.round(((earliest.rateLimitedUntil || now) - now) / 1000))}s`);
+        console.warn(`[GROQ_POOL] All active keys busy/rate-limited. Earliest available key: ${earliest.label} in ${Math.max(0, Math.round(((earliest.rateLimitedUntil || now) - now) / 1000))}s`);
       }
-      // If nothing available in pool, return env key directly if valid
       const envKey = (process.env.GROQ_API_KEY || "").trim();
       if (envKey && envKey.length > 10 && !envKey.includes("your_groq")) {
         return {
@@ -283,8 +285,8 @@ export class GroqKeyPoolManager {
     }
 
     // Priority Failover Strategy:
-    // ALWAYS use the primary active key (available[0]).
-    // Other keys remain in standby (closed) and only take over if the primary key is rate-limited (429) or fails!
+    // ALWAYS use the first healthy key that hasn't completed its limit!
+    // As soon as Key 1 reaches its limit, available[0] AUTOMATICALLY becomes Key 2!
     const selected = available[0];
     return selected;
   }
@@ -308,7 +310,46 @@ export class GroqKeyPoolManager {
   }
 
   /**
+   * Reset a key's daily usage counters back to 0
+   */
+  static resetKeyUsage(keyId) {
+    syncPool();
+    const item = keyPool.find((k) => k.id === keyId || k.apiKey === keyId);
+    if (item) {
+      item.dailyRequests = 0;
+      item.dailyTokens = 0;
+      item.status = "active";
+      item.rateLimitedUntil = null;
+      item.lastError = null;
+      savePoolToFile(keyPool);
+      return item;
+    }
+    return null;
+  }
+
+  /**
+   * Update configurable request and token limits for a key
+   */
+  static updateKeyLimits({ id, dailyCap, tokenCap }) {
+    syncPool();
+    const item = keyPool.find((k) => k.id === id || k.apiKey === id);
+    if (item) {
+      if (dailyCap !== undefined && Number(dailyCap) > 0) item.dailyCap = Number(dailyCap);
+      if (tokenCap !== undefined && Number(tokenCap) > 0) item.tokenCap = Number(tokenCap);
+      if (item.status === "limit_completed") {
+        if ((item.dailyRequests || 0) < (item.dailyCap || 14400) && (item.dailyTokens || 0) < (item.tokenCap || 500000)) {
+          item.status = "active";
+        }
+      }
+      savePoolToFile(keyPool);
+      return item;
+    }
+    return null;
+  }
+
+  /**
    * Record successful usage (tokens, request count) dynamically
+   * If Key 1 reaches its limit, automatically marks it limit_completed so Key 2 takes over!
    */
   static recordSuccess(keyId, tokens = 0) {
     syncPool();
@@ -324,12 +365,12 @@ export class GroqKeyPoolManager {
         keyId === "primary"
     );
 
-    // 2. If not matched, fallback to first active key or first key in pool
-    if (!item) {
-      item = keyPool.find((k) => k.isActive) || keyPool[0];
+    // 2. If generic "primary", pick whichever key is currently active & serving
+    if (!item || keyId === "primary") {
+      item = keyPool.find((k) => k.isActive && k.status !== "limit_completed" && k.status !== "error") || keyPool[0];
     }
 
-    // 3. If pool is completely empty, create primary default key
+    // 3. Fallback creation
     if (!item) {
       const envKey = (process.env.GROQ_API_KEY || "").trim();
       item = {
@@ -344,6 +385,8 @@ export class GroqKeyPoolManager {
         totalTokens: 0,
         dailyRequests: 0,
         dailyTokens: 0,
+        dailyCap: 14400,
+        tokenCap: 500000,
         lastUsedAt: null,
         lastError: null,
         createdAt: new Date().toISOString(),
@@ -356,11 +399,21 @@ export class GroqKeyPoolManager {
     item.totalTokens = (item.totalTokens || 0) + tok;
     item.dailyTokens = (item.dailyTokens || 0) + tok;
     item.lastUsedAt = new Date().toISOString();
-    item.status = "active";
-    item.lastError = null;
+
+    // Check if this request completed the key's daily limit
+    const dailyCap = item.dailyCap || 14400;
+    const tokenCap = item.tokenCap || 500000;
+    if (item.dailyRequests >= dailyCap || item.dailyTokens >= tokenCap) {
+      item.status = "limit_completed";
+      item.lastError = `Daily limit reached (${item.dailyRequests}/${dailyCap} req, ${item.dailyTokens}/${tokenCap} tok). Auto-switched to backup key.`;
+      console.warn(`[GROQ_POOL] Key '${item.label}' COMPLETED its daily limit! Next request will automatically switch to backup key.`);
+    } else {
+      item.status = "active";
+      item.lastError = null;
+    }
 
     savePoolToFile(keyPool);
-    console.log(`[GROQ_POOL] Success recorded for '${item.label}': +${tok} tokens, daily=${item.dailyTokens}, reqs=${item.dailyRequests}`);
+    console.log(`[GROQ_POOL] Success recorded for '${item.label}': +${tok} tokens, daily=${item.dailyTokens}/${tokenCap}, reqs=${item.dailyRequests}/${dailyCap}`);
     return item;
   }
 
@@ -375,7 +428,7 @@ export class GroqKeyPoolManager {
       item.status = "rate_limited";
       item.rateLimitedUntil = Date.now() + cooldownSeconds * 1000;
       item.lastError = errorMessage;
-      console.warn(`[GROQ_POOL] Key '${item.label}' (${item.maskedKey}) marked RATE_LIMITED for ${cooldownSeconds}s. Failing over to next key...`);
+      console.warn(`[GROQ_POOL] Key '${item.label}' (${item.maskedKey}) marked RATE_LIMITED for ${cooldownSeconds}s. Automatically failing over to next key...`);
       savePoolToFile(keyPool);
     }
   }
@@ -400,8 +453,20 @@ export class GroqKeyPoolManager {
     syncPool();
     const now = Date.now();
 
-    // Identify which single key is currently Active & Serving
-    const activeServingKey = keyPool.find((k) => k.isActive && (!k.rateLimitedUntil || k.rateLimitedUntil <= now) && k.status !== "error") || null;
+    const isKeyAvailable = (k) => {
+      if (!k.isActive || k.status === "error") return false;
+      if (k.rateLimitedUntil && k.rateLimitedUntil > now) return false;
+      const dailyCap = k.dailyCap || 14400;
+      const tokenCap = k.tokenCap || 500000;
+      if ((k.dailyRequests || 0) >= dailyCap) return false;
+      if ((k.dailyTokens || 0) >= tokenCap) return false;
+      if (k.liveRemainingRequests !== null && k.liveRemainingRequests !== undefined && k.liveRemainingRequests <= 0) return false;
+      if (k.liveRemainingTokens !== null && k.liveRemainingTokens !== undefined && k.liveRemainingTokens <= 0) return false;
+      return true;
+    };
+
+    // Identify which single key is currently Active & Serving (must be available and not completed limit!)
+    const activeServingKey = keyPool.find(isKeyAvailable) || null;
     const activeServingKeyId = activeServingKey ? activeServingKey.id : null;
 
     const keys = keyPool.map((k) => {
@@ -409,9 +474,15 @@ export class GroqKeyPoolManager {
         ? Math.round((k.rateLimitedUntil - now) / 1000)
         : 0;
 
-      // Groq Free Tier has ~14,400 daily requests per key
-      const dailyCap = 14400;
+      const dailyCap = k.dailyCap || 14400;
+      const tokenCap = k.tokenCap || 500000;
       const dailyPercent = Math.min(100, Math.round(((k.dailyRequests || 0) / dailyCap) * 100));
+      const tokenPercent = Math.min(100, Math.round(((k.dailyTokens || 0) / tokenCap) * 100));
+
+      const isLimitCompleted = (k.dailyRequests || 0) >= dailyCap ||
+        (k.dailyTokens || 0) >= tokenCap ||
+        (k.liveRemainingRequests !== null && k.liveRemainingRequests !== undefined && k.liveRemainingRequests <= 0) ||
+        (k.liveRemainingTokens !== null && k.liveRemainingTokens !== undefined && k.liveRemainingTokens <= 0);
 
       let poolRole = "disabled";
       if (k.isActive) {
@@ -419,10 +490,12 @@ export class GroqKeyPoolManager {
           poolRole = "rate_limited";
         } else if (k.status === "error") {
           poolRole = "error";
+        } else if (isLimitCompleted) {
+          poolRole = "limit_completed"; // Daily quota completed! Automatically passed to next key
         } else if (k.id === activeServingKeyId) {
-          poolRole = "active_serving"; // Currently active & serving all requests
+          poolRole = "active_serving"; // Currently active & serving all traffic
         } else {
-          poolRole = "standby"; // Closed / Standby (backup on deck)
+          poolRole = "standby"; // Closed / Standby (backup ready on deck)
         }
       }
 
@@ -433,7 +506,7 @@ export class GroqKeyPoolManager {
         isActive: k.isActive,
         isServing: k.id === activeServingKeyId,
         poolRole,
-        status: poolRole === "rate_limited" ? "rate_limited" : poolRole === "error" ? "error" : poolRole === "active_serving" ? "active_serving" : poolRole === "standby" ? "standby" : "disabled",
+        status: poolRole,
         cooldownRemainingSec,
         totalRequests: k.totalRequests || 0,
         totalTokens: k.totalTokens || 0,
@@ -444,16 +517,19 @@ export class GroqKeyPoolManager {
         liveRemainingRequests: k.liveRemainingRequests || null,
         liveLimitRequests: k.liveLimitRequests || null,
         dailyCap,
+        tokenCap,
         dailyPercent,
+        tokenPercent,
         lastUsedAt: k.lastUsedAt,
         lastError: k.lastError,
         createdAt: k.createdAt,
       };
     });
 
-    const activeKeysCount = activeServingKey ? 1 : 0; // Exactly 1 active serving key!
+    const activeKeysCount = activeServingKey ? 1 : 0; // Exactly 1 active serving key
     const standbyKeysCount = keys.filter((k) => k.poolRole === "standby").length;
     const rateLimitedKeysCount = keys.filter((k) => k.poolRole === "rate_limited").length;
+    const limitCompletedKeysCount = keys.filter((k) => k.poolRole === "limit_completed").length;
     const totalDailyRequests = keys.reduce((sum, k) => sum + (k.dailyRequests || 0), 0);
     const totalDailyTokens = keys.reduce((sum, k) => sum + (k.dailyTokens || 0), 0);
     const totalAllTimeTokens = keys.reduce((sum, k) => sum + (k.totalTokens || 0), 0);
@@ -461,11 +537,23 @@ export class GroqKeyPoolManager {
     const totalDailyTokenCapacity = Math.max(500000, keys.filter((k) => k.isActive).length * 500000);
     const remainingDailyTokens = Math.max(0, totalDailyTokenCapacity - totalDailyTokens);
 
+    const activeServingKeyRequests = activeServingKey ? (activeServingKey.dailyRequests || 0) : 0;
+    const activeServingKeyTokens = activeServingKey ? (activeServingKey.dailyTokens || 0) : 0;
+    const activeServingKeyDailyCap = activeServingKey ? (activeServingKey.dailyCap || 14400) : 14400;
+    const activeServingKeyTokenCap = activeServingKey ? (activeServingKey.tokenCap || 500000) : 500000;
+
     return {
       totalKeys: keys.length,
       activeKeysCount, // Exactly 1 Active Serving
-      standbyKeysCount, // All other keys are Standby Backup
+      standbyKeysCount, // All other available keys are Standby Backup
+      limitCompletedKeysCount, // Keys that completed their limit
       activeServingKey: activeServingKey ? { id: activeServingKey.id, label: activeServingKey.label, maskedKey: activeServingKey.maskedKey } : null,
+      activeServingKeyRequests,
+      activeServingKeyTokens,
+      activeServingKeyDailyCap,
+      activeServingKeyTokenCap,
+      activeServingKeyRemainingRequests: Math.max(0, activeServingKeyDailyCap - activeServingKeyRequests),
+      activeServingKeyRemainingTokens: Math.max(0, activeServingKeyTokenCap - activeServingKeyTokens),
       rateLimitedKeysCount,
       totalDailyRequests,
       totalDailyTokens,

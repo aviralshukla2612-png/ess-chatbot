@@ -104,6 +104,18 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, message: "Promoted to primary active key", key: promoted });
     }
 
+    if (action === "update-limits") {
+      const { id, dailyCap, tokenCap } = body;
+      const updated = GroqKeyPoolManager.updateKeyLimits({ id, dailyCap, tokenCap });
+      return NextResponse.json({ ok: true, message: "Key limits updated", key: updated });
+    }
+
+    if (action === "reset-usage") {
+      const { id } = body;
+      const reset = GroqKeyPoolManager.resetKeyUsage(id);
+      return NextResponse.json({ ok: true, message: "Key usage reset to 0", key: reset });
+    }
+
     if (action === "sync-baseline") {
       const { id, baselineTokens } = body;
       const updated = GroqKeyPoolManager.syncGroqBaseline(id, baselineTokens);
