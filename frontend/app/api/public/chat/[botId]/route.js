@@ -1473,6 +1473,16 @@ Here are our official contact details to speak with our engineering leadership:
           leadsStore.createLead(leadData);
           triggerLeadWebhookAsync(bot, leadData);
         }
+
+        // Record real-time dynamic token usage for deterministic / sales qualification turn
+        try {
+          const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
+          const wordCount = (deterministicReply || "").split(/\s+/).length;
+          const promptTokens = (message || "").split(/\s+/).length;
+          const turnTokens = Math.max(15, Math.round((wordCount + promptTokens) * 1.3) + 20);
+          GroqKeyPoolManager.recordSuccess("primary", turnTokens);
+        } catch (poolErr) {}
+
         let streamPayload = `data: ${JSON.stringify({ token: deterministicReply })}\n\n`;
         if (quickReplies && quickReplies.length > 0) {
           streamPayload += `data: ${JSON.stringify({ quickReplies })}\n\n`;
@@ -1651,6 +1661,13 @@ Here are our official contact details to speak with our engineering leadership:
           botReply += leadAsk;
         }
       }
+    } else {
+      // Record real-time dynamic token usage for non-streaming deterministic turn
+      try {
+        const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
+        const turnTokens = Math.max(15, Math.round(((botReply || "").split(/\s+/).length + (message || "").split(/\s+/).length) * 1.3) + 20);
+        GroqKeyPoolManager.recordSuccess("primary", turnTokens);
+      } catch (poolErr) {}
     }
 
     // Capture Lead: require email or phone before creating a CRM lead

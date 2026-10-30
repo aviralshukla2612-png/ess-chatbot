@@ -48,7 +48,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
   React.useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await fetch("/api/admin/keys");
+        const res = await fetch("/api/admin/keys", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           if (data.ok) setKeyStats(data.stats);
@@ -56,7 +56,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       } catch {}
     }
     fetchStats();
-    const timer = setInterval(fetchStats, 10000);
+    const timer = setInterval(fetchStats, 3500);
     return () => clearInterval(timer);
   }, []);
 

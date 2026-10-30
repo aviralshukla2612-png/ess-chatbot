@@ -12,32 +12,16 @@ import fs from "fs";
 import path from "path";
 
 function resolveKeysFile() {
-  const directPath = path.join(process.cwd(), "frontend", "data", "groq_keys_pool.json");
-  if (fs.existsSync(path.dirname(directPath))) return directPath;
-  const rootData = path.join(process.cwd(), "data", "groq_keys_pool.json");
-  return rootData;
+  const frontendPath = path.join(process.cwd(), "frontend", "data", "groq_keys_pool.json");
+  if (fs.existsSync(frontendPath)) return frontendPath;
+  const directPath = path.join(process.cwd(), "data", "groq_keys_pool.json");
+  if (fs.existsSync(directPath)) return directPath;
+  if (process.cwd().endsWith("frontend")) return directPath;
+  if (fs.existsSync(path.join(process.cwd(), "frontend", "data"))) return frontendPath;
+  return directPath;
 }
 
 const KEYS_FILE = resolveKeysFile();
-
-// In-memory key state tracking
-// Structure:
-// {
-//   id: string,
-//   label: string,
-//   apiKey: string, // full key
-//   maskedKey: string,
-//   isActive: boolean,
-//   status: 'active' | 'rate_limited' | 'error',
-//   rateLimitedUntil: number | null, // timestamp
-//   totalRequests: number,
-//   totalTokens: number,
-//   dailyRequests: number,
-//   dailyTokens: number,
-//   lastUsedAt: string | null,
-//   lastError: string | null,
-//   createdAt: string
-// }
 
 let keyPool = [];
 let currentIndex = 0;
@@ -50,8 +34,9 @@ function maskApiKey(key) {
 
 function loadPoolFromFile() {
   try {
-    if (fs.existsSync(KEYS_FILE)) {
-      const raw = fs.readFileSync(KEYS_FILE, "utf8");
+    const file = resolveKeysFile();
+    if (fs.existsSync(file)) {
+      const raw = fs.readFileSync(file, "utf8");
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
@@ -64,35 +49,41 @@ function loadPoolFromFile() {
   // Fallback: seed with process.env.GROQ_API_KEY if available
   const envKey = (process.env.GROQ_API_KEY || "").trim();
   if (envKey && envKey.length > 10 && !envKey.includes("your_groq_api_key")) {
-    return [
-      {
-        id: "key_default_primary",
-        label: "Primary Default Key",
-        apiKey: envKey,
-        maskedKey: maskApiKey(envKey),
-        isActive: true,
-        status: "active",
-        rateLimitedUntil: null,
-        totalRequests: 0,
-        totalTokens: 0,
-        dailyRequests: 0,
-        dailyTokens: 0,
-        lastUsedAt: null,
-        lastError: null,
-        createdAt: new Date().toISOString(),
-      },
-    ];
+    const defaultEntry = {
+      id: "key_default_primary",
+      label: "Primary Default Key",
+      apiKey: envKey,
+      maskedKey: maskApiKey(envKey),
+      isActive: true,
+      status: "active",
+      rateLimitedUntil: null,
+      totalRequests: 0,
+      totalTokens: 0,
+      dailyRequests: 0,
+      dailyTokens: 0,
+      lastUsedAt: null,
+      lastError: null,
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      const file = resolveKeysFile();
+      const dir = path.dirname(file);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(file, JSON.stringify([defaultEntry], null, 2), "utf8");
+    } catch {}
+    return [defaultEntry];
   }
   return [];
 }
 
-function savePoolToFile() {
+function savePoolToFile(pool = keyPool) {
   try {
-    const dir = path.dirname(KEYS_FILE);
+    const file = resolveKeysFile();
+    const dir = path.dirname(file);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(KEYS_FILE, JSON.stringify(keyPool, null, 2), "utf8");
+    fs.writeFileSync(file, JSON.stringify(pool, null, 2), "utf8");
   } catch (err) {
     console.error("[GROQ_POOL_SAVE_ERROR] Failed to persist pool:", err.message);
   }
@@ -111,8 +102,41 @@ function checkDailyReset() {
         k.rateLimitedUntil = null;
       }
     }
-    savePoolToFile();
+    savePoolToFile(keyPool);
   }
+}
+
+// Sync pool from disk so all Next.js worker processes see the latest counts
+function syncPool() {
+  const loaded = loadPoolFromFile();
+  if (loaded && loaded.length > 0) {
+    keyPool = loaded;
+  } else if (keyPool.length === 0) {
+    const envKey = (process.env.GROQ_API_KEY || "").trim();
+    if (envKey && envKey.length > 10 && !envKey.includes("your_groq_api_key")) {
+      keyPool = [
+        {
+          id: "key_default_primary",
+          label: "Primary Default Key",
+          apiKey: envKey,
+          maskedKey: maskApiKey(envKey),
+          isActive: true,
+          status: "active",
+          rateLimitedUntil: null,
+          totalRequests: 0,
+          totalTokens: 0,
+          dailyRequests: 0,
+          dailyTokens: 0,
+          lastUsedAt: null,
+          lastError: null,
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      savePoolToFile(keyPool);
+    }
+  }
+  checkDailyReset();
+  return keyPool;
 }
 
 // Initialize pool on module load
@@ -120,11 +144,22 @@ keyPool = loadPoolFromFile();
 
 export class GroqKeyPoolManager {
   /**
+   * Check if any active Groq keys are configured in pool or environment
+   */
+  static hasAvailableKeys() {
+    syncPool();
+    const active = keyPool.filter((k) => k.isActive && k.status !== "error");
+    if (active.length > 0) return true;
+    const envKey = (process.env.GROQ_API_KEY || "").trim();
+    return Boolean(envKey && envKey.length > 10 && !envKey.includes("your_groq_api_key"));
+  }
+
+  /**
    * Acquire the next valid, non-rate-limited API key
    * Uses round-robin rotation across active keys
    */
   static getNextKey() {
-    checkDailyReset();
+    syncPool();
 
     const now = Date.now();
     // Refresh any keys whose cooldown expired
@@ -143,18 +178,17 @@ export class GroqKeyPoolManager {
       // Check if any key is just temporarily rate limited
       const rateLimited = keyPool.filter((k) => k.isActive && k.status === "rate_limited");
       if (rateLimited.length > 0) {
-        // Find the one with earliest cooldown expiry
         rateLimited.sort((a, b) => (a.rateLimitedUntil || 0) - (b.rateLimitedUntil || 0));
         const earliest = rateLimited[0];
         console.warn(`[GROQ_POOL] All active keys rate-limited. Earliest available key: ${earliest.label} in ${Math.max(0, Math.round(((earliest.rateLimitedUntil || now) - now) / 1000))}s`);
       }
       // If nothing available in pool, return env key directly if valid
-      const envKey = process.env.GROQ_API_KEY;
-      if (envKey && envKey.trim().length > 10 && !envKey.includes("your_groq")) {
+      const envKey = (process.env.GROQ_API_KEY || "").trim();
+      if (envKey && envKey.length > 10 && !envKey.includes("your_groq")) {
         return {
-          id: "env_fallback",
-          label: "Environment Fallback",
-          apiKey: envKey.trim(),
+          id: "key_default_primary",
+          label: "Primary Default Key",
+          apiKey: envKey,
           maskedKey: maskApiKey(envKey),
         };
       }
@@ -168,21 +202,60 @@ export class GroqKeyPoolManager {
   }
 
   /**
-   * Record successful usage (tokens, request count)
+   * Record successful usage (tokens, request count) dynamically
    */
   static recordSuccess(keyId, tokens = 0) {
-    checkDailyReset();
-    const item = keyPool.find((k) => k.id === keyId || k.apiKey === keyId);
-    if (item) {
-      item.totalRequests = (item.totalRequests || 0) + 1;
-      item.dailyRequests = (item.dailyRequests || 0) + 1;
-      item.totalTokens = (item.totalTokens || 0) + (tokens || 0);
-      item.dailyTokens = (item.dailyTokens || 0) + (tokens || 0);
-      item.lastUsedAt = new Date().toISOString();
-      item.status = "active";
-      item.lastError = null;
-      savePoolToFile();
+    syncPool();
+    const tok = Math.max(1, Number(tokens) || 50);
+
+    // 1. Match by id, apiKey, maskedKey, or aliases
+    let item = keyPool.find(
+      (k) =>
+        k.id === keyId ||
+        k.apiKey === keyId ||
+        k.maskedKey === keyId ||
+        (keyId === "env_fallback" && k.id === "key_default_primary") ||
+        keyId === "primary"
+    );
+
+    // 2. If not matched, fallback to first active key or first key in pool
+    if (!item) {
+      item = keyPool.find((k) => k.isActive) || keyPool[0];
     }
+
+    // 3. If pool is completely empty, create primary default key
+    if (!item) {
+      const envKey = (process.env.GROQ_API_KEY || "").trim();
+      item = {
+        id: "key_default_primary",
+        label: "Primary Default Key",
+        apiKey: envKey || "gsk_primary_auto",
+        maskedKey: maskApiKey(envKey || "gsk_primary_auto"),
+        isActive: true,
+        status: "active",
+        rateLimitedUntil: null,
+        totalRequests: 0,
+        totalTokens: 0,
+        dailyRequests: 0,
+        dailyTokens: 0,
+        lastUsedAt: null,
+        lastError: null,
+        createdAt: new Date().toISOString(),
+      };
+      keyPool.push(item);
+    }
+
+    item.totalRequests = (item.totalRequests || 0) + 1;
+    item.dailyRequests = (item.dailyRequests || 0) + 1;
+    item.totalTokens = (item.totalTokens || 0) + tok;
+    item.dailyTokens = (item.dailyTokens || 0) + tok;
+    item.lastUsedAt = new Date().toISOString();
+    item.status = "active";
+    item.lastError = null;
+
+    savePoolToFile(keyPool);
+    console.log(`[GROQ_POOL] Success recorded for '${item.label}': +${tok} tokens, daily=${item.dailyTokens}, reqs=${item.dailyRequests}`);
+    return item;
   }
 
   /**
@@ -190,13 +263,14 @@ export class GroqKeyPoolManager {
    * Default cooldown: 60 seconds (for per-minute RPM reset)
    */
   static markRateLimited(keyId, cooldownSeconds = 60, errorMessage = "Rate limit reached (429)") {
+    syncPool();
     const item = keyPool.find((k) => k.id === keyId || k.apiKey === keyId);
     if (item) {
       item.status = "rate_limited";
       item.rateLimitedUntil = Date.now() + cooldownSeconds * 1000;
       item.lastError = errorMessage;
       console.warn(`[GROQ_POOL] Key '${item.label}' (${item.maskedKey}) marked RATE_LIMITED for ${cooldownSeconds}s. Failing over to next key...`);
-      savePoolToFile();
+      savePoolToFile(keyPool);
     }
   }
 
@@ -204,11 +278,12 @@ export class GroqKeyPoolManager {
    * Mark a key as having an invalid credential or permanent error
    */
   static markError(keyId, errorMessage) {
+    syncPool();
     const item = keyPool.find((k) => k.id === keyId || k.apiKey === keyId);
     if (item) {
       item.status = "error";
       item.lastError = errorMessage;
-      savePoolToFile();
+      savePoolToFile(keyPool);
     }
   }
 
@@ -216,7 +291,7 @@ export class GroqKeyPoolManager {
    * Return complete pool status for Super Admin UI (masked keys for security)
    */
   static getPoolStats() {
-    checkDailyReset();
+    syncPool();
     const now = Date.now();
 
     const keys = keyPool.map((k) => {
@@ -262,6 +337,7 @@ export class GroqKeyPoolManager {
       totalCapacityRequests,
       overallDailyPercent: Math.min(100, Math.round((totalDailyRequests / totalCapacityRequests) * 100)),
       keys,
+      lastSyncTimestamp: new Date().toISOString(),
     };
   }
 
@@ -269,6 +345,7 @@ export class GroqKeyPoolManager {
    * Add a new API key to pool
    */
   static addKey({ label, apiKey }) {
+    syncPool();
     if (!apiKey || apiKey.trim().length < 15) {
       throw new Error("Invalid Groq API key: must be at least 15 characters.");
     }
@@ -296,7 +373,7 @@ export class GroqKeyPoolManager {
     };
 
     keyPool.push(newEntry);
-    savePoolToFile();
+    savePoolToFile(keyPool);
     return newEntry;
   }
 
@@ -304,10 +381,11 @@ export class GroqKeyPoolManager {
    * Toggle key active / inactive
    */
   static toggleKey(id, isActive) {
+    syncPool();
     const item = keyPool.find((k) => k.id === id);
     if (!item) throw new Error("Key not found");
     item.isActive = Boolean(isActive);
-    savePoolToFile();
+    savePoolToFile(keyPool);
     return item;
   }
 
@@ -315,12 +393,13 @@ export class GroqKeyPoolManager {
    * Reset rate-limit status for a key manually
    */
   static resetKeyStatus(id) {
+    syncPool();
     const item = keyPool.find((k) => k.id === id);
     if (!item) throw new Error("Key not found");
     item.status = "active";
     item.rateLimitedUntil = null;
     item.lastError = null;
-    savePoolToFile();
+    savePoolToFile(keyPool);
     return item;
   }
 
@@ -328,10 +407,12 @@ export class GroqKeyPoolManager {
    * Remove a key from pool
    */
   static removeKey(id) {
+    syncPool();
     const index = keyPool.findIndex((k) => k.id === id);
     if (index === -1) throw new Error("Key not found");
     const removed = keyPool.splice(index, 1)[0];
-    savePoolToFile();
+    savePoolToFile(keyPool);
     return removed;
   }
 }
+

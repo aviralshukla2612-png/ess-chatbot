@@ -31,7 +31,7 @@ export default function AdminKeysPage() {
 
   const loadStats = async () => {
     try {
-      const res = await fetch("/api/admin/keys");
+      const res = await fetch("/api/admin/keys", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         if (data.ok) {
@@ -47,7 +47,7 @@ export default function AdminKeysPage() {
 
   useEffect(() => {
     loadStats();
-    const interval = setInterval(loadStats, 8000); // auto-refresh every 8s
+    const interval = setInterval(loadStats, 3000); // dynamic auto-refresh every 3s
     return () => clearInterval(interval);
   }, []);
 
@@ -146,6 +146,10 @@ export default function AdminKeysPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Dynamic Sync (3s)</span>
+          </div>
           <button
             onClick={loadStats}
             disabled={loading}

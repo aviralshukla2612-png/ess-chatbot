@@ -2,13 +2,25 @@ import { NextResponse } from "next/server";
 import { GroqKeyPoolManager } from "@/lib/ai/groqKeyPool";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request) {
   const auth = await requireSuperAdmin(request);
   if (!auth.ok) return auth.response;
 
   try {
     const stats = GroqKeyPoolManager.getPoolStats();
-    return NextResponse.json({ ok: true, stats });
+    return NextResponse.json(
+      { ok: true, stats },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }

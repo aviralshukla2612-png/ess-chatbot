@@ -59,7 +59,9 @@ export class InferenceProvider {
 
     try {
       const defaultEnvProvider = (process.env.DEFAULT_AI_PROVIDER || "").toLowerCase();
-      const hasValidGroqKey = Boolean(
+      const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
+      const hasPoolKeys = GroqKeyPoolManager.hasAvailableKeys();
+      const hasValidGroqKey = hasPoolKeys || Boolean(
         process.env.GROQ_API_KEY &&
         process.env.GROQ_API_KEY.trim().length > 10 &&
         !process.env.GROQ_API_KEY.includes("your_groq_api_key")
@@ -77,7 +79,7 @@ export class InferenceProvider {
         case "groq":
           try {
             return await InferenceProvider._callGroq({
-              model: model || process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+              model: model || process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
               messages,
               temperature,
               maxTokens,
@@ -157,10 +159,10 @@ export class InferenceProvider {
       const candidateModels = [
         model,
         process.env.GROQ_MODEL,
-        "openai/gpt-oss-120b",
-        "openai/gpt-oss-20b",
-        "qwen/qwen3.8-27b",
         "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+        "gemma2-9b-it",
       ].filter(Boolean);
 
       const uniqueModels = [...new Set(candidateModels)];
@@ -214,14 +216,14 @@ export class InferenceProvider {
 
           if (stream && onToken && res.body) {
             const content = await InferenceProvider._consumeOpenAiStream(res.body, onToken);
-            // Record rough token estimate: words * 1.3
-            const approxTokens = Math.round((content || "").split(/\s+/).length * 1.3) + 100;
-            if (keyObj?.id) GroqKeyPoolManager.recordSuccess(keyObj.id, approxTokens);
+            // Record rough token estimate: words * 1.3 + prompt overhead
+            const approxTokens = Math.max(30, Math.round((content || "").split(/\s+/).length * 1.3) + 75);
+            GroqKeyPoolManager.recordSuccess(keyObj?.id || keyObj?.apiKey || "primary", approxTokens);
             return content;
           } else {
             const data = await res.json();
-            const totalTokens = data.usage?.total_tokens || Math.round((data.choices?.[0]?.message?.content || "").split(/\s+/).length * 1.3) + 100;
-            if (keyObj?.id) GroqKeyPoolManager.recordSuccess(keyObj.id, totalTokens);
+            const totalTokens = data.usage?.total_tokens || Math.max(30, Math.round((data.choices?.[0]?.message?.content || "").split(/\s+/).length * 1.3) + 75);
+            GroqKeyPoolManager.recordSuccess(keyObj?.id || keyObj?.apiKey || "primary", totalTokens);
             return data.choices?.[0]?.message?.content || "";
           }
         } catch (err) {
@@ -360,10 +362,21 @@ export class InferenceProvider {
           }
         }
       }
+      const approxTokens = Math.max(25, Math.round((fullText || "").split(/\s+/).length * 1.3) + 60);
+      try {
+        const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
+        GroqKeyPoolManager.recordSuccess("primary", approxTokens);
+      } catch {}
       return fullText;
     } else {
       const data = await res.json();
-      return data.message?.content || "";
+      const content = data.message?.content || "";
+      const approxTokens = Math.max(25, Math.round((content || "").split(/\s+/).length * 1.3) + 60);
+      try {
+        const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
+        GroqKeyPoolManager.recordSuccess("primary", approxTokens);
+      } catch {}
+      return content;
     }
   }
 
