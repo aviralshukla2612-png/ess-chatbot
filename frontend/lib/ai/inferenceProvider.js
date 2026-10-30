@@ -214,6 +214,22 @@ export class InferenceProvider {
             throw new Error(`Groq API error ${res.status}: ${errBody}`);
           }
 
+          // Capture live rate limit & token headers from Groq response
+          try {
+            const liveRemainingTokens = res.headers.get("x-ratelimit-remaining-tokens");
+            const liveLimitTokens = res.headers.get("x-ratelimit-limit-tokens");
+            const liveRemainingRequests = res.headers.get("x-ratelimit-remaining-requests");
+            const liveLimitRequests = res.headers.get("x-ratelimit-limit-requests");
+            if (liveRemainingTokens || liveRemainingRequests) {
+              GroqKeyPoolManager.updateLiveLimits(keyObj?.id || keyObj?.apiKey || "primary", {
+                remainingTokens: liveRemainingTokens,
+                limitTokens: liveLimitTokens,
+                remainingRequests: liveRemainingRequests,
+                limitRequests: liveLimitRequests,
+              });
+            }
+          } catch (headErr) {}
+
           if (stream && onToken && res.body) {
             const content = await InferenceProvider._consumeOpenAiStream(res.body, onToken);
             // Calculate accurate conversational tokens (prompt overhead from messages + completion tokens)

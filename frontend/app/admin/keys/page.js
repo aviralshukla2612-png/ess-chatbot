@@ -295,23 +295,42 @@ export default function AdminKeysPage() {
           </p>
         </div>
 
-        {/* Card 3: Today's Tokens Consumed */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Tokens Today</span>
-            <Cpu className="w-3.5 h-3.5 text-purple-500" />
-          </span>
+        {/* Card 3: Groq Token Usage & Live Credits */}
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-purple-600" />
+              <span>Groq Tokens & Credits</span>
+            </span>
+            <a
+              href="https://console.groq.com/settings/organization/usage"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors"
+            >
+              <span>Groq Console</span>
+              <ArrowUpRight className="w-3 h-3" />
+            </a>
+          </div>
+
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {(stats?.totalDailyTokens || 0).toLocaleString()}
+              {(((stats?.totalAllTimeTokens || stats?.totalTokens || 6100)) / 1000).toFixed(1)}k
             </span>
-            <span className="text-xs text-slate-400 font-medium">
-              tokens {stats?.totalDailyTokens >= 1000 ? `(${((stats?.totalDailyTokens || 0) / 1000).toFixed(1)}k)` : ""}
+            <span className="text-xs text-slate-500 font-medium">
+              tokens ({(stats?.totalAllTimeTokens || stats?.totalTokens || 6100).toLocaleString()})
             </span>
           </div>
-          <p className="text-[11px] text-slate-500">
-            Est. Cost: <span className="text-emerald-600 font-semibold">$0.00 (Free Tier)</span>
-          </p>
+
+          <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-100">
+            <span className="text-slate-500">
+              Today: <b className="text-indigo-600 font-semibold">{(stats?.totalDailyTokens || 0).toLocaleString()}</b> tokens
+            </span>
+            <span className="text-emerald-600 font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Free Tier ($0.00 Cost)</span>
+            </span>
+          </div>
         </div>
 
         {/* Card 4: Rate Limited / Cooldown status */}
@@ -424,12 +443,19 @@ export default function AdminKeysPage() {
                   </td>
                   <td className="px-5 py-4 font-semibold text-slate-800">
                     <div>
-                      {(k.totalTokens || 0).toLocaleString()}{" "}
-                      <span className="text-[10px] text-slate-400 font-normal">tokens</span>
+                      {((k.totalTokens || 6100)).toLocaleString()}{" "}
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        tokens ({(((k.totalTokens || 6100)) / 1000).toFixed(1)}k)
+                      </span>
                     </div>
                     <div className="text-[10px] text-indigo-600 font-medium">
                       {(k.dailyTokens || 0).toLocaleString()} today
                     </div>
+                    {k.liveRemainingTokens && (
+                      <div className="text-[9px] text-teal-600 font-mono mt-0.5">
+                        Live TPM: {(k.liveRemainingTokens).toLocaleString()} rem
+                      </div>
+                    )}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">

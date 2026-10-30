@@ -55,6 +55,12 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, message: "API Key removed from pool", key: removed });
     }
 
+    if (action === "sync-baseline") {
+      const { id, baselineTokens } = body;
+      const updated = GroqKeyPoolManager.syncGroqBaseline(id, baselineTokens);
+      return NextResponse.json({ ok: true, message: "Groq Console usage synced", key: updated });
+    }
+
     return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 400 });

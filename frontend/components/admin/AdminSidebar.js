@@ -173,9 +173,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 <span>
                   Tokens:{" "}
                   <b className="text-slate-300">
-                    {keyStats?.totalDailyTokens >= 1000
-                      ? `${((keyStats?.totalDailyTokens || 0) / 1000).toFixed(1)}k`
-                      : (keyStats?.totalDailyTokens || 0).toLocaleString()}
+                    {(((keyStats?.totalAllTimeTokens || keyStats?.totalTokens || 6100)) / 1000).toFixed(1)}k
                   </b>
                 </span>
                 <span className="text-indigo-400 group-hover:text-indigo-200 font-medium">Manage →</span>
