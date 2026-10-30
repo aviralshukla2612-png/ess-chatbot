@@ -150,6 +150,15 @@ export default function AdminKeysPage() {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Dynamic Sync (3s)</span>
           </div>
+          <a
+            href="https://console.groq.com/settings/organization/usage"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-colors shadow-xs"
+          >
+            <span>Groq Console</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </a>
           <button
             onClick={loadStats}
             disabled={loading}
@@ -295,40 +304,27 @@ export default function AdminKeysPage() {
           </p>
         </div>
 
-        {/* Card 3: Groq Token Usage & Live Credits */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-purple-600" />
-              <span>Groq Tokens & Credits</span>
-            </span>
-            <a
-              href="https://console.groq.com/settings/organization/usage"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors"
-            >
-              <span>Groq Console</span>
-              <ArrowUpRight className="w-3 h-3" />
-            </a>
-          </div>
-
+        {/* Card 3: Tokens & Credits */}
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+            <span>Tokens & Credits</span>
+            <Cpu className="w-3.5 h-3.5 text-purple-500" />
+          </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
               {(((stats?.totalAllTimeTokens || stats?.totalTokens || 6100)) / 1000).toFixed(1)}k
             </span>
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-xs text-slate-400">
               tokens ({(stats?.totalAllTimeTokens || stats?.totalTokens || 6100).toLocaleString()})
             </span>
           </div>
-
-          <div className="flex items-center justify-between pt-1 text-[11px] border-t border-slate-100">
-            <span className="text-slate-500">
-              Today: <b className="text-indigo-600 font-semibold">{(stats?.totalDailyTokens || 0).toLocaleString()}</b> tokens
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
+            <span>
+              Today: <b className="text-indigo-600 font-semibold">{(stats?.totalDailyTokens || 0).toLocaleString()}</b>
             </span>
-            <span className="text-emerald-600 font-semibold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Free Tier ($0.00 Cost)</span>
+            <span className="text-emerald-600 font-semibold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>Free Tier ($0.00)</span>
             </span>
           </div>
         </div>
