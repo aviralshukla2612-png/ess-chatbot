@@ -136,67 +136,108 @@ export class InferenceProvider {
     }
   }
 
-  // --- Groq LPU Adapter ---
+  // --- Groq LPU Adapter with Multi-Key Pool Rotation & 429 Auto-Failover ---
   static async _callGroq({ model, messages, temperature, maxTokens, stream, onToken, timeoutMs }) {
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) throw new Error("GROQ_API_KEY environment variable is missing.");
-
-    const candidateModels = [
-      model,
-      process.env.GROQ_MODEL,
-      "openai/gpt-oss-120b",
-      "openai/gpt-oss-20b",
-      "qwen/qwen3.8-27b",
-      "llama-3.3-70b-versatile",
-    ].filter(Boolean);
-
-    const uniqueModels = [...new Set(candidateModels)];
+    const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
+    
+    // Attempt with up to 3 pool keys before bailing out
+    const MAX_KEY_ATTEMPTS = 3;
+    let attempts = 0;
     let lastError = null;
 
-    for (const targetModel of uniqueModels) {
-      try {
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: targetModel,
-            messages,
-            temperature,
-            max_tokens: maxTokens,
-            stream: Boolean(stream && onToken),
-          }),
-          signal: AbortSignal.timeout(timeoutMs),
-        });
+    while (attempts < MAX_KEY_ATTEMPTS) {
+      attempts++;
+      const keyObj = GroqKeyPoolManager.getNextKey();
+      const apiKey = keyObj?.apiKey || process.env.GROQ_API_KEY;
 
-        if (!res.ok) {
-          const errBody = await res.text();
-          if (res.status === 404 || errBody.includes("model_not_found") || errBody.includes("does not exist")) {
-            console.warn(`[GROQ] Model '${targetModel}' not available on this account, trying fallback model...`);
-            lastError = new Error(`Groq API error ${res.status}: ${errBody}`);
+      if (!apiKey) {
+        throw new Error("GROQ_API_KEY or key pool is missing.");
+      }
+
+      const candidateModels = [
+        model,
+        process.env.GROQ_MODEL,
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.8-27b",
+        "llama-3.3-70b-versatile",
+      ].filter(Boolean);
+
+      const uniqueModels = [...new Set(candidateModels)];
+
+      for (const targetModel of uniqueModels) {
+        try {
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: targetModel,
+              messages,
+              temperature,
+              max_tokens: maxTokens,
+              stream: Boolean(stream && onToken),
+            }),
+            signal: AbortSignal.timeout(timeoutMs),
+          });
+
+          if (!res.ok) {
+            const errBody = await res.text();
+            
+            // Check for Rate Limit (429) -> Auto-Failover to next key in pool
+            if (res.status === 429 || errBody.includes("rate_limit_exceeded")) {
+              console.warn(`[GROQ_RATE_LIMIT] Key '${keyObj?.label || "primary"}' received 429. Rotating key...`);
+              if (keyObj?.id) {
+                GroqKeyPoolManager.markRateLimited(keyObj.id, 60, "Rate limit reached (429)");
+              }
+              lastError = new Error(`Groq 429 Rate Limit: ${errBody}`);
+              break; // break model loop to try next key in pool
+            }
+
+            if (res.status === 401 || res.status === 403) {
+              if (keyObj?.id) {
+                GroqKeyPoolManager.markError(keyObj.id, `Invalid key / Auth error (${res.status})`);
+              }
+              lastError = new Error(`Groq Auth error ${res.status}: ${errBody}`);
+              break; // break to try next key
+            }
+
+            if (res.status === 404 || errBody.includes("model_not_found") || errBody.includes("does not exist")) {
+              console.warn(`[GROQ] Model '${targetModel}' not available on this account, trying fallback model...`);
+              lastError = new Error(`Groq API error ${res.status}: ${errBody}`);
+              continue;
+            }
+            throw new Error(`Groq API error ${res.status}: ${errBody}`);
+          }
+
+          if (stream && onToken && res.body) {
+            const content = await InferenceProvider._consumeOpenAiStream(res.body, onToken);
+            // Record rough token estimate: words * 1.3
+            const approxTokens = Math.round((content || "").split(/\s+/).length * 1.3) + 100;
+            if (keyObj?.id) GroqKeyPoolManager.recordSuccess(keyObj.id, approxTokens);
+            return content;
+          } else {
+            const data = await res.json();
+            const totalTokens = data.usage?.total_tokens || Math.round((data.choices?.[0]?.message?.content || "").split(/\s+/).length * 1.3) + 100;
+            if (keyObj?.id) GroqKeyPoolManager.recordSuccess(keyObj.id, totalTokens);
+            return data.choices?.[0]?.message?.content || "";
+          }
+        } catch (err) {
+          lastError = err;
+          if (err.message && (err.message.includes("model_not_found") || err.message.includes("does not exist"))) {
             continue;
           }
-          throw new Error(`Groq API error ${res.status}: ${errBody}`);
+          if (err.message && (err.message.includes("429") || err.message.includes("Rate Limit"))) {
+            break;
+          }
+          throw err;
         }
-
-        if (stream && onToken && res.body) {
-          return await InferenceProvider._consumeOpenAiStream(res.body, onToken);
-        } else {
-          const data = await res.json();
-          return data.choices?.[0]?.message?.content || "";
-        }
-      } catch (err) {
-        lastError = err;
-        if (err.message && (err.message.includes("model_not_found") || err.message.includes("does not exist"))) {
-          continue;
-        }
-        throw err;
       }
     }
 
-    throw lastError || new Error("All candidate Groq models failed.");
+    throw lastError || new Error("All Groq key pool attempts exhausted.");
   }
 
   // --- vLLM Adapter (OpenAI-compatible) ---

@@ -21,12 +21,15 @@ import {
   LogOut,
   CreditCard,
   LifeBuoy,
+  Key,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminNavItems = [
   { name: "Overview", href: "/admin", icon: LayoutDashboard },
   { name: "AI Evaluations", href: "/admin/ai-evaluations", icon: Sparkles },
+  { name: "API Keys & Limits", href: "/admin/keys", icon: Key },
   { name: "Organizations", href: "/admin/organizations", icon: Building2 },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Bots", href: "/admin/bots", icon: Bot },
@@ -40,6 +43,22 @@ const adminNavItems = [
 
 export default function AdminSidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const [keyStats, setKeyStats] = React.useState(null);
+
+  React.useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch("/api/admin/keys");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok) setKeyStats(data.stats);
+        }
+      } catch {}
+    }
+    fetchStats();
+    const timer = setInterval(fetchStats, 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <>
@@ -119,6 +138,44 @@ export default function AdminSidebar({ isOpen, onClose }) {
             );
           })}
         </nav>
+
+        {/* Groq Key Pool & Daily Limit Card */}
+        <div className="px-3 pt-2">
+          <Link
+            href="/admin/keys"
+            onClick={onClose}
+            className="block p-3 rounded-2xl bg-linear-to-b from-indigo-950/60 to-slate-900/90 border border-indigo-500/25 hover:border-indigo-400/50 transition-all group"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-300">
+                <Key className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-12 transition-transform" />
+                <span>Groq Key Pool</span>
+              </div>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                {keyStats ? `${keyStats.activeKeysCount || 0} Active` : "1 Key"}
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-slate-400">Daily Requests</span>
+                <span className="font-semibold text-slate-200">
+                  {keyStats ? `${keyStats.totalDailyRequests || 0} / ${((keyStats.totalCapacityRequests || 14400)/1000).toFixed(0)}k` : "0 / 14.4k"}
+                </span>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-linear-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, keyStats?.overallDailyPercent || 0)}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] text-slate-400 pt-0.5">
+                <span>Tokens: <b className="text-slate-300">{((keyStats?.totalDailyTokens || 0) / 1000).toFixed(1)}k</b></span>
+                <span className="text-indigo-400 group-hover:text-indigo-200 font-medium">Manage →</span>
+              </div>
+            </div>
+          </Link>
+        </div>
 
         {/* Profile and Platform Status directly following menu items */}
         <div className="p-3 border-t border-slate-800/80 space-y-2">
