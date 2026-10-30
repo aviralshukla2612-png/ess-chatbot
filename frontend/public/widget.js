@@ -68,7 +68,7 @@
     primaryColor: (scriptTag && scriptTag.getAttribute("data-color")) || "#4f46e5",
     welcomeMessage:
       (scriptTag && scriptTag.getAttribute("data-welcome")) ||
-      "Hello! How can I help you today?",
+      "Hello! Welcome to Emperor Smart Solutions. How can I help you today?",
     placeholderText: "Type your message...",
     launcherPosition:
       (scriptTag && scriptTag.getAttribute("data-position")) || "bottom-right",
@@ -698,20 +698,20 @@
       welcomeEl.className = "nexus-msg nexus-msg-bot";
       welcomeEl.textContent = botConfig.welcomeMessage;
 
+      const defaultServices = [
+        "Website Development",
+        "Mobile Application",
+        "AI Chatbot & RAG",
+        "Custom Software & ERP",
+        "UI/UX Design",
+        "Cloud & DevOps",
+        "Hire Dedicated Developers",
+      ];
+
       const servicesToShow =
         Array.isArray(botConfig.quickReplies) && botConfig.quickReplies.length > 0
           ? botConfig.quickReplies
-          : (botConfig.id === "bot_aa" || botConfig.id === "aa"
-              ? [
-                  "Website Development",
-                  "Mobile Application",
-                  "AI Chatbot",
-                  "Custom Software",
-                  "UI/UX Design",
-                  "Cloud & DevOps",
-                  "SEO & Marketing",
-                ]
-              : []);
+          : defaultServices;
 
       if (servicesToShow.length > 0) {
         const qrContainer = document.createElement("div");
