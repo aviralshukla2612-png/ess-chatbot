@@ -132,6 +132,23 @@ export default function AdminKeysPage() {
     }
   };
 
+  const handleSetPrimary = async (id, label) => {
+    try {
+      const res = await fetch("/api/admin/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_primary", id }),
+      });
+      if (res.ok) {
+        setNotification({ type: "success", message: `'${label}' is now the Active Serving key.` });
+        loadStats();
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-12 font-sans">
       {/* Top Banner & Title */}
@@ -142,7 +159,7 @@ export default function AdminKeysPage() {
             Groq API Key Pool & Rate Limits
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Pool multiple free or paid Groq API accounts with automatic round-robin rotation, 429 auto-failover, and real-time token tracking.
+            Priority Active-Standby Failover: 1 key actively serves traffic while backup keys remain on standby for automatic 429 failover.
           </p>
         </div>
         <div className="flex items-center flex-wrap gap-2 shrink-0">
@@ -266,18 +283,20 @@ export default function AdminKeysPage() {
         {/* Card 1: Active Pool Capacity */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Live Key Pool</span>
+            <span>Active Serving Key</span>
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {stats?.activeKeysCount || 0}
+              {stats?.activeKeysCount || 1}
             </span>
-            <span className="text-xs text-slate-400">/ {stats?.totalKeys || 0} active</span>
+            <span className="text-xs text-slate-400">
+              active • {stats?.standbyKeysCount || 0} standby {stats?.standbyKeysCount === 1 ? 'backup' : 'backups'}
+            </span>
           </div>
           <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Round-robin balancing active</span>
+            <span>Priority Failover (1 Live, Rest on Standby)</span>
           </div>
         </div>
 
@@ -421,14 +440,19 @@ export default function AdminKeysPage() {
                         <AlertTriangle className="w-3 h-3 text-rose-600" />
                         Auth Error
                       </span>
-                    ) : k.isActive ? (
+                    ) : k.status === "active_serving" ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Active & In Rotation
+                        Active (Serving)
+                      </span>
+                    ) : k.status === "standby" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        Standby (Backup)
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                        Disabled
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-400 border border-slate-200">
+                        Paused
                       </span>
                     )}
                   </td>
@@ -469,6 +493,15 @@ export default function AdminKeysPage() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">
+                      {k.status === "standby" && (
+                        <button
+                          onClick={() => handleSetPrimary(k.id, k.label)}
+                          title="Make this key the Active Serving key"
+                          className="px-2 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors cursor-pointer"
+                        >
+                          Make Active
+                        </button>
+                      )}
                       {k.status === "rate_limited" && (
                         <button
                           onClick={() => handleResetCooldown(k.id)}

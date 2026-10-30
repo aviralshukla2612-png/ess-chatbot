@@ -98,6 +98,12 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, message: "API Key removed from pool", key: removed });
     }
 
+    if (action === "set_primary") {
+      const { id } = body;
+      const promoted = GroqKeyPoolManager.setPrimaryKey(id);
+      return NextResponse.json({ ok: true, message: "Promoted to primary active key", key: promoted });
+    }
+
     if (action === "sync-baseline") {
       const { id, baselineTokens } = body;
       const updated = GroqKeyPoolManager.syncGroqBaseline(id, baselineTokens);

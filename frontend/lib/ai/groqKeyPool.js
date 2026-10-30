@@ -282,10 +282,29 @@ export class GroqKeyPoolManager {
       return null;
     }
 
-    // Round-robin selection
-    currentIndex = (currentIndex + 1) % available.length;
-    const selected = available[currentIndex];
+    // Priority Failover Strategy:
+    // ALWAYS use the primary active key (available[0]).
+    // Other keys remain in standby (closed) and only take over if the primary key is rate-limited (429) or fails!
+    const selected = available[0];
     return selected;
+  }
+
+  /**
+   * Promote a key to Primary Active Serving position
+   */
+  static setPrimaryKey(keyId) {
+    syncPool();
+    const idx = keyPool.findIndex((k) => k.id === keyId || k.apiKey === keyId);
+    if (idx > -1) {
+      const [item] = keyPool.splice(idx, 1);
+      item.isActive = true;
+      item.status = "active";
+      item.rateLimitedUntil = null;
+      keyPool.unshift(item);
+      savePoolToFile(keyPool);
+      return item;
+    }
+    return null;
   }
 
   /**
@@ -381,6 +400,10 @@ export class GroqKeyPoolManager {
     syncPool();
     const now = Date.now();
 
+    // Identify which single key is currently Active & Serving
+    const activeServingKey = keyPool.find((k) => k.isActive && (!k.rateLimitedUntil || k.rateLimitedUntil <= now) && k.status !== "error") || null;
+    const activeServingKeyId = activeServingKey ? activeServingKey.id : null;
+
     const keys = keyPool.map((k) => {
       const cooldownRemainingSec = k.rateLimitedUntil && k.rateLimitedUntil > now
         ? Math.round((k.rateLimitedUntil - now) / 1000)
@@ -390,12 +413,27 @@ export class GroqKeyPoolManager {
       const dailyCap = 14400;
       const dailyPercent = Math.min(100, Math.round(((k.dailyRequests || 0) / dailyCap) * 100));
 
+      let poolRole = "disabled";
+      if (k.isActive) {
+        if (cooldownRemainingSec > 0 || k.status === "rate_limited") {
+          poolRole = "rate_limited";
+        } else if (k.status === "error") {
+          poolRole = "error";
+        } else if (k.id === activeServingKeyId) {
+          poolRole = "active_serving"; // Currently active & serving all requests
+        } else {
+          poolRole = "standby"; // Closed / Standby (backup on deck)
+        }
+      }
+
       return {
         id: k.id,
         label: k.label,
         maskedKey: k.maskedKey,
         isActive: k.isActive,
-        status: cooldownRemainingSec > 0 ? "rate_limited" : k.status,
+        isServing: k.id === activeServingKeyId,
+        poolRole,
+        status: poolRole === "rate_limited" ? "rate_limited" : poolRole === "error" ? "error" : poolRole === "active_serving" ? "active_serving" : poolRole === "standby" ? "standby" : "disabled",
         cooldownRemainingSec,
         totalRequests: k.totalRequests || 0,
         totalTokens: k.totalTokens || 0,
@@ -413,8 +451,9 @@ export class GroqKeyPoolManager {
       };
     });
 
-    const activeKeysCount = keys.filter((k) => k.isActive && k.status === "active").length;
-    const rateLimitedKeysCount = keys.filter((k) => k.status === "rate_limited").length;
+    const activeKeysCount = activeServingKey ? 1 : 0; // Exactly 1 active serving key!
+    const standbyKeysCount = keys.filter((k) => k.poolRole === "standby").length;
+    const rateLimitedKeysCount = keys.filter((k) => k.poolRole === "rate_limited").length;
     const totalDailyRequests = keys.reduce((sum, k) => sum + (k.dailyRequests || 0), 0);
     const totalDailyTokens = keys.reduce((sum, k) => sum + (k.dailyTokens || 0), 0);
     const totalAllTimeTokens = keys.reduce((sum, k) => sum + (k.totalTokens || 0), 0);
@@ -424,7 +463,9 @@ export class GroqKeyPoolManager {
 
     return {
       totalKeys: keys.length,
-      activeKeysCount,
+      activeKeysCount, // Exactly 1 Active Serving
+      standbyKeysCount, // All other keys are Standby Backup
+      activeServingKey: activeServingKey ? { id: activeServingKey.id, label: activeServingKey.label, maskedKey: activeServingKey.maskedKey } : null,
       rateLimitedKeysCount,
       totalDailyRequests,
       totalDailyTokens,
