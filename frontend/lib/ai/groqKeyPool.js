@@ -137,6 +137,11 @@ function syncPool() {
       k.dailyTokens = 6600;
       calibrated = true;
     }
+    if (k.status === "error") {
+      k.status = "active";
+      k.lastError = null;
+      calibrated = true;
+    }
     if (!k.totalRequests || k.totalRequests === 0) {
       k.totalRequests = 5;
       k.dailyRequests = 5;
