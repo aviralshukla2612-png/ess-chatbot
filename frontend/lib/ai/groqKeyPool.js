@@ -120,7 +120,15 @@ function syncPool() {
   // Calibrate baseline tokens:
   // User's Groq organization usage is 6.6k (6,600 tokens). Ensure totalTokens tracks >= 6,600!
   let calibrated = false;
+  const envKey = (process.env.GROQ_API_KEY || "").trim();
   for (const k of keyPool) {
+    if (envKey && envKey.length > 10 && !envKey.includes("your_groq_api_key")) {
+      if (k.apiKey === "gsk_primary_auto_active" || k.id === "key_default_primary") {
+        k.apiKey = envKey;
+        k.maskedKey = maskApiKey(envKey);
+        calibrated = true;
+      }
+    }
     if ((k.totalTokens || 0) < 6600) {
       k.totalTokens = 6600;
       calibrated = true;

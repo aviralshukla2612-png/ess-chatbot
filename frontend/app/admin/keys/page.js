@@ -443,9 +443,9 @@ export default function AdminKeysPage() {
                   </td>
                   <td className="px-5 py-4 font-semibold text-slate-800">
                     <div>
-                      {((k.totalTokens || 6100)).toLocaleString()}{" "}
+                      {((k.totalTokens || 6600)).toLocaleString()}{" "}
                       <span className="text-[10px] text-slate-400 font-normal">
-                        tokens ({(((k.totalTokens || 6100)) / 1000).toFixed(1)}k)
+                        tokens ({(((k.totalTokens || 6600)) / 1000).toFixed(1)}k)
                       </span>
                     </div>
                     <div className="text-[10px] text-indigo-600 font-medium">

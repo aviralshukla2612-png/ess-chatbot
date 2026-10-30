@@ -1,0 +1,18 @@
+[
+  {
+    "id": "key_default_primary",
+    "label": "Primary Groq Account",
+    "apiKey": "gsk_primary_auto_active",
+    "maskedKey": "gsk_yCd...Wd35",
+    "isActive": true,
+    "status": "error",
+    "rateLimitedUntil": null,
+    "totalRequests": 5,
+    "totalTokens": 6600,
+    "dailyRequests": 5,
+    "dailyTokens": 6600,
+    "lastUsedAt": "2026-10-30T12:00:00.000Z",
+    "lastError": "Invalid key / Auth error (401)",
+    "createdAt": "2026-10-30T00:00:00.000Z"
+  }
+]
