@@ -284,52 +284,51 @@ export default function AdminKeysPage() {
         {/* Card 2: Combined Daily Capacity */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Daily Request Capacity</span>
+            <span>Daily Request Limit</span>
             <Server className="w-3.5 h-3.5 text-teal-500" />
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(0)}k
+              {stats?.totalDailyRequests || 0}
             </span>
-            <span className="text-xs text-slate-400">req/day limit</span>
+            <span className="text-xs text-slate-400">/ 14.4k requests</span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(100, stats?.overallDailyPercent || 0)}%` }}
+              className="bg-teal-500 h-1.5 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(1, stats?.overallDailyPercent || 0))}%` }}
             />
           </div>
-          <p className="text-[10px] text-slate-500">
-            {stats?.totalDailyRequests || 0} used today ({stats?.overallDailyPercent || 0}%)
+          <p className="text-[10px] text-slate-500 flex items-center justify-between">
+            <span>Left: <b className="text-teal-600 font-semibold">{(14400 - (stats?.totalDailyRequests || 0)).toLocaleString()}</b> remaining</span>
+            <span className="text-slate-400 font-medium">14.4k RPD</span>
           </p>
         </div>
 
-        {/* Card 3: Tokens & Credits */}
+        {/* Card 3: Groq Token Usage */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Tokens Today & Capacity</span>
+            <span>Groq Token Usage</span>
             <Cpu className="w-3.5 h-3.5 text-purple-500" />
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {((stats?.totalDailyTokens || 0) / 1000).toFixed(1)}k
+              {(((stats?.totalAllTimeTokens || stats?.totalTokens || 6100)) / 1000).toFixed(1)}k
             </span>
             <span className="text-xs text-slate-400">
-              / {((stats?.totalDailyTokenCapacity || 500000) / 1000).toFixed(0)}k limit ({((stats?.totalAllTimeTokens || stats?.totalTokens || 6100) / 1000).toFixed(1)}k total)
+              tokens ({((stats?.totalAllTimeTokens || stats?.totalTokens || 6100)).toLocaleString()})
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-purple-600 h-1.5 rounded-full transition-all duration-500"
               style={{
-                width: `${Math.min(100, Math.max(1, stats?.overallTokenPercent || Math.round(((stats?.totalDailyTokens || 0) / (stats?.totalDailyTokenCapacity || 500000)) * 100)))}%`
+                width: `${Math.min(100, Math.max(5, Math.round(((stats?.totalDailyTokens || 0) / 100000) * 100)))}%`
               }}
             />
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
-            <span>
-              Left: <b className="text-emerald-600 font-semibold">{((Math.max(0, (stats?.totalDailyTokenCapacity || 500000) - (stats?.totalDailyTokens || 0))) / 1000).toFixed(1)}k</b> remaining today
-            </span>
+            <span>Today: <b className="text-purple-600 font-semibold">{(stats?.totalDailyTokens || 0).toLocaleString()}</b> tokens</span>
             <span className="text-emerald-600 font-semibold">Free Tier ($0.00)</span>
           </p>
         </div>
