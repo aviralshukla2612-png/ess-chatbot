@@ -199,12 +199,9 @@ export async function POST(request, { params }) {
       );
     }
 
-    // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots, but handle legacy aliases)
+    // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots)
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
-    if (!bot) {
-      bot = (await botsStore.getBotAsync("bot_aa")) || botsStore.getBot("bot_aa");
-    }
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       console.warn(`[PUBLIC_CHAT_404] Bot not found or inactive. botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status='${bot?.status}'`);
       return corsResponse(
