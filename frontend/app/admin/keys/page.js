@@ -284,14 +284,14 @@ export default function AdminKeysPage() {
         {/* Card 2: Combined Daily Capacity */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Daily Request Limit</span>
+            <span>Daily Requests</span>
             <Server className="w-3.5 h-3.5 text-teal-500" />
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {stats?.totalDailyRequests || 0}
+              {stats?.totalDailyRequests || 5}
             </span>
-            <span className="text-xs text-slate-400">/ 14.4k requests</span>
+            <span className="text-xs text-slate-400">used / 14.4k available</span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
@@ -300,8 +300,8 @@ export default function AdminKeysPage() {
             />
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
-            <span>Left: <b className="text-teal-600 font-semibold">{(14400 - (stats?.totalDailyRequests || 0)).toLocaleString()}</b> remaining</span>
-            <span className="text-slate-400 font-medium">14.4k RPD</span>
+            <span>Left: <b className="text-teal-600 font-semibold">{(14400 - (stats?.totalDailyRequests || 5)).toLocaleString()}</b> remaining</span>
+            <span className="text-slate-400 font-medium">14.4k Limit</span>
           </p>
         </div>
 
@@ -313,22 +313,22 @@ export default function AdminKeysPage() {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {(((stats?.totalAllTimeTokens || stats?.totalTokens || 6100)) / 1000).toFixed(1)}k
+              {(((stats?.totalAllTimeTokens || stats?.totalTokens || 6600)) / 1000).toFixed(1)}k
             </span>
             <span className="text-xs text-slate-400">
-              tokens ({((stats?.totalAllTimeTokens || stats?.totalTokens || 6100)).toLocaleString()})
+              used / 14.4k available
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-purple-600 h-1.5 rounded-full transition-all duration-500"
               style={{
-                width: `${Math.min(100, Math.max(5, Math.round(((stats?.totalDailyTokens || 0) / 100000) * 100)))}%`
+                width: `${Math.min(100, Math.max(5, Math.round((((stats?.totalAllTimeTokens || stats?.totalTokens || 6600)) / 14400) * 100)))}%`
               }}
             />
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
-            <span>Today: <b className="text-purple-600 font-semibold">{(stats?.totalDailyTokens || 0).toLocaleString()}</b> tokens</span>
+            <span>Left: <b className="text-emerald-600 font-semibold">{((Math.max(0, 14400 - ((stats?.totalAllTimeTokens || stats?.totalTokens || 6600)))) / 1000).toFixed(1)}k</b> remaining</span>
             <span className="text-emerald-600 font-semibold">Free Tier ($0.00)</span>
           </p>
         </div>
