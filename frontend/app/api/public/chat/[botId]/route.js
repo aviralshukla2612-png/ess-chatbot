@@ -231,7 +231,14 @@ export async function POST(request, { params }) {
       bot?.company && bot?.company !== "My Organization"
         ? bot.company
         : (bot?.id === "bot_aa" ? "Emperor Smart Solutions" : (bot?.name || "Business"));
-    const isEssBot = bot?.id === "bot_aa";
+    const isEssBot =
+      bot?.id === "bot_aa" ||
+      bot?.id === "bot_1791618269632" ||
+      bot?.organizationId === "org_ess_default" ||
+      bot?.organizationId === "org_default" ||
+      bot?.company === "Emperor Smart Solutions" ||
+      bot?.name === "aa" ||
+      bot?.name === "Emperor AI Assistant";
     const tenantId = bot?.organizationId || botId;
 
     // --- SAAS BILLING & QUOTA ENFORCEMENT ---
@@ -1594,6 +1601,22 @@ Here are our official contact details to speak with our engineering leadership:
             triggerLeadWebhookAsync(bot, leadData);
           }
 
+          if (!quickReplies || quickReplies.length === 0) {
+            const replyLower = (accumulatedReply || "").toLowerCase();
+            const msgLower = (message || "").toLowerCase();
+            if (replyLower.includes("type of website") || replyLower.includes("create") || msgLower.includes("website") || msgLower.includes("web development")) {
+              quickReplies = ["Business website", "New website", "Revamp / Redesign", "E-commerce store", "Custom Web App"];
+            } else if (replyLower.includes("mobile app") || msgLower.includes("mobile") || msgLower.includes("android") || msgLower.includes("flutter")) {
+              quickReplies = ["New Mobile App", "Revamp Existing App", "Android & iOS (Flutter)", "Get Price Quote"];
+            } else if (replyLower.includes("ai chatbot") || msgLower.includes("chatbot") || msgLower.includes("ai")) {
+              quickReplies = ["Customer Support AI", "WhatsApp AI Bot", "Website RAG Bot", "Custom AI Solution"];
+            }
+          }
+
+          if (quickReplies && quickReplies.length > 0) {
+            writer.write(encoder.encode(`data: ${JSON.stringify({ quickReplies })}\n\n`));
+          }
+
           writer.write(encoder.encode(`data: [DONE]\n\n`));
         } catch (streamErr) {
           writer.write(encoder.encode(`data: ${JSON.stringify({ token: " I'm ready to assist you. Please ask your question again!" })}\n\n`));
@@ -1700,6 +1723,18 @@ Here are our official contact details to speak with our engineering leadership:
           { role: "assistant", content: botReply, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
         ],
       });
+    }
+
+    if (!quickReplies || quickReplies.length === 0) {
+      const replyLower = (botReply || "").toLowerCase();
+      const msgLower = (message || "").toLowerCase();
+      if (replyLower.includes("type of website") || replyLower.includes("create") || msgLower.includes("website") || msgLower.includes("web development")) {
+        quickReplies = ["Business website", "New website", "Revamp / Redesign", "E-commerce store", "Custom Web App"];
+      } else if (replyLower.includes("mobile app") || msgLower.includes("mobile") || msgLower.includes("android") || msgLower.includes("flutter")) {
+        quickReplies = ["New Mobile App", "Revamp Existing App", "Android & iOS (Flutter)", "Get Price Quote"];
+      } else if (replyLower.includes("ai chatbot") || msgLower.includes("chatbot") || msgLower.includes("ai")) {
+        quickReplies = ["Customer Support AI", "WhatsApp AI Bot", "Website RAG Bot", "Custom AI Solution"];
+      }
     }
 
     const finalRes = corsResponse(
