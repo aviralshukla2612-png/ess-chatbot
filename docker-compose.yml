@@ -25,7 +25,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-ess_chatbot}
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-groq}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
-      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - GROQ_MODEL=${GROQ_MODEL:-openai/gpt-oss-120b}
       - OLLAMA_URL=http://ollama:11434
       - CHAT_MODEL=${CHAT_MODEL:-llama3.2:1b}
       - LEAD_WEBHOOK_URL=${LEAD_WEBHOOK_URL:-}

@@ -77,7 +77,7 @@ export class InferenceProvider {
         case "groq":
           try {
             return await InferenceProvider._callGroq({
-              model: model || process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+              model: model || process.env.GROQ_MODEL || "openai/gpt-oss-120b",
               messages,
               temperature,
               maxTokens,
@@ -141,33 +141,62 @@ export class InferenceProvider {
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) throw new Error("GROQ_API_KEY environment variable is missing.");
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-        stream: Boolean(stream && onToken),
-      }),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const candidateModels = [
+      model,
+      process.env.GROQ_MODEL,
+      "openai/gpt-oss-120b",
+      "openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b",
+      "llama-3.3-70b-versatile",
+    ].filter(Boolean);
 
-    if (!res.ok) {
-      const errBody = await res.text();
-      throw new Error(`Groq API error ${res.status}: ${errBody}`);
+    const uniqueModels = [...new Set(candidateModels)];
+    let lastError = null;
+
+    for (const targetModel of uniqueModels) {
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: targetModel,
+            messages,
+            temperature,
+            max_tokens: maxTokens,
+            stream: Boolean(stream && onToken),
+          }),
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.text();
+          if (res.status === 404 || errBody.includes("model_not_found") || errBody.includes("does not exist")) {
+            console.warn(`[GROQ] Model '${targetModel}' not available on this account, trying fallback model...`);
+            lastError = new Error(`Groq API error ${res.status}: ${errBody}`);
+            continue;
+          }
+          throw new Error(`Groq API error ${res.status}: ${errBody}`);
+        }
+
+        if (stream && onToken && res.body) {
+          return await InferenceProvider._consumeOpenAiStream(res.body, onToken);
+        } else {
+          const data = await res.json();
+          return data.choices?.[0]?.message?.content || "";
+        }
+      } catch (err) {
+        lastError = err;
+        if (err.message && (err.message.includes("model_not_found") || err.message.includes("does not exist"))) {
+          continue;
+        }
+        throw err;
+      }
     }
 
-    if (stream && onToken && res.body) {
-      return await InferenceProvider._consumeOpenAiStream(res.body, onToken);
-    } else {
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content || "";
-    }
+    throw lastError || new Error("All candidate Groq models failed.");
   }
 
   // --- vLLM Adapter (OpenAI-compatible) ---
