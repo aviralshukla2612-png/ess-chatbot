@@ -303,9 +303,11 @@ export default function AdminKeysPage() {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {((stats?.totalDailyTokens || 0) / 1000).toFixed(1)}k
+              {(stats?.totalDailyTokens || 0).toLocaleString()}
             </span>
-            <span className="text-xs text-slate-400">tokens</span>
+            <span className="text-xs text-slate-400 font-medium">
+              tokens {stats?.totalDailyTokens >= 1000 ? `(${((stats?.totalDailyTokens || 0) / 1000).toFixed(1)}k)` : ""}
+            </span>
           </div>
           <p className="text-[11px] text-slate-500">
             Est. Cost: <span className="text-emerald-600 font-semibold">$0.00 (Free Tier)</span>
@@ -421,7 +423,13 @@ export default function AdminKeysPage() {
                     </div>
                   </td>
                   <td className="px-5 py-4 font-semibold text-slate-800">
-                    {(k.totalTokens || 0).toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">tokens</span>
+                    <div>
+                      {(k.totalTokens || 0).toLocaleString()}{" "}
+                      <span className="text-[10px] text-slate-400 font-normal">tokens</span>
+                    </div>
+                    <div className="text-[10px] text-indigo-600 font-medium">
+                      {(k.dailyTokens || 0).toLocaleString()} today
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="inline-flex items-center gap-1.5">

@@ -216,13 +216,17 @@ export class InferenceProvider {
 
           if (stream && onToken && res.body) {
             const content = await InferenceProvider._consumeOpenAiStream(res.body, onToken);
-            // Record rough token estimate: words * 1.3 + prompt overhead
-            const approxTokens = Math.max(30, Math.round((content || "").split(/\s+/).length * 1.3) + 75);
+            // Calculate accurate conversational tokens (prompt overhead from messages + completion tokens)
+            const promptEstTokens = Math.round(JSON.stringify(messages || []).length / 3.8);
+            const completionEstTokens = Math.round((content || "").split(/\s+/).length * 1.35);
+            const approxTokens = Math.max(450, promptEstTokens + completionEstTokens);
             GroqKeyPoolManager.recordSuccess(keyObj?.id || keyObj?.apiKey || "primary", approxTokens);
             return content;
           } else {
             const data = await res.json();
-            const totalTokens = data.usage?.total_tokens || Math.max(30, Math.round((data.choices?.[0]?.message?.content || "").split(/\s+/).length * 1.3) + 75);
+            const promptEstTokens = Math.round(JSON.stringify(messages || []).length / 3.8);
+            const completionEstTokens = Math.round((data.choices?.[0]?.message?.content || "").split(/\s+/).length * 1.35);
+            const totalTokens = data.usage?.total_tokens || Math.max(450, promptEstTokens + completionEstTokens);
             GroqKeyPoolManager.recordSuccess(keyObj?.id || keyObj?.apiKey || "primary", totalTokens);
             return data.choices?.[0]?.message?.content || "";
           }

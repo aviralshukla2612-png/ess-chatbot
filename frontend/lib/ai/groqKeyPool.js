@@ -135,6 +135,21 @@ function syncPool() {
       savePoolToFile(keyPool);
     }
   }
+
+  // Calibrate any previously undercounted records where dailyRequests > 0 but tokens was based on raw words without context
+  let calibrated = false;
+  for (const k of keyPool) {
+    if ((k.dailyRequests || 0) > 0 && (k.dailyTokens || 0) < (k.dailyRequests * 450)) {
+      const realisticTokens = Math.max(k.dailyTokens || 0, Math.round((k.dailyRequests || 1) * 920));
+      k.dailyTokens = realisticTokens;
+      k.totalTokens = Math.max(k.totalTokens || 0, realisticTokens);
+      calibrated = true;
+    }
+  }
+  if (calibrated) {
+    savePoolToFile(keyPool);
+  }
+
   checkDailyReset();
   return keyPool;
 }

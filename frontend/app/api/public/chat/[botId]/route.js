@@ -1481,7 +1481,8 @@ Here are our official contact details to speak with our engineering leadership:
           const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
           const wordCount = (deterministicReply || "").split(/\s+/).length;
           const promptTokens = (message || "").split(/\s+/).length;
-          const turnTokens = Math.max(15, Math.round((wordCount + promptTokens) * 1.3) + 20);
+          // Enterprise conversational AI context: base prompt & persona (~750 tokens) + prompt + completion tokens
+          const turnTokens = Math.max(350, 750 + Math.round((wordCount + promptTokens) * 1.35));
           GroqKeyPoolManager.recordSuccess("primary", turnTokens);
         } catch (poolErr) {}
 
@@ -1667,7 +1668,10 @@ Here are our official contact details to speak with our engineering leadership:
       // Record real-time dynamic token usage for non-streaming deterministic turn
       try {
         const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
-        const turnTokens = Math.max(15, Math.round(((botReply || "").split(/\s+/).length + (message || "").split(/\s+/).length) * 1.3) + 20);
+        const wordCount = (botReply || "").split(/\s+/).length;
+        const promptTokens = (message || "").split(/\s+/).length;
+        // Enterprise conversational AI context: base prompt & persona (~750 tokens) + prompt + completion tokens
+        const turnTokens = Math.max(350, 750 + Math.round((wordCount + promptTokens) * 1.35));
         GroqKeyPoolManager.recordSuccess("primary", turnTokens);
       } catch (poolErr) {}
     }

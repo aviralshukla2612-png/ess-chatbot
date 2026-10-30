@@ -170,7 +170,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 />
               </div>
               <div className="flex justify-between items-center text-[10px] text-slate-400 pt-0.5">
-                <span>Tokens: <b className="text-slate-300">{((keyStats?.totalDailyTokens || 0) / 1000).toFixed(1)}k</b></span>
+                <span>
+                  Tokens:{" "}
+                  <b className="text-slate-300">
+                    {keyStats?.totalDailyTokens >= 1000
+                      ? `${((keyStats?.totalDailyTokens || 0) / 1000).toFixed(1)}k`
+                      : (keyStats?.totalDailyTokens || 0).toLocaleString()}
+                  </b>
+                </span>
                 <span className="text-indigo-400 group-hover:text-indigo-200 font-medium">Manage →</span>
               </div>
             </div>
