@@ -149,6 +149,20 @@ function syncPool() {
       calibrated = true;
     }
   }
+
+  // Auto-clean any secondary keys that were accidentally seeded with the 6,600 token / 5 req bug
+  for (const k of keyPool) {
+    if (primaryKey && k.id !== primaryKey.id) {
+      if (k.totalTokens === 6600 && k.dailyTokens === 6600 && k.dailyRequests === 5 && k.totalRequests === 5) {
+        k.totalTokens = 0;
+        k.dailyTokens = 0;
+        k.totalRequests = 0;
+        k.dailyRequests = 0;
+        calibrated = true;
+      }
+    }
+  }
+
   if (calibrated) {
     savePoolToFile(keyPool);
   }
