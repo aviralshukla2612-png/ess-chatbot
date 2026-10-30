@@ -44,8 +44,8 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose, subscription: initialSub, onOpenCheckout }) {
   const pathname = usePathname();
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-  const [currentOrg, setCurrentOrg] = useState("Emperor Smart Solutions");
-  const [orgList, setOrgList] = useState(["Emperor Smart Solutions"]);
+  const [currentOrg, setCurrentOrg] = useState("My Workspace");
+  const [orgList, setOrgList] = useState(["My Workspace"]);
   const [currentUser, setCurrentUser] = useState(null);
   const [subData, setSubData] = useState(null);
   const orgDropdownRef = React.useRef(null);
@@ -79,7 +79,10 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
       .then((d) => {
         if (d?.success && d?.user) {
           setCurrentUser(d.user);
-          const realOrgs = [];
+          const userName = d.user.name || d.user.email?.split("@")[0] || "User";
+          const userWorkspace = `${userName}'s Workspace`;
+
+          const realOrgs = [userWorkspace];
           if (Array.isArray(d.memberships) && d.memberships.length > 0) {
             d.memberships.forEach((m) => {
               const name = m.orgName || m.name;
@@ -87,13 +90,11 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
             });
           }
           if (d.user.organization && !realOrgs.includes(d.user.organization)) {
-            realOrgs.unshift(d.user.organization);
+            realOrgs.push(d.user.organization);
           }
-          if (realOrgs.length === 0) {
-            realOrgs.push("Emperor Smart Solutions");
-          }
+
           setOrgList(realOrgs);
-          setCurrentOrg(realOrgs[0]);
+          setCurrentOrg(userWorkspace);
         }
       })
       .catch(() => {});
