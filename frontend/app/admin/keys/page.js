@@ -289,9 +289,11 @@ export default function AdminKeysPage() {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {stats?.totalDailyRequests || 5}
+              {stats?.totalDailyRequests || 0}
             </span>
-            <span className="text-xs text-slate-400">used / 14.4k available</span>
+            <span className="text-xs text-slate-400">
+              used / {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k available
+            </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
@@ -300,8 +302,12 @@ export default function AdminKeysPage() {
             />
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
-            <span>Left: <b className="text-teal-600 font-semibold">{(14400 - (stats?.totalDailyRequests || 5)).toLocaleString()}</b> remaining</span>
-            <span className="text-slate-400 font-medium">14.4k Limit</span>
+            <span>
+              Left: <b className="text-teal-600 font-semibold">{Math.max(0, (stats?.totalCapacityRequests || 14400) - (stats?.totalDailyRequests || 0)).toLocaleString()}</b> remaining
+            </span>
+            <span className="text-slate-400 font-medium">
+              {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k Limit ({stats?.activeKeysCount || 1} {stats?.activeKeysCount === 1 ? "key" : "keys"})
+            </span>
           </p>
         </div>
 
@@ -313,23 +319,27 @@ export default function AdminKeysPage() {
           </span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900">
-              {(((stats?.totalAllTimeTokens || stats?.totalTokens || 6600)) / 1000).toFixed(1)}k
+              {((stats?.totalDailyTokens || 0) / 1000).toFixed(1)}k
             </span>
             <span className="text-xs text-slate-400">
-              used / 14.4k available
+              used / {((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k available
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
               className="bg-purple-600 h-1.5 rounded-full transition-all duration-500"
               style={{
-                width: `${Math.min(100, Math.max(5, Math.round((((stats?.totalAllTimeTokens || stats?.totalTokens || 6600)) / 14400) * 100)))}%`
+                width: `${Math.min(100, Math.max(1, stats?.overallTokenPercent || 0))}%`
               }}
             />
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
-            <span>Left: <b className="text-emerald-600 font-semibold">{((Math.max(0, 14400 - ((stats?.totalAllTimeTokens || stats?.totalTokens || 6600)))) / 1000).toFixed(1)}k</b> remaining</span>
-            <span className="text-emerald-600 font-semibold">Free Tier ($0.00)</span>
+            <span>
+              Left: <b className="text-emerald-600 font-semibold">{((Math.max(0, (stats?.totalDailyTokenCapacity || 500000) - (stats?.totalDailyTokens || 0))) / 1000).toFixed(1)}k</b> remaining
+            </span>
+            <span className="text-emerald-600 font-semibold">
+              Free Tier ({((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k/day)
+            </span>
           </p>
         </div>
 
@@ -372,7 +382,7 @@ export default function AdminKeysPage() {
                 <th className="px-5 py-3.5">Account / Label</th>
                 <th className="px-5 py-3.5">API Key (Masked)</th>
                 <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Today's Usage (14.4k Limit)</th>
+                <th className="px-5 py-3.5">Today's Requests (14.4k Limit)</th>
                 <th className="px-5 py-3.5">Total Tokens</th>
                 <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
@@ -443,9 +453,9 @@ export default function AdminKeysPage() {
                   </td>
                   <td className="px-5 py-4 font-semibold text-slate-800">
                     <div>
-                      {((k.totalTokens || 6600)).toLocaleString()}{" "}
+                      {(k.totalTokens || 0).toLocaleString()}{" "}
                       <span className="text-[10px] text-slate-400 font-normal">
-                        tokens ({(((k.totalTokens || 6600)) / 1000).toFixed(1)}k)
+                        tokens ({((k.totalTokens || 0) / 1000).toFixed(1)}k)
                       </span>
                     </div>
                     <div className="text-[10px] text-indigo-600 font-medium">

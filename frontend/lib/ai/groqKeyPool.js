@@ -117,34 +117,35 @@ function syncPool() {
     keyPool = loadPoolFromFile();
   }
 
-  // Calibrate baseline tokens:
-  // User's Groq organization usage is 6.6k (6,600 tokens). Ensure totalTokens tracks >= 6,600!
+  // Calibrate baseline tokens for primary key only:
   let calibrated = false;
   const envKey = (process.env.GROQ_API_KEY || "").trim();
-  for (const k of keyPool) {
+  const primaryKey = keyPool.find((k) => k.id === "key_default_primary") || keyPool[0];
+
+  if (primaryKey) {
     if (envKey && envKey.length > 10 && !envKey.includes("your_groq_api_key")) {
-      if (k.apiKey === "gsk_primary_auto_active" || k.id === "key_default_primary") {
-        k.apiKey = envKey;
-        k.maskedKey = maskApiKey(envKey);
+      if (primaryKey.apiKey === "gsk_primary_auto_active" || primaryKey.id === "key_default_primary") {
+        primaryKey.apiKey = envKey;
+        primaryKey.maskedKey = maskApiKey(envKey);
         calibrated = true;
       }
     }
-    if ((k.totalTokens || 0) < 6600) {
-      k.totalTokens = 6600;
+    if ((primaryKey.totalTokens || 0) < 6600) {
+      primaryKey.totalTokens = 6600;
       calibrated = true;
     }
-    if ((k.dailyTokens || 0) < 6600) {
-      k.dailyTokens = 6600;
+    if ((primaryKey.dailyTokens || 0) < 6600) {
+      primaryKey.dailyTokens = 6600;
       calibrated = true;
     }
-    if (k.status === "error") {
-      k.status = "active";
-      k.lastError = null;
+    if (primaryKey.status === "error") {
+      primaryKey.status = "active";
+      primaryKey.lastError = null;
       calibrated = true;
     }
-    if (!k.totalRequests || k.totalRequests === 0) {
-      k.totalRequests = 5;
-      k.dailyRequests = 5;
+    if (!primaryKey.totalRequests || primaryKey.totalRequests === 0) {
+      primaryKey.totalRequests = 5;
+      primaryKey.dailyRequests = 5;
       calibrated = true;
     }
   }
@@ -361,9 +362,9 @@ export class GroqKeyPoolManager {
       totalDailyTokenCapacity,
       remainingDailyTokens,
       overallTokenPercent: Math.min(100, Math.round((totalDailyTokens / totalDailyTokenCapacity) * 100)),
-      totalAllTimeTokens: Math.max(6600, totalAllTimeTokens),
-      totalTokens: Math.max(6600, totalAllTimeTokens),
-      groqConsoleTokens: Math.max(6600, totalAllTimeTokens),
+      totalAllTimeTokens,
+      totalTokens: totalAllTimeTokens,
+      groqConsoleTokens: totalAllTimeTokens,
       groqConsoleUrl: "https://console.groq.com/settings/organization/usage",
       totalCapacityRequests,
       overallDailyPercent: Math.min(100, Math.round((totalDailyRequests / totalCapacityRequests) * 100)),
