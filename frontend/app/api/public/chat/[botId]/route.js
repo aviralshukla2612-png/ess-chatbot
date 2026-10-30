@@ -660,7 +660,8 @@ export async function POST(request, { params }) {
        /\bwhat\s+(?:do\s+you|they|does\s+(?:ess|emperor))\s+(?:do|provide|offer|build|make)\b/i.test(message) ||
        /\bwhat\s+can\s+you\s+(?:do|build|make|provide|offer)\b/i.test(message) ||
        /\b(?:kya|konsi|kaunsi)\s+(?:service|services|kaam|suvidha)\b/i.test(message) ||
-       /\b(?:kya\s+karte\s+ho|kya\s+karti\s+hai|kya\s+service\s+dete\s+ho)\b/i.test(message));
+       /\b(?:kya\s+karte\s+ho|kya\s+karti\s+hai|kya\s+service\s+dete\s+ho)\b/i.test(message) ||
+       /\b(?:everything\s+in\s+details?|all\s+services?\s+in\s+details?|tell\s+me\s+in\s+details?|explain\s+in\s+details?|give\s+me\s+details?|want\s+everything\s+in\s+details?|full\s+details?)\b/i.test(message));
 
     const isFirstMessageQuery = /\bwhat\s+(?:was|is)\s+(?:my\s+)?(?:first|1st|1)\s*(?:message|msg|messgae)\b/i.test(message);
     const wasAskedForName =
@@ -1212,6 +1213,7 @@ With a proven track record of 50+ delivered projects across FinTech, Healthcare,
         }
       }
     } else if (isEssBot && isServicesQuery) {
+      quickReplies = ["Mobile Applications", "Website Development", "AI Chatbot & Automation", "Custom Software & ERP"];
       deterministicReply = lang === "hindi"
         ? `Emperor Smart Solutions (ESS) एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज AI डेवलपमेंट कंपनी है। हमारी मुख्य सेवाएं इस प्रकार हैं:
 

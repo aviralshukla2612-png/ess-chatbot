@@ -22,6 +22,176 @@ export const ALL_ESS_SERVICES = [
   "SEO & Marketing",
 ];
 
+export const SERVICE_OVERVIEWS = {
+  mobile_app: {
+    english: `At **Emperor Smart Solutions**, we build high-performance, production-ready mobile applications designed for scale and exceptional user experience! 📱✨
+
+Here is what our mobile engineering includes:
+• **Cross-Platform & Native Development:** High-speed **Flutter & React Native** apps (single codebase for both iOS & Android), plus native **Swift (iOS)** and **Kotlin (Android)** for hardware-intensive use cases.
+• **Complete Feature Engineering:** Secure REST/GraphQL APIs, real-time WebSockets, push notifications (Firebase Cloud Messaging), biometric authentication, offline data caching, and geolocation/maps.
+• **Payment & Third-Party Integrations:** Seamless payment gateway checkout (Razorpay, Stripe, UPI), CRM integrations, and analytics.
+• **Scalable Cloud Backends:** Node.js/Python microservices, PostgreSQL databases, and custom web-based Admin Dashboards for full platform control.
+• **App Store & Play Store Deployment:** End-to-end publishing, certificate management, CI/CD automation, and post-launch maintenance.`,
+    hindi: `**Emperor Smart Solutions** में, हम उच्च-प्रदर्शन, सुरक्षित और स्केलेबल मोबाइल एप्लिकेशन बनाते हैं जो आपके व्यवसाय को नई ऊँचाइयों पर ले जाते हैं! 📱✨
+
+हमारी मोबाइल इंजीनियरिंग में शामिल हैं:
+• **क्रॉस-प्लेटफ़ॉर्म और नेटिव डेवलपमेंट:** तेज़ गति वाले **Flutter और React Native** ऐप्स (iOS और Android दोनों के लिए एकल कोडबेस), साथ ही नेटिव **Swift (iOS)** और **Kotlin (Android)**।
+• **पूर्ण फ़ीचर इंजीनियरिंग:** सुरक्षित REST/GraphQL APIs, रियल-टाइम WebSockets, पुश नोटिफ़िकेशन (FCM), बायोमेट्रिक लॉगिन, ऑफ़लाइन कैशिंग और लाइव मैप्स।
+• **पेमेंट और इंटीग्रेशन:** Razorpay, Stripe, UPI पेमेंट गेटवे, CRM और एनालिटिक्स इंटीग्रेशन।
+• **स्केलेबल बैकएंड और एडमिन पोर्टल:** Node.js/Python बैकएंड, PostgreSQL डेटाबेस और पूर्ण नियंत्रण के लिए वेब एडमिन पैनल।
+• **प्ले स्टोर और ऐप स्टोर पब्लिशिंग:** पूर्ण स्टोर सबमिशन, CI/CD ऑटोमेशन और लॉन्च के बाद तकनीकी सहायता।`,
+    hinglish: `**Emperor Smart Solutions** mein hum high-performance, secure aur scalable mobile applications build karte hain jo aapke business ko grow karein! 📱✨
+
+Hamari mobile engineering mein kya-kya include hai:
+• **Cross-Platform & Native Apps:** Super-fast **Flutter & React Native** apps (single codebase for both Android & iOS), plus native **Swift (iOS)** aur **Kotlin (Android)**.
+• **Complete Features:** Secure APIs, real-time WebSockets, push notifications (FCM), biometric login, offline caching aur Google Maps integration.
+• **Payment Gateways:** Razorpay, Stripe, UPI payment integrations aur CRM sync.
+• **Backend & Admin Panel:** Scalable Node.js/Python backends, PostgreSQL databases aur custom web admin dashboards.
+• **Play Store & App Store Deployment:** Complete publishing, CI/CD automation aur 30 days post-launch support.`,
+  },
+  website: {
+    english: `At **Emperor Smart Solutions**, we engineer modern, ultra-fast web platforms and digital experiences built for high conversion and business growth! 🌐⚡
+
+Here is what our web engineering includes:
+• **Modern Full-Stack Tech:** High-performance **Next.js 15, React, Node.js, and Tailwind CSS** for instant page loads, smooth micro-interactions, and 95+ Google Lighthouse scores.
+• **Custom Admin Portals & Dashboards:** Intuitive, role-based admin panels to manage your content, users, orders, and business metrics without touching code.
+• **E-Commerce & Digital Commerce:** Dynamic product catalogs, secure shopping cart, multi-currency checkout, and payment gateways (Razorpay, Stripe, PayPal).
+• **Database & Cloud Architecture:** Robust PostgreSQL, MongoDB, and Redis caching hosted on AWS/Docker with automated daily backups and SSL security.
+• **Search Engine Optimization (SEO):** Full technical SEO, semantic HTML5, dynamic OpenGraph meta tags, and structured schema markup for top Google rankings.`,
+    hindi: `**Emperor Smart Solutions** में, हम आधुनिक, उच्च-गति वाली वेबसाइटें और वेब प्लेटफ़ॉर्म बनाते हैं जो अधिकतम कन्वर्ज़न और व्यावसायिक वृद्धि सुनिश्चित करते हैं! 🌐⚡
+
+हमारी वेब इंजीनियरिंग में शामिल हैं:
+• **आधुनिक फुल-स्टैक तकनीक:** त्वरित लोडिंग और 95+ Google Lighthouse स्कोर के लिए **Next.js, React, Node.js और Tailwind CSS**।
+• **कस्टम एडमिन पोर्टल:** बिना कोडिंग के अपनी सामग्री, उपयोगकर्ता और ऑर्डर प्रबंधित करने के लिए शक्तिशाली एडमिन डैशबोर्ड।
+• **ई-कॉमर्स समाधान:** डायनामिक उत्पाद कैटलॉग, सुरक्षित शॉपिंग कार्ट और पेमेंट गेटवे (Razorpay, Stripe, UPI)।
+• **डेटाबेस और सुरक्षा:** मजबूत PostgreSQL डेटाबेस, AWS/Docker क्लाउड होस्टिंग, SSL एन्क्रिप्शन और स्वचालित बैकअप।
+• **पूर्ण SEO ऑप्टिमाइज़ेशन:** शीर्ष Google रैंकिंग के लिए तकनीकी SEO, सिमेंटिक HTML5 और स्कीमा मार्कअप।`,
+    hinglish: `**Emperor Smart Solutions** mein hum modern, lightning-fast websites aur enterprise web portals develop karte hain jo high conversion deliver karein! 🌐⚡
+
+Hamari web engineering services:
+• **Modern Tech Stack:** High-speed **Next.js 15, React, Node.js aur Tailwind CSS** (95+ Google Lighthouse speed score).
+• **Custom Admin Dashboard:** Content, users, aur orders easily manage karne ke liye intuitive admin panel.
+• **E-Commerce Solutions:** Dynamic product catalogs, cart, checkout, aur online payment gateways (Razorpay, Stripe, UPI).
+• **Database & Security:** PostgreSQL / MongoDB, Redis caching, AWS/Docker cloud hosting aur SSL encryption.
+• **Top Google SEO:** Technical SEO, fast loading, mobile responsive aur schema markup included.`,
+  },
+  ai_chatbot: {
+    english: `At **Emperor Smart Solutions**, we develop enterprise-grade AI Chatbots and automated conversational agents that convert visitors and automate customer support 24/7! 🤖💬
+
+Here is what our AI conversational systems include:
+• **Custom RAG (Retrieval-Augmented Generation):** Trained directly on your company documents, PDFs, FAQs, and product catalogs to provide 100% verified, hallucination-free answers.
+• **Multi-Channel Deployment:** Instant integration into your website via our sleek live widget, plus official **WhatsApp Cloud API** and CRM sync.
+• **Automated Lead Capture & CRM Sync:** Smart multi-turn sales qualification that extracts visitor names, phone numbers, and requirements, dispatching real-time leads to your email, WhatsApp, or CRM webhooks.
+• **Multi-Language Intelligence:** Seamless auto-detection and natural conversation in **English, Hindi (Devanagari), and Hinglish**.
+• **Hybrid AI Architecture:** High-speed Groq LPU inference combined with self-hosted private Ollama LLM fallback for maximum uptime and zero data leakage.`,
+    hindi: `**Emperor Smart Solutions** में, हम अत्याधुनिक एआई चैटबॉट और ऑटोमेशन सिस्टम विकसित करते हैं जो आपकी वेबसाइट और व्हाट्सएप पर 24/7 ग्राहकों को सहायता प्रदान करते हैं! 🤖💬
+
+हमारे एआई चैटबॉट समाधान में शामिल हैं:
+• **कस्टम RAG तकनीक:** आपके दस्तावेज़ों, PDFs और उत्पाद कैटलॉग पर प्रशिक्षित, 100% सटीक उत्तर।
+• **मल्टी-चैनल सपोर्ट:** वेबसाइट लाइव चैट विजेट और आधिकारिक **WhatsApp Cloud API** इंटीग्रेशन।
+• **ऑटोमेटेड लीड कैप्चर:** संभावित ग्राहकों के नाम, नंबर और आवश्यकताओं को स्वतः एकत्र कर आपकी टीम को ईमेल/व्हाट्सएप पर भेजना।
+• **बहुभाषी समझ:** अंग्रेजी, हिंदी और हिंग्लिश में स्वाभाविक बातचीत।
+• **उच्च गति और गोपनीयता:** बिजली जैसी तेज़ गति (Groq LPU) और निजी डेटा सुरक्षा।`,
+    hinglish: `**Emperor Smart Solutions** mein hum enterprise-grade AI Chatbots aur automated assistants develop karte hain jo aapke customers ko 24/7 engage aur support karte hain! 🤖💬
+
+Hamare AI Chatbot solutions:
+• **Custom Document RAG:** Aapki company ke PDFs, docs aur catalogs se train hokar 100% accurate answers deta hai.
+• **Website & WhatsApp:** Sleek live chat widget for websites plus official WhatsApp Cloud API integration.
+• **Auto Lead Generation:** Leads ka Name, Phone aur requirements capture karke real-time notification send karta hai.
+• **Multi-Language:** English, Hindi aur natural Hinglish auto-detect karke smartly converse karta hai.
+• **Ultra-Fast Speed:** High-speed Groq inference aur privacy-first database architecture.`,
+  },
+  custom_software: {
+    english: `At **Emperor Smart Solutions**, we architect bespoke enterprise software, custom ERP platforms, and internal business tools designed to automate operations and eliminate manual bottlenecks! 💻⚙️
+
+Here is what our custom software engineering includes:
+• **Tailored ERP & CRM Systems:** Custom workflow automation for sales pipelines, inventory tracking, order management, employee HR/payroll, and customer portals.
+• **Granular Role-Based Access Control (RBAC):** Multi-tier staff permissions, audit logs, and data security policies tailored to your organizational hierarchy.
+• **Data Migration & Legacy Integration:** Seamless import and synchronization from spreadsheets, legacy databases (SQL/Oracle), and third-party accounting APIs.
+• **Interactive Business Analytics:** Real-time analytics dashboards with data visualizations, automated PDF/Excel reports, and executive summaries.
+• **Enterprise Architecture:** High-availability PostgreSQL databases, Docker containerization, REST/GraphQL microservices, and 99.9% uptime SLA.`,
+    hindi: `**Emperor Smart Solutions** में, हम कस्टम एंटरप्राइज सॉफ्टवेयर और ERP समाधान तैयार करते हैं जो आपके व्यावसायिक कार्यों को पूरी तरह स्वचालित करते हैं! 💻⚙️
+
+हमारे कस्टम सॉफ्टवेयर में शामिल हैं:
+• **कस्टम ERP और CRM:** इन्वेंट्री, बिलिंग, बिक्री पाइपलाइन और कर्मचारी प्रबंधन के लिए विशेष रूप से निर्मित सॉफ्टवेयर।
+• **भूमिका-आधारित सुरक्षा (RBAC):** विभिन्न कर्मचारियों के लिए अनुमति स्तर और विस्तृत ऑडिट लॉग।
+• **डेटा माइग्रेशन:** पुरानी स्प्रेडशीट और डेटाबेस से नए सिस्टम में सुरक्षित डेटा ट्रांसफर।
+• **रियल-टाइम एनालिटिक्स:** व्यावसायिक प्रदर्शन और राजस्व पर नज़र रखने के लिए सुंदर विज़ुअल डैशबोर्ड।`,
+    hinglish: `**Emperor Smart Solutions** mein hum tailored enterprise software aur ERP systems architect karte hain jo aapke business workflows ko automate karte hain! 💻⚙️
+
+Hamare custom software solutions:
+• **Custom ERP & CRM:** Sales, inventory, billing, HR aur customer portals ke liye tailored automation.
+• **Role-Based Access (RBAC):** Multi-level employee permissions aur secure data controls.
+• **Data Migration:** Old Excel sheets ya databases se smooth cloud migration.
+• **Live Dashboards:** Real-time visual reports, graphs aur automated PDF export.`,
+  },
+  ui_ux: {
+    english: `At **Emperor Smart Solutions**, we craft stunning, user-centric UI/UX designs and interactive prototypes that turn complex digital products into intuitive, delightful experiences! 🎨✨
+
+Here is what our design practice includes:
+• **End-to-End Design Systems:** Component libraries, typography scales, curated color palettes, dark/light mode themes, and responsive layout grids.
+• **High-Fidelity Figma Prototypes:** Clickable, animated prototypes that simulate real user journeys before a single line of code is written.
+• **User Research & Wireframing:** Information architecture, user persona mapping, and UX flow diagrams to maximize conversion and reduce churn.
+• **Developer-Ready Handoff:** Pixel-perfect asset exports, CSS token specifications, and design system documentation for seamless engineering execution.`,
+    hindi: `**Emperor Smart Solutions** में, हम आकर्षक, उपयोग में आसान और आधुनिक UI/UX डिज़ाइन तैयार करते हैं जो उपयोगकर्ताओं को मोहित करते हैं! 🎨✨
+
+हमारी डिज़ाइन सेवाओं में शामिल हैं:
+• **फ़िग्मा (Figma) इंटरएक्टिव प्रोटोटाइप:** कोडिंग से पहले संपूर्ण उपयोगकर्ता अनुभव का जीवंत परीक्षण।
+• **आधुनिक डिज़ाइन सिस्टम:** डार्क/लाइट थीम, कस्टम आइकन, टाइपोग्राफी और रिस्पॉन्सिव लेआउट।
+• **वायरफ्रेमिंग और यूज़र रिसर्च:** अधिकतम जुड़ाव और रूपांतरण के लिए रणनीतिक यूएक्स योजना।`,
+    hinglish: `**Emperor Smart Solutions** mein hum premium UI/UX design aur interactive Figma prototypes craft karte hain jo users ko impress karein! 🎨✨
+
+Hamari UI/UX services:
+• **Figma Clickable Prototypes:** Coding start hone se pehle real app/website flow test karein.
+• **Complete Design System:** Custom components, dark/light mode, sleek colors aur modern typography.
+• **User-Centric UX:** High conversion rates aur intuitive navigation ensure karne ke liye deep research.`,
+  },
+  cloud_devops: {
+    english: `At **Emperor Smart Solutions**, we engineer resilient cloud infrastructure, automated deployment pipelines, and security hardening for mission-critical web and mobile applications! ☁️🔒
+
+Here is what our DevOps & Cloud practice includes:
+• **Cloud Infrastructure Architecture:** Scalable setup on AWS, Google Cloud, or dedicated VPS with load balancing and auto-scaling.
+• **Containerization & Orchestration:** Docker containerization and Kubernetes cluster management for reproducible, isolated microservices.
+• **Automated CI/CD Pipelines:** GitHub Actions or GitLab CI automated test runs, linting, Docker image builds, and zero-downtime rolling deployments.
+• **Database Scaling & High Availability:** PostgreSQL replication, read replicas, automated vector indexing (pgvector), and automated offsite backups.
+• **Cybersecurity & Compliance:** Nginx reverse proxy, SSL/TLS certificates, rate limiting, DDoS mitigation, and firewall configuration.`,
+    hindi: `**Emperor Smart Solutions** में, हम स्केलेबल क्लाउड इन्फ्रास्ट्रक्चर और स्वचालित डेवऑप्स (DevOps) समाधान प्रदान करते हैं! ☁️🔒
+
+हमारी क्लाउड सेवाओं में शामिल हैं:
+• **क्लाउड आर्किटेक्चर:** AWS, Google Cloud या डेडिकेटेड VPS पर सुरक्षित और उच्च-उपलब्धता सर्वर सेटअप।
+• **Docker और CI/CD पाइपलाइन्स:** स्वचालित टेस्टिंग और शून्य-डाउनटाइम डिप्लॉयमेंट।
+• **डेटाबेस स्केलिंग और सुरक्षा:** PostgreSQL क्लस्टरिंग, स्वचालित बैकअप और SSL सुरक्षा।`,
+    hinglish: `**Emperor Smart Solutions** mein hum scalable cloud infrastructure aur automated CI/CD DevOps pipelines deliver karte hain! ☁️🔒
+
+Hamari Cloud & DevOps services:
+• **AWS / GCP Cloud Setup:** High-availability server architecture with auto-scaling.
+• **Docker & CI/CD:** GitHub Actions automated builds aur zero-downtime rolling deployments.
+• **PostgreSQL Database HA:** Replication, vector search (pgvector) aur daily automated cloud backups.`,
+  },
+  seo_marketing: {
+    english: `At **Emperor Smart Solutions**, we drive sustainable, organic traffic and qualified sales leads through technical SEO audits, search engine dominance, and digital growth strategies! 📈🚀
+
+Here is what our SEO & Digital Growth practice includes:
+• **Technical SEO & Core Web Vitals:** Optimizing page load speeds, resolving indexing bottlenecks, mobile responsiveness, and schema.org structured data.
+• **Keyword & Market Dominance:** In-depth competitor analysis, intent-based keyword research, and high-converting landing page optimization.
+• **Local & National SEO:** Google Business Profile (GBP) ranking, local citation building, and multi-location map pack dominance.
+• **Content & Authority Building:** Authoritative content clusters, internal link optimization, and search engine crawlability improvements.
+• **Transparent Growth Analytics:** Real-time search console tracking, keyword ranking reports, and organic lead attribution.`,
+    hindi: `**Emperor Smart Solutions** में, हम जैविक (Organic) ट्रैफ़िक और व्यावसायिक लीड बढ़ाने के लिए उन्नत एसईओ (SEO) रणनीतियाँ लागू करते हैं! 📈🚀
+
+हमारी SEO सेवाओं में शामिल हैं:
+• **तकनीकी SEO:** Google Core Web Vitals ऑप्टिमाइज़ेशन और उच्च-गति पेज लोड।
+• **कीवर्ड और प्रतिस्पर्धी विश्लेषण:** शीर्ष Google रैंकिंग के लिए उच्च-मूल्य वाले कीवर्ड्स पर काम।
+• **स्थानीय और राष्ट्रीय एसईओ:** Google Business Profile (GBP) रैंकिंग और मैप्स दृश्यता।`,
+    hinglish: `**Emperor Smart Solutions** mein hum organic Google ranking aur qualified customer leads ke liye proven SEO strategies implement karte hain! 📈🚀
+
+Hamari SEO & Growth services:
+• **Technical SEO:** Lightning-fast page speeds, mobile optimization aur schema structured data.
+• **Targeted Keyword Ranking:** Top Google search spots par rank karne ke liye in-depth research.
+• **Local & National Visibility:** Google Business Profile (GBP) optimization aur map pack dominance.`,
+  },
+};
+
 export const QUALIFICATION_FLOWS = {
   website: {
     serviceName: "Website Development",
@@ -792,41 +962,77 @@ function extractTimelineAnswer(text) {
  * Detects if the visitor is initiating or switching services
  */
 export function detectServiceIntent(message = "", currentService = null) {
-  const clean = message.toLowerCase();
+  const clean = message.toLowerCase().trim();
 
-  // SEO & Digital Growth Intent
-  if (/\b(?:seo|search\s*engine\s*optimization|digital\s*marketing|organic\s*traffic|google\s*ranking|seo\s*&\s*digital\s*growth)\b/i.test(clean)) {
-    return "seo_marketing";
+  // Mobile App Intent (mobile apps, mobile application, mobile applications, flutter, react native, ios, android)
+  if (
+    /\b(?:mobile\s*apps?|ios\s*apps?|android\s*apps?|flutter\s*apps?|react\s*native|build\s*an?\s*apps?|apps?\s*development|mobile\s*applications?|apps?\s+for|want\s+(?:an?\s+)?apps?|need\s+(?:an?\s+)?apps?|applications?\s+for|school\s*management\s*apps?)\b/i.test(clean) ||
+    clean === "mobile applications" ||
+    clean === "mobile application" ||
+    clean === "mobile app" ||
+    clean === "mobile apps"
+  ) {
+    return "mobile_app";
+  }
+
+  // Website & E-commerce Intent
+  if (
+    /\b(?:websites?|web\s*sites?|web\s*portals?|web\s*pages?|landing\s*pages?|e-?commerce|online\s*stores?|clinic\s*websites?|business\s*websites?|web\s*platforms?|website\s*developments?)\b/i.test(clean) ||
+    clean === "website development" ||
+    clean === "websites" ||
+    clean === "website"
+  ) {
+    return "website";
+  }
+
+  // AI Chatbot Intent
+  if (
+    /\b(?:ai\s*chatbots?|chatbots?|whatsapp\s*bots?|whatsapp\s*ai|rag|support\s*bots?|automated\s*agents?|ai\s*agents?|ai\s*chatbots?\s*&\s*automation|ai\s*solutions?|ai\s*chatbot)\b/i.test(clean) ||
+    clean === "ai chatbot" ||
+    clean === "ai chatbots" ||
+    clean === "ai chatbot & automation" ||
+    clean === "ai chatbots & automation"
+  ) {
+    return "ai_chatbot";
+  }
+
+  // Custom Software & ERP Intent
+  if (
+    /\b(?:custom\s*softwares?|erp|crm|inventory\s*softwares?|billing\s*softwares?|management\s*systems?|custom\s*software\s*&\s*erp|software\s*developments?|school\s*management|college\s*management|hospital\s*management|management\s*softwares?|custom\s*business\s*software)\b/i.test(clean) ||
+    clean === "custom software" ||
+    clean === "custom software & erp" ||
+    clean === "custom business software"
+  ) {
+    return "custom_software";
   }
 
   // UI/UX Design Intent
-  if (/\b(?:ui\s*\/?\s*ux|uiux|wireframe|figma|prototype|prototyping|design\s*system|ui\s*\/?\s*ux\s*design)\b/i.test(clean)) {
+  if (
+    /\b(?:ui\s*\/?\s*ux|uiux|wireframes?|figma|prototypes?|prototyping|design\s*systems?|ui\s*\/?\s*ux\s*designs?)\b/i.test(clean) ||
+    clean === "ui/ux design" ||
+    clean === "ui/ux" ||
+    clean === "ui ux"
+  ) {
     return "ui_ux";
   }
 
   // Cloud & DevOps Intent
-  if (/\b(?:cloud|devops|aws|docker|ci\s*\/?\s*cd|kubernetes|server\s*setup|cloud\s*&\s*devops|cloud\s*infrastructure)\b/i.test(clean)) {
+  if (
+    /\b(?:cloud|devops|aws|docker|ci\s*\/?\s*cd|kubernetes|server\s*setups?|cloud\s*&\s*devops|cloud\s*infrastructures?)\b/i.test(clean) ||
+    clean === "cloud & devops" ||
+    clean === "cloud and devops"
+  ) {
     return "cloud_devops";
   }
 
-  // Mobile App Intent
-  if (/\b(?:mobile\s*app|ios\s*app|android\s*app|flutter\s*app|react\s*native|build\s*an?\s*app|app\s*development|mobile\s*application|app\s+for|want\s+(?:an?\s+)?app|need\s+(?:an?\s+)?app|application\s+for|school\s*management\s*app)\b/i.test(clean)) {
-    return "mobile_app";
-  }
-
-  // Custom Software & ERP Intent
-  if (/\b(?:custom\s*software|erp|crm|inventory\s*software|billing\s*software|management\s*system|custom\s*software\s*&\s*erp|software\s*development|school\s*management|college\s*management|hospital\s*management|management\s*software)\b/i.test(clean)) {
-    return "custom_software";
-  }
-
-  // AI Chatbot Intent
-  if (/\b(?:ai\s*chatbot|chatbot|bot|whatsapp\s*bot|rag|support\s*bot|automated\s*agent|ai\s*agent|ai\s*chatbot\s*&\s*automation)\b/i.test(clean)) {
-    return "ai_chatbot";
-  }
-
-  // Website & E-commerce Intent
-  if (/\b(?:website|web\s*site|web\s*portal|web\s*page|landing\s*page|e-?commerce|online\s*store|clinic\s*website|business\s*website|web\s*platform|website\s*development)\b/i.test(clean)) {
-    return "website";
+  // SEO & Digital Growth Intent
+  if (
+    /\b(?:seo|search\s*engine\s*optimizations?|digital\s*marketings?|organic\s*traffics?|google\s*rankings?|seo\s*&\s*digital\s*growths?|seo\s*&\s*marketing)\b/i.test(clean) ||
+    clean === "seo & marketing" ||
+    clean === "seo & digital growth" ||
+    clean === "seo"
+  ) {
+    return "seo_marketing";
   }
 
   // Generic Software / Web requirement
@@ -1210,7 +1416,7 @@ export function handleSalesFlowTurn({
 
   const isPureServiceSelection = ALL_ESS_SERVICES.some(
     (s) => s.toLowerCase() === cleanMsg.toLowerCase()
-  );
+  ) || /^(?:mobile\s*applications?|mobile\s*apps?|website\s*developments?|websites?|ai\s*chatbots?|ai\s*chatbots?\s*&\s*automation|custom\s*software(?:\s*&\s*erp)?|custom\s*business\s*software|ui\s*\/?\s*ux(?:\s*design)?|cloud(?:\s*&\s*devops)?|seo(?:\s*&\s*marketing)?)$/i.test(cleanMsg);
 
   const cleanVisitorName = (visitorName && typeof visitorName === "string" && !/^(?:there|website visitor|website prospect|visitor|prospect|user|guest)$/i.test(visitorName.trim()))
     ? visitorName.trim()
@@ -1350,7 +1556,19 @@ export function handleSalesFlowTurn({
 
     let finalReply = nextQ.text;
     if (briefAnswer) {
-      finalReply = `${briefAnswer} ${nextQ.text}`;
+      finalReply = `${briefAnswer}\n\n${nextQ.text}`;
+    }
+
+    // If starting consultation for this service, provide rich technical and architectural details
+    const isFirstQuestionForService = Object.keys(current.answers).length === 0;
+    if (isFirstQuestionForService && SERVICE_OVERVIEWS[current.service]) {
+      const overview = SERVICE_OVERVIEWS[current.service][lang] || SERVICE_OVERVIEWS[current.service].english;
+      const transition = lang === "hindi"
+        ? "आपकी परियोजना के लिए उपयुक्त आर्किटेक्चर और समय-सीमा तैयार करने के लिए:"
+        : lang === "hinglish"
+        ? "Aapke project ke liye right architecture aur timeline plan karne ke liye:"
+        : "To tailor the architecture and project roadmap for your needs:";
+      finalReply = `${overview}\n\n${transition}\n${nextQ.text}`;
     }
 
     return {
@@ -1367,6 +1585,11 @@ export function handleSalesFlowTurn({
   }
 
   // 6. All qualification questions answered! Present brief summary and finalize lead
+  // Guard: ONLY finalize if a valid service exists and at least one answer was recorded!
+  if (!current.service || !QUALIFICATION_FLOWS[current.service] || Object.keys(current.answers).length === 0) {
+    return { shouldHandle: false };
+  }
+
   const summary = generateRequirementsSummary(current.service, current.answers, lang);
   const serviceTitle = QUALIFICATION_FLOWS[current.service]?.serviceName || "Digital Project";
 
