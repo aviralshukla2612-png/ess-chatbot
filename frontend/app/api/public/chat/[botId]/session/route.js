@@ -82,6 +82,7 @@ async function handleSession(request, { params }) {
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
+      console.warn(`[CHAT_SESSION_404] Bot not found or inactive. botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status='${bot?.status}'`);
       return corsResponse(
         NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 }),
         request

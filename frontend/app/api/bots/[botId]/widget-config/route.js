@@ -19,10 +19,21 @@ export async function GET(request, { params }) {
 
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
+      console.warn(`[WIDGET_CONFIG_404] botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status=${bot?.status}`);
       return corsResponse(
         NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 })
       );
     }
+
+    const defaultQuickReplies = [
+      "Website Development",
+      "Mobile Application",
+      "AI Chatbot & RAG",
+      "Custom Software & ERP",
+      "UI/UX Design",
+      "Cloud & DevOps",
+      "Hire Dedicated Developers",
+    ];
 
     return corsResponse(
       NextResponse.json({
@@ -36,7 +47,10 @@ export async function GET(request, { params }) {
           launcherPosition: bot.launcherPosition || "bottom-right",
           brandingEnabled: bot.brandingEnabled !== false,
           placeholderText: bot.placeholderText || "Type your message...",
-          quickReplies: Array.isArray(bot.quickReplies) ? bot.quickReplies : [],
+          quickReplies:
+            Array.isArray(bot.quickReplies) && bot.quickReplies.length > 0
+              ? bot.quickReplies
+              : (bot.id === "bot_aa" || bot.name === "aa" || !bot.quickReplies ? defaultQuickReplies : []),
         },
       })
     );

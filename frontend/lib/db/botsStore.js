@@ -36,6 +36,15 @@ const DEFAULT_BOTS = [
     instructions: "Be courteous, clear, and direct.",
     collectLeads: true,
     allowedDomains: ["*"],
+    quickReplies: [
+      "Website Development",
+      "Mobile Application",
+      "AI Chatbot & RAG",
+      "Custom Software & ERP",
+      "UI/UX Design",
+      "Cloud & DevOps",
+      "Hire Dedicated Developers",
+    ],
     conversationsCount: 0,
     questionsCount: 0,
     leadsCount: 0,
@@ -151,6 +160,20 @@ export const botsStore = {
     match = scopedBots.find((b) => b.name && b.name.trim().toLowerCase() === queryLower);
     if (match) return match;
 
+    // 4. Default seed bot fallback (ensure official default bot is always accessible)
+    if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
+      if (queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
+        const def = DEFAULT_BOTS.find((b) => b.id === "bot_aa");
+        if (def) {
+          if (!bots.some((b) => b.id === "bot_aa")) {
+            bots.push(def);
+            saveBotsToDisk(bots);
+          }
+          return def;
+        }
+      }
+    }
+
     // Strict: Never fall back to another tenant's bot or the first bot in the store
     return null;
   },
@@ -163,6 +186,7 @@ export const botsStore = {
     if (!idOrName) return null;
     const query = String(idOrName).trim();
     if (!query) return null;
+    const queryLower = query.toLowerCase();
 
     // Check disk/memory first for speed
     const localMatch = this.getBot(query, organizationId);
@@ -200,6 +224,13 @@ export const botsStore = {
       }
     } catch (err) {
       console.warn("Database bot lookup error:", err);
+    }
+
+    // Default seed bot fallback
+    if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
+      if (queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
+        return DEFAULT_BOTS.find((b) => b.id === "bot_aa") || null;
+      }
     }
 
     return null;
