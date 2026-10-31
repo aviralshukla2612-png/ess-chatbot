@@ -87,9 +87,9 @@ export const leadsStore = {
             visitorId: conv.visitorId || null,
             sessionId: conv.id,
             organizationId: conv.organizationId || "org_ess_default",
-            name: conv.visitorName && conv.visitorName !== "Website Visitor" && conv.visitorName !== "Website Prospect"
+            name: conv.visitorName && !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(conv.visitorName.trim())
               ? conv.visitorName
-              : (conv.visitorEmail ? conv.visitorEmail.split("@")[0].replace(/[._]/g, " ") : "Client Lead"),
+              : (conv.visitorEmail ? conv.visitorEmail.split("@")[0].replace(/[._]/g, " ") : (conv.visitorPhone ? `Client (${conv.visitorPhone})` : "Client Lead")),
             email: conv.visitorEmail || "",
             phone: conv.visitorPhone || "",
             company: conv.company || "Direct Inbound",
@@ -129,7 +129,7 @@ export const leadsStore = {
       const conv = (l.sessionId && conversationsStore.getConversation(l.sessionId, l.organizationId)) ||
         conversationsStore.getConversations({ organizationId: l.organizationId, botId: l.botId }).find((c) =>
           (l.phone && c.visitorPhone && cleanDigits(c.visitorPhone) === cleanDigits(l.phone)) ||
-          (l.name && l.name !== "Website Prospect" && l.name !== "Website Visitor" && c.visitorName && c.visitorName.toLowerCase() === l.name.toLowerCase())
+          (l.name && !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client)$/i.test(l.name.trim()) && c.visitorName && c.visitorName.toLowerCase() === l.name.toLowerCase())
         );
 
       if (conv?.qualification) {
@@ -147,7 +147,8 @@ export const leadsStore = {
     list = list.filter((l) => {
       const hasContact = Boolean(l.email || l.phone);
       const hasAnswers = Boolean(l.answers && Object.keys(l.answers).length > 0);
-      const hasRealName = Boolean(l.name && l.name !== "Website Prospect" && l.name !== "Website Visitor");
+      const isPlaceholder = !l.name || /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(l.name.trim());
+      const hasRealName = Boolean(l.name && !isPlaceholder);
       const isBogusName = /^(?:who\s+is|what\s+is|can\s+you|tell\s+me|i\s+want|how\s+much|hello|hi)\b/i.test(l.name || "");
       if (isBogusName) return false;
       if (!hasContact && !hasAnswers && !hasRealName) return false;

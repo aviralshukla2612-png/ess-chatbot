@@ -1418,9 +1418,12 @@ export function handleSalesFlowTurn({
     (s) => s.toLowerCase() === cleanMsg.toLowerCase()
   ) || /^(?:mobile\s*applications?|mobile\s*apps?|website\s*developments?|websites?|ai\s*chatbots?|ai\s*chatbots?\s*&\s*automation|custom\s*software(?:\s*&\s*erp)?|custom\s*business\s*software|ui\s*\/?\s*ux(?:\s*design)?|cloud(?:\s*&\s*devops)?|seo(?:\s*&\s*marketing)?)$/i.test(cleanMsg);
 
-  const cleanVisitorName = (visitorName && typeof visitorName === "string" && !/^(?:there|website visitor|website prospect|visitor|prospect|user|guest)$/i.test(visitorName.trim()))
-    ? visitorName.trim()
-    : "";
+  const isGenericOrPlaceholder = (n) =>
+    !n ||
+    typeof n !== "string" ||
+    /^(?:there|website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(n.trim());
+
+  const cleanVisitorName = isGenericOrPlaceholder(visitorName) ? "" : visitorName.trim();
   const hasRealName = Boolean(cleanVisitorName);
 
   // If user requests to add more details to their completed qualification

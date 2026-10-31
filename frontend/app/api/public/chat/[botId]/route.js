@@ -438,7 +438,10 @@ export async function POST(request, { params }) {
     const isCompanyEmail = (em) =>
       /emperorsmartsolutions\.com|emperorsmartsolutions@gmail\.com|^contact@|^sales@|^info@|^support@|^careers@/i.test(em || "");
     const isCompanyPhone = (ph) => /63591\s*20081/.test((ph || "").replace(/\D/g, ""));
-    const isPlaceholderName = (n) => !n || n === "Website Visitor" || n === "Website Prospect";
+    const isPlaceholderName = (n) =>
+      !n ||
+      typeof n !== "string" ||
+      /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(n.trim());
 
     // 1. Phone Resolution (Current message has top priority!)
     let resolvedPhone = "";
@@ -468,40 +471,19 @@ export async function POST(request, { params }) {
       resolvedEmail = visitor.email;
     }
 
-    // 3. Name Resolution (Preserve existing verified visitor name unless explicitly updated!)
+    // 3. Name Resolution (Freshly extracted real name always takes priority over placeholders!)
     const hasExplicitNameIntro = /(?:my\s+name\s+is|i\s+am|call\s+me|mera\s+naam|this\s+is)\b/i.test(message);
     const knownVisitorName = (persistentVisitor?.name && !isPlaceholderName(persistentVisitor.name))
       ? persistentVisitor.name
       : (existingConv?.visitorName && !isPlaceholderName(existingConv.visitorName) ? existingConv.visitorName : "");
 
     let resolvedName = "";
-    if (hasExplicitNameIntro && currentMsgLead.name && !isPlaceholderName(currentMsgLead.name)) {
-      // Check for conflicting customer details on explicit intro
-      if (knownVisitorName && knownVisitorName.toLowerCase() !== currentMsgLead.name.toLowerCase()) {
-        const isSwitchConfirmation = /\b(?:yes|update|change|confirm|switch)\b/i.test(message);
-        if (!isSwitchConfirmation) {
-          const conflictReply = corsResponse(
-            NextResponse.json({
-              success: true,
-              reply: `I have your profile recorded as **${knownVisitorName}**. Are you a different person using this browser, or would you like to update your name to **${currentMsgLead.name}**?`,
-              quickReplies: [`Update name to ${currentMsgLead.name}`, "Start as new visitor", `Keep ${knownVisitorName}`],
-              sources: [],
-              sessionId: currentSessionId,
-            })
-          );
-          if (isNewVisitorTokenIssued && rawTokenToSet) {
-            setVisitorCookie(conflictReply, bot.id, rawTokenToSet);
-          }
-          return conflictReply;
-        }
-      }
+    if (currentMsgLead.name && !isPlaceholderName(currentMsgLead.name)) {
       resolvedName = currentMsgLead.name;
-    } else if (knownVisitorName) {
+    } else if (knownVisitorName && !isPlaceholderName(knownVisitorName)) {
       resolvedName = knownVisitorName;
     } else if (visitor?.name && !isPlaceholderName(visitor.name)) {
       resolvedName = visitor.name;
-    } else if (currentMsgLead.name && !isPlaceholderName(currentMsgLead.name)) {
-      resolvedName = currentMsgLead.name;
     } else if (sessionLead.name && !isPlaceholderName(sessionLead.name)) {
       resolvedName = sessionLead.name;
     }
@@ -829,8 +811,7 @@ export async function POST(request, { params }) {
         : `Sure! Please share your **Name and Phone Number (or WhatsApp)** here, and I'll make sure our technical team connects with you promptly.`;
     } else if (isContactSubmission) {
       const activeQual = existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
-      const hasActiveProject = Boolean(activeQual && activeQual.service);
-      const displayName = (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") ? resolvedName : "";
+      const displayName = (resolvedName && !isPlaceholderName(resolvedName)) ? resolvedName : "";
 
       if (hasActiveProject && (resolvedPhone || resolvedEmail)) {
         const serviceTitle = QUALIFICATION_FLOWS[activeQual.service]?.serviceName || "Digital Project";

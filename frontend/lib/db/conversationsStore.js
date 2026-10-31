@@ -48,13 +48,13 @@ function loadFromDisk() {
           botName = "Emperor AI Assistant";
           isChanged = true;
         }
-        if (!visitorName || visitorName === "Website Visitor") {
+        if (!visitorName || visitorName === "Website Visitor" || visitorName === "Client Inquiry") {
           if (c.visitorEmail) {
             visitorName = c.visitorEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
           } else if (c.visitorPhone) {
             visitorName = `Client (${c.visitorPhone})`;
           } else {
-            visitorName = "Client Inquiry";
+            visitorName = "";
           }
           isChanged = true;
         }
@@ -209,9 +209,9 @@ export const conversationsStore = {
       visitorId: data.visitorId || null,
       leadId: data.leadId || null,
       visitorName:
-        data.visitorName && data.visitorName !== "Website Visitor"
+        data.visitorName && data.visitorName !== "Website Visitor" && data.visitorName !== "Client Inquiry"
           ? data.visitorName
-          : (data.visitorEmail ? data.visitorEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (x) => x.toUpperCase()) : "Client Inquiry"),
+          : (data.visitorEmail ? data.visitorEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (x) => x.toUpperCase()) : ""),
       visitorEmail: data.visitorEmail || "",
       visitorPhone: data.visitorPhone || "",
       visitorLocation:
