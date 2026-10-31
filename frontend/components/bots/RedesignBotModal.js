@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   Palette,
@@ -20,6 +20,8 @@ import {
   Circle,
   Square,
   Maximize2,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 
@@ -84,6 +86,49 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Instant local preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFormData((prev) => ({
+          ...prev,
+          launcherIcon: "custom",
+          launcherLogoUrl: event.target.result,
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    setUploadingImage(true);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      const res = await fetch("/api/upload/image", {
+        method: "POST",
+        body: data,
+      });
+      const json = await res.json();
+      if (json && json.success && json.url) {
+        setFormData((prev) => ({
+          ...prev,
+          launcherIcon: "custom",
+          launcherLogoUrl: json.url,
+        }));
+      }
+    } catch (err) {
+      console.warn("Upload failed, retaining local preview:", err);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   useEffect(() => {
     if (bot) {
@@ -310,31 +355,97 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                 </div>
               </div>
 
-              {/* Custom Image / Logo URL Field */}
+              {/* Custom Image / Logo Upload Box */}
               {formData.launcherIcon === "custom" && (
-                <div className="p-3 bg-white dark:bg-[#1A1A1A] rounded-xl border border-[#EFE7DC] dark:border-neutral-700 space-y-2">
-                  <label className="block text-[11px] font-bold text-neutral-700 dark:text-neutral-300">
-                    Custom Logo Image URL
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="url"
-                      value={formData.launcherLogoUrl}
-                      onChange={(e) => setFormData({ ...formData, launcherLogoUrl: e.target.value })}
-                      placeholder="https://yourdomain.com/logo.png or /e-logoicon.webp"
-                      className="flex-1 text-xs bg-[#FAF9F6] dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
-                    />
+                <div className="p-3.5 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-[#B68A55]/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-neutral-800 dark:text-neutral-200">
+                      Brand Logo Image (Upload from Computer or URL)
+                    </label>
+                    <span className="text-[10px] text-[#B68A55] font-semibold">
+                      PNG, WEBP, SVG
+                    </span>
+                  </div>
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+
+                  {/* Active Logo Thumbnail & Action Row */}
+                  {formData.launcherLogoUrl && (
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800">
+                      <div className="w-12 h-12 rounded-xl bg-[#0A0A0A] border border-neutral-700 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-xs">
+                        <img
+                          src={formData.launcherLogoUrl}
+                          alt="Logo Preview"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Logo Ready
+                        </span>
+                        <p className="text-[10px] text-neutral-500 truncate mt-0.5 font-mono">
+                          {formData.launcherLogoUrl.startsWith("data:") ? "Uploaded from Device" : formData.launcherLogoUrl}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="px-2.5 py-1.5 text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] hover:bg-[#B68A55]/25 rounded-lg border border-[#B68A55]/30 transition-colors cursor-pointer"
+                        >
+                          {uploadingImage ? "Uploading..." : "Change Image"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, launcherLogoUrl: "" })}
+                          className="p-1.5 text-neutral-400 hover:text-rose-500 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                          title="Remove custom logo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Button + Shortcut Buttons */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                      className="px-3 py-2 text-xs font-bold bg-[#B68A55] hover:bg-[#966E3A] text-white rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{uploadingImage ? "Uploading..." : "Upload Image from Computer 📁"}</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, launcherLogoUrl: "/e-logoicon.webp" })}
-                      className="px-2.5 py-2 text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] rounded-lg border border-[#B68A55]/30 hover:bg-[#B68A55]/25 whitespace-nowrap cursor-pointer"
+                      className="px-3 py-2 text-xs font-bold bg-[#B68A55]/15 text-[#B68A55] rounded-xl border border-[#B68A55]/30 hover:bg-[#B68A55]/25 transition-colors cursor-pointer"
                     >
                       Use ESS Logo
                     </button>
                   </div>
-                  <p className="text-[10px] text-neutral-500">
-                    PNG, SVG, or WEBP with transparent background recommended.
-                  </p>
+
+                  {/* Or Manual URL Input */}
+                  <div className="pt-1">
+                    <input
+                      type="url"
+                      value={formData.launcherLogoUrl}
+                      onChange={(e) => setFormData({ ...formData, launcherLogoUrl: e.target.value })}
+                      placeholder="Or paste image URL (https://yourdomain.com/logo.png)"
+                      className="w-full text-xs bg-[#FAF9F6] dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -633,11 +744,16 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
           <button
             type="button"
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || uploadingImage}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             style={{ backgroundColor: formData.primaryColor || "#B68A55" }}
           >
-            {saving ? (
+            {uploadingImage ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Uploading Image...</span>
+              </>
+            ) : saving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
                 <span>Saving Design...</span>
