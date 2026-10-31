@@ -142,12 +142,13 @@ export class InferenceProvider {
   static async _callGroq({ model, messages, temperature, maxTokens, stream, onToken, timeoutMs }) {
     const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
     
-    // Attempt with up to 3 pool keys before bailing out
-    const MAX_KEY_ATTEMPTS = 3;
+    // Attempt across all keys in the pool before giving up
+    const poolStats = GroqKeyPoolManager.getPoolStats?.() || {};
+    const maxKeyAttempts = Math.max(6, (poolStats?.totalKeys || 1) + 2);
     let attempts = 0;
     let lastError = null;
 
-    while (attempts < MAX_KEY_ATTEMPTS) {
+    while (attempts < maxKeyAttempts) {
       attempts++;
       const keyObj = GroqKeyPoolManager.getNextKey();
       const apiKey = keyObj?.apiKey || process.env.GROQ_API_KEY;
@@ -188,14 +189,16 @@ export class InferenceProvider {
           if (!res.ok) {
             const errBody = await res.text();
             
-            // Check for Rate Limit (429) -> Auto-Failover to next key in pool
-            if (res.status === 429 || errBody.includes("rate_limit_exceeded")) {
-              console.warn(`[GROQ_RATE_LIMIT] Key '${keyObj?.label || "primary"}' received 429. Rotating key...`);
+            // Check for Rate Limit (429) or token quota exhaustion -> Auto-failover to next key in rotation!
+            if (res.status === 429 || errBody.includes("rate_limit_exceeded") || errBody.includes("tokens per minute") || errBody.includes("tokens per day")) {
+              console.warn(`[GROQ_RATE_LIMIT] Key '${keyObj?.label || "serving"}' token limit reached (429). Automatically switching to next key...`);
               if (keyObj?.id) {
-                GroqKeyPoolManager.markRateLimited(keyObj.id, 60, "Rate limit reached (429)");
+                const retryAfter = res.headers.get("retry-after");
+                const cooldown = retryAfter ? Math.max(10, parseInt(retryAfter, 10)) : 60;
+                GroqKeyPoolManager.markTokenCompleted(keyObj.id, `Token limit reached (429): ${errBody.slice(0, 100)}`, cooldown);
               }
               lastError = new Error(`Groq 429 Rate Limit: ${errBody}`);
-              break; // break model loop to try next key in pool
+              break; // break model loop to immediately retry with next key in pool!
             }
 
             if (res.status === 401 || res.status === 403) {

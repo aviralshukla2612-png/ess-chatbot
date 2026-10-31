@@ -166,6 +166,23 @@ export default function AdminKeysPage() {
     }
   };
 
+  const handleRestartCycle = async () => {
+    try {
+      const res = await fetch("/api/admin/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restart_cycle" }),
+      });
+      if (res.ok) {
+        setNotification({ type: "success", message: "Rotation cycle restarted at Key #1!" });
+        loadStats();
+        setTimeout(() => setNotification(null), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-12 font-sans">
       {/* Top Banner & Title */}
@@ -176,7 +193,7 @@ export default function AdminKeysPage() {
             Groq API Key Pool & Rate Limits
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Priority Active-Standby Failover: 1 key actively serves traffic while backup keys remain on standby for automatic 429 failover.
+            Sequential Token Rotation: Key 1 serves until token completed → switches to 2 → 3 → 4 → 5 → 6 → loops back to 1.
           </p>
         </div>
         <div className="flex items-center flex-wrap gap-2 shrink-0">
@@ -184,6 +201,14 @@ export default function AdminKeysPage() {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Dynamic Sync (3s)</span>
           </div>
+          <button
+            onClick={handleRestartCycle}
+            title="Restart rotation sequence from Key #1"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors shadow-xs cursor-pointer whitespace-nowrap"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Restart Cycle (#1)</span>
+          </button>
           <a
             href="https://console.groq.com/settings/organization/usage"
             target="_blank"
@@ -304,26 +329,30 @@ export default function AdminKeysPage() {
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-extrabold text-slate-900 truncate max-w-[190px]" title={stats?.activeServingKey?.label || "None"}>
-              {stats?.activeServingKey?.label || "Auto-Failover Active"}
+            <span className="text-xl font-extrabold text-slate-900 truncate max-w-[200px]" title={stats?.activeServingKey?.label || "None"}>
+              {stats?.activeServingKey ? `#${stats.activeServingKey.sequenceNum || stats.currentServingIndex || 1} ${stats.activeServingKey.label}` : "Key #1 Active"}
             </span>
           </div>
           <p className="text-[11px] text-slate-500 flex items-center justify-between">
-            <span>Standby: <b className="text-slate-700">{stats?.standbyKeysCount || 0}</b> backup keys</span>
-            {stats?.limitCompletedKeysCount > 0 && (
-              <span className="text-purple-600 font-semibold">{stats.limitCompletedKeysCount} limit completed</span>
+            <span>Sequence: <b className="text-slate-700">Key {stats?.currentServingIndex || 1} of {stats?.totalKeys || 1}</b></span>
+            {stats?.cycleCount > 1 && (
+              <span className="text-indigo-600 font-semibold">Cycle #{stats.cycleCount}</span>
             )}
           </p>
           <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1 pt-0.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Auto-switches to backup on limit reached</span>
+            <span>
+              {stats?.nextServingKey
+                ? `Switches to #${stats.nextServingKey.sequenceNum} on token limit`
+                : "Auto-switches to next key on token limit"}
+            </span>
           </div>
         </div>
 
         {/* Card 2: Combined Daily Capacity */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Daily Requests</span>
+            <span>Daily Requests (API Calls)</span>
             <Server className="w-3.5 h-3.5 text-teal-500" />
           </span>
           <div className="flex items-baseline gap-2">
@@ -331,7 +360,7 @@ export default function AdminKeysPage() {
               {stats?.totalDailyRequests || 0}
             </span>
             <span className="text-xs text-slate-400">
-              used / {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k pool cap
+              used / {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k requests cap
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -342,10 +371,10 @@ export default function AdminKeysPage() {
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
             <span>
-              Active Key: <b className="text-teal-600 font-semibold">{Math.max(0, (stats?.activeServingKeyDailyCap || 14400) - (stats?.activeServingKeyRequests || 0)).toLocaleString()}</b> left
+              Active Key: <b className="text-teal-600 font-semibold">{Math.max(0, (stats?.activeServingKeyDailyCap || 14400) - (stats?.activeServingKeyRequests || 0)).toLocaleString()}</b> reqs left
             </span>
             <span className="text-slate-400 font-medium">
-              Pool: {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k ({stats?.totalKeys || 1} keys)
+              Pool: {((stats?.totalCapacityRequests || 14400) / 1000).toFixed(1)}k reqs ({stats?.totalKeys || 1} keys)
             </span>
           </p>
         </div>
@@ -353,7 +382,7 @@ export default function AdminKeysPage() {
         {/* Card 3: Groq Token Usage */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-            <span>Groq Token Usage</span>
+            <span>Daily Tokens (1,000k Total)</span>
             <Cpu className="w-3.5 h-3.5 text-purple-500" />
           </span>
           <div className="flex items-baseline gap-2">
@@ -363,7 +392,7 @@ export default function AdminKeysPage() {
                 : (stats?.totalDailyTokens || 0)}
             </span>
             <span className="text-xs text-slate-400">
-              used ({stats?.totalDailyTokens?.toLocaleString() || 0} tok)
+              used ({stats?.totalDailyTokens?.toLocaleString() || 0} tokens)
             </span>
           </div>
           <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -376,10 +405,10 @@ export default function AdminKeysPage() {
           </div>
           <p className="text-[10px] text-slate-500 flex items-center justify-between">
             <span>
-              Active Key: <b className="text-emerald-600 font-semibold">{((Math.max(0, (stats?.activeServingKeyTokenCap || 500000) - (stats?.activeServingKeyTokens || 0))) / 1000).toFixed(1)}k</b> left
+              Active Key: <b className="text-emerald-600 font-semibold">{((Math.max(0, (stats?.activeServingKeyTokenCap || 500000) - (stats?.activeServingKeyTokens || 0))) / 1000).toFixed(1)}k</b> tok left
             </span>
             <span className="text-emerald-600 font-semibold">
-              Pool: {((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k
+              Pool: {((stats?.totalDailyTokenCapacity || 500000) / 1000).toLocaleString()}k tok
             </span>
           </p>
         </div>
@@ -465,7 +494,7 @@ export default function AdminKeysPage() {
                     ) : k.status === "limit_completed" ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
                         <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                        Limit Completed (Auto-Switched)
+                        Token Completed (Switched)
                       </span>
                     ) : k.status === "active_serving" ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -475,7 +504,7 @@ export default function AdminKeysPage() {
                     ) : k.status === "standby" ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                         <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                        Standby (Backup)
+                        Standby (Queue #{idx + 1})
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-400 border border-slate-200">
@@ -513,8 +542,8 @@ export default function AdminKeysPage() {
                       {(k.dailyTokens || 0).toLocaleString()} today
                     </div>
                     {k.liveRemainingTokens && (
-                      <div className="text-[9px] text-teal-600 font-mono mt-0.5">
-                        Live TPM: {(k.liveRemainingTokens).toLocaleString()} rem
+                      <div className="text-[9px] text-teal-600 font-mono mt-0.5" title="Groq per-minute burst limit (6,000 TPM limit). Resets every 60 seconds!">
+                        Per-Min Speed: {(k.liveRemainingTokens).toLocaleString()} / 6k TPM (resets in 60s)
                       </div>
                     )}
                   </td>

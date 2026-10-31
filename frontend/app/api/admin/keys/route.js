@@ -122,6 +122,11 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, message: "Groq Console usage synced", key: updated });
     }
 
+    if (action === "restart_cycle") {
+      const stats = GroqKeyPoolManager.restartCycle();
+      return NextResponse.json({ ok: true, message: "Rotation cycle restarted at Key #1", stats });
+    }
+
     return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 400 });
