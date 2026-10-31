@@ -353,20 +353,20 @@ export default function BillingPage() {
       )}
 
       {/* Executive Razorpay Subscription Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-tr from-slate-900 via-indigo-950 to-slate-900 border border-slate-700/80 p-6 sm:p-9 text-white shadow-2xl space-y-7">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-linear-to-tr dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 border border-[#EFE7DC] dark:border-slate-700/80 p-6 sm:p-9 text-[#252525] dark:text-white shadow-xs space-y-7">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#B68A55]/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Card Header */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFE7DC] dark:border-white/10 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-indigo-300" />
+            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-indigo-500/20 dark:border-indigo-400/30 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-[#B68A55] dark:text-indigo-300" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-300 block">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#B68A55] dark:text-indigo-300 block">
                 Official Payment Gateway
               </span>
-              <span className="text-base font-extrabold text-white">
+              <span className="text-base font-extrabold text-[#252525] dark:text-white">
                 Razorpay Subscriptions (UPI Autopay & Cards)
               </span>
             </div>
@@ -376,19 +376,19 @@ export default function BillingPage() {
             <span
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase border ${
                 isTrial
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
                   : hasActiveSub
-                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                  : "bg-rose-500/20 text-rose-300 border-rose-500/30"
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                  : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
               }`}
             >
               <span
                 className={`w-2 h-2 rounded-full ${
                   isTrial
-                    ? "bg-amber-400 animate-pulse"
+                    ? "bg-amber-500 animate-pulse"
                     : hasActiveSub
-                    ? "bg-emerald-400"
-                    : "bg-rose-400"
+                    ? "bg-emerald-500"
+                    : "bg-rose-500"
                 }`}
               />
               {isTrial
@@ -403,10 +403,10 @@ export default function BillingPage() {
         {/* Plan Details & Pricing */}
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
           <div>
-            <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#252525] dark:text-white">
               {planName} Plan
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
               {isTrial
                 ? "Full unrestricted access to custom AI Chatbots, Vector Knowledge, and Leads CRM. ₹0 was charged upfront."
                 : hasActiveSub
@@ -416,13 +416,13 @@ export default function BillingPage() {
           </div>
 
           <div className="sm:text-right flex flex-col justify-center sm:items-end">
-            <div className="text-3xl sm:text-4xl font-black text-indigo-300 font-mono">
+            <div className="text-3xl sm:text-4xl font-black text-[#B68A55] dark:text-indigo-300 font-mono">
               {isTrial ? "₹0.00" : "₹2,499"}
-              <span className="text-xs sm:text-sm font-normal text-slate-400 font-sans">
+              <span className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 font-sans">
                 {isTrial ? " (Upfront)" : " / month"}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {isTrial
                 ? `Recurring deduction of ₹2,499/mo begins on ${billingData?.autopayDate || "Day 8"}.`
                 : "Billed monthly via automatic bank mandate."}
@@ -432,19 +432,19 @@ export default function BillingPage() {
 
         {/* Trial Progress Bar */}
         {isTrial && (
-          <div className="relative z-10 p-5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+          <div className="relative z-10 p-5 rounded-2xl bg-[#FAF9F6] dark:bg-white/5 border border-[#EFE7DC] dark:border-white/10 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-amber-300 flex items-center gap-1.5">
+              <span className="font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
                 Trial Period Progress
               </span>
-              <span className="font-bold font-mono text-white text-sm">
+              <span className="font-bold font-mono text-[#252525] dark:text-white text-sm">
                 {billingData?.trialDaysRemaining ?? 7} Days Remaining
               </span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-[#EFE7DC] dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-linear-to-r from-amber-400 via-amber-300 to-indigo-400 h-2.5 rounded-full transition-all duration-500"
+                className="bg-linear-to-r from-amber-500 via-amber-400 to-[#B68A55] h-2.5 rounded-full transition-all duration-500"
                 style={{
                   width: `${Math.max(
                     12,
@@ -457,10 +457,10 @@ export default function BillingPage() {
         )}
 
         {/* Card Footer Details & Actions */}
-        <div className="relative z-10 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-xs text-slate-400 flex items-center gap-2">
+        <div className="relative z-10 pt-5 border-t border-[#EFE7DC] dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
             <span>Mandate ID:</span>
-            <span className="font-mono text-slate-200 bg-white/10 px-2 py-0.5 rounded-md font-semibold">
+            <span className="font-mono text-[#252525] dark:text-slate-200 bg-[#FAF9F6] dark:bg-white/10 px-2 py-0.5 rounded-md font-semibold border border-[#EFE7DC] dark:border-transparent">
               {billingData?.subscription?.providerSubscriptionId || "sub_unregistered"}
             </span>
           </div>
@@ -470,9 +470,9 @@ export default function BillingPage() {
               onClick={() => {
                 extensionSectionRef.current?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="px-4 py-2 rounded-xl bg-linear-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#252525] hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 text-[#B68A55]" />
               <span>Extend Plan Duration ⚡</span>
             </button>
 
@@ -480,7 +480,7 @@ export default function BillingPage() {
               <button
                 onClick={handleCancelAutopay}
                 disabled={cancelLoading}
-                className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/30 text-rose-200 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-400/30 text-rose-700 dark:text-rose-200 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
               >
                 {cancelLoading ? "Cancelling..." : "Cancel Autopay"}
               </button>

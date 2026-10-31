@@ -150,9 +150,9 @@ export default function Header({ onToggleSidebar }) {
 
         <Link
           href="/bots/create"
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-xs shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-linear-to-r dark:from-indigo-600 dark:to-violet-600 dark:hover:from-indigo-700 dark:hover:to-violet-700 shadow-xs transition-all hover:scale-[1.02]"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-[#B68A55] dark:text-white" />
           <span className="hidden sm:inline">Create Bot</span>
         </Link>
 
@@ -164,19 +164,19 @@ export default function Header({ onToggleSidebar }) {
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#B68A55] dark:bg-indigo-600 animate-pulse" />
             )}
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 p-4 z-50 animate-fade-in">
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-100 dark:border-neutral-800">
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-[#EFE7DC] dark:border-neutral-800 p-4 z-50 animate-fade-in">
+              <div className="flex items-center justify-between pb-3 border-b border-[#EFE7DC] dark:border-neutral-800">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-sm text-neutral-900 dark:text-white">
+                  <h4 className="font-semibold text-sm text-[#252525] dark:text-white">
                     Notifications
                   </h4>
                   {unreadCount > 0 && (
-                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] dark:bg-indigo-950 dark:text-indigo-300 px-1.5 py-0.5 rounded-full">
                       {unreadCount} new
                     </span>
                   )}
@@ -184,32 +184,32 @@ export default function Header({ onToggleSidebar }) {
                 {unreadCount > 0 && (
                   <button
                     onClick={handleClearNotifications}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="text-xs text-[#B68A55] dark:text-indigo-400 hover:underline font-medium"
                   >
                     Mark read
                   </button>
                 )}
               </div>
 
-              <div className="divide-y divide-neutral-100 dark:divide-neutral-800 max-h-72 overflow-y-auto mt-2">
+              <div className="divide-y divide-[#EFE7DC] dark:divide-neutral-800 max-h-72 overflow-y-auto mt-2">
                 {notifications.map((item) => {
                   const Icon = item.icon;
                   return (
                     <div
                       key={item.id}
-                      className="py-3 flex items-start gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 rounded-xl px-2 transition-colors cursor-pointer"
+                      className="py-3 flex items-start gap-3 hover:bg-[#FAF9F6] dark:hover:bg-neutral-800/50 rounded-xl px-2 transition-colors cursor-pointer"
                     >
-                      <div className={`p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 shrink-0 ${item.iconColor}`}>
+                      <div className={`p-2 rounded-lg bg-[#FAF9F6] dark:bg-neutral-800 shrink-0 ${item.iconColor}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 overflow-hidden">
-                        <p className="text-xs font-semibold text-neutral-900 dark:text-white">
+                        <p className="text-xs font-semibold text-[#252525] dark:text-white">
                           {item.title}
                         </p>
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate mt-0.5">
                           {item.desc}
                         </p>
-                        <span className="text-[10px] text-neutral-400 mt-1 block">
+                        <span className="text-[10px] text-slate-400 mt-1 block">
                           {item.time}
                         </span>
                       </div>
@@ -224,10 +224,10 @@ export default function Header({ onToggleSidebar }) {
         {/* User Avatar */}
         <Link
           href="/settings"
-          className="flex items-center gap-2 pl-2 border-l border-neutral-200 dark:border-neutral-800"
+          className="flex items-center gap-2 pl-2 border-l border-[#EFE7DC] dark:border-neutral-800"
           title={currentUser ? `${currentUser.name} (${currentUser.email})` : "Account Settings"}
         >
-          <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+          <div className="w-8 h-8 rounded-full bg-[#252525] dark:bg-linear-to-tr dark:from-indigo-600 dark:to-violet-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
             {initials}
           </div>
         </Link>

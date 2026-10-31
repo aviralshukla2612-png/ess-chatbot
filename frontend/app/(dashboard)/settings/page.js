@@ -186,8 +186,8 @@ export default function SettingsPage() {
                   onClick={() => setActiveSection(s.id)}
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold transition-all text-left cursor-pointer group ${
                     isActive
-                      ? "bg-linear-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/25 ring-1 ring-white/10"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
+                      ? "bg-[#252525] dark:bg-linear-to-r dark:from-indigo-600 dark:to-violet-600 text-white shadow-xs ring-1 ring-black/5 dark:ring-white/10"
+                      : "text-slate-600 dark:text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ export default function SettingsPage() {
                       className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
                         isActive
                           ? "bg-white/20 text-white"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-indigo-400"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-[#B68A55] dark:group-hover:text-indigo-400"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -204,7 +204,7 @@ export default function SettingsPage() {
                       <p className={`font-bold ${isActive ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
                         {s.label}
                       </p>
-                      <p className={`text-[10px] truncate max-w-[150px] ${isActive ? "text-indigo-100/80" : "text-slate-400 dark:text-slate-500"}`}>
+                      <p className={`text-[10px] truncate max-w-[150px] ${isActive ? "text-slate-200" : "text-slate-400 dark:text-slate-500"}`}>
                         {s.desc}
                       </p>
                     </div>
@@ -221,28 +221,28 @@ export default function SettingsPage() {
           </div>
 
           {/* Infrastructure Specs Card */}
-          <div className="p-4 rounded-2xl bg-linear-to-br from-slate-900/90 to-slate-950 border border-slate-800 text-white shadow-lg space-y-3">
+          <div className="p-4 rounded-2xl bg-white dark:bg-linear-to-br dark:from-slate-900/90 dark:to-slate-950 border border-[#EFE7DC] dark:border-slate-800 text-[#252525] dark:text-white shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Server className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Server className="w-3.5 h-3.5 text-[#B68A55] dark:text-indigo-400" />
                 Infrastructure
               </span>
-              <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">
+              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">
                 99.98% SLA
               </span>
             </div>
-            <div className="space-y-1.5 text-xs text-slate-300">
+            <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400">Database Engine:</span>
-                <span className="font-mono font-medium text-slate-200">PostgreSQL (RLS)</span>
+                <span className="text-slate-500 dark:text-slate-400">Database Engine:</span>
+                <span className="font-mono font-medium text-[#252525] dark:text-slate-200">PostgreSQL (RLS)</span>
               </div>
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400">Embedding Vector:</span>
-                <span className="font-mono font-medium text-indigo-300">1536-dim HNSW</span>
+                <span className="text-slate-500 dark:text-slate-400">Embedding Vector:</span>
+                <span className="font-mono font-medium text-[#B68A55] dark:text-indigo-300">1536-dim HNSW</span>
               </div>
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-400">Data Isolation:</span>
-                <span className="font-medium text-emerald-300">Tenant Level</span>
+                <span className="text-slate-500 dark:text-slate-400">Data Isolation:</span>
+                <span className="font-medium text-emerald-600 dark:text-emerald-300">Tenant Level</span>
               </div>
             </div>
           </div>
@@ -254,40 +254,40 @@ export default function SettingsPage() {
           {activeSection === "general" && (
             <div className="space-y-6">
               {/* Workspace Identity Hero Card */}
-              <div className="relative overflow-hidden rounded-3xl bg-linear-to-tr from-slate-900 via-indigo-950/70 to-slate-900 border border-slate-800 p-6 sm:p-7 shadow-2xl text-white">
-                <div className="absolute -top-16 -right-16 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-linear-to-tr dark:from-slate-900 dark:via-indigo-950/70 dark:to-slate-900 border border-[#EFE7DC] dark:border-slate-800 p-6 sm:p-7 shadow-xs text-[#252525] dark:text-white">
+                <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#B68A55]/10 dark:bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-indigo-500 via-indigo-600 to-violet-600 flex items-center justify-center text-white text-xl font-extrabold shadow-lg shadow-indigo-500/30 border border-white/20 shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-[#252525] dark:bg-linear-to-tr dark:from-indigo-500 dark:via-indigo-600 dark:to-violet-600 flex items-center justify-center text-white text-xl font-extrabold shadow-sm border border-black/10 dark:border-white/20 shrink-0">
                       {orgNameInput?.slice(0, 2).toUpperCase() || "WS"}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+                        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#252525] dark:text-white">
                           {orgNameInput || "Enterprise Workspace"}
                         </h2>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] dark:bg-indigo-500/20 dark:text-indigo-300 border border-[#B68A55]/20 dark:border-indigo-500/30">
                           {userProfile.role}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-400 font-mono">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                           ID: {userProfile.organizationId || "org_default"}
                         </span>
                         <button
                           onClick={handleCopyTenant}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-[#FAF9F6] hover:bg-[#EFE7DC] text-[#252525] dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-[#EFE7DC] dark:border-transparent transition-colors cursor-pointer"
                           title="Copy Tenant ID"
                         >
                           {copiedTenantId ? (
                             <>
-                              <Check className="w-3 h-3 text-emerald-400" />
-                              <span className="text-emerald-400">Copied</span>
+                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3 h-3 text-slate-400" />
+                              <Copy className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                               <span>Copy</span>
                             </>
                           )}
@@ -297,45 +297,45 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       Live Cluster Online
                     </span>
                   </div>
                 </div>
 
                 {/* 4 Live Workspace Metric Chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
-                  <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
-                      <Bot className="w-3.5 h-3.5 text-indigo-400" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#EFE7DC] dark:border-slate-800/80">
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
+                      <Bot className="w-3.5 h-3.5 text-[#B68A55] dark:text-indigo-400" />
                       <span>Live Bots</span>
                     </div>
-                    <span className="text-base font-bold text-white">{botsCount} Assistant</span>
+                    <span className="text-base font-bold text-[#252525] dark:text-white">{botsCount} Assistant</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
-                      <Users2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
+                      <Users2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Captured Leads</span>
                     </div>
-                    <span className="text-base font-bold text-white">{leadsCount} Leads</span>
+                    <span className="text-base font-bold text-[#252525] dark:text-white">{leadsCount} Leads</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
-                      <Database className="w-3.5 h-3.5 text-violet-400" />
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
+                      <Database className="w-3.5 h-3.5 text-[#B68A55] dark:text-violet-400" />
                       <span>Vector Search</span>
                     </div>
-                    <span className="text-base font-bold text-white">Active (RAG)</span>
+                    <span className="text-base font-bold text-[#252525] dark:text-white">Active (RAG)</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
-                      <Globe className="w-3.5 h-3.5 text-sky-400" />
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
+                      <Globe className="w-3.5 h-3.5 text-[#B68A55] dark:text-sky-400" />
                       <span>Cloud Region</span>
                     </div>
-                    <span className="text-base font-bold text-white">ap-south-1</span>
+                    <span className="text-base font-bold text-[#252525] dark:text-white">ap-south-1</span>
                   </div>
                 </div>
               </div>

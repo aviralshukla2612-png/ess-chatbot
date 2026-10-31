@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0B0F19] text-[#252525] dark:text-slate-100 flex flex-col transition-colors duration-200">
       <div className="flex flex-1 min-h-screen">
-        <Suspense fallback={<aside className="w-64 hidden lg:block bg-[#111827] border-r border-slate-800/80 sticky top-0 h-screen shrink-0" />}>
+        <Suspense fallback={<aside className="w-64 hidden lg:block bg-[#FAF9F6] dark:bg-[#111827] border-r border-[#EFE7DC] dark:border-slate-800/80 sticky top-0 h-screen shrink-0" />}>
           <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}

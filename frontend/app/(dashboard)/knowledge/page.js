@@ -148,10 +148,10 @@ export default function KnowledgePage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#252525] dark:text-white">
             Knowledge Engine
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
             Train your AI bots with documents, verified answers, web pages, and resolve visitor knowledge gaps.
           </p>
         </div>
@@ -160,35 +160,35 @@ export default function KnowledgePage() {
           {activeTab === "qa" && (
             <button
               onClick={() => setQaModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#252525] hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Add Q&A Pair
+              <Plus className="w-4 h-4 text-[#B68A55] dark:text-white" /> Add Q&A Pair
             </button>
           )}
           {activeTab === "websites" && (
             <button
               onClick={() => setWebModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#252525] hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white shadow-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Add Website URL
+              <Plus className="w-4 h-4 text-[#B68A55] dark:text-white" /> Add Website URL
             </button>
           )}
           <button
             onClick={() => setActiveTab("company-profile")}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
               activeTab === "company-profile"
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100"
+                ? "bg-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:text-white"
+                : "bg-white text-[#252525] border border-[#EFE7DC] hover:bg-[#FAF9F6] dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800"
             }`}
           >
-            <Building2 className="w-4 h-4" />
+            <Building2 className="w-4 h-4 text-[#B68A55]" />
             <span>Company Profile Intake</span>
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto">
+      <div className="border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto">
         {[
           {
             id: "company-profile",
@@ -211,20 +211,20 @@ export default function KnowledgePage() {
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id)}
-              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap cursor-pointer ${
                 activeTab === t.id
-                  ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600"
-                  : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  ? "text-[#252525] dark:text-[#B68A55] border-b-2 border-[#252525] dark:border-[#B68A55]"
+                  : "text-slate-500 hover:text-[#252525] dark:hover:text-neutral-200"
               }`}
             >
               <Icon className="w-4 h-4" />
               <span>{t.label}</span>
               {t.badge ? (
-                <span className="text-[10px] bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                <span className="text-[10px] bg-[#B68A55]/15 text-[#B68A55] dark:bg-indigo-950 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-[#B68A55]/20 dark:border-indigo-800">
                   {t.badge}
                 </span>
               ) : t.count !== undefined ? (
-                <span className="text-[10px] text-neutral-400 font-mono">({t.count})</span>
+                <span className="text-[10px] text-slate-400 font-mono">({t.count})</span>
               ) : null}
             </button>
           );

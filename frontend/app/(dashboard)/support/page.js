@@ -162,50 +162,50 @@ export default function SupportPage() {
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-indigo-900 via-indigo-950 to-neutral-900 border border-indigo-500/20 p-6 sm:p-10 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-linear-to-r dark:from-indigo-900 dark:via-indigo-950 dark:to-neutral-900 border border-[#EFE7DC] dark:border-indigo-500/20 p-6 sm:p-10 text-[#252525] dark:text-white shadow-xs">
         <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-semibold text-indigo-300">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B68A55]/10 border border-[#B68A55]/20 text-xs font-semibold text-[#B68A55] dark:bg-white/10 dark:border-white/15 dark:text-indigo-300">
             <Sparkles className="w-3.5 h-3.5" />
             24/7 Dedicated Support & Assistance
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#252525] dark:text-white">
             How can we help you today?
           </h1>
-          <p className="text-sm text-indigo-200/90 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-indigo-200/90 leading-relaxed">
             Search our knowledge base for instant answers on bot deployment, 7-day trials, Razorpay autopay, and knowledge base vector training.
           </p>
 
           {/* Search Bar */}
           <div className="relative pt-2">
-            <Search className="w-4 h-4 text-indigo-300 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-indigo-300 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search guides, FAQs, error messages, or setup instructions..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white placeholder-indigo-200/60 text-xs sm:text-sm outline-hidden focus:border-indigo-400 focus:bg-white/15 transition-all shadow-inner"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF9F6] border border-[#EFE7DC] text-[#252525] placeholder-slate-400 dark:bg-white/10 dark:border-white/20 dark:text-white dark:placeholder-indigo-200/60 text-xs sm:text-sm outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-400 transition-all shadow-xs"
             />
           </div>
         </div>
 
         {/* Status Badge */}
-        <div className="mt-6 sm:mt-0 sm:absolute sm:top-8 sm:right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="mt-6 sm:mt-0 sm:absolute sm:top-8 sm:right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>All Systems Operational</span>
         </div>
       </div>
 
       {/* 3 Quick Contact Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col justify-between">
           <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-indigo-950/50 dark:border-indigo-900/60 flex items-center justify-center text-[#B68A55] dark:text-indigo-400">
               <Mail className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-sm text-neutral-900 dark:text-white">
+            <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Email Support
             </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
               Send us your inquiries or screenshots. Our engineering team responds within 2-4 hours.
             </p>
           </div>
