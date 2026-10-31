@@ -456,29 +456,29 @@ export default function BotsPage() {
       {/* INSTANT DEPLOY MODAL */}
       {deployModalBot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
-          <div className="bg-[#111827] rounded-3xl max-w-2xl w-full border border-slate-800 shadow-2xl overflow-hidden space-y-0 text-white animate-scale-in">
+          <div className="bg-white dark:bg-[#111827] rounded-3xl max-w-2xl w-full border border-[#EFE7DC] dark:border-slate-800 shadow-2xl overflow-hidden space-y-0 text-[#252525] dark:text-white animate-scale-in">
             {/* Modal Header */}
-            <div className="p-6 pb-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
+            <div className="p-6 pb-4 border-b border-[#EFE7DC] dark:border-slate-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-slate-900/60">
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-xs"
                   style={{
-                    backgroundColor: `${deployModalBot.primaryColor || "#4f46e5"}25`,
-                    color: deployModalBot.primaryColor || "#818cf8",
+                    backgroundColor: `${deployModalBot.primaryColor || "#B68A55"}20`,
+                    color: deployModalBot.primaryColor || "#B68A55",
                   }}
                 >
                   {deployModalBot.avatar || "🤖"}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-white">
+                    <h3 className="text-base font-bold text-[#252525] dark:text-white">
                       Deploy "{deployModalBot.name}" on Your Website
                     </h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                       Ready
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Copy the embed code snippet below and paste it into any website HTML.
                   </p>
                 </div>
@@ -486,7 +486,7 @@ export default function BotsPage() {
 
               <button
                 onClick={() => setDeployModalBot(null)}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="p-2 text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -496,14 +496,14 @@ export default function BotsPage() {
             <div className="p-6 space-y-5 text-xs">
               {/* Embed Code Snippet Card */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
+                <div className="flex items-center gap-2 border-b border-[#EFE7DC] dark:border-slate-800 pb-2.5">
                   <button
                     type="button"
                     onClick={() => setModalEmbedTab("html")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                       modalEmbedTab === "html"
-                        ? "bg-indigo-600 text-white shadow-xs"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        ? "bg-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:text-white"
+                        : "bg-[#FAF9F6] dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#EFE7DC]/50 dark:hover:bg-slate-700 border border-[#EFE7DC] dark:border-transparent"
                     }`}
                   >
                     <Code className="w-3.5 h-3.5" />
@@ -514,8 +514,8 @@ export default function BotsPage() {
                     onClick={() => setModalEmbedTab("console")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                       modalEmbedTab === "console"
-                        ? "bg-indigo-600 text-white shadow-xs"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        ? "bg-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:text-white"
+                        : "bg-[#FAF9F6] dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#EFE7DC]/50 dark:hover:bg-slate-700 border border-[#EFE7DC] dark:border-transparent"
                     }`}
                   >
                     <span>🖥️</span>
@@ -525,17 +525,17 @@ export default function BotsPage() {
 
                 {modalEmbedTab === "html" ? (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                       <span>Add to website source code:</span>
-                      <span>Paste before closing <code className="bg-slate-800 px-1 py-0.5 rounded font-mono text-slate-200">&lt;/body&gt;</code></span>
+                      <span>Paste before closing <code className="bg-[#FAF9F6] dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">&lt;/body&gt;</code></span>
                     </div>
                     <div className="relative">
-                      <pre className="p-4 rounded-2xl bg-black/60 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
+                      <pre className="p-4 rounded-2xl bg-[#FAF9F6] dark:bg-black/60 text-[#252525] dark:text-slate-100 font-mono text-xs overflow-x-auto border border-[#EFE7DC] dark:border-slate-800 leading-relaxed shadow-inner">
                         {getEmbedSnippet(deployModalBot)}
                       </pre>
                       <button
                         onClick={() => handleCopyScript(deployModalBot)}
-                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-[#B68A55] dark:hover:bg-[#a07746] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                       >
                         {copiedScript ? (
                           <>
@@ -544,7 +544,7 @@ export default function BotsPage() {
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3.5 h-3.5 text-[#B68A55] dark:text-white" />
                             <span>Copy HTML</span>
                           </>
                         )}
@@ -553,16 +553,16 @@ export default function BotsPage() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="p-2.5 bg-amber-950/40 rounded-xl border border-amber-800/60 text-[11px] text-amber-200 leading-relaxed">
-                      <strong>💡 Quick Console Testing:</strong> Open any website, press <kbd className="bg-slate-900 px-1 py-0.5 rounded border border-amber-700 font-mono font-bold text-amber-300">F12</kbd> (Console), paste this JS code and press <kbd className="bg-slate-900 px-1 py-0.5 rounded border border-amber-700 font-mono font-bold text-amber-300">Enter</kbd>.
+                    <div className="p-2.5 bg-amber-500/10 dark:bg-amber-950/40 rounded-xl border border-amber-500/20 dark:border-amber-800/60 text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
+                      <strong>💡 Quick Console Testing:</strong> Open any website, press <kbd className="bg-white dark:bg-slate-900 px-1 py-0.5 rounded border border-amber-300 dark:border-amber-700 font-mono font-bold text-amber-700 dark:text-amber-300">F12</kbd> (Console), paste this JS code and press <kbd className="bg-white dark:bg-slate-900 px-1 py-0.5 rounded border border-amber-300 dark:border-amber-700 font-mono font-bold text-amber-700 dark:text-amber-300">Enter</kbd>.
                     </div>
                     <div className="relative">
-                      <pre className="p-4 rounded-2xl bg-black/60 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800 leading-relaxed shadow-inner">
+                      <pre className="p-4 rounded-2xl bg-[#FAF9F6] dark:bg-black/60 text-[#252525] dark:text-slate-100 font-mono text-xs overflow-x-auto border border-[#EFE7DC] dark:border-slate-800 leading-relaxed shadow-inner">
                         {getConsoleSnippet(deployModalBot)}
                       </pre>
                       <button
                         onClick={() => handleCopyConsole(deployModalBot)}
-                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer border border-slate-700"
+                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer border border-[#252525] dark:border-slate-700"
                       >
                         {copiedConsole ? (
                           <>
@@ -587,42 +587,42 @@ export default function BotsPage() {
                   href="/test-embed.html"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3.5 rounded-2xl border border-indigo-900/50 bg-indigo-950/40 hover:bg-indigo-900/40 text-indigo-200 flex items-center justify-between transition-colors group cursor-pointer"
+                  className="p-3.5 rounded-2xl border border-[#EFE7DC] dark:border-indigo-900/50 bg-[#FAF9F6] dark:bg-indigo-950/40 hover:bg-[#EFE7DC]/50 dark:hover:bg-indigo-900/40 text-[#252525] dark:text-indigo-200 flex items-center justify-between transition-colors group cursor-pointer shadow-xs"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#B68A55] text-white flex items-center justify-center shrink-0">
                       <Globe className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="font-bold block text-xs text-white">Test on Live Demo Website</span>
-                      <span className="text-[11px] text-indigo-300">See widget floating in action</span>
+                      <span className="font-bold block text-xs text-[#252525] dark:text-white">Test on Live Demo Website</span>
+                      <span className="text-[11px] text-[#B68A55] dark:text-indigo-300">See widget floating in action</span>
                     </div>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300" />
+                  <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-[#252525] dark:group-hover:text-indigo-300" />
                 </a>
 
                 <button
                   type="button"
                   onClick={() => handleDownloadSampleHtml(deployModalBot)}
-                  className="p-3.5 rounded-2xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-200 flex items-center justify-between transition-colors group cursor-pointer"
+                  className="p-3.5 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 bg-[#FAF9F6] dark:bg-slate-900/60 hover:bg-[#EFE7DC]/50 dark:hover:bg-slate-800 text-[#252525] dark:text-slate-200 flex items-center justify-between transition-colors group cursor-pointer shadow-xs"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-white flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-xl bg-white border border-[#EFE7DC] text-[#252525] dark:bg-slate-800 dark:border-slate-700 dark:text-white flex items-center justify-center shrink-0">
                       <Download className="w-4 h-4" />
                     </div>
                     <div className="text-left">
-                      <span className="font-bold block text-xs text-white">Download HTML File</span>
-                      <span className="text-[11px] text-slate-400">Ready-to-open local sample</span>
+                      <span className="font-bold block text-xs text-[#252525] dark:text-white">Download HTML File</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Ready-to-open local sample</span>
                     </div>
                   </div>
-                  <Download className="w-4 h-4 text-slate-400 group-hover:text-slate-200" />
+                  <Download className="w-4 h-4 text-slate-400 group-hover:text-[#252525] dark:group-hover:text-slate-200" />
                 </button>
               </div>
 
               {/* Platform Guides */}
-              <div className="border border-slate-800 rounded-2xl p-4 bg-slate-900/40 space-y-3">
-                <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-                  <span className="font-bold text-slate-300 text-xs">Platform Guide:</span>
+              <div className="border border-[#EFE7DC] dark:border-slate-800 rounded-2xl p-4 bg-[#FAF9F6] dark:bg-slate-900/40 space-y-3">
+                <div className="flex items-center gap-2 border-b border-[#EFE7DC] dark:border-slate-800 pb-2">
+                  <span className="font-bold text-slate-600 dark:text-slate-300 text-xs">Platform Guide:</span>
                   {["html", "wordpress", "shopify", "webflow"].map((plat) => (
                     <button
                       key={plat}
@@ -630,8 +630,8 @@ export default function BotsPage() {
                       onClick={() => setModalCmsTab(plat)}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                         modalCmsTab === plat
-                          ? "bg-indigo-600 text-white"
-                          : "text-slate-400 hover:bg-slate-800"
+                          ? "bg-[#252525] text-white dark:bg-[#B68A55]"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-[#EFE7DC]/60 dark:hover:bg-slate-800"
                       }`}
                     >
                       {plat.toUpperCase()}
@@ -639,10 +639,10 @@ export default function BotsPage() {
                   ))}
                 </div>
 
-                <div className="text-xs text-slate-300 leading-relaxed">
+                <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                   {modalCmsTab === "html" && (
                     <p>
-                      Open your website's <code className="bg-slate-800 px-1 py-0.5 rounded font-mono text-slate-200">index.html</code>. Paste the script tag right above the closing <code className="bg-slate-800 px-1 py-0.5 rounded font-mono text-slate-200">&lt;/body&gt;</code> tag and save.
+                      Open your website's <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">index.html</code>. Paste the script tag right above the closing <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">&lt;/body&gt;</code> tag and save.
                     </p>
                   )}
                   {modalCmsTab === "wordpress" && (
@@ -652,7 +652,7 @@ export default function BotsPage() {
                   )}
                   {modalCmsTab === "shopify" && (
                     <p>
-                      In Shopify Admin, go to <strong>Online Store &rarr; Themes &rarr; Actions &rarr; Edit code</strong>. Open <code className="bg-slate-800 px-1 py-0.5 rounded font-mono text-slate-200">theme.liquid</code> and paste before <code className="bg-slate-800 px-1 py-0.5 rounded font-mono text-slate-200">&lt;/body&gt;</code>.
+                      In Shopify Admin, go to <strong>Online Store &rarr; Themes &rarr; Actions &rarr; Edit code</strong>. Open <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">theme.liquid</code> and paste before <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">&lt;/body&gt;</code>.
                     </p>
                   )}
                   {modalCmsTab === "webflow" && (
@@ -665,17 +665,17 @@ export default function BotsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between">
+            <div className="p-4 bg-[#FAF9F6] dark:bg-slate-900/80 border-t border-[#EFE7DC] dark:border-slate-800 flex items-center justify-between">
               <Link
                 href={`/bots/${deployModalBot.id}/deploy`}
-                className="inline-flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 font-semibold text-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-[#B68A55] dark:text-indigo-400 hover:underline font-semibold text-xs cursor-pointer"
               >
                 <span>Open Full Customization Studio &rarr;</span>
               </Link>
 
               <button
                 onClick={() => setDeployModalBot(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
+                className="px-4 py-2 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold transition-colors cursor-pointer border border-[#252525] dark:border-slate-700 shadow-xs"
               >
                 Done
               </button>
