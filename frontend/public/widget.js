@@ -25,7 +25,7 @@
   const botId =
     (scriptTag && scriptTag.getAttribute("data-bot-id")) ||
     window.NEXUS_BOT_ID ||
-    "aa";
+    "bot_1791618269632";
 
   // 2. Derive Server API Base URL
   let apiBase = "";
@@ -203,7 +203,40 @@
     container.style.setProperty("--nexus-primary-glow", glow);
     container.style.setProperty("--nexus-primary-soft", softBg);
   }
+
+  function updatePosition() {
+    const pos = (botConfig.launcherPosition || "bottom-right").toLowerCase();
+    const isLeft = pos === "bottom-left" || pos === "left";
+    if (isLeft) {
+      container.classList.add("nexus-pos-left");
+      container.style.left = "24px";
+      container.style.right = "auto";
+    } else {
+      container.classList.remove("nexus-pos-left");
+      container.style.right = "24px";
+      container.style.left = "auto";
+    }
+  }
+
+  function applyTheme() {
+    updateThemeVariables();
+    updatePosition();
+    const titleEl = document.getElementById("nexus-header-title");
+    if (titleEl && botConfig.name) {
+      titleEl.textContent = botConfig.name;
+    }
+    const avatarBadge = document.getElementById("nexus-avatar-badge");
+    if (avatarBadge && botConfig.avatar) {
+      avatarBadge.childNodes[0].textContent = botConfig.avatar;
+    }
+    const inputEl = document.getElementById("nexus-user-input");
+    if (inputEl && botConfig.placeholderText) {
+      inputEl.placeholder = botConfig.placeholderText;
+    }
+  }
+
   updateThemeVariables();
+  updatePosition();
 
   const style = document.createElement("style");
   style.id = "nexus-widget-styles";
@@ -211,7 +244,8 @@
     #nexus-chatbot-widget-container {
       position: fixed;
       bottom: 24px;
-      \${botConfig.launcherPosition === "bottom-left" ? "left: 24px;" : "right: 24px;"}
+      right: 24px;
+      left: auto;
       z-index: 2147483647;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
       line-height: 1.5;
@@ -219,6 +253,11 @@
       -moz-osx-font-smoothing: grayscale;
       box-sizing: border-box;
     }
+    #nexus-chatbot-widget-container.nexus-pos-left {
+      left: 24px !important;
+      right: auto !important;
+    }
+
     #nexus-chatbot-widget-container * {
       box-sizing: border-box;
     }
@@ -268,7 +307,8 @@
       display: none;
       position: absolute;
       bottom: 78px;
-      \${botConfig.launcherPosition === "bottom-left" ? "left: 0;" : "right: 0;"}
+      right: 0;
+      left: auto;
       width: 388px;
       max-width: calc(100vw - 32px);
       height: 610px;
@@ -280,6 +320,10 @@
       flex-direction: column;
       border: 1px solid #262626;
       animation: nexusPopIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #nexus-chatbot-widget-container.nexus-pos-left #nexus-widget-window {
+      left: 0 !important;
+      right: auto !important;
     }
     @keyframes nexusPopIn {
       0% { opacity: 0; transform: translateY(18px) scale(0.96); }
@@ -774,12 +818,21 @@
         right: 16px;
         left: auto;
       }
+      #nexus-chatbot-widget-container.nexus-pos-left {
+        left: 16px !important;
+        right: auto !important;
+      }
       #nexus-widget-window {
         width: calc(100vw - 32px);
         height: min(580px, 84vh);
         bottom: 74px;
         right: 0;
+        left: auto;
         border-radius: 20px;
+      }
+      #nexus-chatbot-widget-container.nexus-pos-left #nexus-widget-window {
+        left: 0 !important;
+        right: auto !important;
       }
     }
   `;
