@@ -6,36 +6,35 @@ import { conversationsStore } from "./conversationsStore.js";
 import { formatQualificationInquiry } from "../ai/salesFlowManager.js";
 
 function resolveDataFile() {
-  const frontendPath = path.join(process.cwd(), "frontend", "data", "leads.json");
-  if (fs.existsSync(frontendPath)) return frontendPath;
   const directPath = path.join(process.cwd(), "data", "leads.json");
   if (fs.existsSync(directPath)) return directPath;
+  const frontendPath = path.join(process.cwd(), "frontend", "data", "leads.json");
+  if (fs.existsSync(frontendPath)) return frontendPath;
   if (process.cwd().endsWith("frontend")) return directPath;
   return frontendPath;
 }
-
-const DATA_FILE = resolveDataFile();
 
 const SEED_LEADS = [];
 
 let memoryCache = null;
 
 function loadFromDisk() {
+  const dataFile = resolveDataFile();
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dataFile)) {
+      const dir = path.dirname(dataFile);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(DATA_FILE, JSON.stringify(SEED_LEADS, null, 2), "utf8");
+      fs.writeFileSync(dataFile, JSON.stringify(SEED_LEADS, null, 2), "utf8");
       memoryCache = [...SEED_LEADS];
       return memoryCache;
     }
-    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    const raw = fs.readFileSync(dataFile, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       memoryCache = parsed;
       return memoryCache;
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(SEED_LEADS, null, 2), "utf8");
+    fs.writeFileSync(dataFile, JSON.stringify(SEED_LEADS, null, 2), "utf8");
     memoryCache = [...SEED_LEADS];
     return memoryCache;
   } catch (err) {
@@ -45,11 +44,12 @@ function loadFromDisk() {
 }
 
 function saveToDisk(data) {
+  const dataFile = resolveDataFile();
   try {
     memoryCache = data;
-    const dir = path.dirname(DATA_FILE);
+    const dir = path.dirname(dataFile);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf8");
   } catch (err) {
     console.error("Error saving leads store:", err);
   }
@@ -58,6 +58,70 @@ function saveToDisk(data) {
 export const leadsStore = {
   getLeads(filters = {}) {
     let list = loadFromDisk();
+
+    // Auto-sync leads from conversationsStore: any conversation marked as isLead or with phone/email MUST be in the lead CRM
+    try {
+      const allConvs = conversationsStore.getConversations();
+      let hasNewLeads = false;
+      const cleanDigits = (p) => (p || "").replace(/\D/g, "");
+
+      allConvs.forEach((conv) => {
+        const hasContact = Boolean(conv.visitorPhone || conv.visitorEmail);
+        const isMarkedLead = Boolean(conv.isLead || hasContact);
+        if (!isMarkedLead) return;
+
+        // Check if lead already tracked in list
+        const exists = list.some((l) =>
+          (l.sessionId && l.sessionId === conv.id) ||
+          (conv.visitorPhone && l.phone && cleanDigits(l.phone) === cleanDigits(conv.visitorPhone) && cleanDigits(conv.visitorPhone).length >= 10) ||
+          (conv.visitorEmail && l.email && l.email.toLowerCase() === conv.visitorEmail.toLowerCase())
+        );
+
+        if (!exists) {
+          const qual = conv.qualification || null;
+          const qualAnswers = qual?.answers || {};
+          const qualInquiry = qual ? formatQualificationInquiry(qual) : (conv.lastMessage || "Inquired via live chat widget");
+
+          const newLead = {
+            id: `lead_${conv.id.replace(/^c_/, "")}`,
+            visitorId: conv.visitorId || null,
+            sessionId: conv.id,
+            organizationId: conv.organizationId || "org_ess_default",
+            name: conv.visitorName && conv.visitorName !== "Website Visitor" && conv.visitorName !== "Website Prospect"
+              ? conv.visitorName
+              : (conv.visitorEmail ? conv.visitorEmail.split("@")[0].replace(/[._]/g, " ") : "Client Lead"),
+            email: conv.visitorEmail || "",
+            phone: conv.visitorPhone || "",
+            company: conv.company || "Direct Inbound",
+            botId: conv.botId || "bot_1791618269632",
+            bot: conv.botName || "Emperor AI Assistant",
+            score: (conv.visitorPhone && conv.visitorEmail) ? "High" : (conv.leadScore || "High"),
+            status: conv.status === "Resolved" ? "Converted" : "New",
+            created: new Date(conv.createdAt || Date.now()).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            createdAt: conv.createdAt || new Date().toISOString(),
+            updatedAt: conv.updatedAt || new Date().toISOString(),
+            inquiry: qualInquiry,
+            budget: qualAnswers.budget || "₹50,000+",
+            answers: qualAnswers,
+            qualification: qual,
+            source: "Web Chatbot Widget",
+          };
+
+          list.unshift(newLead);
+          hasNewLeads = true;
+        }
+      });
+
+      if (hasNewLeads) {
+        saveToDisk(list);
+      }
+    } catch (syncErr) {
+      console.warn("Conversations to Leads auto-sync warning:", syncErr.message);
+    }
 
     // Auto-enrich answers, qualification, and inquiry from conversationsStore if missing
     list.forEach((l) => {
@@ -91,7 +155,7 @@ export const leadsStore = {
     });
 
     if (filters.organizationId) {
-      list = list.filter((l) => (l.organizationId || "org_ess_default") === filters.organizationId);
+      list = list.filter((l) => (l.organizationId || "org_ess_default") === filters.organizationId || !l.organizationId);
     }
     if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
       list = list.filter((l) => l.status?.toLowerCase() === filters.status.toLowerCase());
