@@ -117,7 +117,7 @@ export default function AdminConversationsPage() {
                 filtered.map((c) => (
                   <tr key={c.id} className="hover:bg-neutral-900/60 transition-colors">
                     <td className="p-4">
-                      <p className="font-bold text-white">{c.visitorName || "Website Visitor"}</p>
+                      <p className="font-bold text-white">{c.visitorName && c.visitorName !== "Website Visitor" ? c.visitorName : (c.visitorEmail ? c.visitorEmail.split("@")[0].replace(/[._]/g, " ") : "Client Inquiry")}</p>
                       {c.visitorPhone && (
                         <p className="text-[11px] font-mono text-neutral-400 mt-0.5">{c.visitorPhone}</p>
                       )}
@@ -125,7 +125,7 @@ export default function AdminConversationsPage() {
                     <td className="p-4">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 text-neutral-200 font-medium text-xs border border-neutral-800">
                         <Bot className="w-3.5 h-3.5 text-[#B68A55]" />
-                        <span>{c.botName || "aa"}</span>
+                        <span>{c.botName && c.botName !== "aa" ? c.botName : "Emperor AI Assistant"}</span>
                       </span>
                     </td>
                     <td className="p-4 text-neutral-300 max-w-sm truncate">
