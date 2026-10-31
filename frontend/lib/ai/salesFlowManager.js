@@ -1481,8 +1481,32 @@ export function handleSalesFlowTurn({
   // 2. Check if user already provided consent or submitted contact details
   if (current.consentAsked) {
     if (Boolean(contactRecorded) || /\b(?:yes|contact\s*me|sure|okay|definitely|call\s*me|haan|kar\s*lo|theek\s*hai)\b/i.test(cleanMsg)) {
-      current.status = "completed";
       const serviceTitle = QUALIFICATION_FLOWS[current.service]?.serviceName || "Digital Project";
+
+      if (contactRecorded && !hasRealName) {
+        current.status = "awaiting_name";
+        current.consentAsked = true;
+
+        const askNameText = lang === "hindi"
+          ? `शानदार! धन्यवाद! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका फ़ोन नंबर (**${contactRecorded}**) सुरक्षित रूप से नोट कर लिया है।\n\nकृपया अपना **शुभ नाम** साझा करें ताकि हमारी तकनीकी टीम आपसे सही प्रकार से संपर्क कर सके?`
+          : lang === "hinglish"
+          ? `Great! Thank you! Humne aapke **${serviceTitle}** project ke liye aapka contact number (**${contactRecorded}**) note kar liya hai.\n\nPlease apna **Name** share karein taaki hamari technical team aapse connect kar sake?`
+          : `Thank you! We have recorded your contact number (**${contactRecorded}**) for your **${serviceTitle}** project.\n\nCould you please share your **Name** so our technical team knows whom to contact?`;
+
+        return {
+          shouldHandle: true,
+          reply: askNameText,
+          quickReplies: [],
+          updatedQualification: current,
+          leadDataToSave: {
+            service: current.service,
+            answers: current.answers,
+            summary: formatQualificationInquiry(current),
+          },
+        };
+      }
+
+      current.status = "completed";
       const promptText = contactRecorded
         ? (lang === "hindi"
             ? `शानदार! धन्यवाद ${cleanVisitorName || ""}! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका संपर्क नंबर (**${contactRecorded}**) सुरक्षित रूप से नोट कर लिया है।\n\nहमारी तकनीकी टीम जल्द ही एक कस्टमाइज्ड प्रस्ताव और कार्ययोजना के साथ आपसे संपर्क करेगी! 🚀`
@@ -1597,6 +1621,29 @@ export function handleSalesFlowTurn({
   const serviceTitle = QUALIFICATION_FLOWS[current.service]?.serviceName || "Digital Project";
 
   if (contactRecorded) {
+    if (!hasRealName) {
+      current.status = "awaiting_name";
+      current.consentAsked = true;
+
+      const askNameText = lang === "hindi"
+        ? `शानदार! मैंने आपकी **${serviceTitle}** आवश्यकताओं और संपर्क नंबर (**${contactRecorded}**) को नोट कर लिया है।\n\nकृपया अपना **शुभ नाम** साझा करें ताकि हमारी तकनीकी टीम आपसे सही प्रकार से संपर्क कर सके?`
+        : lang === "hinglish"
+        ? `Great! Humne aapke **${serviceTitle}** project ke requirements aur contact number (**${contactRecorded}**) note kar liye hain.\n\nPlease apna **Name** share karein taaki hamari technical team aapse connect kar sake?`
+        : `Great! We have recorded your requirements and contact number (**${contactRecorded}**) for your **${serviceTitle}** project.\n\nCould you please share your **Name** so our technical team knows whom to contact?`;
+
+      return {
+        shouldHandle: true,
+        reply: askNameText,
+        quickReplies: [],
+        updatedQualification: current,
+        leadDataToSave: {
+          service: current.service,
+          answers: current.answers,
+          summary: summary,
+        },
+      };
+    }
+
     current.status = "completed";
     current.consentAsked = false;
 

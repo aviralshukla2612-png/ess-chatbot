@@ -673,10 +673,14 @@ export async function POST(request, { params }) {
          wasAskedForName));
 
     const wasAskedForContact =
-      /\b(?:phone\s*number|contact\s*number|whatsapp|phone|mobile|reach\s*out\s*to\s*you|customized\s*proposal|share\s*your\s*name\s*and\s*phone)\b/i.test(lastAssistantMessage) ||
+      /\b(?:phone\s*number|contact\s*number|whatsapp|phone|mobile|reach\s*out\s*to\s*you|customized\s*proposal|share\s*your\s*name\s*and\s*phone|share\s*your\s*name|whom\s+to\s+(?:contact|address))\b/i.test(lastAssistantMessage) ||
       lastAssistantMessage.includes("Phone Number") ||
       lastAssistantMessage.includes("फ़ोन नंबर") ||
+      lastAssistantMessage.includes("share your Name") ||
+      lastAssistantMessage.includes("whom to contact") ||
+      lastAssistantMessage.includes("whom to address") ||
       activeQual?.status === "summary_ready" ||
+      activeQual?.status === "awaiting_name" ||
       Boolean(activeQual?.consentAsked);
 
     const isContactSubmission =
@@ -691,7 +695,9 @@ export async function POST(request, { params }) {
          /\b\d{7,14}\b/.test(message) ||
          /^\s*(?:\+|00)?[\d\s().-]{7,20}\s*$/.test(message) ||
          /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message) ||
-         wasAskedForContact)));
+         wasAskedForContact ||
+         wasAskedForName)) ||
+       (Boolean(resolvedName && !isPlaceholderName(resolvedName)) && activeQual?.status === "awaiting_name"));
 
     // 1. Personal advice and relationships
     const isRomanceOrRelationships =
@@ -841,53 +847,100 @@ export async function POST(request, { params }) {
         const serviceTitle = QUALIFICATION_FLOWS[activeQual.service]?.serviceName || "Digital Project";
         const contactVal = resolvedPhone || resolvedEmail;
 
-        const completedQual = {
-          ...activeQual,
-          status: "completed",
-          consentAsked: false,
-          answers: {
-            ...(activeQual.answers || {}),
-          },
-        };
+        if (!displayName) {
+          // Contact number recorded, but visitor Name is still missing! Ask for Name!
+          const waitingNameQual = {
+            ...activeQual,
+            status: "awaiting_name",
+            consentAsked: true,
+            answers: {
+              ...(activeQual.answers || {}),
+            },
+          };
 
-        quickReplies = ["Tell me about ESS", "Recent projects", "Office location"];
+          quickReplies = [];
 
-        if (lang === "hindi") {
-          deterministicReply = `शानदार! धन्यवाद ${displayName || ""}! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका संपर्क नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nहमारी तकनीकी टीम जल्द ही एक कस्टमाइज्ड प्रस्ताव और कार्ययोजना के साथ आपसे संपर्क करेगी! 🚀`;
-        } else if (lang === "hinglish") {
-          deterministicReply = `Great! Thank you ${displayName || ""}! Humne aapke **${serviceTitle}** project ke liye aapka contact number (**${contactVal}**) note kar liya hai.\n\nHamari technical team jald hi customized proposal aur project roadmap ke saath aapse connect karegi! 🚀`;
+          if (lang === "hindi") {
+            deterministicReply = `शानदार! धन्यवाद! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका फ़ोन नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nकृपया अपना **शुभ नाम** साझा करें ताकि हमारी तकनीकी टीम आपसे सही प्रकार से संपर्क कर सके?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Great! Thank you! Humne aapke **${serviceTitle}** project ke liye aapka contact number (**${contactVal}**) note kar liya hai.\n\nPlease apna **Name** share karein taaki hamari technical team aapse connect kar sake?`;
+          } else {
+            deterministicReply = `Thank you! We have recorded your contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nCould you please share your **Name** so our technical team knows whom to contact?`;
+          }
+
+          const inquirySummary = formatQualificationInquiry(waitingNameQual);
+          const qAnswers = waitingNameQual.answers || {};
+
+          leadsStore.createLead({
+            sessionId: currentSessionId,
+            botId: bot?.id || botId,
+            organizationId: bot?.organizationId || "org_ess_default",
+            name: "Website Prospect",
+            email: resolvedEmail || leadDetails.email || "",
+            phone: resolvedPhone || leadDetails.phone || "",
+            company: bot?.company || "Direct Inbound",
+            bot: botName,
+            inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
+            budget: qAnswers.budget || "₹50,000+",
+            source: "Web Chatbot Widget",
+            answers: qAnswers,
+            qualification: waitingNameQual,
+          });
+
+          conversationsStore.updateConversation(currentSessionId, {
+            qualification: waitingNameQual,
+            status: "in_progress",
+            ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+            ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+          });
         } else {
-          deterministicReply = displayName
-            ? `Thank you, ${displayName}! We have recorded your contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nOur technical team will reach out to you shortly with a customized proposal and project roadmap! 🚀`
-            : `Thank you! We have recorded your contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nOur technical team will reach out to you shortly with a customized proposal and project roadmap! 🚀`;
+          // Both Name and Phone are provided! Finalize the qualified lead!
+          const completedQual = {
+            ...activeQual,
+            status: "completed",
+            consentAsked: false,
+            answers: {
+              ...(activeQual.answers || {}),
+            },
+          };
+
+          quickReplies = ["Tell me about ESS", "Recent projects", "Office location"];
+
+          if (lang === "hindi") {
+            deterministicReply = `शानदार! धन्यवाद **${displayName}**! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका संपर्क नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nहमारी तकनीकी टीम जल्द ही एक कस्टमाइज्ड प्रस्ताव और कार्ययोजना के साथ आपसे संपर्क करेगी! 🚀`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Great! Thank you **${displayName}**! Humne aapke **${serviceTitle}** project ke liye aapka contact details (**${contactVal}**) note kar liya hai.\n\nHamari technical team jald hi customized proposal aur project roadmap ke saath aapse connect karegi! 🚀`;
+          } else {
+            deterministicReply = `Thank you, **${displayName}**! We have recorded all your requirements and contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nOur technical team will reach out to you shortly with a customized proposal and project roadmap! 🚀`;
+          }
+
+          const inquirySummary = formatQualificationInquiry(completedQual);
+          const qAnswers = completedQual.answers || {};
+
+          leadsStore.createLead({
+            sessionId: currentSessionId,
+            botId: bot?.id || botId,
+            organizationId: bot?.organizationId || "org_ess_default",
+            name: displayName,
+            email: resolvedEmail || leadDetails.email || "",
+            phone: resolvedPhone || leadDetails.phone || "",
+            company: bot?.company || "Direct Inbound",
+            bot: botName,
+            inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
+            budget: qAnswers.budget || "₹50,000+",
+            source: "Web Chatbot Widget",
+            answers: qAnswers,
+            qualification: completedQual,
+          });
+
+          conversationsStore.updateConversation(currentSessionId, {
+            qualification: completedQual,
+            status: "completed",
+            visitorName: displayName,
+            ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+            ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+          });
         }
-
-        const inquirySummary = formatQualificationInquiry(completedQual);
-        const qAnswers = completedQual.answers || {};
-
-        leadsStore.createLead({
-          sessionId: currentSessionId,
-          botId: bot?.id || botId,
-          organizationId: bot?.organizationId || "org_ess_default",
-          name: displayName || leadDetails.name || "Website Prospect",
-          email: resolvedEmail || leadDetails.email || "",
-          phone: resolvedPhone || leadDetails.phone || "",
-          company: bot?.company || "Direct Inbound",
-          bot: botName,
-          inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
-          budget: qAnswers.budget || "₹50,000+",
-          source: "Web Chatbot Widget",
-          answers: qAnswers,
-          qualification: completedQual,
-        });
-
-        conversationsStore.updateConversation(currentSessionId, {
-          qualification: completedQual,
-          status: "completed",
-          ...(displayName ? { visitorName: displayName } : {}),
-          ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
-          ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
-        });
       } else {
         if (isEssBot) {
           quickReplies = [...ALL_ESS_SERVICES];
@@ -923,6 +976,16 @@ export async function POST(request, { params }) {
                 : `Thank you, ${displayName}! Your contact details have been recorded. How can I assist you with ${businessName} today?`;
             }
           }
+        }
+
+        if (!displayName && (resolvedPhone || resolvedEmail)) {
+          const contactVal = resolvedPhone || resolvedEmail;
+          deterministicReply = lang === "hindi"
+            ? `धन्यवाद! आपका संपर्क नंबर (**${contactVal}**) नोट कर लिया गया है। कृपया अपना **शुभ नाम** साझा करें ताकि हम आपसे उचित प्रकार से संपर्क कर सकें।`
+            : lang === "hinglish"
+            ? `Thank you! Humne aapka contact number (**${contactVal}**) note kar liya hai. Please apna **Name** share karein taaki hum aapse connect kar sakein.`
+            : `Thank you! We have recorded your contact number (**${contactVal}**). Could you please share your **Name** so we know whom to address?`;
+          quickReplies = [];
         }
 
         if (displayName) {
