@@ -22,6 +22,7 @@ import {
   Trash2,
   Building2,
   ShieldAlert,
+  Palette,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import StatCard from "@/components/ui/StatCard";
@@ -32,6 +33,7 @@ import CompanyKnowledgeBuilder from "@/components/knowledge/CompanyKnowledgeBuil
 import { botsApi } from "@/lib/api/bots";
 import { knowledgeApi } from "@/lib/api/knowledge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
+import RedesignBotModal from "@/components/bots/RedesignBotModal";
 
 function formatDocumentName(doc) {
   if (!doc) return "Company Knowledge Document";
@@ -64,6 +66,7 @@ function BotDetailContent() {
   const [qas, setQas] = useState([]);
   const [activeTab, setActiveTab] = useState(queryTab || "overview");
   const [deployModalOpen, setDeployModalOpen] = useState(false);
+  const [redesignModalOpen, setRedesignModalOpen] = useState(false);
   const [knowledgeSubtab, setKnowledgeSubtab] = useState("websites");
   const [loading, setLoading] = useState(true);
 
@@ -275,6 +278,7 @@ function BotDetailContent() {
               badge: !hasCompanyProfile ? "Mandatory ⚠️" : "Approved ✅",
             },
             { id: "overview", label: "Overview", icon: BarChart3 },
+            { id: "appearance", label: "Appearance & Redesign", icon: Palette },
             { id: "knowledge", label: "Knowledge Base", icon: BookOpen },
             { id: "test", label: "Interactive Playground", icon: Sparkles },
             { id: "settings", label: "Behavior & Instructions", icon: Settings },
@@ -311,13 +315,24 @@ function BotDetailContent() {
           })}
         </div>
 
-        <Link
-          href={`/bots/${bot.id}/deploy`}
-          className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors shrink-0 whitespace-nowrap"
-        >
-          <Share2 className="w-4 h-4 text-indigo-600" />
-          <span>External Site Deploy &rarr;</span>
-        </Link>
+        <div className="flex items-center gap-4 shrink-0">
+          <button
+            type="button"
+            onClick={() => setRedesignModalOpen(true)}
+            className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-[#B68A55] hover:text-[#9e7542] transition-colors shrink-0 whitespace-nowrap cursor-pointer"
+          >
+            <Palette className="w-4 h-4 text-[#B68A55]" />
+            <span>Redesign Bot 🎨</span>
+          </button>
+
+          <Link
+            href={`/bots/${bot.id}/deploy`}
+            className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors shrink-0 whitespace-nowrap"
+          >
+            <Share2 className="w-4 h-4 text-indigo-600" />
+            <span>External Site Deploy &rarr;</span>
+          </Link>
+        </div>
       </div>
 
       {/* Tab: Company Profile Intake (Mandatory Setup) */}
@@ -554,6 +569,22 @@ function BotDetailContent() {
           onClose={() => setDeployModalOpen(false)}
           bot={bot}
           onBotUpdated={(updated) => setBot(updated)}
+        />
+      )}
+
+      {bot && (
+        <RedesignBotModal
+          isOpen={redesignModalOpen || activeTab === "appearance"}
+          onClose={() => {
+            setRedesignModalOpen(false);
+            if (activeTab === "appearance") setActiveTab("overview");
+          }}
+          bot={bot}
+          onBotUpdated={(updated) => {
+            setBot((prev) => ({ ...prev, ...updated }));
+            setRedesignModalOpen(false);
+            if (activeTab === "appearance") setActiveTab("overview");
+          }}
         />
       )}
     </div>

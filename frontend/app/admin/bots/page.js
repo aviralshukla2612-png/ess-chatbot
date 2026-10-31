@@ -11,14 +11,17 @@ import {
   AlertTriangle,
   Ban,
   ShieldCheck,
+  Palette,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { botsApi } from "@/lib/api/bots";
+import RedesignBotModal from "@/components/bots/RedesignBotModal";
 
 export default function AdminBotsPage() {
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [purging, setPurging] = useState(false);
+  const [redesignBot, setRedesignBot] = useState(null);
 
   const loadBots = useCallback(async () => {
     setLoading(true);
@@ -198,6 +201,13 @@ export default function AdminBotsPage() {
                             <Ban className="w-4 h-4 text-amber-400" />
                           )}
                         </button>
+                        <button
+                          onClick={() => setRedesignBot(b)}
+                          className="p-1.5 text-neutral-400 hover:text-[#B68A55] rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
+                          title="Redesign & Style Bot"
+                        >
+                          <Palette className="w-4 h-4 text-[#B68A55]" />
+                        </button>
                         <a
                           href={`/bots/${b.id}`}
                           target="_blank"
@@ -223,6 +233,18 @@ export default function AdminBotsPage() {
           </table>
         </div>
       </div>
+
+      <RedesignBotModal
+        isOpen={Boolean(redesignBot)}
+        onClose={() => setRedesignBot(null)}
+        bot={redesignBot}
+        onBotUpdated={(updated) => {
+          setBots((prev) =>
+            prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item))
+          );
+          setRedesignBot(null);
+        }}
+      />
     </div>
   );
 }

@@ -24,11 +24,13 @@ import {
   ShieldCheck,
   BookOpen,
   Building2,
+  Palette,
 } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
+import RedesignBotModal from "@/components/bots/RedesignBotModal";
 
 export default function BotsPage() {
   const [bots, setBots] = useState([]);
@@ -39,6 +41,7 @@ export default function BotsPage() {
   // Instant Deploy Modal State
   const [deployModalBot, setDeployModalBot] = useState(null);
   const [deployWebsiteBot, setDeployWebsiteBot] = useState(null);
+  const [redesignModalBot, setRedesignModalBot] = useState(null);
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedConsole, setCopiedConsole] = useState(false);
   const [modalEmbedTab, setModalEmbedTab] = useState("html"); // "html" | "console"
@@ -380,6 +383,17 @@ export default function BotsPage() {
                   <span>Open</span>
                 </Link>
 
+                {/* Direct Redesign & Styling Button */}
+                <button
+                  type="button"
+                  onClick={() => setRedesignModalBot(bot)}
+                  className="px-3.5 py-1.5 rounded-lg border border-[#B68A55]/40 bg-[#B68A55]/10 hover:bg-[#B68A55]/20 text-[#B68A55] font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Redesign bot color, avatar, greeting, and widget styling"
+                >
+                  <Palette className="w-3.5 h-3.5 text-[#B68A55]" />
+                  <span>Redesign 🎨</span>
+                </button>
+
                 {/* Mandatory Company Profile Intake Form Button */}
                 <Link
                   href={`/bots/${bot.id}?tab=company-profile`}
@@ -691,6 +705,20 @@ export default function BotsPage() {
           bot={deployWebsiteBot}
           onBotUpdated={(updated) => {
             setBots((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+          }}
+        />
+      )}
+
+      {redesignModalBot && (
+        <RedesignBotModal
+          isOpen={Boolean(redesignModalBot)}
+          onClose={() => setRedesignModalBot(null)}
+          bot={redesignModalBot}
+          onBotUpdated={(updated) => {
+            setBots((prev) =>
+              prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
+            );
+            setRedesignModalBot(null);
           }}
         />
       )}
