@@ -195,7 +195,7 @@ export default function BillingPage() {
       id: "PLAN_STARTER_MONTHLY",
       name: "1 Month Renewal",
       badge: "Standard",
-      badgeColor: "bg-slate-500/20 text-slate-300 border-slate-500/30",
+      badgeColor: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-500/30",
       duration: "+30 Days Access",
       price: "₹2,500",
       equivalent: "₹2,500 / month",
@@ -214,7 +214,7 @@ export default function BillingPage() {
       id: "PLAN_PRO_6MONTHS",
       name: "Pro (6 Months Pass)",
       badge: "MOST POPULAR • SAVE 66% 🔥",
-      badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      badgeColor: "bg-[#B68A55]/15 text-[#B68A55] border-[#B68A55]/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30",
       duration: "+180 Days Access (6 Months)",
       price: "₹5,000",
       originalPrice: "₹15,000",
@@ -236,7 +236,7 @@ export default function BillingPage() {
       id: "PLAN_ENTERPRISE_ANNUAL",
       name: "Annual VIP Pass",
       badge: "MAX SAVINGS • 1 YEAR VIP 👑",
-      badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+      badgeColor: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30",
       duration: "+365 Days Access (12 Months)",
       price: "₹9,999",
       originalPrice: "₹30,000",
@@ -524,8 +524,8 @@ export default function BillingPage() {
                 key={pkg.id}
                 className={`relative rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between ${
                   pkg.isPopular
-                    ? "bg-linear-to-b from-slate-900 via-indigo-950/90 to-slate-900 border-2 border-indigo-500 shadow-xl shadow-indigo-500/15 text-white scale-[1.02]"
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 text-slate-900 dark:text-white"
+                    ? "bg-white dark:bg-slate-900 border-2 border-[#B68A55] shadow-lg shadow-[#B68A55]/10 text-[#252525] dark:text-white scale-[1.02]"
+                    : "bg-white dark:bg-slate-900 border border-[#EFE7DC] dark:border-slate-800 shadow-xs hover:border-[#B68A55]/40 dark:hover:border-slate-700 text-[#252525] dark:text-white"
                 }`}
               >
                 {/* Popular Pill */}
@@ -535,7 +535,7 @@ export default function BillingPage() {
                   >
                     {pkg.badge}
                   </span>
-                  <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-mono">
+                  <span className="text-[11px] font-bold text-[#B68A55] dark:text-indigo-400 flex items-center gap-1 font-mono">
                     <Calendar className="w-3 h-3" />
                     {pkg.duration}
                   </span>
@@ -543,21 +543,21 @@ export default function BillingPage() {
 
                 {/* Plan Info */}
                 <div>
-                  <h4 className="text-lg font-black tracking-tight">{pkg.name}</h4>
+                  <h4 className="text-lg font-black tracking-tight text-[#252525] dark:text-white">{pkg.name}</h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                     {pkg.description}
                   </p>
 
-                  <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="mt-4 pt-4 border-t border-[#EFE7DC] dark:border-slate-800">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black font-mono tracking-tight">{pkg.price}</span>
+                      <span className="text-3xl font-black font-mono tracking-tight text-[#252525] dark:text-white">{pkg.price}</span>
                       {pkg.originalPrice && (
                         <span className="text-xs text-slate-400 line-through font-mono">
                           {pkg.originalPrice}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                    <p className="text-[11px] text-[#B68A55] dark:text-indigo-400 font-semibold mt-0.5">
                       Equivalent to {pkg.equivalent}
                     </p>
                   </div>
@@ -574,14 +574,14 @@ export default function BillingPage() {
                 </div>
 
                 {/* Action CTA */}
-                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="mt-6 pt-4 border-t border-[#EFE7DC] dark:border-slate-800/80">
                   <button
                     onClick={() => handleExtendPlan(pkg)}
                     disabled={isProcessing}
                     className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 ${
                       pkg.isPopular
-                        ? "bg-linear-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-600/30 hover:scale-[1.02]"
-                        : "bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white"
+                        ? "bg-[#B68A55] hover:bg-[#a07746] text-white shadow-md shadow-[#B68A55]/25 hover:scale-[1.02]"
+                        : "bg-[#252525] hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white"
                     }`}
                   >
                     {isProcessing ? (
