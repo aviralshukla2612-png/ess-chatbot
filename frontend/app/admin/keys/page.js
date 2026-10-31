@@ -188,8 +188,7 @@ export default function AdminKeysPage() {
       {/* Top Banner & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Key className="w-7 h-7 text-indigo-600" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
             Groq API Key Pool & Rate Limits
           </h1>
         </div>
