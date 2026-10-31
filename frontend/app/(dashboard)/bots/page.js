@@ -373,94 +373,105 @@ export default function BotsPage() {
                 </div>
               </div>
 
-              {/* Bottom row: Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#EFE7DC] dark:border-slate-800/80 text-xs">
-                <Link
-                  href={`/bots/${bot.id}`}
-                  className="px-3.5 py-1.5 rounded-lg bg-[#B68A55] hover:bg-[#966E3A] text-white font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs shadow-[#B68A55]/20"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open</span>
-                </Link>
+              {/* Bottom row: Clean Organized Action Buttons */}
+              <div className="pt-3 border-t border-[#EFE7DC] dark:border-neutral-800 space-y-2.5 text-xs">
+                {/* Main Action Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/bots/${bot.id}`}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shadow-[#B68A55]/20"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open</span>
+                    </Link>
 
-                {/* Direct Redesign & Styling Button */}
-                <button
-                  type="button"
-                  onClick={() => setRedesignModalBot(bot)}
-                  className="px-3.5 py-1.5 rounded-lg border border-[#B68A55]/40 bg-[#B68A55]/10 hover:bg-[#B68A55]/20 text-[#B68A55] font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Redesign bot color, avatar, greeting, and widget styling"
-                >
-                  <Palette className="w-3.5 h-3.5 text-[#B68A55]" />
-                  <span>Redesign 🎨</span>
-                </button>
+                    {/* Prominent Redesign & Launcher Button */}
+                    <button
+                      type="button"
+                      onClick={() => setRedesignModalBot(bot)}
+                      className="px-3.5 py-1.5 rounded-xl border border-[#B68A55]/50 bg-[#B68A55]/15 hover:bg-[#B68A55]/25 text-[#B68A55] font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="Customize chat button circle shape, logo, colors, and styling"
+                    >
+                      <Palette className="w-3.5 h-3.5 text-[#B68A55]" />
+                      <span>Redesign & Launcher 🎨</span>
+                    </button>
 
-                {/* Mandatory Company Profile Intake Form Button */}
-                <Link
-                  href={`/bots/${bot.id}?tab=company-profile`}
-                  className="px-3.5 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Complete mandatory Company Profile Intake & Business Hours form"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-[#B68A55]" />
-                  <span>Company Profile Intake 🏢</span>
-                </Link>
+                    {/* Direct Live Website Deploy Button */}
+                    <button
+                      type="button"
+                      onClick={() => setDeployWebsiteBot(bot)}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shadow-emerald-600/20"
+                      title="Configure and open live website with chatbot active"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Live Website Deploy 🚀</span>
+                    </button>
 
-                {/* Direct Add Information / Knowledge Button */}
-                <Link
-                  href={`/bots/${bot.id}?tab=knowledge`}
-                  className="px-3.5 py-1.5 rounded-lg bg-[#B68A55] hover:bg-[#a67945] text-white font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Add website URLs, documents, Q&A pairs, or training information"
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>+ Add Information 📚</span>
-                </Link>
+                    {/* Instant Deploy / Embed Code Modal Trigger */}
+                    <button
+                      type="button"
+                      onClick={() => setDeployModalBot(bot)}
+                      className="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-[#B68A55] dark:text-[#B68A55]" />
+                      <span>Embed Code</span>
+                    </button>
 
-                {/* Direct Live Website Deploy Button */}
-                <button
-                  type="button"
-                  onClick={() => setDeployWebsiteBot(bot)}
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Configure and open live website with chatbot active"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Live Website Deploy 🚀</span>
-                </button>
+                    <Link
+                      href={`/bots/${bot.id}`}
+                      className="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Play className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Test</span>
+                    </Link>
 
-                <Link
-                  href={`/bots/${bot.id}`}
-                  className="px-3.5 py-1.5 rounded-lg border border-[#EFE7DC] dark:border-slate-700/80 bg-white dark:bg-slate-800/60 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 text-[#252525] dark:text-slate-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Play className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Test</span>
-                </Link>
+                    <Link
+                      href="/analytics"
+                      className="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <BarChart2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Analytics</span>
+                    </Link>
+                  </div>
 
-                <Link
-                  href="/analytics"
-                  className="px-3.5 py-1.5 rounded-lg border border-[#EFE7DC] dark:border-slate-700/80 bg-white dark:bg-slate-800/60 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 text-[#252525] dark:text-slate-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
-                >
-                  <BarChart2 className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Analytics</span>
-                </Link>
+                  {/* Explicit Direct Delete Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteBot(bot.id, e)}
+                    className="px-3.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 hover:border-rose-300 dark:hover:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ml-auto"
+                    title="Permanently delete this bot"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                    <span>Delete Bot</span>
+                  </button>
+                </div>
 
-                {/* Instant Deploy Modal Trigger */}
-                <button
-                  type="button"
-                  onClick={() => setDeployModalBot(bot)}
-                  className="px-3.5 py-1.5 rounded-lg border border-[#B68A55]/30 dark:border-indigo-500/30 bg-amber-500/10 dark:bg-indigo-950/50 hover:bg-amber-500/20 dark:hover:bg-indigo-900/60 text-[#B68A55] dark:text-indigo-300 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <Share2 className="w-3.5 h-3.5 text-[#B68A55] dark:text-indigo-400" />
-                  <span>Embed Code</span>
-                </button>
+                {/* Sub-row: Setup & Knowledge Inputs */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-neutral-200/50 dark:border-neutral-800/60">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mr-1">
+                    Setup & Knowledge:
+                  </span>
+                  {/* Mandatory Company Profile Intake Form Button */}
+                  <Link
+                    href={`/bots/${bot.id}?tab=company-profile`}
+                    className="px-3 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    title="Complete mandatory Company Profile Intake & Business Hours form"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-[#B68A55]" />
+                    <span>Company Profile Intake 🏢</span>
+                  </Link>
 
-                {/* Explicit Direct Delete Button */}
-                <button
-                  type="button"
-                  onClick={(e) => handleDeleteBot(bot.id, e)}
-                  className="px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 hover:border-rose-300 dark:hover:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ml-auto"
-                  title="Permanently delete this bot"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-                  <span>Delete Bot</span>
-                </button>
+                  {/* Direct Add Information / Knowledge Button */}
+                  <Link
+                    href={`/bots/${bot.id}?tab=knowledge`}
+                    className="px-3 py-1 rounded-lg bg-[#B68A55]/15 hover:bg-[#B68A55]/25 border border-[#B68A55]/40 text-[#B68A55] font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    title="Add website URLs, documents, Q&A pairs, or training information"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>+ Add Information 📚</span>
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
