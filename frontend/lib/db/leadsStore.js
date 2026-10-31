@@ -154,7 +154,18 @@ export const leadsStore = {
 
       const dbRes = await queryDb(query, params);
       if (dbRes.ok && dbRes.rows.length > 0) {
-        return dbRes.rows;
+        let rows = dbRes.rows;
+        // Sanitize database leads: filter out dummy entries without real contact info or real name
+        rows = rows.filter((l) => {
+          const hasContact = Boolean((l.email && l.email.trim()) || (l.phone && l.phone.trim()));
+          const hasAnswers = Boolean(l.answers && typeof l.answers === "object" && Object.keys(l.answers).length > 0);
+          const hasRealName = Boolean(l.name && l.name !== "Website Prospect" && l.name !== "Website Visitor");
+          const isBogusName = /^(?:who\s+is|what\s+is|can\s+you|tell\s+me|i\s+want|how\s+much|hello|hi)\b/i.test(l.name || "");
+          if (isBogusName) return false;
+          if (!hasContact && !hasAnswers && !hasRealName) return false;
+          return true;
+        });
+        return rows;
       }
     } catch (err) {
       console.warn("DB leads query failed:", err);
@@ -356,6 +367,9 @@ export const leadsStore = {
   clearAll() {
     saveToDisk([]);
     sseBroker.broadcast("leads_cleared", {});
+    try {
+      queryDb('DELETE FROM "Lead";').catch((err) => console.warn("[DB_CLEAR_LEADS_FAIL]", err.message));
+    } catch (e) {}
     return { success: true };
   },
 };

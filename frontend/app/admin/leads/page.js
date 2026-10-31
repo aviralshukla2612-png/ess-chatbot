@@ -20,6 +20,8 @@ import {
   ExternalLink,
   ChevronRight,
   TrendingUp,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { leadsApi } from "@/lib/api/leads";
@@ -32,25 +34,63 @@ function stripMarkdown(text) {
 export default function AdminLeadsPage() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [purging, setPurging] = useState(false);
   const [search, setSearch] = useState("");
   const [scoreFilter, setScoreFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedLead, setSelectedLead] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await leadsApi.getLeads();
-        setLeads(data || []);
-      } catch (err) {
-        console.error("Failed to load leads:", err);
-      } finally {
-        setLoading(false);
-      }
+  const loadLeads = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await leadsApi.getLeads();
+      setLeads(data || []);
+    } catch (err) {
+      console.error("Failed to load leads:", err);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    loadLeads();
+  }, [loadLeads]);
+
+  const handleDeleteLead = async (e, leadId) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!confirm("Are you sure you want to permanently delete this lead?")) return;
+    try {
+      const res = await fetch(`/api/leads?id=${leadId}`, { method: "DELETE" });
+      if (res.ok) {
+        setLeads((prev) => prev.filter((l) => l.id !== leadId));
+        if (selectedLead?.id === leadId) setSelectedLead(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert("Failed to delete lead: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Error deleting lead: " + err.message);
+    }
+  };
+
+  const handlePurgeDummyLeads = async () => {
+    if (!confirm("Purge all dummy and incomplete test leads from the database and storage?")) return;
+    setPurging(true);
+    try {
+      const res = await fetch("/api/leads?purgeDummy=true", { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (data.success) {
+        await loadLeads();
+      } else {
+        alert("Failed to purge dummy leads: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Error purging dummy leads: " + err.message);
+    } finally {
+      setPurging(false);
+    }
+  };
 
   const copyToClipboard = (text, field) => {
     if (!text) return;
@@ -116,6 +156,26 @@ export default function AdminLeadsPage() {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={loadLeads}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={handlePurgeDummyLeads}
+            disabled={purging}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl shadow-xs transition-colors cursor-pointer"
+            title="Purge dummy and test leads"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>{purging ? "Purging..." : "Purge Dummy Leads"}</span>
+          </button>
         </div>
       </div>
 
@@ -365,11 +425,20 @@ export default function AdminLeadsPage() {
                         {l.created || (l.createdAt ? l.createdAt.split("T")[0] : "Just now")}
                       </td>
 
-                      {/* Action Chevron */}
+                      {/* Action Chevron & Delete */}
                       <td className="p-4 text-center">
-                        <span className="p-1 rounded-lg text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-colors inline-block">
-                          <ChevronRight className="w-4 h-4" />
-                        </span>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={(e) => handleDeleteLead(e, l.id)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                          </button>
+                          <span className="p-1 rounded-lg text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-colors inline-block">
+                            <ChevronRight className="w-4 h-4" />
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -503,10 +572,19 @@ export default function AdminLeadsPage() {
               </div>
             )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex items-center justify-between">
+              <button
+                onClick={(e) => {
+                  handleDeleteLead(e, selectedLead.id);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Delete Lead</span>
+              </button>
               <button
                 onClick={() => setSelectedLead(null)}
-                className="px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Close
               </button>
