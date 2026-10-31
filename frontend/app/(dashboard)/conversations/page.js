@@ -19,6 +19,7 @@ import {
   ArrowRight,
   Sparkles,
   Inbox,
+  X,
 } from "lucide-react";
 import { conversationsApi } from "@/lib/api/conversations";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
@@ -195,6 +196,7 @@ export default function ConversationsPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [replyInput, setReplyInput] = useState("");
+  const [showClientDetails, setShowClientDetails] = useState(false); // Closed by default
 
   const loadConversations = async () => {
     try {
@@ -453,7 +455,12 @@ export default function ConversationsPage() {
         </div>
 
         {/* COLUMN 2: Chat Transcript */}
-        <div className="flex-1 flex flex-col border-r border-[#EFE7DC] dark:border-neutral-800 min-w-0 bg-white dark:bg-[#0A0A0A]">
+        <div
+          className={cn(
+            "flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0A0A0A]",
+            showClientDetails && "border-r border-[#EFE7DC] dark:border-neutral-800"
+          )}
+        >
           {currentChat ? (
             <>
               {/* Top Chat Header */}
@@ -481,6 +488,21 @@ export default function ConversationsPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowClientDetails((prev) => !prev)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95",
+                      showClientDetails
+                        ? "bg-[#B68A55] border-[#B68A55] text-white"
+                        : "border-[#EFE7DC] bg-white hover:bg-[#FAF9F6] text-[#252525] dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-[#1C1C1C] dark:text-neutral-300"
+                    )}
+                    title={showClientDetails ? "Close Details Panel" : "View Client Info & Details"}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>{showClientDetails ? "Close Info" : "Client Info"}</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={handleMarkResolved}
@@ -565,11 +587,27 @@ export default function ConversationsPage() {
           )}
         </div>
 
-        {/* COLUMN 3: Client & Conversation Metadata */}
-        <div
-          className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
+        {/* COLUMN 3: Client & Conversation Metadata (Closed by default) */}
+        {showClientDetails && (
+          <div
+            className="w-full lg:w-72 xl:w-80 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] border-l border-[#EFE7DC] dark:border-neutral-800 space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs animate-in fade-in slide-in-from-right-4 duration-200"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {/* Header with Close X Button */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#EFE7DC] dark:border-neutral-800">
+              <span className="font-bold text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#B68A55]" />
+                <span>Client & Inquiry Info</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowClientDetails(false)}
+                className="p-1 rounded-lg text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#EFE7DC]/50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           {currentChat ? (
             <>
               {/* CLIENT INFO */}
@@ -685,7 +723,8 @@ export default function ConversationsPage() {
               Select a conversation to view client details
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
