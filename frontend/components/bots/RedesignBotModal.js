@@ -79,6 +79,10 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
     launcherIcon: "bubble",
     launcherLogoUrl: "",
     launcherText: "Chat with us",
+    launcherMarginBottom: 24,
+    launcherMarginRight: 24,
+    launcherMarginLeft: 24,
+    launcherMarginTop: 24,
     personality: "Professional",
     collectLeads: true,
   });
@@ -146,6 +150,10 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
         launcherIcon: bot.launcherIcon || (bot.launcherLogoUrl ? "custom" : "bubble"),
         launcherLogoUrl: bot.launcherLogoUrl || "",
         launcherText: bot.launcherText || "Chat with us",
+        launcherMarginBottom: bot.launcherMarginBottom !== undefined ? bot.launcherMarginBottom : 24,
+        launcherMarginRight: bot.launcherMarginRight !== undefined ? bot.launcherMarginRight : 24,
+        launcherMarginLeft: bot.launcherMarginLeft !== undefined ? bot.launcherMarginLeft : 24,
+        launcherMarginTop: bot.launcherMarginTop !== undefined ? bot.launcherMarginTop : 24,
         personality: bot.personality || "Professional",
         collectLeads: bot.collectLeads !== false,
       });
@@ -479,7 +487,120 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                   >
                     <option value="bottom-right">Bottom Right (Standard)</option>
                     <option value="bottom-left">Bottom Left</option>
+                    <option value="top-right">Top Right</option>
+                    <option value="top-left">Top Left</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Launcher Screen Margins / Offsets (Down, Left, Right, Top) */}
+              <div className="p-3.5 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold text-neutral-800 dark:text-neutral-200">
+                    Launcher Margins & Screen Offsets
+                  </label>
+                  <span className="text-[10px] text-neutral-400">Values in pixels (px)</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {/* Down (Bottom) */}
+                  <div className="bg-[#FAF9F6] dark:bg-[#141414] p-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800">
+                    <label className="block text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                      Down (Bottom)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={formData.launcherMarginBottom ?? 24}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            launcherMarginBottom: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
+                        className="w-full text-xs bg-white dark:bg-[#1E1E1E] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg px-2.5 py-1.5 pr-6 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right */}
+                  <div className="bg-[#FAF9F6] dark:bg-[#141414] p-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800">
+                    <label className="block text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                      Right
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={formData.launcherMarginRight ?? 24}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            launcherMarginRight: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
+                        className="w-full text-xs bg-white dark:bg-[#1E1E1E] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg px-2.5 py-1.5 pr-6 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Left */}
+                  <div className="bg-[#FAF9F6] dark:bg-[#141414] p-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800">
+                    <label className="block text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                      Left
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={formData.launcherMarginLeft ?? 24}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            launcherMarginLeft: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
+                        className="w-full text-xs bg-white dark:bg-[#1E1E1E] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg px-2.5 py-1.5 pr-6 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Top */}
+                  <div className="bg-[#FAF9F6] dark:bg-[#141414] p-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800">
+                    <label className="block text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+                      Top
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={formData.launcherMarginTop ?? 24}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            launcherMarginTop: e.target.value === "" ? 0 : Number(e.target.value),
+                          })
+                        }
+                        className="w-full text-xs bg-white dark:bg-[#1E1E1E] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg px-2.5 py-1.5 pr-6 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-neutral-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -660,7 +781,9 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                   <span className="font-semibold block text-white capitalize">
                     {formData.launcherShape} • {formData.launcherSize}
                   </span>
-                  <span className="text-[10px] text-neutral-400">Position: {formData.launcherPosition}</span>
+                  <span className="text-[10px] text-neutral-400">
+                    Position: {formData.launcherPosition} • Margins: ↓{formData.launcherMarginBottom ?? 24}px →{formData.launcherMarginRight ?? 24}px
+                  </span>
                 </div>
 
                 {/* THE LIVE BUTTON PREVIEW */}

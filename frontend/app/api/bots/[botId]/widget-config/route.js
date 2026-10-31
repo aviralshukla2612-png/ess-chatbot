@@ -57,6 +57,10 @@ export async function GET(request, { params }) {
           launcherLogoUrl: bot.launcherLogoUrl || "",
           launcherText: bot.launcherText || "",
           launcherColor: bot.launcherColor || null,
+          launcherMarginBottom: typeof bot.launcherMarginBottom === "number" ? bot.launcherMarginBottom : 24,
+          launcherMarginRight: typeof bot.launcherMarginRight === "number" ? bot.launcherMarginRight : 24,
+          launcherMarginLeft: typeof bot.launcherMarginLeft === "number" ? bot.launcherMarginLeft : 24,
+          launcherMarginTop: typeof bot.launcherMarginTop === "number" ? bot.launcherMarginTop : 24,
           brandingEnabled: bot.brandingEnabled !== false,
           placeholderText: bot.placeholderText || "Type your message...",
           quickReplies:

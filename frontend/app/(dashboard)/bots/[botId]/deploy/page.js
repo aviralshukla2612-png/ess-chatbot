@@ -50,6 +50,10 @@ function DeployBotContent() {
   const [launcherIcon, setLauncherIcon] = useState("bubble"); // bubble | robot | sparkles | headset | avatar | custom
   const [launcherLogoUrl, setLauncherLogoUrl] = useState("");
   const [launcherText, setLauncherText] = useState("Chat with us");
+  const [launcherMarginBottom, setLauncherMarginBottom] = useState(24);
+  const [launcherMarginRight, setLauncherMarginRight] = useState(24);
+  const [launcherMarginLeft, setLauncherMarginLeft] = useState(24);
+  const [launcherMarginTop, setLauncherMarginTop] = useState(24);
   const [brandingEnabled, setBrandingEnabled] = useState(true);
   const [activeCms, setActiveCms] = useState("html"); // html, wordpress, shopify, webflow, ssh
   const [redesignModalOpen, setRedesignModalOpen] = useState(false);
@@ -137,6 +141,10 @@ function DeployBotContent() {
         if (b.launcherIcon) setLauncherIcon(b.launcherIcon);
         if (b.launcherLogoUrl) setLauncherLogoUrl(b.launcherLogoUrl);
         if (b.launcherText) setLauncherText(b.launcherText);
+        if (b.launcherMarginBottom !== undefined) setLauncherMarginBottom(b.launcherMarginBottom);
+        if (b.launcherMarginRight !== undefined) setLauncherMarginRight(b.launcherMarginRight);
+        if (b.launcherMarginLeft !== undefined) setLauncherMarginLeft(b.launcherMarginLeft);
+        if (b.launcherMarginTop !== undefined) setLauncherMarginTop(b.launcherMarginTop);
         if (b.websiteUrl) {
           setVerifyUrl(b.websiteUrl);
           setPreviewSiteUrl(b.websiteUrl);
@@ -205,6 +213,10 @@ function DeployBotContent() {
           launcherIcon,
           launcherLogoUrl,
           launcherText,
+          launcherMarginBottom: Number(launcherMarginBottom) || 24,
+          launcherMarginRight: Number(launcherMarginRight) || 24,
+          launcherMarginLeft: Number(launcherMarginLeft) || 24,
+          launcherMarginTop: Number(launcherMarginTop) || 24,
           brandingEnabled,
         }),
       });
@@ -946,7 +958,100 @@ function DeployBotContent() {
                   >
                     <option value="bottom-right">Bottom Right (Standard)</option>
                     <option value="bottom-left">Bottom Left</option>
+                    <option value="top-right">Top Right</option>
+                    <option value="top-left">Top Left</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Launcher Screen Margins / Offsets (Down, Left, Right, Top) */}
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold text-slate-800">
+                    Launcher Margins & Screen Offsets
+                  </label>
+                  <span className="text-[10px] text-slate-500">Values in pixels (px)</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {/* Down (Bottom) */}
+                  <div className="bg-white p-2 rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                      Down (Bottom)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={launcherMarginBottom}
+                        onChange={(e) => setLauncherMarginBottom(e.target.value === "" ? 0 : Number(e.target.value))}
+                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 pr-6 text-slate-900 outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right */}
+                  <div className="bg-white p-2 rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                      Right
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={launcherMarginRight}
+                        onChange={(e) => setLauncherMarginRight(e.target.value === "" ? 0 : Number(e.target.value))}
+                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 pr-6 text-slate-900 outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Left */}
+                  <div className="bg-white p-2 rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                      Left
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={launcherMarginLeft}
+                        onChange={(e) => setLauncherMarginLeft(e.target.value === "" ? 0 : Number(e.target.value))}
+                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 pr-6 text-slate-900 outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Top */}
+                  <div className="bg-white p-2 rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                      Top
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="400"
+                        value={launcherMarginTop}
+                        onChange={(e) => setLauncherMarginTop(e.target.value === "" ? 0 : Number(e.target.value))}
+                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 pr-6 text-slate-900 outline-hidden focus:border-[#B68A55] font-mono"
+                      />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                        px
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1409,6 +1514,10 @@ function DeployBotContent() {
             launcherIcon,
             launcherLogoUrl,
             launcherText,
+            launcherMarginBottom,
+            launcherMarginRight,
+            launcherMarginLeft,
+            launcherMarginTop,
             brandingEnabled,
           }}
           onBotUpdated={(updated) => {
@@ -1421,6 +1530,10 @@ function DeployBotContent() {
             if (updated.launcherIcon) setLauncherIcon(updated.launcherIcon);
             if (updated.launcherLogoUrl !== undefined) setLauncherLogoUrl(updated.launcherLogoUrl);
             if (updated.launcherText) setLauncherText(updated.launcherText);
+            if (updated.launcherMarginBottom !== undefined) setLauncherMarginBottom(updated.launcherMarginBottom);
+            if (updated.launcherMarginRight !== undefined) setLauncherMarginRight(updated.launcherMarginRight);
+            if (updated.launcherMarginLeft !== undefined) setLauncherMarginLeft(updated.launcherMarginLeft);
+            if (updated.launcherMarginTop !== undefined) setLauncherMarginTop(updated.launcherMarginTop);
             if (updated.brandingEnabled !== undefined) setBrandingEnabled(updated.brandingEnabled);
             setRedesignModalOpen(false);
           }}

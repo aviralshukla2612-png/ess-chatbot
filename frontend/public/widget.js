@@ -86,6 +86,22 @@
     launcherIcon: (scriptTag && scriptTag.getAttribute("data-icon")) || "bubble",
     launcherLogoUrl: (scriptTag && scriptTag.getAttribute("data-logo")) || "",
     launcherText: (scriptTag && scriptTag.getAttribute("data-launcher-text")) || "",
+    launcherMarginBottom:
+      scriptTag && scriptTag.getAttribute("data-margin-bottom")
+        ? parseInt(scriptTag.getAttribute("data-margin-bottom"), 10)
+        : 24,
+    launcherMarginRight:
+      scriptTag && scriptTag.getAttribute("data-margin-right")
+        ? parseInt(scriptTag.getAttribute("data-margin-right"), 10)
+        : 24,
+    launcherMarginLeft:
+      scriptTag && scriptTag.getAttribute("data-margin-left")
+        ? parseInt(scriptTag.getAttribute("data-margin-left"), 10)
+        : 24,
+    launcherMarginTop:
+      scriptTag && scriptTag.getAttribute("data-margin-top")
+        ? parseInt(scriptTag.getAttribute("data-margin-top"), 10)
+        : 24,
     brandingEnabled:
       scriptTag && scriptTag.getAttribute("data-branding") === "false" ? false : true,
     quickReplies: [],
@@ -110,9 +126,34 @@
           ),
           welcomeMessage: (scriptTag && scriptTag.getAttribute("data-welcome")) || data.bot.welcomeMessage || "Hello! How can I help you today?",
           launcherPosition: (scriptTag && scriptTag.getAttribute("data-position")) || data.bot.launcherPosition || "bottom-right",
+          launcherMarginBottom:
+            scriptTag && scriptTag.getAttribute("data-margin-bottom")
+              ? parseInt(scriptTag.getAttribute("data-margin-bottom"), 10)
+              : data.bot.launcherMarginBottom !== undefined
+              ? data.bot.launcherMarginBottom
+              : 24,
+          launcherMarginRight:
+            scriptTag && scriptTag.getAttribute("data-margin-right")
+              ? parseInt(scriptTag.getAttribute("data-margin-right"), 10)
+              : data.bot.launcherMarginRight !== undefined
+              ? data.bot.launcherMarginRight
+              : 24,
+          launcherMarginLeft:
+            scriptTag && scriptTag.getAttribute("data-margin-left")
+              ? parseInt(scriptTag.getAttribute("data-margin-left"), 10)
+              : data.bot.launcherMarginLeft !== undefined
+              ? data.bot.launcherMarginLeft
+              : 24,
+          launcherMarginTop:
+            scriptTag && scriptTag.getAttribute("data-margin-top")
+              ? parseInt(scriptTag.getAttribute("data-margin-top"), 10)
+              : data.bot.launcherMarginTop !== undefined
+              ? data.bot.launcherMarginTop
+              : 24,
           quickReplies: Array.isArray(data.bot.quickReplies) ? data.bot.quickReplies : [],
         };
         applyTheme();
+        updateLauncher();
         renderMessages();
       }
     })
@@ -211,14 +252,39 @@
 
   function updatePosition() {
     const pos = (botConfig.launcherPosition || "bottom-right").toLowerCase();
-    const isLeft = pos === "bottom-left" || pos === "left";
+    const isLeft = pos.includes("left");
+    const isTop = pos.includes("top");
+
+    const mb = Number.isFinite(Number(botConfig.launcherMarginBottom))
+      ? Number(botConfig.launcherMarginBottom)
+      : 24;
+    const mr = Number.isFinite(Number(botConfig.launcherMarginRight))
+      ? Number(botConfig.launcherMarginRight)
+      : 24;
+    const ml = Number.isFinite(Number(botConfig.launcherMarginLeft))
+      ? Number(botConfig.launcherMarginLeft)
+      : 24;
+    const mt = Number.isFinite(Number(botConfig.launcherMarginTop))
+      ? Number(botConfig.launcherMarginTop)
+      : 24;
+
+    if (isTop) {
+      container.classList.add("nexus-pos-top");
+      container.style.top = `${mt}px`;
+      container.style.bottom = "auto";
+    } else {
+      container.classList.remove("nexus-pos-top");
+      container.style.bottom = `${mb}px`;
+      container.style.top = "auto";
+    }
+
     if (isLeft) {
       container.classList.add("nexus-pos-left");
-      container.style.left = "24px";
+      container.style.left = `${ml}px`;
       container.style.right = "auto";
     } else {
       container.classList.remove("nexus-pos-left");
-      container.style.right = "24px";
+      container.style.right = `${mr}px`;
       container.style.left = "auto";
     }
   }
@@ -258,9 +324,9 @@
       -moz-osx-font-smoothing: grayscale;
       box-sizing: border-box;
     }
-    #nexus-chatbot-widget-container.nexus-pos-left {
-      left: 24px !important;
-      right: auto !important;
+    #nexus-chatbot-widget-container.nexus-pos-top #nexus-widget-window {
+      top: 78px !important;
+      bottom: auto !important;
     }
 
     #nexus-chatbot-widget-container * {
