@@ -672,32 +672,32 @@ export async function POST(request, { params }) {
          /\b(?:i am|my name|mera naam|call me|myself)\b/i.test(trimmedMsg) ||
          wasAskedForName));
 
-    const wasAskedForContact =
-      /\b(?:phone\s*number|contact\s*number|whatsapp|phone|mobile|reach\s*out\s*to\s*you|customized\s*proposal|share\s*your\s*name\s*and\s*phone|share\s*your\s*name|whom\s+to\s+(?:contact|address))\b/i.test(lastAssistantMessage) ||
-      lastAssistantMessage.includes("Phone Number") ||
-      lastAssistantMessage.includes("फ़ोन नंबर") ||
-      lastAssistantMessage.includes("share your Name") ||
-      lastAssistantMessage.includes("whom to contact") ||
-      lastAssistantMessage.includes("whom to address") ||
-      activeQual?.status === "summary_ready" ||
-      activeQual?.status === "awaiting_name" ||
-      Boolean(activeQual?.consentAsked);
+    const messageHasDigits = /\b\d{7,14}\b/.test(message) || /^\s*(?:\+|00)?[\d\s().-]{7,20}\s*$/.test(message);
+    const messageHasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message);
+    const messageHasExplicitContactKeyword = /\b(?:my\s+(?:number|phone|mobile|whatsapp|email)|number\s+is|phone\s+is|call\s+me\s+at)\b/i.test(message);
+
+    // Is the assistant actively waiting for contact details? (exclude thank-you/recorded state)
+    const assistantIsAskingForContact =
+      !/\b(?:have\s+recorded|recorded\s+your|thank\s+you|dhanyawad)\b/i.test(lastAssistantMessage) &&
+      (/\b(?:share\s+your\s+phone|share\s+your\s+number|share\s+your\s+contact|share\s+your\s+name\s+and\s+phone|what\s+is\s+your\s+phone|may\s+i\s+have\s+your\s+phone|please\s+provide\s+your\s+phone|apna\s+number\s+share)\b/i.test(lastAssistantMessage) ||
+       activeQual?.status === "summary_ready");
+
+    const assistantIsAskingForName =
+      !/\b(?:have\s+recorded|recorded\s+your|thank\s+you|dhanyawad)\b/i.test(lastAssistantMessage) &&
+      (/\b(?:share\s+your\s+name|may\s+i\s+know\s+your\s+name|whom\s+to\s+contact|whom\s+to\s+address|apna\s+naam)\b/i.test(lastAssistantMessage) ||
+       activeQual?.status === "awaiting_name");
 
     const isContactSubmission =
       !hasTechnicalKeywords &&
       !isContactDetailsQuery &&
       !isOfferingToShareContact &&
+      !isCompanyOverviewQuery &&
+      !isProjectsPortfolioQuery &&
+      !isServicesQuery &&
       (isNameIntroductionOnly ||
-       ((Boolean(resolvedPhone) || Boolean(resolvedEmail)) &&
-        (/\b(?:name|naam|number|nunmber|phone|mobile|whatsapp|email|here\s+it\s+is|this\s+is|call\s+me)\b/i.test(message) ||
-         (leadDetails.phone && message.includes(leadDetails.phone)) ||
-         (resolvedName && message.toLowerCase().includes(resolvedName.toLowerCase())) ||
-         /\b\d{7,14}\b/.test(message) ||
-         /^\s*(?:\+|00)?[\d\s().-]{7,20}\s*$/.test(message) ||
-         /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message) ||
-         wasAskedForContact ||
-         wasAskedForName)) ||
-       (Boolean(resolvedName && !isPlaceholderName(resolvedName)) && activeQual?.status === "awaiting_name"));
+       ((messageHasDigits || messageHasEmail || messageHasExplicitContactKeyword) &&
+        (assistantIsAskingForContact || !hasActiveProject || messageHasDigits || messageHasEmail)) ||
+       (assistantIsAskingForName && Boolean(resolvedName && !isPlaceholderName(resolvedName)) && !isAnsweringQualificationOption));
 
     // 1. Personal advice and relationships
     const isRomanceOrRelationships =
@@ -839,6 +839,24 @@ export async function POST(request, { params }) {
           : `I don't have your name recorded yet. Could you please share your **Name**?`;
       }
       quickReplies = isEssBot ? [...ALL_ESS_SERVICES] : (bot?.quickReplies || []);
+    } else if (isCompanyOverviewQuery) {
+      if (lang === "hindi") {
+        deterministicReply = `**Emperor Smart Solutions (ESS)** अहमदाबाद, गुजरात में स्थित एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज समाधान कंपनी है। 🏢🚀\n\n**हमारी मुख्य सेवाएँ:**\n• **वेबसाइट एवं वेब पोर्टल्स:** Next.js, React और Node.js पर निर्मित 95+ लाइटहाउस स्कोर वाले हाई-स्पीड वेब प्लेटफॉर्म और ई-कॉमर्स।\n• **मोबाइल ऐप्स:** iOS और Android के लिए स्केलेबल React Native और Flutter ऐप्स।\n• **कस्टम AI चैटबॉट्स:** आपके व्यापार के लिए प्रशिक्षित स्वायत्त AI सेल्स व सपोर्ट एजेंट्स (RAG आर्किटेक्चर)।\n• **एंटरप्राइज सॉफ्टवेयर:** कस्टम ERP, CRM और ऑटोमेशन सिस्टम।\n• **क्लाउड एवं डेवऑप्स:** AWS, Docker और सुरक्षित स्केलेबल इंफ्रास्ट्रक्चर।\n\n🏢 **मुख्यालय:** C-1002, सिद्धि विनायक टावर्स, मकरबा, एस.जी. हाईवे, अहमदाबाद, गुजरात 380051\n🌐 **वेबसाइट:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **संपर्क:** +91 73831 98435 | info@emperorsmartsolutions.com`;
+      } else if (lang === "hinglish") {
+        deterministicReply = `**Emperor Smart Solutions (ESS)** Ahmedabad, Gujarat based premier digital engineering aur enterprise technology solutions company hai. 🏢🚀\n\n**Hamari Core Capabilities:**\n• **High-Performance Web Platforms:** Next.js, React aur Node.js par ultra-fast websites, e-commerce aur custom admin dashboards.\n• **Mobile Applications:** iOS aur Android ke liye custom React Native & Flutter mobile apps.\n• **AI Chatbots & RAG Systems:** Business-specific knowledge base par trained autonomous AI sales & support bots.\n• **Enterprise Software:** Custom ERP, CRM, inventory aur business automation systems.\n• **Cloud Architecture & DevOps:** AWS, Docker aur secure scalable databases.\n\n🏢 **Office:** C-1002, Siddhi Vinayak Towers, Makarba, SG Highway, Ahmedabad 380051\n🌐 **Website:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **Contact:** +91 73831 98435 | info@emperorsmartsolutions.com`;
+      } else {
+        deterministicReply = `**Emperor Smart Solutions (ESS)** is a premier digital engineering and enterprise technology solutions company headquartered in Ahmedabad, Gujarat. 🏢🚀\n\n**Our Core Capabilities:**\n• **High-Performance Web Platforms:** Modern full-stack web applications, e-commerce, and admin portals built on Next.js, React, Node.js, and PostgreSQL/MongoDB with 95+ Lighthouse scores.\n• **Mobile Applications:** Scalable iOS & Android mobile applications engineered with React Native and Flutter.\n• **AI Chatbots & RAG Systems:** Custom-trained conversational AI, autonomous sales & support agents, and domain-specific knowledge bots.\n• **Custom Enterprise Software:** Scalable ERP, CRM, inventory management, and automated business workflows.\n• **Cloud Architecture & DevOps:** AWS, Docker, automated CI/CD pipelines, and robust security.\n\n🏢 **Headquarters:** C-1002, Siddhi Vinayak Towers, Makarba, SG Highway, Ahmedabad, Gujarat 380051\n🌐 **Website:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **Contact:** +91 73831 98435 | info@emperorsmartsolutions.com`;
+      }
+      quickReplies = ["Services", "Recent projects", "Office location"];
+    } else if (isProjectsPortfolioQuery) {
+      if (lang === "hindi") {
+        deterministicReply = `यहाँ **Emperor Smart Solutions** के कुछ प्रमुख लाइव प्रोजेक्ट्स और डिजिटल समाधान हैं: 💻🌟\n\n1. **NexusAI एंटरप्राइज प्लेटफॉर्म:** मल्टी-टेनेंट ऑटोनॉमस AI चैटबॉट सास प्लेटफॉर्म।\n2. **Vardaan Smart Solutions ई-कॉमर्स पोर्टल:** नेक्स्ट-जेन ई-कॉमर्स, ऑनलाइन पेमेंट व इन्वेंटरी मैनेजमेंट।\n3. **ग्लोबल लॉजिस्टिक्स ट्रैकिंग सिस्टम:** रियल-टाइम फ्लीट ट्रैकिंग व सप्लाई चेन ऑटोमेशन।\n4. **हेल्थकेयर टेली-कंसल्टेशन मोबाइल ऐप:** लाइव डॉक्टर अपॉइंटमेंट व ई-प्रिस्क्रिप्शन ऐप।\n5. **मैन्युफैक्चरिंग ERP डैशबोर्ड:** रियल-टाइम प्रोडक्शन व वेयरहाउस मैनेजमेंट सिस्टम।\n\nक्या आप इनमें से किसी समाधान के बारे में विस्तार से जानना चाहते हैं?`;
+      } else if (lang === "hinglish") {
+        deterministicReply = `Ye hain **Emperor Smart Solutions** ke kuch featured enterprise projects & digital solutions: 💻🌟\n\n1. **NexusAI Enterprise Platform:** Multi-tenant autonomous sales & support chatbot platform with RAG architecture.\n2. **Vardaan Smart Solutions E-Commerce Portal:** Ultra-fast e-commerce platform with automated payment gateways & inventory dashboard.\n3. **Global Logistics & Supply Chain Tracker:** Real-time fleet tracking, automated dispatch & invoicing.\n4. **Healthcare Tele-Consultation App:** Doctor appointments, video consultations & digital health records.\n5. **Manufacturing ERP Engine:** Custom cloud dashboard for production lines and warehouse ledger.\n\nAap inme se kis project ke baare mein discuss karna chahte hain?`;
+      } else {
+        deterministicReply = `Here are some of **Emperor Smart Solutions'** featured enterprise projects & digital solutions: 💻🌟\n\n1. **NexusAI Enterprise Platform:** Multi-tenant autonomous sales & support chatbot SaaS platform with enterprise RAG.\n2. **Vardaan Smart Solutions E-Commerce Portal:** Ultra-fast Next.js store with Razorpay/Stripe checkout, order tracking, and inventory management.\n3. **Global Logistics & Supply Chain Tracker:** Real-time fleet tracking, automated dispatch scheduling, and invoice generation.\n4. **Healthcare Tele-Consultation App:** Tele-medicine mobile app with instant doctor appointments, video calling, and digital prescriptions.\n5. **Manufacturing ERP Engine:** Custom cloud dashboard for production lines, batch management, and real-time inventory ledger.\n\nWould you like to explore how we can build a similar customized solution for your business?`;
+      }
+      quickReplies = ["Website Development", "Mobile Application", "AI Chatbot", "Office location"];
     } else if (isContactSubmission) {
       const activeQual = existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
       const displayName = (resolvedName && !isPlaceholderName(resolvedName)) ? resolvedName : "";
