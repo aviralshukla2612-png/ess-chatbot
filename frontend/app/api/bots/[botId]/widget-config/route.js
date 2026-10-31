@@ -45,10 +45,9 @@ export async function GET(request, { params }) {
           id: bot.id,
           name: bot.name || "AI Assistant",
           avatar: bot.avatar || "🤖",
-          primaryColor:
-            !bot.primaryColor || bot.primaryColor === "#4f46e5" || bot.primaryColor === "#6366f1"
-              ? "#B68A55"
-              : bot.primaryColor,
+          primaryColor: bot.primaryColor
+            ? (bot.primaryColor.startsWith("#") ? bot.primaryColor : `#${bot.primaryColor}`)
+            : "#B68A55",
           welcomeMessage: bot.welcomeMessage || `Hello! I am ${bot.name}. How can I help you today?`,
           launcherPosition: bot.launcherPosition || "bottom-right",
           launcherShape: bot.launcherShape || "circle",

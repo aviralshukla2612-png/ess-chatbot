@@ -26,14 +26,48 @@ import {
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 
 const PRESET_COLORS = [
+  // Luxury Golds & Ambers
   { name: "Imperial Gold", hex: "#B68A55" },
-  { name: "Emerald Green", hex: "#10B981" },
-  { name: "Royal Indigo", hex: "#4F46E5" },
-  { name: "Electric Cyan", hex: "#06B6D4" },
-  { name: "Crimson Rose", hex: "#F43F5E" },
-  { name: "Purple Velvet", hex: "#8B5CF6" },
+  { name: "Warm Amber", hex: "#D97706" },
+  { name: "Honey Yellow", hex: "#F59E0B" },
+  { name: "Sunburst", hex: "#EAB308" },
+
+  // Vibrant Oranges & Corals
   { name: "Burnt Orange", hex: "#EA580C" },
+  { name: "Vibrant Tangerine", hex: "#F97316" },
+  { name: "Coral Sunset", hex: "#FB7185" },
+  { name: "Terracotta", hex: "#C2410C" },
+
+  // Crimson & Pinks
+  { name: "Crimson Rose", hex: "#F43F5E" },
+  { name: "Ruby Red", hex: "#E11D48" },
+  { name: "Cherry Scarlet", hex: "#DC2626" },
+  { name: "Electric Pink", hex: "#EC4899" },
+  { name: "Hot Magenta", hex: "#D946EF" },
+
+  // Purples & Violets
+  { name: "Royal Purple", hex: "#9333EA" },
+  { name: "Purple Velvet", hex: "#8B5CF6" },
+  { name: "Deep Indigo", hex: "#6366F1" },
+  { name: "Royal Blue", hex: "#4F46E5" },
+
+  // Blues & Cyans
+  { name: "Electric Ocean", hex: "#2563EB" },
+  { name: "Sky Azure", hex: "#0EA5E9" },
+  { name: "Electric Cyan", hex: "#06B6D4" },
+  { name: "Deep Navy", hex: "#1D4ED8" },
+
+  // Teals & Greens
+  { name: "Emerald Green", hex: "#10B981" },
+  { name: "Jade Mint", hex: "#059669" },
+  { name: "Deep Teal", hex: "#0D9488" },
+  { name: "Fresh Lime", hex: "#84CC16" },
+  { name: "Forest Green", hex: "#15803D" },
+
+  // Sleek Monochromes
+  { name: "Pitch Black", hex: "#000000" },
   { name: "Deep Charcoal", hex: "#18181B" },
+  { name: "Slate Carbon", hex: "#334155" },
 ];
 
 const PRESET_AVATARS = ["🤖", "⚡", "🚀", "💬", "👑", "🛡️", "💎", "💼", "🧠", "🌟", "🎯", "🌐"];
@@ -657,11 +691,55 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
 
             {/* 3. Theme & Colors */}
             <div className="space-y-3 bg-[#FAF9F6] dark:bg-[#141414] p-4.5 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                3. Brand Accent Color
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  3. Brand Accent Color & Theme
+                </label>
+                <span className="text-[10px] text-[#B68A55] font-semibold">
+                  29 Curated Swatches + Custom Picker
+                </span>
+              </div>
 
-              <div className="grid grid-cols-4 sm:grid-cols-4 gap-2.5">
+              {/* Full Color Spectrum Picker Box */}
+              <div className="p-3.5 bg-white dark:bg-[#1A1A1A] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="relative group shrink-0">
+                    <input
+                      type="color"
+                      id="color-spectrum-wheel"
+                      value={formData.primaryColor}
+                      onChange={(e) => handleColorChange(e.target.value)}
+                      className="w-10 h-10 rounded-xl cursor-pointer border-2 border-white dark:border-neutral-700 shadow-md p-0 overflow-hidden"
+                    />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-1.5">
+                      <span>Full Color Spectrum (16.7M Colors)</span>
+                      <span
+                        className="w-3.5 h-3.5 rounded-full border border-white shadow-2xs"
+                        style={{ backgroundColor: formData.primaryColor }}
+                      />
+                    </span>
+                    <span className="text-[10px] text-neutral-400">
+                      Click the color square above to pick ANY custom shade from the visual color wheel
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 bg-[#FAF9F6] dark:bg-[#121212] px-3 py-1.5 rounded-xl border border-[#EFE7DC] dark:border-neutral-700 shadow-2xs">
+                  <span className="text-[11px] font-bold text-neutral-400">HEX:</span>
+                  <input
+                    type="text"
+                    value={formData.primaryColor}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                    placeholder="#B68A55"
+                    className="w-24 font-mono font-bold text-xs uppercase bg-transparent text-[#252525] dark:text-white outline-hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Preset Swatches Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 max-h-56 overflow-y-auto no-scrollbar p-0.5">
                 {PRESET_COLORS.map((c) => {
                   const isSelected = formData.primaryColor.toLowerCase() === c.hex.toLowerCase();
                   return (
@@ -676,7 +754,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                       }`}
                     >
                       <span
-                        className="w-4 h-4 rounded-full shrink-0 shadow-xs flex items-center justify-center"
+                        className="w-4 h-4 rounded-full shrink-0 shadow-xs flex items-center justify-center border border-black/10"
                         style={{ backgroundColor: c.hex }}
                       >
                         {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
@@ -685,27 +763,6 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                     </button>
                   );
                 })}
-              </div>
-
-              {/* Custom Color Input */}
-              <div className="flex items-center gap-3 pt-1">
-                <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">
-                  Custom Hex Code:
-                </span>
-                <div className="flex items-center gap-2 bg-white dark:bg-[#1A1A1A] px-2.5 py-1.5 rounded-xl border border-[#EFE7DC] dark:border-neutral-700">
-                  <input
-                    type="color"
-                    value={formData.primaryColor}
-                    onChange={(e) => handleColorChange(e.target.value)}
-                    className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={formData.primaryColor}
-                    onChange={(e) => handleColorChange(e.target.value)}
-                    className="w-20 font-mono text-xs uppercase bg-transparent text-[#252525] dark:text-white outline-hidden"
-                  />
-                </div>
               </div>
             </div>
 

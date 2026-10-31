@@ -62,12 +62,9 @@
   let isLoading = false;
 
   function sanitizeColor(hex) {
-    if (!hex || typeof hex !== "string") return "#B68A55";
-    const lower = hex.trim().toLowerCase();
-    if (lower === "#4f46e5" || lower === "#6366f1" || lower === "#4338ca" || lower === "indigo") {
-      return "#B68A55";
-    }
-    return hex.startsWith("#") ? hex : `#${hex}`;
+    if (!hex || typeof hex !== "string" || !hex.trim()) return "#B68A55";
+    const trimmed = hex.trim();
+    return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
   }
 
   let botConfig = {
@@ -122,7 +119,7 @@
           ...botConfig,
           ...data.bot,
           primaryColor: sanitizeColor(
-            (scriptTag && scriptTag.getAttribute("data-color")) || data.bot.primaryColor || "#B68A55"
+            data.bot.primaryColor || (scriptTag && scriptTag.getAttribute("data-color")) || "#B68A55"
           ),
           welcomeMessage: (scriptTag && scriptTag.getAttribute("data-welcome")) || data.bot.welcomeMessage || "Hello! How can I help you today?",
           launcherPosition: (scriptTag && scriptTag.getAttribute("data-position")) || data.bot.launcherPosition || "bottom-right",
@@ -248,6 +245,12 @@
     container.style.setProperty("--nexus-primary-light", lighter);
     container.style.setProperty("--nexus-primary-glow", glow);
     container.style.setProperty("--nexus-primary-soft", softBg);
+
+    const launcherEl = document.getElementById("nexus-widget-launcher");
+    if (launcherEl) {
+      launcherEl.style.background = `linear-gradient(135deg, ${primary} 0%, ${darker} 100%)`;
+      launcherEl.style.boxShadow = `0 10px 28px -4px ${glow}, 0 4px 16px rgba(0, 0, 0, 0.7)`;
+    }
   }
 
   function updatePosition() {
@@ -1003,6 +1006,12 @@
       : "";
     const launcherText = (botConfig.launcherText || "").trim();
 
+    const primary = sanitizeColor(botConfig.primaryColor || "#B68A55");
+    const darker = adjustColorBrightness(primary, -26);
+    const glow = hexToRgba(primary, 0.45);
+
+    launcherEl.style.background = `linear-gradient(135deg, ${primary} 0%, ${darker} 100%)`;
+    launcherEl.style.boxShadow = `0 10px 28px -4px ${glow}, 0 4px 16px rgba(0, 0, 0, 0.7)`;
     launcherEl.style.borderRadius = shape === "squircle" ? "18px" : shape === "pill" ? "9999px" : "50%";
     launcherEl.style.width = shape === "pill" ? "auto" : `${size}px`;
     launcherEl.style.height = `${size}px`;

@@ -129,9 +129,7 @@ function DeployBotContent() {
       if (b) {
         setBot(b);
         if (b.primaryColor) {
-          setWidgetColor(
-            b.primaryColor === "#4f46e5" || b.primaryColor === "#6366f1" ? "#B68A55" : b.primaryColor
-          );
+          setWidgetColor(b.primaryColor);
         }
         if (b.welcomeMessage) setWelcomeMessage(b.welcomeMessage);
         if (b.launcherPosition) setLauncherPosition(b.launcherPosition);
@@ -726,25 +724,72 @@ function DeployBotContent() {
 
             <div className="space-y-4 text-xs">
               {/* Primary Color Picker */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1.5">
-                  Brand Color
-                </label>
-                <div className="flex items-center gap-3">
-                  {["#B68A55", "#C89D66", "#0ea5e9", "#10b981", "#8b5cf6", "#141414"].map((c) => (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block font-semibold text-slate-800">
+                    Brand Accent Color & Theme
+                  </label>
+                  <span className="text-[10px] text-[#B68A55] font-semibold">
+                    Full Spectrum Wheel + Presets
+                  </span>
+                </div>
+
+                {/* Color Wheel & Hex Input */}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2.5 shadow-2xs">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={widgetColor}
+                      onChange={(e) => setWidgetColor(e.target.value)}
+                      className="w-9 h-9 rounded-xl cursor-pointer border border-slate-200 shadow-xs p-0 overflow-hidden"
+                    />
+                    <div>
+                      <span className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span>Color Wheel (16.7M Colors)</span>
+                        <span
+                          className="w-3 h-3 rounded-full border border-white shadow-2xs"
+                          style={{ backgroundColor: widgetColor }}
+                        />
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        Pick ANY custom shade from the visual spectrum
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <span className="text-[11px] font-bold text-slate-400">HEX:</span>
+                    <input
+                      type="text"
+                      value={widgetColor}
+                      onChange={(e) => setWidgetColor(e.target.value)}
+                      placeholder="#B68A55"
+                      className="w-20 font-mono font-bold text-xs uppercase bg-transparent text-slate-900 outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Palette Swatches */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {[
+                    "#B68A55", "#D97706", "#F59E0B", "#EA580C", "#F97316",
+                    "#F43F5E", "#E11D48", "#DC2626", "#EC4899", "#8B5CF6",
+                    "#4F46E5", "#2563EB", "#0EA5E9", "#06B6D4", "#10B981",
+                    "#0D9488", "#84CC16", "#15803D", "#18181B", "#000000"
+                  ].map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setWidgetColor(c)}
-                      className={`w-7 h-7 rounded-full transition-transform cursor-pointer ${
-                        widgetColor === c ? "scale-125 ring-2 ring-offset-2 ring-[#B68A55]" : "hover:scale-110"
+                      className={`w-7 h-7 rounded-xl border transition-all cursor-pointer shadow-2xs ${
+                        widgetColor.toLowerCase() === c.toLowerCase()
+                          ? "ring-2 ring-offset-2 ring-[#B68A55] scale-110"
+                          : "border-slate-200 hover:scale-105"
                       }`}
                       style={{ backgroundColor: c }}
+                      title={c}
                     />
                   ))}
-                  <div className="flex items-center gap-2 ml-2 pl-3 border-l border-slate-200">
-                    <span className="text-slate-400 font-mono text-[11px]">{widgetColor}</span>
-                  </div>
                 </div>
               </div>
 

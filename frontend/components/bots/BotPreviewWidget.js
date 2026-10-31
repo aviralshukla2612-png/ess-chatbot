@@ -24,12 +24,9 @@ export default function BotPreviewWidget({
   showLeadForm = false,
 }) {
   const sanitizeColor = (c) => {
-    if (!c || typeof c !== "string") return "#B68A55";
-    const lower = c.trim().toLowerCase();
-    if (lower === "#4f46e5" || lower === "#6366f1" || lower === "#4338ca" || lower === "indigo") {
-      return "#B68A55";
-    }
-    return c;
+    if (!c || typeof c !== "string" || !c.trim()) return "#B68A55";
+    const trimmed = c.trim();
+    return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
   };
   const primaryColor = sanitizeColor(rawPrimaryColor);
   const [messages, setMessages] = useState([
@@ -320,7 +317,8 @@ export default function BotPreviewWidget({
               />
               <button
                 type="submit"
-                className="w-full py-1.5 bg-[#B68A55] hover:bg-[#966E3A] text-white rounded-lg font-semibold text-xs shadow-xs transition-colors"
+                className="w-full py-1.5 text-white rounded-lg font-semibold text-xs shadow-xs transition-colors hover:brightness-110"
+                style={{ backgroundColor: primaryColor }}
               >
                 Submit & Connect
               </button>
