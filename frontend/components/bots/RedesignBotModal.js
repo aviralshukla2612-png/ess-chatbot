@@ -70,7 +70,29 @@ const PRESET_COLORS = [
   { name: "Slate Carbon", hex: "#334155" },
 ];
 
-const PRESET_AVATARS = ["🤖", "⚡", "🚀", "💬", "👑", "🛡️", "💎", "💼", "🧠", "🌟", "🎯", "🌐"];
+const PRESET_AVATARS = [
+  "🤖",
+  "✳️",
+  "🧠",
+  "💠",
+  "🔮",
+  "🫧",
+  "◈",
+  "✧",
+  "💬",
+  "⚛️",
+  "🌐",
+  "⟡",
+  "◎",
+  "⚡",
+  "🚀",
+  "👑",
+  "🛡️",
+  "💎",
+  "💼",
+  "🌟",
+  "🎯",
+];
 
 const LAUNCHER_ICONS = [
   { id: "bubble", label: "Speech Bubble", icon: MessageCircle },

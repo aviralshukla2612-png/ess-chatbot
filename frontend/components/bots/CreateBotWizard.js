@@ -73,7 +73,9 @@ export default function CreateBotWizard() {
     { role: "assistant", content: "Hello! How can I assist you today?" },
   ]);
 
-  const avatarsList = ["🤖", "💼", "🎧", "⚡", "🩺", "💬"];
+  const avatarsList = [
+    "🤖", "✳️", "🧠", "💠", "🔮", "🫧", "◈", "✧", "💬", "⚛️", "🌐", "⟡", "◎", "💼", "🎧", "⚡"
+  ];
   const colorSwatches = ["#B68A55", "#C89D66", "#06B6D4", "#10B981", "#8B5CF6", "#111827"];
 
   const handleFileUpload = (files) => {
