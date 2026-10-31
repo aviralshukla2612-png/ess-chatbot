@@ -15,44 +15,8 @@ function resolveDataFile() {
 const DATA_FILE = resolveDataFile();
 const DEFAULT_ORG_ID = "org_ess_default";
 
-// Default seed bot matching user's created bot 'aa'
+// Default single official seed bot: Emperor AI Assistant
 const DEFAULT_BOTS = [
-  {
-    id: "bot_aa",
-    organizationId: DEFAULT_ORG_ID,
-    name: "aa",
-    company: "Emperor Smart Solutions",
-    description: "Official AI Sales Representative for Emperor Smart Solutions.",
-    avatar: "🤖",
-    status: "Active",
-    primaryColor: "#B68A55",
-    welcomeMessage: "Hello! I am Emperor AI, your AI Sales Consultant. How can I help you today?",
-    placeholderText: "Type a message...",
-    launcherPosition: "bottom-right",
-    brandingEnabled: true,
-    personality: "Helpful & Professional",
-    systemPrompt: "You are Emperor AI, the official AI Sales Consultant for Emperor Smart Solutions. Assist visitors with Web, Mobile, ERP, and AI solutions.",
-    responseLength: "Balanced",
-    instructions: "Be courteous, clear, and direct.",
-    collectLeads: true,
-    allowedDomains: ["*"],
-    quickReplies: [
-      "Website Development",
-      "Mobile Application",
-      "AI Chatbot & RAG",
-      "Custom Software & ERP",
-      "UI/UX Design",
-      "Cloud & DevOps",
-      "Hire Dedicated Developers",
-    ],
-    conversationsCount: 0,
-    questionsCount: 0,
-    leadsCount: 0,
-    sourcesCount: 0,
-    createdDate: "Oct 9, 2026",
-    lastActive: "Just now",
-    documents: [],
-  },
   {
     id: "bot_1791618269632",
     organizationId: DEFAULT_ORG_ID,
@@ -107,11 +71,20 @@ function loadBotsFromDisk() {
     const raw = fs.readFileSync(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      memoryBotsCache = parsed.map((b) => ({
+      // Filter out legacy dummy bot 'bot_aa' / 'aa' and enforce single official bot
+      const sanitized = parsed.filter((b) => b.id !== "bot_aa" && b.name !== "aa");
+      if (sanitized.length === 0) {
+        sanitized.push(...DEFAULT_BOTS);
+      }
+      memoryBotsCache = sanitized.map((b) => ({
         ...b,
         organizationId: b.organizationId || DEFAULT_ORG_ID,
         primaryColor: (!b.primaryColor || b.primaryColor === "#4f46e5" || b.primaryColor === "#6366f1") ? "#B68A55" : b.primaryColor,
       }));
+      // If disk had dummy bot_aa, persist the sanitized list
+      if (sanitized.length !== parsed.length) {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(memoryBotsCache, null, 2), "utf8");
+      }
       return memoryBotsCache;
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), "utf8");
@@ -197,10 +170,10 @@ export const botsStore = {
     match = scopedBots.find((b) => b.name && b.name.trim().toLowerCase() === queryLower);
     if (match) return match;
 
-    // 4. Default seed bot fallback (ensure official default bot & Cashbook bot are always accessible)
+    // 4. Default seed bot fallback (ensure official default Emperor AI Assistant is always accessible)
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
       if (queryLower === "bot_1791618269632" || queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
-        const def = DEFAULT_BOTS.find((b) => b.id === query || b.id === queryLower) || DEFAULT_BOTS[0];
+        const def = DEFAULT_BOTS[0];
         if (def) {
           if (!bots.some((b) => b.id === def.id)) {
             bots.push(def);
@@ -266,7 +239,7 @@ export const botsStore = {
     // Default seed bot fallback
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
       if (queryLower === "bot_1791618269632" || queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
-        return DEFAULT_BOTS.find((b) => b.id === query || b.id === queryLower) || DEFAULT_BOTS[0];
+        return DEFAULT_BOTS[0];
       }
     }
 

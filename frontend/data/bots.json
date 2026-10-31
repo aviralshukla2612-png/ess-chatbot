@@ -1,34 +1,5 @@
 [
   {
-    "id": "bot_aa",
-    "organizationId": "org_ess_default",
-    "name": "aa",
-    "company": "Emperor Smart Solutions",
-    "description": "Official AI Sales Representative for Emperor Smart Solutions.",
-    "avatar": "🤖",
-    "status": "Active",
-    "primaryColor": "#B68A55",
-    "welcomeMessage": "Hello! I am Emperor AI, your AI Sales Consultant. How can I help you today?",
-    "placeholderText": "Type a message...",
-    "launcherPosition": "bottom-right",
-    "brandingEnabled": true,
-    "personality": "Helpful & Professional",
-    "systemPrompt": "You are Emperor AI, the official AI Sales Consultant for Emperor Smart Solutions. Assist visitors with Web, Mobile, ERP, and AI solutions.",
-    "responseLength": "Balanced",
-    "instructions": "Be courteous, clear, and direct.",
-    "collectLeads": true,
-    "allowedDomains": [
-      "*"
-    ],
-    "conversationsCount": 0,
-    "questionsCount": 0,
-    "leadsCount": 0,
-    "sourcesCount": 0,
-    "createdDate": "Oct 9, 2026",
-    "lastActive": "Just now",
-    "documents": []
-  },
-  {
     "id": "bot_1791618269632",
     "organizationId": "org_ess_default",
     "name": "Emperor AI Assistant",
@@ -58,12 +29,21 @@
       "Cloud & DevOps",
       "Hire Dedicated Developers"
     ],
-    "conversationsCount": 0,
-    "questionsCount": 0,
-    "leadsCount": 0,
-    "sourcesCount": 0,
+    "conversationsCount": 3,
+    "questionsCount": 5,
+    "leadsCount": 2,
+    "sourcesCount": 1,
     "createdDate": "Oct 9, 2026",
     "lastActive": "Just now",
-    "documents": []
+    "documents": [
+      {
+        "id": "doc_emperor_smart_solutions_01",
+        "name": "Emperor_Smart_Solutions_Company_Profile.pdf",
+        "type": "PDF",
+        "size": "150 KB",
+        "status": "Ready",
+        "chunks": 5
+      }
+    ]
   }
 ]

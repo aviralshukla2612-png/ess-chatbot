@@ -59,6 +59,7 @@ export const quotaGuard = {
       organizationId === "org_ess_01" ||
       organizationId === "bot_aa" ||
       botId === "bot_aa" ||
+      botId === "bot_1791618269632" ||
       String(botId || "").toLowerCase().includes("aa")
     ) {
       return { allowed: true, currentUsage: 0, limit: Infinity };

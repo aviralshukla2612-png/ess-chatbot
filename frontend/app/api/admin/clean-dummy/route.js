@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 
 // Protected system resources that must NEVER be deleted under any circumstances
-const PROTECTED_BOT_IDS = new Set(["bot_aa"]);
+const PROTECTED_BOT_IDS = new Set(["bot_1791618269632"]);
 const PROTECTED_ORG_IDS = new Set(["org_ess_01", "org_ess_default"]);
 
 const REQUIRED_CONFIRM_TOKEN = "CONFIRM_DELETE_DUMMY_RECORDS";

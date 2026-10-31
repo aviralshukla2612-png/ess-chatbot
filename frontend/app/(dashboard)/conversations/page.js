@@ -25,6 +25,112 @@ import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import { cn } from "@/lib/utils";
 
+// Rich Markdown, Bold, Links, and Bullets Formatter
+function FormattedChatMessage({ text, isUser = false }) {
+  if (!text) return null;
+
+  const lines = String(text).split("\n");
+
+  const parseInline = (line, lineKey) => {
+    // Regex matches bold **text**, URLs, emails, and phone numbers
+    const tokenRegex =
+      /(\*\*[^*]+\*\*|https?:\/\/[^\s<>"')]+|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|\+?[0-9]{1,4}[\s-]?[0-9]{5}[\s-]?[0-9]{5})/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+
+    while ((match = tokenRegex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.substring(lastIndex, match.index));
+      }
+
+      const token = match[0];
+      if (token.startsWith("**") && token.endsWith("**")) {
+        const boldText = token.slice(2, -2);
+        parts.push(
+          <strong
+            key={`${lineKey}-${key++}`}
+            className={isUser ? "font-bold text-white" : "font-bold text-white dark:text-white"}
+          >
+            {boldText}
+          </strong>
+        );
+      } else if (token.startsWith("http://") || token.startsWith("https://")) {
+        parts.push(
+          <a
+            key={`${lineKey}-${key++}`}
+            href={token}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#B68A55] hover:text-[#d8a86f] underline underline-offset-2 break-all font-medium transition-colors"
+          >
+            {token}
+          </a>
+        );
+      } else if (token.includes("@") && !token.startsWith("http")) {
+        parts.push(
+          <a
+            key={`${lineKey}-${key++}`}
+            href={`mailto:${token}`}
+            className="text-[#B68A55] hover:text-[#d8a86f] underline underline-offset-2 break-all font-medium transition-colors"
+          >
+            {token}
+          </a>
+        );
+      } else if (token.startsWith("+") || token.replace(/\D/g, "").length >= 10) {
+        parts.push(
+          <a
+            key={`${lineKey}-${key++}`}
+            href={`tel:${token.replace(/\s+/g, "")}`}
+            className="text-[#B68A55] hover:text-[#d8a86f] underline underline-offset-2 font-medium transition-colors"
+          >
+            {token}
+          </a>
+        );
+      } else {
+        parts.push(token);
+      }
+
+      lastIndex = tokenRegex.lastIndex;
+    }
+
+    if (lastIndex < line.length) {
+      parts.push(line.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : line;
+  };
+
+  return (
+    <div className="space-y-1.5 break-words [overflow-wrap:anywhere] leading-relaxed">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={idx} className="h-1" />;
+        }
+
+        // Bullet point detection (- or * or •)
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
+          const content = trimmed.substring(2);
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-0.5 my-1">
+              <span className="text-[#B68A55] font-bold text-xs shrink-0 select-none leading-relaxed">•</span>
+              <div className="flex-1 min-w-0">{parseInline(content, idx)}</div>
+            </div>
+          );
+        }
+
+        return (
+          <div key={idx} className="min-w-0">
+            {parseInline(line, idx)}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ConversationsPage() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,10 +142,16 @@ export default function ConversationsPage() {
   const loadConversations = async () => {
     try {
       const data = await conversationsApi.getConversations();
-      setConversations(data || []);
-      if (data && data.length > 0) {
+      // Normalize all conversations to Emperor AI Assistant if legacy or dummy
+      const sanitized = (data || []).map((c) => ({
+        ...c,
+        botName: c.botName && c.botName !== "aa" ? c.botName : "Emperor AI Assistant",
+        botId: c.botId && c.botId !== "bot_aa" ? c.botId : "bot_1791618269632",
+      }));
+      setConversations(sanitized);
+      if (sanitized.length > 0) {
         setSelectedId((prev) =>
-          prev ? (data.some((c) => c.id === prev) ? prev : data[0].id) : data[0].id
+          prev ? (sanitized.some((c) => c.id === prev) ? prev : sanitized[0].id) : sanitized[0].id
         );
       }
     } catch (err) {
@@ -79,6 +191,7 @@ export default function ConversationsPage() {
     await conversationsApi.addMessage(currentChat.id, {
       role: "assistant",
       content: text,
+      botName: currentChat.botName || "Emperor AI Assistant",
     });
     loadConversations();
   };
@@ -90,18 +203,18 @@ export default function ConversationsPage() {
   };
 
   return (
-    <div className="space-y-5 pb-12 animate-fade-in font-sans text-slate-200">
+    <div className="space-y-5 pb-12 animate-fade-in font-sans text-neutral-200">
       {/* Top Header with Real-Time Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
             <span>Live Conversations & Chat Inbox</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#B68A55]/15 text-[#B68A55] border border-[#B68A55]/30 font-medium">
               Real-time
             </span>
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Monitor, inspect, and reply to visitor inquiries in real-time across your deployed chatbots.
+          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+            Monitor, inspect, and reply to visitor inquiries in real-time across your live chatbot.
           </p>
         </div>
         <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
@@ -150,7 +263,7 @@ export default function ConversationsPage() {
                     "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer text-center",
                     filterTab === tab
                       ? "bg-[#252525] text-white font-semibold shadow-xs dark:bg-[#B68A55] dark:text-white"
-                      : "text-slate-600 dark:text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60"
+                      : "text-neutral-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A]"
                   )}
                 >
                   {tab}
@@ -160,22 +273,22 @@ export default function ConversationsPage() {
 
             {/* Search */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search conversations..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#EFE7DC] dark:border-slate-700/80 bg-white dark:bg-slate-800/60 text-xs text-[#252525] dark:text-white placeholder-slate-400 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 transition-colors shadow-xs"
+                className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#141414] text-xs text-[#252525] dark:text-white placeholder-neutral-500 outline-hidden focus:border-[#B68A55] dark:focus:border-[#B68A55] transition-colors shadow-xs"
               />
             </div>
           </div>
 
           {/* List items or Empty state */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[#EFE7DC] dark:divide-slate-800/60">
+          <div className="flex-1 overflow-y-auto divide-y divide-[#EFE7DC] dark:divide-neutral-800/80">
             {!loading && filtered.length === 0 && (
               <div className="p-8 text-center space-y-3.5 my-auto">
-                <div className="w-12 h-12 rounded-2xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-indigo-500/10 dark:border-indigo-500/20 flex items-center justify-center text-[#B68A55] dark:text-indigo-400 mx-auto shadow-inner">
+                <div className="w-12 h-12 rounded-2xl bg-[#B68A55]/10 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55] mx-auto shadow-inner">
                   <Inbox className="w-6 h-6" />
                 </div>
                 <h4 className="text-sm font-bold text-[#252525] dark:text-white">
@@ -187,7 +300,7 @@ export default function ConversationsPage() {
                     ? "No resolved conversations"
                     : "No conversations yet"}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs mx-auto">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-xs mx-auto">
                   {filterTab === "Leads"
                     ? "Leads will appear here automatically as soon as visitors share contact details with your bot."
                     : "New visitor sessions will appear here in real-time when users interact with your chatbot."}
@@ -213,8 +326,8 @@ export default function ConversationsPage() {
                   className={cn(
                     "p-3.5 flex items-start gap-3 cursor-pointer transition-colors relative",
                     isSelected
-                      ? "bg-white dark:bg-[#1A1A1A] border-l-3 border-[#B68A55] dark:border-[#B68A55] shadow-xs"
-                      : "hover:bg-[#FAF9F6] dark:hover:bg-[#121212] text-[#252525] dark:text-neutral-300"
+                      ? "bg-white dark:bg-[#161616] border-l-3 border-[#B68A55] dark:border-[#B68A55] shadow-xs"
+                      : "hover:bg-[#FAF9F6] dark:hover:bg-[#111111] text-[#252525] dark:text-neutral-300"
                   )}
                 >
                   <div
@@ -222,7 +335,7 @@ export default function ConversationsPage() {
                       "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border",
                       isSelected
                         ? "bg-[#252525] border-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:border-[#B68A55]"
-                        : "bg-white border-[#EFE7DC] text-[#B68A55] dark:bg-[#121212] dark:border-neutral-800 dark:text-[#B68A55]"
+                        : "bg-white border-[#EFE7DC] text-[#B68A55] dark:bg-[#141414] dark:border-neutral-800 dark:text-[#B68A55]"
                     )}
                   >
                     {item.visitorName?.charAt(0) || "V"}
@@ -233,11 +346,11 @@ export default function ConversationsPage() {
                       <span className="font-semibold text-xs text-[#252525] dark:text-white truncate">
                         {item.visitorName || "Website Visitor"}
                       </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 shrink-0 ml-1">
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400 shrink-0 ml-1">
                         {item.startedAt || "Today"}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                       {item.lastMessage || "Started chat session"}
                     </p>
                     <div className="flex items-center gap-1.5 mt-1.5">
@@ -246,8 +359,8 @@ export default function ConversationsPage() {
                           Lead
                         </span>
                       )}
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                        {item.botName || "Chatbot"}
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
+                        {item.botName && item.botName !== "aa" ? item.botName : "Emperor AI Assistant"}
                       </span>
                     </div>
                   </div>
@@ -258,100 +371,107 @@ export default function ConversationsPage() {
         </div>
 
         {/* COLUMN 2: Chat Transcript */}
-        <div className="flex-1 flex flex-col border-r border-[#EFE7DC] dark:border-slate-800/80 min-w-0 bg-white dark:bg-slate-950/30">
+        <div className="flex-1 flex flex-col border-r border-[#EFE7DC] dark:border-neutral-800 min-w-0 bg-white dark:bg-[#0A0A0A]">
           {currentChat ? (
             <>
               {/* Top Chat Header */}
-              <div className="p-4 border-b border-[#EFE7DC] dark:border-slate-800/80 flex items-center justify-between bg-[#FAF9F6] dark:bg-slate-900/60 shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EFE7DC] text-[#B68A55] dark:bg-slate-800 dark:border-slate-700 dark:text-indigo-400 font-bold text-xs flex items-center justify-center shadow-xs">
+              <div className="p-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#0E0E0E] shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-[#EFE7DC] text-[#B68A55] dark:bg-[#161616] dark:border-neutral-800 dark:text-[#B68A55] font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
                     {currentChat.visitorName?.charAt(0) || "V"}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-[#252525] dark:text-white">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-sm text-[#252525] dark:text-white truncate">
                       {currentChat.visitorName || "Website Visitor"}
                     </h3>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
                       <span>{currentChat.visitorLocation || "Direct Session"}</span>
                       <span>•</span>
-                      <span className="text-[#B68A55] dark:text-indigo-400 font-medium">{currentChat.botName || "Bot Assistant"}</span>
+                      <span className="text-[#B68A55] font-medium truncate">
+                        {currentChat.botName && currentChat.botName !== "aa"
+                          ? currentChat.botName
+                          : "Emperor AI Assistant"}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={handleMarkResolved}
-                    className="px-3 py-1.5 rounded-xl border border-[#EFE7DC] bg-white hover:bg-[#FAF9F6] text-[#252525] dark:border-slate-700 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                    className="px-3.5 py-1.5 rounded-xl border border-[#EFE7DC] bg-white hover:bg-[#FAF9F6] text-[#252525] dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-[#1C1C1C] dark:text-neutral-300 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
                   >
                     {currentChat.status === "Resolved" ? "Resolved" : "Mark Resolved"}
                   </button>
                 </div>
               </div>
 
-              {/* Messages Flow */}
-              <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-[#FAF9F6]/50 dark:bg-slate-950/40">
+              {/* Messages Flow (Horizontal overflow strictly prevented) */}
+              <div className="flex-1 p-5 overflow-y-auto overflow-x-hidden space-y-4 bg-[#FAF9F6]/50 dark:bg-[#070707]">
                 <div className="text-center">
-                  <span className="text-[10px] bg-white dark:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/60 text-slate-600 dark:text-slate-400 font-semibold px-2.5 py-1 rounded-full shadow-xs">
+                  <span className="text-[10px] bg-white dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold px-2.5 py-1 rounded-full shadow-xs">
                     {currentChat.startedAt || "Today"}
                   </span>
                 </div>
 
-                {currentChat.messages?.map((msg, i) => (
-                  <div
-                    key={msg.id || i}
-                    className={`flex items-start gap-2.5 ${
-                      msg.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    {msg.role !== "user" && (
-                      <div className="w-7 h-7 rounded-lg bg-[#B68A55]/10 border border-[#B68A55]/20 text-[#B68A55] dark:bg-indigo-500/15 dark:border-indigo-500/25 dark:text-indigo-400 flex items-center justify-center text-xs shrink-0 font-bold">
-                        <Bot className="w-4 h-4" />
-                      </div>
-                    )}
-
+                {currentChat.messages?.map((msg, i) => {
+                  const isUser = msg.role === "user";
+                  return (
                     <div
-                      className={cn(
-                        "p-3.5 rounded-2xl max-w-md text-xs leading-relaxed shadow-xs",
-                        msg.role === "user"
-                          ? "bg-[#252525] text-white rounded-tr-xs dark:bg-[#B68A55] dark:text-white"
-                          : "bg-white text-[#252525] border border-[#EFE7DC] rounded-tl-xs dark:bg-slate-800/90 dark:text-slate-200 dark:border-slate-700/80"
-                      )}
+                      key={msg.id || i}
+                      className={`flex items-start gap-2.5 ${
+                        isUser ? "justify-end" : "justify-start"
+                      }`}
                     >
-                      <p className="whitespace-pre-line">{msg.text || msg.content}</p>
+                      {!isUser && (
+                        <div className="w-7 h-7 rounded-lg bg-[#B68A55]/10 border border-[#B68A55]/25 text-[#B68A55] flex items-center justify-center text-xs shrink-0 font-bold shadow-xs">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                      )}
+
+                      <div
+                        className={cn(
+                          "p-3.5 rounded-2xl max-w-[88%] sm:max-w-xl text-xs leading-relaxed shadow-sm break-words [overflow-wrap:anywhere]",
+                          isUser
+                            ? "bg-[#252525] text-white rounded-tr-xs dark:bg-[#B68A55] dark:text-white"
+                            : "bg-white text-[#252525] border border-[#EFE7DC] rounded-tl-xs dark:bg-[#141414] dark:text-neutral-200 dark:border-neutral-800"
+                        )}
+                      >
+                        <FormattedChatMessage text={msg.text || msg.content} isUser={isUser} />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Reply Box */}
               <form
                 onSubmit={handleSendReply}
-                className="p-3.5 border-t border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#0D0D0D] flex items-center gap-2"
+                className="p-3.5 border-t border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#0E0E0E] flex items-center gap-2"
               >
                 <input
                   type="text"
                   placeholder="Type a message to reply in real-time..."
                   value={replyInput}
                   onChange={(e) => setReplyInput(e.target.value)}
-                  className="flex-1 text-xs bg-[#FAF9F6] dark:bg-[#121212] px-3.5 py-2.5 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-white placeholder-slate-400 outline-hidden focus:border-[#B68A55] transition-colors shadow-xs"
+                  className="flex-1 text-xs bg-[#FAF9F6] dark:bg-[#141414] px-3.5 py-2.5 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-white placeholder-neutral-500 outline-hidden focus:border-[#B68A55] transition-colors shadow-xs"
                 />
                 <button
                   type="submit"
-                  className="p-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white shadow-xs transition-all cursor-pointer"
+                  className="p-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white shadow-xs transition-all cursor-pointer active:scale-95"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-neutral-400 space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#FAF9F6] dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-center text-[#B68A55] shadow-xs">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-neutral-500 dark:text-neutral-400 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF9F6] dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-center text-[#B68A55] shadow-xs">
                 <MessageSquare className="w-6 h-6" />
               </div>
               <h4 className="text-sm font-bold text-[#252525] dark:text-white">No conversation selected</h4>
-              <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-xs">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xs">
                 Select a conversation from the left to view the complete live transcript and visitor details.
               </p>
             </div>
@@ -364,66 +484,68 @@ export default function ConversationsPage() {
             <>
               {/* VISITOR INFO */}
               <div className="space-y-3">
-                <h4 className="font-bold text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <h4 className="font-bold text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Visitor Info
                 </h4>
 
                 <div className="space-y-2.5">
-                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-200">
-                    <User className="w-4 h-4 text-[#B68A55] dark:text-indigo-400 shrink-0" />
-                    <span className="font-semibold text-[#252525] dark:text-white">
+                  <div className="flex items-center gap-2.5 text-neutral-700 dark:text-neutral-200">
+                    <User className="w-4 h-4 text-[#B68A55] shrink-0" />
+                    <span className="font-semibold text-[#252525] dark:text-white truncate">
                       {currentChat.visitorName || "Website Visitor"}
                     </span>
                   </div>
 
                   {currentChat.visitorPhone && (
-                    <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300">
-                      <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{currentChat.visitorPhone}</span>
+                    <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-300">
+                      <Phone className="w-4 h-4 text-neutral-400 shrink-0" />
+                      <span className="break-all">{currentChat.visitorPhone}</span>
                     </div>
                   )}
 
                   {currentChat.visitorEmail && (
-                    <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300">
-                      <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                    <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-300">
+                      <Mail className="w-4 h-4 text-neutral-400 shrink-0" />
                       <span className="truncate">{currentChat.visitorEmail}</span>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300">
-                    <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>{currentChat.visitorLocation || "Direct Session"}</span>
+                  <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-300">
+                    <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
+                    <span className="truncate">{currentChat.visitorLocation || "Direct Session"}</span>
                   </div>
                 </div>
               </div>
 
               {/* CONVERSATION INFO */}
-              <div className="space-y-3 pt-4 border-t border-[#EFE7DC] dark:border-slate-800">
-                <h4 className="font-bold text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <div className="space-y-3 pt-4 border-t border-[#EFE7DC] dark:border-neutral-800">
+                <h4 className="font-bold text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Conversation Info
                 </h4>
 
-                <div className="space-y-2 text-slate-600 dark:text-slate-300">
+                <div className="space-y-2 text-neutral-600 dark:text-neutral-300">
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Duration:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">Duration:</span>
                     <span className="font-medium text-[#252525] dark:text-white">
                       {currentChat.duration || "1 min"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Messages:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">Messages:</span>
                     <span className="font-medium text-[#252525] dark:text-white">
                       {currentChat.messages?.length || 0}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500 dark:text-slate-400">Bot:</span>
-                    <span className="font-semibold text-[#B68A55] bg-[#B68A55]/10 border border-[#B68A55]/20 dark:text-indigo-400 dark:bg-indigo-500/10 dark:border-indigo-500/20 px-2 py-0.5 rounded-md">
-                      {currentChat.botName || "Custom Bot"}
+                    <span className="text-neutral-500 dark:text-neutral-400">Bot:</span>
+                    <span className="font-semibold text-[#B68A55] bg-[#B68A55]/10 border border-[#B68A55]/20 px-2 py-0.5 rounded-md truncate max-w-[140px]">
+                      {currentChat.botName && currentChat.botName !== "aa"
+                        ? currentChat.botName
+                        : "Emperor AI Assistant"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Status:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">Status:</span>
                     <span className="font-medium text-[#252525] dark:text-white">
                       {currentChat.status || "Active"}
                     </span>
@@ -432,26 +554,26 @@ export default function ConversationsPage() {
               </div>
 
               {/* LEAD INFORMATION */}
-              <div className="space-y-3 pt-4 border-t border-[#EFE7DC] dark:border-slate-800">
-                <h4 className="font-bold text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <div className="space-y-3 pt-4 border-t border-[#EFE7DC] dark:border-neutral-800">
+                <h4 className="font-bold text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                   Lead Information
                 </h4>
 
-                <div className="space-y-2 text-slate-600 dark:text-slate-300">
+                <div className="space-y-2 text-neutral-600 dark:text-neutral-300">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500 dark:text-slate-400">Lead Score:</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                    <span className="text-neutral-500 dark:text-neutral-400">Lead Score:</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] border border-[#B68A55]/30">
                       {currentChat.leadScore || "Medium"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500 dark:text-slate-400">Status:</span>
+                    <span className="text-neutral-500 dark:text-neutral-400">Status:</span>
                     <span
                       className={cn(
                         "font-semibold text-[11px] px-2 py-0.5 rounded-md border",
                         currentChat.isLead
                           ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                          : "bg-white border-[#EFE7DC] text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                          : "bg-white border-[#EFE7DC] text-neutral-700 dark:bg-[#141414] dark:text-neutral-300 dark:border-neutral-800"
                       )}
                     >
                       {currentChat.isLead ? "Captured Lead" : "In Progress"}
@@ -461,7 +583,7 @@ export default function ConversationsPage() {
               </div>
             </>
           ) : (
-            <div className="text-slate-500 dark:text-slate-500 text-xs text-center py-12">
+            <div className="text-neutral-500 dark:text-neutral-500 text-xs text-center py-12">
               Select a conversation to view visitor details
             </div>
           )}

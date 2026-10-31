@@ -30,7 +30,24 @@ function loadFromDisk() {
     const raw = fs.readFileSync(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      memoryCache = parsed;
+      // Normalize any legacy conversations referencing bot_aa or aa to Emperor AI Assistant
+      let hasChanges = false;
+      memoryCache = parsed.map((c) => {
+        if (c.botId === "bot_aa" || c.botName === "aa" || !c.botName) {
+          hasChanges = true;
+          return {
+            ...c,
+            botId: "bot_1791618269632",
+            botName: "Emperor AI Assistant",
+          };
+        }
+        return c;
+      });
+      if (hasChanges) {
+        try {
+          fs.writeFileSync(DATA_FILE, JSON.stringify(memoryCache, null, 2), "utf8");
+        } catch (e) {}
+      }
       return memoryCache;
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
@@ -232,11 +249,11 @@ export const conversationsStore = {
     if (!conv) {
       conv = this.createConversation({
         id: conversationId,
-        botId: options.botId || message.botId || "unknown_bot",
-        botName: options.botName || message.botName || "AI Assistant",
+        botId: options.botId || message.botId || "bot_1791618269632",
+        botName: options.botName || message.botName || "Emperor AI Assistant",
         organizationId: options.organizationId || message.organizationId || "org_ess_default",
         visitorId: options.visitorId || null,
-        visitorName: message.role === "user" ? "Website Visitor" : (options.botName || "AI Assistant"),
+        visitorName: message.role === "user" ? "Website Visitor" : (options.botName || "Emperor AI Assistant"),
         messages: [],
         now,
       });
@@ -291,7 +308,7 @@ export const conversationsStore = {
           [
             conv.id,
             conv.organizationId || "org_ess_default",
-            conv.botId || "bot_aa",
+            conv.botId || "bot_1791618269632",
             conv.visitorId || null,
             conv.visitorName || "Website Visitor",
             conv.status || "Active",

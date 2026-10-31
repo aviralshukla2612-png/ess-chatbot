@@ -28,7 +28,7 @@ import { botsApi } from "@/lib/api/bots";
 
 function DeployBotContent() {
   const routeParams = useParams();
-  const botId = routeParams?.botId || "bot_aa";
+  const botId = routeParams?.botId || "bot_1791618269632";
 
   const [bot, setBot] = useState(null);
   const [loading, setLoading] = useState(true);

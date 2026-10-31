@@ -97,13 +97,13 @@ export default function BotsPage() {
 
   const getEmbedSnippet = (bot) => {
     if (!bot) return "";
-    const idToUse = bot.id || "bot_aa";
+    const idToUse = bot.id || "bot_1791618269632";
     return `<script src="${appOrigin}/widget.js" data-bot-id="${idToUse}" defer></script>`;
   };
 
   const getConsoleSnippet = (bot) => {
     if (!bot) return "";
-    const idToUse = bot.id || "bot_aa";
+    const idToUse = bot.id || "bot_1791618269632";
     return `(() => {
   const s = document.createElement("script");
   s.src = "${appOrigin}/widget.js";
