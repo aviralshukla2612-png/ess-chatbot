@@ -134,28 +134,28 @@
           launcherText:
             data.bot.launcherText || (scriptTag && scriptTag.getAttribute("data-launcher-text")) || "",
           launcherMarginBottom:
-            scriptTag && scriptTag.getAttribute("data-margin-bottom")
+            data.bot.launcherMarginBottom !== undefined && Number.isFinite(Number(data.bot.launcherMarginBottom))
+              ? Number(data.bot.launcherMarginBottom)
+              : scriptTag && scriptTag.getAttribute("data-margin-bottom")
               ? parseInt(scriptTag.getAttribute("data-margin-bottom"), 10)
-              : data.bot.launcherMarginBottom !== undefined
-              ? data.bot.launcherMarginBottom
               : 24,
           launcherMarginRight:
-            scriptTag && scriptTag.getAttribute("data-margin-right")
+            data.bot.launcherMarginRight !== undefined && Number.isFinite(Number(data.bot.launcherMarginRight))
+              ? Number(data.bot.launcherMarginRight)
+              : scriptTag && scriptTag.getAttribute("data-margin-right")
               ? parseInt(scriptTag.getAttribute("data-margin-right"), 10)
-              : data.bot.launcherMarginRight !== undefined
-              ? data.bot.launcherMarginRight
               : 24,
           launcherMarginLeft:
-            scriptTag && scriptTag.getAttribute("data-margin-left")
+            data.bot.launcherMarginLeft !== undefined && Number.isFinite(Number(data.bot.launcherMarginLeft))
+              ? Number(data.bot.launcherMarginLeft)
+              : scriptTag && scriptTag.getAttribute("data-margin-left")
               ? parseInt(scriptTag.getAttribute("data-margin-left"), 10)
-              : data.bot.launcherMarginLeft !== undefined
-              ? data.bot.launcherMarginLeft
               : 24,
           launcherMarginTop:
-            scriptTag && scriptTag.getAttribute("data-margin-top")
+            data.bot.launcherMarginTop !== undefined && Number.isFinite(Number(data.bot.launcherMarginTop))
+              ? Number(data.bot.launcherMarginTop)
+              : scriptTag && scriptTag.getAttribute("data-margin-top")
               ? parseInt(scriptTag.getAttribute("data-margin-top"), 10)
-              : data.bot.launcherMarginTop !== undefined
-              ? data.bot.launcherMarginTop
               : 24,
           quickReplies: Array.isArray(data.bot.quickReplies) ? data.bot.quickReplies : [],
         };
@@ -283,22 +283,22 @@
 
     if (isTop) {
       container.classList.add("nexus-pos-top");
-      container.style.top = `${mt}px`;
-      container.style.bottom = "auto";
+      container.style.setProperty("top", `${mt}px`, "important");
+      container.style.setProperty("bottom", "auto", "important");
     } else {
       container.classList.remove("nexus-pos-top");
-      container.style.bottom = `${mb}px`;
-      container.style.top = "auto";
+      container.style.setProperty("bottom", `${mb}px`, "important");
+      container.style.setProperty("top", "auto", "important");
     }
 
     if (isLeft) {
       container.classList.add("nexus-pos-left");
-      container.style.left = `${ml}px`;
-      container.style.right = "auto";
+      container.style.setProperty("left", `${ml}px`, "important");
+      container.style.setProperty("right", "auto", "important");
     } else {
       container.classList.remove("nexus-pos-left");
-      container.style.right = `${mr}px`;
-      container.style.left = "auto";
+      container.style.setProperty("right", `${mr}px`, "important");
+      container.style.setProperty("left", "auto", "important");
     }
   }
 
@@ -768,9 +768,9 @@
     .nexus-confirm-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.78);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
+      background: rgba(0, 0, 0, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 50;
       display: flex;
       align-items: center;
@@ -780,20 +780,33 @@
     }
     .nexus-confirm-card {
       background: #141414;
-      border-radius: 22px;
-      padding: 24px;
+      border-radius: 24px;
+      padding: 26px 22px;
       width: 100%;
-      max-width: 295px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px #262626;
-      border: 1px solid #2A2A2A;
+      max-width: 305px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       text-align: center;
       animation: nexusScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    .nexus-confirm-icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--nexus-primary, #B68A55) 0%, var(--nexus-primary-dark, #8E6838) 100%);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px -2px var(--nexus-primary-glow, rgba(182, 138, 85, 0.45));
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      margin: 0 auto 12px auto;
+    }
     .nexus-confirm-title {
-      font-size: 15.5px;
+      font-size: 16px;
       font-weight: 700;
       color: #FFFFFF;
-      margin-top: 12px;
+      margin-top: 4px;
       margin-bottom: 6px;
       letter-spacing: -0.01em;
     }
@@ -801,7 +814,7 @@
       font-size: 12.5px;
       color: #9CA3AF;
       line-height: 1.5;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
     .nexus-confirm-actions {
       display: flex;
@@ -809,10 +822,10 @@
     }
     .nexus-confirm-btn {
       flex: 1;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 12.5px;
-      font-weight: 600;
+      padding: 11px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 650;
       cursor: pointer;
       border: none;
       transition: all 0.15s ease;
@@ -820,20 +833,23 @@
     .nexus-confirm-cancel {
       background: #1F1F1F;
       color: #D1D5DB;
-      border: 1px solid #2E2E2E;
+      border: 1px solid #333333;
     }
     .nexus-confirm-cancel:hover {
-      background: #282828;
+      background: #2A2A2A;
       color: #FFFFFF;
+      border-color: #444444;
     }
     .nexus-confirm-ok {
-      background: linear-gradient(135deg, var(--nexus-primary) 0%, var(--nexus-primary-dark) 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 12px var(--nexus-primary-glow);
+      background: linear-gradient(135deg, var(--nexus-primary, #B68A55) 0%, var(--nexus-primary-dark, #8E6838) 100%);
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 16px var(--nexus-primary-glow, rgba(182, 138, 85, 0.45));
     }
     .nexus-confirm-ok:hover {
-      opacity: 0.92;
+      opacity: 0.94;
       transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--nexus-primary-glow, rgba(182, 138, 85, 0.6));
     }
     @keyframes nexusFadeIn {
       from { opacity: 0; }
@@ -1006,6 +1022,7 @@
   function updateLauncher() {
     const launcherEl = document.getElementById("nexus-widget-launcher");
     if (!launcherEl) return;
+    updatePosition();
 
     const shape = (botConfig.launcherShape || "circle").toLowerCase();
     let size = 62;
@@ -1289,8 +1306,8 @@
     overlay.className = "nexus-confirm-overlay";
     overlay.innerHTML = `
       <div class="nexus-confirm-card">
-        <div style="width:44px; height:44px; border-radius:14px; background:var(--nexus-primary-soft); color:var(--nexus-primary); display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 8px var(--nexus-primary-glow);">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="nexus-confirm-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
           </svg>
         </div>

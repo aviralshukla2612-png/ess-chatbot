@@ -69,8 +69,10 @@ export async function PUT(request, { params }) {
       if (!ssrfCheck.valid) {
         return NextResponse.json({ success: false, error: ssrfCheck.error }, { status: 400 });
       }
-      body.websiteUrl = ssrfCheck.normalizedUrl;
-    }
+    if (body.launcherMarginBottom !== undefined) body.launcherMarginBottom = Number(body.launcherMarginBottom) || 0;
+    if (body.launcherMarginRight !== undefined) body.launcherMarginRight = Number(body.launcherMarginRight) || 0;
+    if (body.launcherMarginLeft !== undefined) body.launcherMarginLeft = Number(body.launcherMarginLeft) || 0;
+    if (body.launcherMarginTop !== undefined) body.launcherMarginTop = Number(body.launcherMarginTop) || 0;
 
     const bot = botsStore.upsertBot({ ...existingBot, ...body, id: botId, organizationId: targetOrgId }, targetOrgId);
     return NextResponse.json({ success: true, bot });
