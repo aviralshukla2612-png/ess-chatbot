@@ -3,8 +3,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #FAF9F6;
+  --foreground: #252525;
+  --card: #FFFFFF;
+  --card-border: #EFE7DC;
+  --accent: #B68A55;
+  --beige: #EFE7DC;
 }
 
 @theme inline {
@@ -18,11 +22,16 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #f8fafc;
+  --background: #0B0F19;
+  --foreground: #F8FAFC;
+  --card: #111827;
+  --card-border: #1F2937;
+  --accent: #B68A55;
+  --beige: #1F2937;
 }
 
 .dark h1,
@@ -31,46 +40,10 @@ body {
 .dark h4,
 .dark h5,
 .dark h6 {
-  color: #f8fafc;
+  color: #F8FAFC;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #09090b;
-    --foreground: #f8fafc;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: #f8fafc;
-  }
-
-
-  input,
-  textarea,
-  select {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    background-color: #18181b !important;
-    border-color: #3f3f46 !important;
-  }
-
-  input::placeholder,
-  textarea::placeholder {
-    color: #a1a1aa !important;
-    -webkit-text-fill-color: #a1a1aa !important;
-    opacity: 1 !important;
-  }
-
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover, 
-  input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #ffffff !important;
-    -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
-    transition: background-color 5000s ease-in-out 0s;
-  }
-}
-
-/* Fallback for explicit class="dark" */
+/* Scoped strictly to .dark class so light mode is pure Ivory & Charcoal */
 .dark input,
 .dark select,
 .dark textarea {
@@ -102,15 +75,7 @@ body {
 
 /* Dedicated company profile input high-contrast styles */
 .company-profile-input {
-  color: #0f172a;
-}
-
-@media (prefers-color-scheme: dark) {
-  .company-profile-input {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    background-color: #18181b !important;
-  }
+  color: #252525;
 }
 
 .dark .company-profile-input {

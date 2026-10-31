@@ -174,13 +174,13 @@ export default function DashboardPage() {
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-white dark:bg-slate-900/90 rounded-xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs transition-shadow"
+            className="bg-white dark:bg-[#111827] rounded-xl p-4 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs hover:shadow-xs transition-shadow"
           >
             <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block truncate">
               {kpi.title}
             </span>
             <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              <span className="text-xl sm:text-2xl font-bold text-[#252525] dark:text-white">
                 {kpi.value}
               </span>
               <span
@@ -203,21 +203,21 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Conversations Over Time (2 cols) */}
-        <div className="lg:col-span-2 bg-white rounded-xl p-5 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-sm text-slate-900">
+              <h3 className="font-bold text-sm text-[#252525] dark:text-white">
                 Conversations Over Time
               </h3>
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[11px] font-medium text-slate-600">
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-slate-300">
               {["daily", "weekly", "monthly"].map((t) => (
                 <button
                   key={t}
                   onClick={() => setTimeView(t)}
                   className={`px-2.5 py-1 rounded-md capitalize transition-all cursor-pointer ${
-                    timeView === t ? "bg-white text-indigo-600 font-bold shadow-2xs" : "hover:text-slate-900"
+                    timeView === t ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-2xs" : "hover:text-[#252525] dark:hover:text-white"
                   }`}
                 >
                   {t}
@@ -235,14 +235,14 @@ export default function DashboardPage() {
                     <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.25} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#94a3b8" }} />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#94a3b8" }} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg">
+                        <div className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg border border-slate-700">
                           <p className="font-bold">{payload[0].payload.date}, 2026</p>
                           <p className="text-indigo-300 font-semibold">{payload[0].value} conversations</p>
                         </div>
@@ -258,8 +258,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Questions by Bot (1 col) */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <h3 className="font-bold text-sm text-slate-900 mb-2">
+        <div className="bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs flex flex-col justify-between">
+          <h3 className="font-bold text-sm text-[#252525] dark:text-white mb-2">
             Questions by Bot
           </h3>
 
@@ -280,21 +280,21 @@ export default function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute text-center">
-              <span className="text-lg font-bold text-slate-900 block leading-tight">
+              <span className="text-lg font-bold text-[#252525] dark:text-white block leading-tight">
                 {totalQuestions}
               </span>
               <span className="text-[10px] text-slate-400">Questions</span>
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+          <div className="space-y-1.5 pt-2 border-t border-[#EFE7DC] dark:border-slate-800 text-xs">
             {botDonutData.map((b, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />
-                  <span className="text-slate-600 truncate max-w-[140px]">{b.name}</span>
+                  <span className="text-slate-600 dark:text-slate-400 truncate max-w-[140px]">{b.name}</span>
                 </div>
-                <span className="font-semibold text-slate-900">{b.value > 0 ? `${Math.round(b.value)}%` : "0%"}</span>
+                <span className="font-semibold text-[#252525] dark:text-white">{b.value > 0 ? `${Math.round(b.value)}%` : "0%"}</span>
               </div>
             ))}
           </div>
@@ -304,12 +304,12 @@ export default function DashboardPage() {
       {/* Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Recent Conversations */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-2xs">
+        <div className="bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm text-slate-900">
+            <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Recent Conversations
             </h3>
-            <Link href="/conversations" className="text-xs font-semibold text-indigo-600 hover:underline">
+            <Link href="/conversations" className="text-xs font-semibold text-[#B68A55] dark:text-indigo-400 hover:underline">
               View all
             </Link>
           </div>
@@ -317,26 +317,26 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {conversations.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs space-y-1.5">
-                <MessageSquare className="w-6 h-6 mx-auto text-slate-300" />
-                <p className="font-medium text-slate-600">No conversations yet</p>
-                <p className="text-[11px]">When visitors chat with your AI assistant, sessions will appear here.</p>
+                <MessageSquare className="w-6 h-6 mx-auto text-slate-400" />
+                <p className="font-medium text-[#252525] dark:text-slate-300">No conversations yet</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">When visitors chat with your AI assistant, sessions will appear here.</p>
               </div>
             ) : (
               conversations.slice(0, 4).map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 transition-colors">
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#252525] dark:text-slate-200 font-bold text-xs flex items-center justify-center shrink-0">
                       {c.visitorName?.charAt(0) || "U"}
                     </div>
                     <div className="truncate">
-                      <p className="text-xs font-bold text-slate-900 truncate">{c.visitorName}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{c.lastMessage}</p>
+                      <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{c.visitorName}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{c.lastMessage}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0 text-right">
                     <span className="text-[10px] text-slate-400">{c.startedAt || "Recently"}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                       {c.status}
                     </span>
                   </div>
@@ -347,12 +347,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-2xs">
+        <div className="bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm text-slate-900">
+            <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Recent Leads
             </h3>
-            <Link href="/leads" className="text-xs font-semibold text-indigo-600 hover:underline">
+            <Link href="/leads" className="text-xs font-semibold text-[#B68A55] dark:text-indigo-400 hover:underline">
               View all
             </Link>
           </div>
@@ -360,26 +360,26 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {leads.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs space-y-1.5">
-                <Users2 className="w-6 h-6 mx-auto text-slate-300" />
-                <p className="font-medium text-slate-600">No leads captured yet</p>
-                <p className="text-[11px]">Prospects captured by your chatbot will automatically appear here.</p>
+                <Users2 className="w-6 h-6 mx-auto text-slate-400" />
+                <p className="font-medium text-[#252525] dark:text-slate-300">No leads captured yet</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Prospects captured by your chatbot will automatically appear here.</p>
               </div>
             ) : (
               leads.slice(0, 4).map((l) => (
-                <div key={l.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                <div key={l.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 transition-colors">
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#252525] dark:text-slate-200 font-bold text-xs flex items-center justify-center shrink-0">
                       {l.name?.charAt(0) || "L"}
                     </div>
                     <div className="truncate">
-                      <p className="text-xs font-bold text-slate-900 truncate">{l.name}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{l.email || l.phone}</p>
+                      <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{l.name}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{l.email || l.phone}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0 text-right">
                     <span className="text-[10px] text-slate-400">{l.created}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                       {l.score || "High"}
                     </span>
                   </div>

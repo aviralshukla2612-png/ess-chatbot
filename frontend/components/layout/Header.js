@@ -13,6 +13,8 @@ import {
   FileText,
   User,
   Shield,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { mockCurrentUser } from "@/lib/mock/data";
 
@@ -20,6 +22,32 @@ export default function Header({ onToggleSidebar }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [currentUser, setCurrentUser] = useState(null);
+  const [theme, setTheme] = useState("dark");
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains("dark");
+    setTheme(isDark ? "dark" : "light");
+
+    const handleThemeChange = () => {
+      setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    };
+    window.addEventListener("theme-change", handleThemeChange);
+    return () => window.removeEventListener("theme-change", handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem("theme", nextTheme);
+    } catch (e) {}
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    window.dispatchEvent(new Event("theme-change"));
+  };
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -78,12 +106,12 @@ export default function Header({ onToggleSidebar }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-8 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-8 bg-[#FAF9F6]/90 dark:bg-[#111827]/90 backdrop-blur-md border-b border-[#EFE7DC] dark:border-slate-800 transition-colors duration-200">
       {/* Left section: mobile hamburger & search */}
       <div className="flex items-center gap-4 flex-1">
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl"
+          className="lg:hidden p-2 text-[#252525] dark:text-neutral-300 hover:bg-[#EFE7DC]/60 dark:hover:bg-neutral-800 rounded-xl"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -93,13 +121,33 @@ export default function Header({ onToggleSidebar }) {
           <input
             type="text"
             placeholder="Search bots, knowledge, conversations, leads..."
-            className="w-full pl-10 pr-4 py-2 text-xs lg:text-sm bg-neutral-100/70 dark:bg-neutral-800/60 border border-transparent focus:border-indigo-500 rounded-xl outline-hidden transition-all text-neutral-900 dark:text-white placeholder:text-neutral-400"
+            className="w-full pl-10 pr-4 py-2 text-xs lg:text-sm bg-white dark:bg-neutral-800/60 border border-[#EFE7DC] dark:border-transparent focus:border-[#B68A55] dark:focus:border-indigo-500 rounded-xl outline-hidden transition-all text-[#252525] dark:text-white placeholder:text-neutral-400 shadow-2xs"
           />
         </div>
       </div>
 
       {/* Right section: actions & notifications */}
-      <div className="flex items-center gap-2.5 sm:gap-3.5">
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Light / Dark Mode Toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="px-2.5 py-1.5 rounded-xl border border-[#EFE7DC] dark:border-slate-800 bg-white dark:bg-slate-900 text-[#252525] dark:text-slate-200 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+          title={theme === "dark" ? "Switch to Light Mode (Ivory & Champagne)" : "Switch to Dark Mode"}
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="w-4 h-4 text-amber-400" />
+              <span className="text-[11px] font-semibold text-slate-300 hidden sm:inline">Light</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-4 h-4 text-[#B68A55]" />
+              <span className="text-[11px] font-semibold text-[#252525] hidden sm:inline">Dark</span>
+            </>
+          )}
+        </button>
+
         <Link
           href="/bots/create"
           className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-xs shadow-indigo-600/30 transition-all hover:scale-[1.02]"
@@ -112,7 +160,7 @@ export default function Header({ onToggleSidebar }) {
         <div className="relative">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="relative p-2.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer"
+            className="relative p-2.5 text-[#252525] dark:text-neutral-300 hover:bg-[#EFE7DC]/60 dark:hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer border border-[#EFE7DC] dark:border-slate-800 bg-white dark:bg-transparent shadow-2xs sm:shadow-none"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (

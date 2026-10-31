@@ -38,14 +38,13 @@ export default function RootLayout({ children }) {
             __html: `
               (function() {
                 try {
-                  var m = window.matchMedia('(prefers-color-scheme: dark)');
-                  if (m.matches) {
+                  var stored = localStorage.getItem('theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (stored === 'dark' || (!stored && prefersDark)) {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
-                  m.addEventListener('change', function(e) {
-                    if (e.matches) document.documentElement.classList.add('dark');
-                    else document.documentElement.classList.remove('dark');
-                  });
                 } catch(e) {}
               })();
             `,

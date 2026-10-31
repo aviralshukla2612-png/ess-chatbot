@@ -159,10 +159,10 @@ export default function LeadsPage() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
             Leads & Pipeline CRM
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Real-time inbound lead capture generated automatically by your live chatbots.
           </p>
         </div>
@@ -177,7 +177,7 @@ export default function LeadsPage() {
                 setSelectedIds([]);
                 loadLeads();
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
             >
               <span>Clear All</span>
             </button>
@@ -190,9 +190,9 @@ export default function LeadsPage() {
               }
               alert("Exporting leads to CSV...");
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer w-fit"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111827] hover:bg-[#FAF9F6] dark:hover:bg-slate-800 border border-[#EFE7DC] dark:border-slate-800 text-[#252525] dark:text-slate-200 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer w-fit"
           >
-            <Download className="w-4 h-4 text-slate-500" />
+            <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             <span>Export</span>
           </button>
         </div>
@@ -201,68 +201,68 @@ export default function LeadsPage() {
       {/* 4 Top KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Leads */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {totalLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
               Total Leads
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/60 flex items-center justify-center text-emerald-600">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100/60 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <Users2 className="w-6 h-6" />
           </div>
         </div>
 
         {/* Card 2: New Leads */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {newLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
               New Leads
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100/60 flex items-center justify-center text-rose-500">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100/60 dark:border-rose-800/40 flex items-center justify-center text-rose-500 dark:text-rose-400">
             <Flame className="w-6 h-6" />
           </div>
         </div>
 
         {/* Card 3: Contacted */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {contactedLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
               Contacted
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100/60 flex items-center justify-center text-amber-600">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100/60 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <PhoneCall className="w-6 h-6" />
           </div>
         </div>
 
         {/* Card 4: Converted */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {convertedLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
               Converted
             </div>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100/60 flex items-center justify-center text-emerald-600">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100/60 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-3.5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -271,7 +271,7 @@ export default function LeadsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search leads..."
-            className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200/70 rounded-xl outline-hidden focus:border-indigo-500 text-slate-800 placeholder:text-slate-400 transition-colors"
+            className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/70 dark:hover:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-900 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 text-[#252525] dark:text-white placeholder:text-slate-400 transition-colors"
           />
         </div>
 
@@ -281,7 +281,7 @@ export default function LeadsPage() {
             <select
               value={botFilter}
               onChange={(e) => setBotFilter(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-700 outline-hidden focus:border-indigo-500 cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl text-xs font-medium text-[#252525] dark:text-slate-300 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 cursor-pointer"
             >
               <option value="All Bots">All Bots</option>
             </select>
@@ -292,7 +292,7 @@ export default function LeadsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-700 outline-hidden focus:border-indigo-500 cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl text-xs font-medium text-[#252525] dark:text-slate-300 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 cursor-pointer"
             >
               <option value="All Status">All Status</option>
               <option value="New">New</option>
@@ -306,7 +306,7 @@ export default function LeadsPage() {
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-700 outline-hidden focus:border-indigo-500 cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl text-xs font-medium text-[#252525] dark:text-slate-300 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 cursor-pointer"
             >
               <option value="All Time">All Time</option>
               <option value="Today">Today</option>
@@ -319,13 +319,13 @@ export default function LeadsPage() {
       </div>
 
       {/* Leads Table Container */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 shadow-xs overflow-hidden">
         {!loading && filteredLeads.length === 0 ? (
           <div className="p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto">
               <Users2 className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-base text-slate-800">
+            <h3 className="font-bold text-base text-[#252525] dark:text-white">
               No leads captured yet
             </h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
@@ -336,7 +336,7 @@ export default function LeadsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60 text-slate-500 font-semibold text-[11px]">
+                <tr className="border-b border-[#EFE7DC] dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
                   <th className="py-3.5 pl-5 pr-2 w-10">
                     <input
                       type="checkbox"
@@ -358,15 +358,15 @@ export default function LeadsPage() {
                   <th className="py-3.5 pr-5 pl-2 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
+              <tbody className="divide-y divide-[#EFE7DC] dark:divide-slate-800 text-[#252525] dark:text-slate-300">
                 {filteredLeads.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
                   return (
                     <tr
                       key={item.id}
                       onClick={() => setSelectedLead(item)}
-                      className={`hover:bg-slate-50/80 cursor-pointer transition-colors ${
-                        isSelected ? "bg-indigo-50/30" : ""
+                      className={`hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 cursor-pointer transition-colors ${
+                        isSelected ? "bg-amber-50/40 dark:bg-indigo-950/40" : ""
                       }`}
                     >
                       <td
@@ -381,33 +381,33 @@ export default function LeadsPage() {
                         />
                       </td>
                       <td className="py-4 px-4">
-                        <p className="font-semibold text-slate-900">{item.name}</p>
+                        <p className="font-semibold text-[#252525] dark:text-white">{item.name}</p>
                         {item.inquiry && item.inquiry !== "Inquired via live chat widget" && !item.inquiry.startsWith("Visitor introduced") && (
-                          <p className="text-[11px] text-indigo-600 font-medium truncate max-w-xs mt-0.5">
+                          <p className="text-[11px] text-[#B68A55] dark:text-indigo-400 font-medium truncate max-w-xs mt-0.5">
                             {item.inquiry}
                           </p>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-slate-600">
+                      <td className="py-4 px-4 text-slate-600 dark:text-slate-400">
                         {item.email || item.phone}
                       </td>
-                      <td className="py-4 px-4 text-slate-600 font-medium">
+                      <td className="py-4 px-4 text-slate-600 dark:text-slate-400 font-medium">
                         {item.company}
                       </td>
-                      <td className="py-4 px-4 text-slate-600 font-medium">
+                      <td className="py-4 px-4 text-slate-600 dark:text-slate-400 font-medium">
                         {item.bot}
                       </td>
                       <td className="py-4 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200/50">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/40">
                           {item.score || "High"}
                         </span>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
                           {item.status}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-slate-500 font-medium">
+                      <td className="py-4 px-4 text-slate-500 dark:text-slate-400 font-medium">
                         {item.created}
                       </td>
                       <td
@@ -416,7 +416,7 @@ export default function LeadsPage() {
                       >
                         <button
                           onClick={() => setSelectedLead(item)}
-                          className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                          className="p-1.5 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-[#252525] dark:hover:text-white transition-colors"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
@@ -432,24 +432,24 @@ export default function LeadsPage() {
 
       {/* Lead Profile Drawer */}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md bg-white h-full shadow-2xl border-l border-slate-200 p-6 flex flex-col justify-between overflow-y-auto animate-slide-left">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-[#111827] h-full shadow-2xl border-l border-[#EFE7DC] dark:border-slate-800 p-6 flex flex-col justify-between overflow-y-auto animate-slide-left text-[#252525] dark:text-slate-200">
             <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-4 border-b border-[#EFE7DC] dark:border-slate-800">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
                     {selectedLead.name?.charAt(0) || "P"}
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="text-base font-bold text-[#252525] dark:text-white">
                       {selectedLead.name}
                     </h2>
-                    <p className="text-xs text-slate-500">{selectedLead.company}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{selectedLead.company}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedLead(null)}
-                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                  className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-[#252525] dark:hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -467,7 +467,7 @@ export default function LeadsPage() {
                       className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                         selectedLead.status === st
                           ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                          : "bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200/80"
+                          : "bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-[#252525] dark:text-slate-300 border-[#EFE7DC] dark:border-slate-800"
                       }`}
                     >
                       {st}
@@ -476,24 +476,24 @@ export default function LeadsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-100">
-                <div className="flex items-center gap-3 text-xs text-slate-700">
+              <div className="space-y-3 p-4 bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl border border-[#EFE7DC] dark:border-slate-800">
+                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
                   <Mail className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="font-medium">{selectedLead.email || "No email"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700">
+                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
                   <Phone className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="font-medium">{selectedLead.phone || "No phone"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700">
+                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
                   <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="font-medium">{selectedLead.company}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700">
+                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
                   <Bot className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="font-medium">Origin: {selectedLead.bot}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-700">
+                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
                   <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="font-medium">Created: {selectedLead.created}</span>
                 </div>
@@ -506,18 +506,18 @@ export default function LeadsPage() {
                     Project Scope & Answers
                   </label>
                   {selectedLead.budget && (
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80">
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-[#B68A55] border border-amber-500/30">
                       Budget: {selectedLead.budget}
                     </span>
                   )}
                 </div>
 
                 {selectedLead.inquiry && (
-                  <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100/80 space-y-1">
-                    <p className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+                  <div className="p-3.5 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-2xl border border-indigo-100/80 dark:border-indigo-800/60 space-y-1">
+                    <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
                       Requirements Summary
                     </p>
-                    <p className="text-xs text-indigo-950 font-medium leading-relaxed">
+                    <p className="text-xs text-indigo-950 dark:text-indigo-200 font-medium leading-relaxed">
                       {selectedLead.inquiry}
                     </p>
                   </div>
@@ -528,14 +528,14 @@ export default function LeadsPage() {
                   const entries = Object.entries(effectiveAnswers);
                   if (entries.length === 0) {
                     return (
-                      <div className="p-4 bg-slate-50/60 rounded-2xl border border-slate-100 text-center text-xs text-slate-400">
+                      <div className="p-4 bg-slate-50/60 dark:bg-slate-900/60 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 text-center text-xs text-slate-400">
                         No scoping questions answered yet.
                       </div>
                     );
                   }
                   return (
-                    <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 space-y-2">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    <div className="p-4 bg-slate-50/80 dark:bg-slate-900/60 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 space-y-2">
+                      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                         Customer Answers Breakdown
                       </p>
                       {entries.map(([k, rawVal]) => {
@@ -544,16 +544,16 @@ export default function LeadsPage() {
                         return (
                           <div
                             key={k}
-                            className="flex items-center justify-between py-1.5 border-b border-slate-200/50 last:border-0 text-xs"
+                            className="flex items-center justify-between py-1.5 border-b border-[#EFE7DC] dark:border-slate-800 last:border-0 text-xs"
                           >
-                            <span className="text-slate-600 font-medium">{label}</span>
+                            <span className="text-slate-600 dark:text-slate-300 font-medium">{label}</span>
                             <span
                               className={`font-semibold px-2.5 py-0.5 rounded-md text-[11px] ${
                                 type === "yes"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                                   : type === "no"
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                  : "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                                  : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
                               }`}
                             >
                               {text}
@@ -567,10 +567,10 @@ export default function LeadsPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+            <div className="pt-4 border-t border-[#EFE7DC] dark:border-slate-800 flex items-center gap-3">
               <button
                 onClick={() => setSelectedLead(null)}
-                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+                className="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#252525] dark:text-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer border border-[#EFE7DC] dark:border-slate-700"
               >
                 Close
               </button>
