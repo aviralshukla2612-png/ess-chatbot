@@ -672,6 +672,13 @@ export async function POST(request, { params }) {
          /\b(?:i am|my name|mera naam|call me|myself)\b/i.test(trimmedMsg) ||
          wasAskedForName));
 
+    const wasAskedForContact =
+      /\b(?:phone\s*number|contact\s*number|whatsapp|phone|mobile|reach\s*out\s*to\s*you|customized\s*proposal|share\s*your\s*name\s*and\s*phone)\b/i.test(lastAssistantMessage) ||
+      lastAssistantMessage.includes("Phone Number") ||
+      lastAssistantMessage.includes("फ़ोन नंबर") ||
+      activeQual?.status === "summary_ready" ||
+      Boolean(activeQual?.consentAsked);
+
     const isContactSubmission =
       !hasTechnicalKeywords &&
       !isContactDetailsQuery &&
@@ -681,8 +688,10 @@ export async function POST(request, { params }) {
         (/\b(?:name|naam|number|nunmber|phone|mobile|whatsapp|email|here\s+it\s+is|this\s+is|call\s+me)\b/i.test(message) ||
          (leadDetails.phone && message.includes(leadDetails.phone)) ||
          (resolvedName && message.toLowerCase().includes(resolvedName.toLowerCase())) ||
-         /\b[6-9]\d{9}\b/.test(message) ||
-         /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message))));
+         /\b\d{7,14}\b/.test(message) ||
+         /^\s*(?:\+|00)?[\d\s().-]{7,20}\s*$/.test(message) ||
+         /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message) ||
+         wasAskedForContact)));
 
     // 1. Personal advice and relationships
     const isRomanceOrRelationships =

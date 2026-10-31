@@ -918,23 +918,23 @@ export const QUALIFICATION_FLOWS = {
 };
 
 function extractBudgetAnswer(text) {
-  const clean = text.toLowerCase();
-  if (/\b(?:under\s*50|less\s*than\s*50|< ?50|below\s*50|50000\s*se\s*kam|50\s*k\s*se\s*kam|5k|10k|20k|30k|40k)\b/i.test(clean)) {
+  const clean = text.toLowerCase().replace(/[–—]/g, "-");
+  if (/\b(?:under\s*50|less\s*than\s*50|< ?50|below\s*50|50000\s*se\s*kam|50\s*k\s*se\s*kam|5k|10k|20k|30k|40k)\b/i.test(clean) || clean.includes("under ₹50,000") || clean.includes("50,000 se kam")) {
     return "Under ₹50,000";
   }
-  if (/\b(?:50\s*k\s*(?:to|-)\s*1\s*l|50,000\s*(?:to|-)\s*1,00,000|50k|60k|70k|80k|90k|1\s*lakh)\b/i.test(clean)) {
+  if (/\b(?:50\s*k\s*(?:to|-)\s*1\s*l|50,000\s*(?:to|-)\s*1,00,000|50\s*k|60\s*k|70\s*k|80\s*k|90\s*k)\b/i.test(clean) || (clean.includes("50,000") && clean.includes("1,00,000"))) {
     return "₹50,000–₹1,00,000";
   }
-  if (/\b(?:1\s*l\s*(?:to|-)\s*2\s*l|1,00,000\s*(?:to|-)\s*2,00,000|1\.5\s*lakh|2\s*lakh)\b/i.test(clean)) {
+  if (/\b(?:1\s*l\s*(?:to|-)\s*2\s*l|1,00,000\s*(?:to|-)\s*2,00,000|1\.5\s*lakh|2\s*lakh)\b/i.test(clean) || (clean.includes("1,00,000") && clean.includes("2,00,000")) || clean.includes("1,00,000")) {
     return "₹1,00,000–₹2,00,000";
   }
-  if (/\b(?:above\s*2|more\s*than\s*2|> ?2|2\s*lakh\s*plus|3\s*lakh|5\s*lakh|enterprise)\b/i.test(clean)) {
+  if (/\b(?:above\s*2|more\s*than\s*2|> ?2|2\s*lakh\s*plus|3\s*lakh|5\s*lakh|enterprise)\b/i.test(clean) || clean.includes("above ₹2,00,000") || clean.includes("2,00,000 se adhik")) {
     return "Above ₹2,00,000";
   }
   if (/\b(?:not\s+sure|don't\s+know|no\s+idea|tbd|pata\s+nahi|undecided|flexible)\b/i.test(clean)) {
     return "Not sure yet";
   }
-  const match = text.match(/(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+(?:\.[0-9]+)?\s*(?:k|lakh|lac)?)/i);
+  const match = text.match(/(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{2,3})+|[0-9]+(?:\.[0-9]+)?\s*(?:k|lakh|lac)?)/i);
   if (match) {
     return match[0].startsWith("₹") ? match[0] : `₹${match[0]}`;
   }
