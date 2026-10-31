@@ -130,95 +130,95 @@ export default function AdminTicketsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B68A55]/10 border border-[#B68A55]/20 text-[#B68A55] text-xs font-semibold mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             Customer Support Central
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-white">
             Helpdesk & Support Tickets
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-neutral-400 mt-0.5">
             Manage incoming customer support requests, billing queries, and WhatsApp integration inquiries.
           </p>
         </div>
 
         <button
           onClick={fetchTickets}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-neutral-800 bg-[#0D0D0D] hover:bg-neutral-900 text-neutral-200 text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
         >
-          <LifeBuoy className="w-4 h-4 text-indigo-600" />
+          <LifeBuoy className="w-4 h-4 text-[#B68A55]" />
           <span>Refresh Tickets</span>
         </button>
       </div>
 
       {/* Notifications */}
       {successMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
               Open & Pending
             </span>
-            <span className="text-2xl font-extrabold text-amber-600 mt-1 block">
+            <span className="text-2xl font-extrabold text-amber-400 mt-1 block">
               {openTicketsCount}
             </span>
-            <span className="text-[11px] text-slate-500 font-medium">Requires immediate response</span>
+            <span className="text-[11px] text-neutral-500 font-medium">Requires immediate response</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
             <Clock className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
               In Progress
             </span>
-            <span className="text-2xl font-extrabold text-indigo-600 mt-1 block">
+            <span className="text-2xl font-extrabold text-[#B68A55] mt-1 block">
               {inProgressCount}
             </span>
-            <span className="text-[11px] text-slate-500 font-medium">Under active investigation</span>
+            <span className="text-[11px] text-neutral-500 font-medium">Under active investigation</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+          <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55]">
             <MessageSquare className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xs flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
               Resolved Tickets
             </span>
-            <span className="text-2xl font-extrabold text-emerald-600 mt-1 block">
+            <span className="text-2xl font-extrabold text-emerald-400 mt-1 block">
               {resolvedCount}
             </span>
-            <span className="text-[11px] text-emerald-600 font-medium inline-flex items-center gap-1">
+            <span className="text-[11px] text-emerald-400 font-medium inline-flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
               {tickets.length > 0 ? Math.round((resolvedCount / tickets.length) * 100) : 0}% Resolution Rate
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
             <ShieldCheck className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0D0D0D] p-3.5 rounded-2xl border border-neutral-800 shadow-2xs">
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
           {[
             { id: "all", label: `All (${tickets.length})` },
@@ -231,8 +231,8 @@ export default function AdminTicketsPage() {
               onClick={() => setStatusFilter(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 statusFilter === tab.id
-                  ? "bg-indigo-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-[#B68A55] text-white shadow-xs"
+                  : "text-neutral-400 hover:text-white hover:bg-neutral-900"
               }`}
             >
               {tab.label}
@@ -241,25 +241,25 @@ export default function AdminTicketsPage() {
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search tickets, email, or message..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 outline-hidden focus:border-indigo-600 focus:bg-white"
+            className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-neutral-800 bg-[#121212] text-xs text-white outline-hidden focus:border-[#B68A55]"
           />
         </div>
       </div>
 
       {/* Tickets List */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-slate-500 bg-white rounded-2xl border border-slate-200">
-          <Loader2 className="w-5 h-5 animate-spin mx-auto text-indigo-600 mb-2" />
+        <div className="p-12 text-center text-xs text-neutral-400 bg-[#0D0D0D] rounded-2xl border border-neutral-800">
+          <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#B68A55] mb-2" />
           Loading support tickets...
         </div>
       ) : filteredTickets.length === 0 ? (
-        <div className="p-12 text-center text-xs text-slate-500 bg-white rounded-2xl border border-dashed border-slate-300">
+        <div className="p-12 text-center text-xs text-neutral-400 bg-[#0D0D0D] rounded-2xl border border-dashed border-neutral-800">
           No support tickets found matching criteria.
         </div>
       ) : (
@@ -271,17 +271,17 @@ export default function AdminTicketsPage() {
             return (
               <div
                 key={ticket.id}
-                className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all shadow-2xs space-y-3"
+                className="p-5 rounded-2xl bg-[#0D0D0D] border border-neutral-800 hover:border-neutral-700 transition-all shadow-2xs space-y-3"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="font-mono text-xs font-extrabold px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 border border-slate-200">
+                    <span className="font-mono text-xs font-extrabold px-2 py-0.5 rounded-md bg-neutral-900 text-neutral-200 border border-neutral-800">
                       {ticket.id}
                     </span>
-                    <span className="font-bold text-sm text-slate-900">
+                    <span className="font-bold text-sm text-white">
                       {ticket.subject}
                     </span>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
                       {ticket.category}
                     </span>
                   </div>
@@ -294,16 +294,16 @@ export default function AdminTicketsPage() {
                       onChange={(e) => handleUpdateStatus(ticket.id, e.target.value)}
                       className={`text-xs font-bold px-2.5 py-1 rounded-xl border outline-hidden cursor-pointer ${
                         isOpen
-                          ? "bg-amber-50 text-amber-800 border-amber-300"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
                           : ticket.status === "IN_PROGRESS"
-                          ? "bg-indigo-50 text-indigo-800 border-indigo-300"
-                          : "bg-emerald-50 text-emerald-800 border-emerald-300"
+                          ? "bg-[#B68A55]/15 text-[#B68A55] border-[#B68A55]/30"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                       }`}
                     >
-                      <option value="OPEN">Status: OPEN</option>
-                      <option value="IN_PROGRESS">Status: IN PROGRESS</option>
-                      <option value="RESOLVED">Status: RESOLVED</option>
-                      <option value="CLOSED">Status: CLOSED</option>
+                      <option value="OPEN" className="bg-[#121212] text-white">Status: OPEN</option>
+                      <option value="IN_PROGRESS" className="bg-[#121212] text-white">Status: IN PROGRESS</option>
+                      <option value="RESOLVED" className="bg-[#121212] text-white">Status: RESOLVED</option>
+                      <option value="CLOSED" className="bg-[#121212] text-white">Status: CLOSED</option>
                     </select>
 
                     <button
@@ -311,7 +311,7 @@ export default function AdminTicketsPage() {
                         setSelectedTicket(ticket);
                         setAdminNotes(ticket.adminNotes || "");
                       }}
-                      className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                      className="px-2.5 py-1 rounded-xl bg-[#121212] hover:bg-neutral-800 text-neutral-300 text-xs font-semibold transition-colors cursor-pointer border border-neutral-800"
                     >
                       Details & Notes
                     </button>
@@ -319,7 +319,7 @@ export default function AdminTicketsPage() {
                     <button
                       onClick={() => handleDeleteTicket(ticket.id)}
                       title="Delete Ticket"
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -327,41 +327,41 @@ export default function AdminTicketsPage() {
                 </div>
 
                 {/* Message Body */}
-                <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <p className="text-xs text-neutral-300 leading-relaxed bg-[#121212] p-3 rounded-xl border border-neutral-800">
                   {ticket.message}
                 </p>
 
                 {/* Admin Notes Preview if present */}
                 {ticket.adminNotes && (
-                  <div className="p-2.5 rounded-xl bg-indigo-50/60 border border-indigo-100 text-[11px] text-indigo-900 flex items-start gap-2">
+                  <div className="p-2.5 rounded-xl bg-[#1a1714] border border-[#B68A55]/30 text-[11px] text-[#B68A55] flex items-start gap-2">
                     <span className="font-bold shrink-0">Admin Note:</span>
-                    <span>{ticket.adminNotes}</span>
+                    <span className="text-neutral-200">{ticket.adminNotes}</span>
                   </div>
                 )}
 
                 {/* Customer Details Footer */}
-                <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1 gap-2">
+                <div className="flex flex-wrap items-center justify-between text-[11px] text-neutral-400 pt-1 gap-2">
                   <div className="flex items-center gap-4 flex-wrap">
                     <span className="flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      <strong>{ticket.userName}</strong>
+                      <User className="w-3.5 h-3.5 text-neutral-500" />
+                      <strong className="text-white">{ticket.userName}</strong>
                     </span>
                     <a
                       href={`mailto:${ticket.userEmail}?subject=Re: [${ticket.id}] ${ticket.subject}`}
-                      className="flex items-center gap-1 text-indigo-600 hover:underline"
+                      className="flex items-center gap-1 text-[#B68A55] hover:underline"
                     >
                       <Mail className="w-3.5 h-3.5" />
                       <span>{ticket.userEmail}</span>
                     </a>
                     {ticket.organizationId && (
-                      <span className="flex items-center gap-1 text-slate-400">
+                      <span className="flex items-center gap-1 text-neutral-500">
                         <Building2 className="w-3.5 h-3.5" />
                         <span>Org: {ticket.organizationId}</span>
                       </span>
                     )}
                   </div>
 
-                  <span className="text-slate-400">
+                  <span className="text-neutral-500">
                     Submitted: {new Date(ticket.createdAt).toLocaleString("en-IN", {
                       day: "numeric",
                       month: "short",
@@ -379,43 +379,43 @@ export default function AdminTicketsPage() {
 
       {/* Ticket Details & Admin Notes Drawer/Modal */}
       {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden text-slate-900 space-y-4 p-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg bg-[#0D0D0D] rounded-3xl border border-neutral-800 shadow-2xl overflow-hidden text-white space-y-4 p-6">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-neutral-900 text-neutral-200 border border-neutral-800">
                   {selectedTicket.id}
                 </span>
-                <span className="font-bold text-sm text-slate-900">
+                <span className="font-bold text-sm text-white">
                   Ticket Management
                 </span>
               </div>
               <button
                 onClick={() => setSelectedTicket(null)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="p-1 rounded-full text-neutral-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-2 text-xs">
-              <span className="font-bold text-slate-800 block text-sm">
+              <span className="font-bold text-white block text-sm">
                 {selectedTicket.subject}
               </span>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-700 leading-relaxed max-h-48 overflow-y-auto">
+              <div className="p-3 rounded-xl bg-[#121212] border border-neutral-800 text-neutral-300 leading-relaxed max-h-48 overflow-y-auto">
                 {selectedTicket.message}
               </div>
             </div>
 
             {/* Quick Email Customer */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#121212] border border-neutral-800 text-xs">
               <div>
-                <span className="font-bold text-indigo-900 block">{selectedTicket.userName}</span>
-                <span className="text-[11px] text-indigo-700">{selectedTicket.userEmail}</span>
+                <span className="font-bold text-white block">{selectedTicket.userName}</span>
+                <span className="text-[11px] text-neutral-400">{selectedTicket.userEmail}</span>
               </div>
               <a
                 href={`mailto:${selectedTicket.userEmail}?subject=Re: [${selectedTicket.id}] ${selectedTicket.subject}`}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-[#B68A55] hover:bg-[#a67c48] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />
                 <span>Email Customer</span>
@@ -424,7 +424,7 @@ export default function AdminTicketsPage() {
 
             {/* Admin Notes Form */}
             <div className="space-y-1.5 text-xs">
-              <label className="font-bold text-slate-700">
+              <label className="font-bold text-neutral-300">
                 Internal Admin Notes / Action Log
               </label>
               <textarea
@@ -432,12 +432,12 @@ export default function AdminTicketsPage() {
                 placeholder="Log internal resolution steps, customer replies, or escalated actions..."
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 outline-hidden focus:border-indigo-600"
+                className="w-full px-3 py-2 rounded-xl border border-neutral-800 bg-[#121212] text-xs text-white outline-hidden focus:border-[#B68A55]"
               />
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div className="flex items-center justify-between pt-2 border-t border-neutral-800 text-xs">
               <button
                 onClick={() => handleUpdateStatus(selectedTicket.id, "RESOLVED", adminNotes)}
                 disabled={updating}
@@ -452,7 +452,7 @@ export default function AdminTicketsPage() {
                   setSelectedTicket(null);
                 }}
                 disabled={updating}
-                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-[#B68A55] hover:bg-[#a67c48] text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
               >
                 Save Notes
               </button>

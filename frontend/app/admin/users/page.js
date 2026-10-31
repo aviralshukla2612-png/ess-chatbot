@@ -128,40 +128,40 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
             Platform Users & Administrators
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
             Audit user accounts, organization assignments, and permission roles across all tenant domains.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-full font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Realtime Live</span>
           </span>
           <button
             onClick={() => loadData(page, searchTerm, roleFilter, statusFilter, pageSize)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-xs transition-colors self-start md:self-auto cursor-pointer"
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-neutral-300 bg-[#0D0D0D] border border-neutral-800 hover:bg-[#161616] rounded-xl shadow-xs transition-colors self-start md:self-auto cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : ""}`} />
             <span>Refresh</span>
           </button>
         </div>
       </div>
 
       {/* Control Bar: Search & Role Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <div className="bg-[#0D0D0D] p-4 rounded-2xl border border-neutral-800 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search thousands of users by name, email, or organization..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-hidden focus:border-indigo-600 focus:bg-white text-slate-800 transition-all placeholder:text-slate-400"
+            className="w-full pl-10 pr-4 py-2 text-xs bg-[#121212] border border-neutral-800 rounded-xl outline-hidden focus:border-[#B68A55] text-white transition-all placeholder:text-neutral-500"
           />
         </div>
 
@@ -173,7 +173,7 @@ export default function AdminUsersPage() {
               setRoleFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 outline-hidden cursor-pointer"
+            className="px-3 py-1.5 text-xs bg-[#121212] border border-neutral-800 rounded-xl text-neutral-200 outline-hidden cursor-pointer"
           >
             <option value="ALL">All Roles</option>
             <option value="OWNER">Workspace Owners</option>
@@ -188,7 +188,7 @@ export default function AdminUsersPage() {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 outline-hidden cursor-pointer"
+            className="px-3 py-1.5 text-xs bg-[#121212] border border-neutral-800 rounded-xl text-neutral-200 outline-hidden cursor-pointer"
           >
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active</option>
@@ -202,7 +202,7 @@ export default function AdminUsersPage() {
               setPageSize(Number(e.target.value));
               setPage(1);
             }}
-            className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 outline-hidden cursor-pointer"
+            className="px-3 py-1.5 text-xs bg-[#121212] border border-neutral-800 rounded-xl text-neutral-200 outline-hidden cursor-pointer"
           >
             <option value={10}>10 / page</option>
             <option value={25}>25 / page</option>
@@ -213,10 +213,10 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+      <div className="bg-[#0D0D0D] rounded-2xl border border-neutral-800 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 text-slate-500 font-semibold text-[11px] uppercase tracking-wider border-b border-slate-200/80">
+            <thead className="bg-[#0A0A0A] text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-neutral-800">
               <tr>
                 <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
@@ -228,38 +228,38 @@ export default function AdminUsersPage() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-neutral-800">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
+                  <td colSpan={8} className="p-8 text-center text-neutral-400">
                     <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#B68A55]" />
                       <span>Loading users...</span>
                     </div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500">
-                    <p className="font-semibold text-sm">No users found</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                  <td colSpan={8} className="p-8 text-center text-neutral-400">
+                    <p className="font-semibold text-sm text-white">No users found</p>
+                    <p className="text-xs text-neutral-500 mt-1">
                       No matching records for "{searchTerm}".
                     </p>
                   </td>
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="p-4 font-bold text-slate-900">{u.name}</td>
-                    <td className="p-4 text-slate-600">{u.email}</td>
-                    <td className="p-4 text-slate-600 font-medium">{u.organization}</td>
+                  <tr key={u.id} className="hover:bg-neutral-900/60 transition-colors">
+                    <td className="p-4 font-bold text-white">{u.name}</td>
+                    <td className="p-4 text-neutral-300">{u.email}</td>
+                    <td className="p-4 text-neutral-300 font-medium">{u.organization}</td>
                     <td className="p-4">
-                      <span className="font-mono text-[11px] px-2.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-semibold">
+                      <span className="font-mono text-[11px] px-2.5 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 font-semibold">
                         {u.role}
                       </span>
                     </td>
-                    <td className="p-4 font-mono font-bold text-indigo-600">{u.bots}</td>
-                    <td className="p-4 text-slate-500">{u.lastLogin}</td>
+                    <td className="p-4 font-mono font-bold text-[#B68A55]">{u.bots}</td>
+                    <td className="p-4 text-neutral-400">{u.lastLogin}</td>
                     <td className="p-4">
                       <StatusBadge status={u.status} size="sm" />
                     </td>
@@ -267,7 +267,7 @@ export default function AdminUsersPage() {
                       {u.role === "Platform Super Admin" ||
                       u.role === "SUPER_ADMIN" ||
                       u.email === "admin@emperorsmartsolutions.com" ? (
-                        <span className="text-[11px] font-medium text-slate-400 italic">
+                        <span className="text-[11px] font-medium text-neutral-500 italic">
                           Protected
                         </span>
                       ) : (
@@ -275,19 +275,19 @@ export default function AdminUsersPage() {
                           onClick={() => handleToggleBlockUser(u.id, u.status, u.name || u.email)}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                             String(u.status).toUpperCase() === "BLOCKED"
-                              ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200"
-                              : "text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200"
+                              ? "text-emerald-400 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-800/50"
+                              : "text-rose-400 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-800/50"
                           }`}
                           title={String(u.status).toUpperCase() === "BLOCKED" ? "Unblock User" : "Block User"}
                         >
                           {String(u.status).toUpperCase() === "BLOCKED" ? (
                             <>
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                               <span>Unblock</span>
                             </>
                           ) : (
                             <>
-                              <Ban className="w-3.5 h-3.5 text-rose-600" />
+                              <Ban className="w-3.5 h-3.5 text-rose-400" />
                               <span>Block</span>
                             </>
                           )}
@@ -302,18 +302,18 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Server-Side Pagination Bar */}
-        <div className="p-4 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="p-4 border-t border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-400">
           <div>
             Showing{" "}
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-white">
               {pagination.totalCount === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}
             </span>{" "}
             to{" "}
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-white">
               {Math.min(pagination.page * pagination.limit, pagination.totalCount)}
             </span>{" "}
             of{" "}
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-white">
               {pagination.totalCount.toLocaleString()}
             </span>{" "}
             users
@@ -323,19 +323,19 @@ export default function AdminUsersPage() {
             <button
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={pagination.page <= 1 || loading}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-900 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="px-3 py-1 font-semibold text-slate-700 bg-slate-100 rounded-lg">
+            <span className="px-3 py-1 font-semibold text-neutral-200 bg-neutral-900 border border-neutral-800 rounded-lg">
               Page {pagination.page} of {pagination.totalPages}
             </span>
 
             <button
               onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
               disabled={pagination.page >= pagination.totalPages || loading}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-900 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

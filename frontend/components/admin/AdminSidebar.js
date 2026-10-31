@@ -87,21 +87,21 @@ export default function AdminSidebar({ isOpen, onClose }) {
           </div>
 
           {/* Super Admin Organization Identity */}
-          <div className="mt-3.5 p-2.5 rounded-xl bg-slate-800/90 border border-indigo-500/30 text-xs shadow-xs">
+          <div className="mt-3.5 p-2.5 rounded-xl bg-[#0D0D0D] border border-neutral-800 text-xs shadow-xs">
             <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5 text-indigo-400 text-[10px] font-bold uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-[#B68A55] text-[10px] font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Super Admin</span>
               </div>
               <Link
                 href="/dashboard"
                 title="Switch to Tenant Workspace"
-                className="text-[10px] text-indigo-400 hover:text-indigo-200 font-medium underline"
+                className="text-[10px] text-[#B68A55] hover:text-white font-medium transition-colors"
               >
                 Tenant App →
               </Link>
             </div>
-            <p className="font-bold text-slate-100 text-xs truncate">
+            <p className="font-bold text-white text-xs truncate">
               Emperor Smart Solution
             </p>
           </div>
@@ -123,14 +123,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 className={cn(
                   "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all",
                   isActive
-                    ? "bg-[#4f46e5] text-white shadow-sm font-semibold"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                    ? "bg-[#B68A55] text-white shadow-sm font-semibold"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-900"
                 )}
               >
                 <Icon
                   className={cn(
                     "w-4 h-4 shrink-0",
-                    isActive ? "text-white" : "text-slate-400"
+                    isActive ? "text-white" : "text-neutral-400"
                   )}
                 />
                 <span className="truncate">{item.name}</span>

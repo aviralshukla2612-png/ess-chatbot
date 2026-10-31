@@ -143,15 +143,15 @@ export default function AdminLeadsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+          <div className="flex items-center gap-3">
+            <span className="p-2.5 rounded-xl bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
               <Users2 className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-2xl font-bold tracking-tight text-white">
                 Global Generated Leads
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-neutral-400 mt-0.5">
                 High-commercial-intent leads captured by all customer assistants across all tenants.
               </p>
             </div>
@@ -162,18 +162,18 @@ export default function AdminLeadsPage() {
           <button
             onClick={loadLeads}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-neutral-200 bg-[#0D0D0D] border border-neutral-800 hover:bg-neutral-900 rounded-xl shadow-xs transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-indigo-600" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-neutral-400"}`} />
             <span>Refresh</span>
           </button>
           <button
             onClick={handlePurgeDummyLeads}
             disabled={purging}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl shadow-xs transition-colors cursor-pointer"
             title="Purge dummy and test leads"
           >
-            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
             <span>{purging ? "Purging..." : "Purge Dummy Leads"}</span>
           </button>
         </div>
@@ -181,82 +181,82 @@ export default function AdminLeadsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs">
+        <div className="bg-[#0D0D0D] rounded-2xl p-4 border border-neutral-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
               Total Leads
             </span>
-            <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
+            <span className="p-1.5 rounded-lg bg-neutral-900 text-neutral-300 border border-neutral-800">
               <Users2 className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-slate-900">{stats.total}</span>
-            <span className="text-[11px] text-slate-400 font-medium">All-time</span>
+            <span className="text-2xl font-extrabold text-white">{stats.total}</span>
+            <span className="text-[11px] text-neutral-500 font-medium">All-time</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs">
+        <div className="bg-[#0D0D0D] rounded-2xl p-4 border border-neutral-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
               Hot / High Intent
             </span>
-            <span className="p-1.5 rounded-lg bg-rose-50 text-rose-600">
+            <span className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <Flame className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-rose-600">{stats.hotOrHigh}</span>
-            <span className="text-[11px] text-slate-400 font-medium">Priority</span>
+            <span className="text-2xl font-extrabold text-rose-400">{stats.hotOrHigh}</span>
+            <span className="text-[11px] text-neutral-500 font-medium">Priority</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs">
+        <div className="bg-[#0D0D0D] rounded-2xl p-4 border border-neutral-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
               Qualified
             </span>
-            <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+            <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-emerald-700">{stats.qualified}</span>
-            <span className="text-[11px] text-slate-400 font-medium">Verified intent</span>
+            <span className="text-2xl font-extrabold text-emerald-400">{stats.qualified}</span>
+            <span className="text-[11px] text-neutral-500 font-medium">Verified intent</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-2xs">
+        <div className="bg-[#0D0D0D] rounded-2xl p-4 border border-neutral-800 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
               New Leads
             </span>
-            <span className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+            <span className="p-1.5 rounded-lg bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
               <Sparkles className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-blue-700">{stats.newLeads}</span>
-            <span className="text-[11px] text-slate-400 font-medium">Needs action</span>
+            <span className="text-2xl font-extrabold text-[#B68A55]">{stats.newLeads}</span>
+            <span className="text-[11px] text-neutral-500 font-medium">Needs action</span>
           </div>
         </div>
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="bg-[#0D0D0D] rounded-2xl border border-neutral-800 p-4 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search leads by name, phone, email, or inquiry..."
-            className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl outline-hidden focus:border-indigo-500 text-slate-800 placeholder:text-slate-400 transition-colors"
+            className="w-full pl-9 pr-3.5 py-2 text-xs bg-[#121212] hover:bg-neutral-900 border border-neutral-800 rounded-xl outline-hidden focus:border-[#B68A55] text-white placeholder:text-neutral-500 transition-colors"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -265,45 +265,45 @@ export default function AdminLeadsPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Score Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-            <span className="text-[11px] font-semibold text-slate-500">Score:</span>
+          <div className="flex items-center gap-1.5 bg-[#121212] border border-neutral-800 rounded-xl px-2.5 py-1">
+            <span className="text-[11px] font-semibold text-neutral-400">Score:</span>
             <select
               value={scoreFilter}
               onChange={(e) => setScoreFilter(e.target.value)}
-              className="text-xs bg-transparent border-0 outline-hidden font-medium text-slate-800 cursor-pointer"
+              className="text-xs bg-transparent border-0 outline-hidden font-medium text-white cursor-pointer"
             >
-              <option value="All">All Scores</option>
-              <option value="Hot">Hot</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              <option value="All" className="bg-[#121212] text-white">All Scores</option>
+              <option value="Hot" className="bg-[#121212] text-white">Hot</option>
+              <option value="High" className="bg-[#121212] text-white">High</option>
+              <option value="Medium" className="bg-[#121212] text-white">Medium</option>
+              <option value="Low" className="bg-[#121212] text-white">Low</option>
             </select>
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-            <span className="text-[11px] font-semibold text-slate-500">Status:</span>
+          <div className="flex items-center gap-1.5 bg-[#121212] border border-neutral-800 rounded-xl px-2.5 py-1">
+            <span className="text-[11px] font-semibold text-neutral-400">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs bg-transparent border-0 outline-hidden font-medium text-slate-800 cursor-pointer"
+              className="text-xs bg-transparent border-0 outline-hidden font-medium text-white cursor-pointer"
             >
-              <option value="All">All Status</option>
-              <option value="New">New</option>
-              <option value="Contacted">Contacted</option>
-              <option value="Qualified">Qualified</option>
-              <option value="Converted">Converted</option>
-              <option value="Lost">Lost</option>
+              <option value="All" className="bg-[#121212] text-white">All Status</option>
+              <option value="New" className="bg-[#121212] text-white">New</option>
+              <option value="Contacted" className="bg-[#121212] text-white">Contacted</option>
+              <option value="Qualified" className="bg-[#121212] text-white">Qualified</option>
+              <option value="Converted" className="bg-[#121212] text-white">Converted</option>
+              <option value="Lost" className="bg-[#121212] text-white">Lost</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
+      <div className="bg-[#0D0D0D] rounded-2xl border border-neutral-800 overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50/90 text-slate-600 font-semibold text-[11px] uppercase tracking-wider border-b border-slate-200/80">
+            <thead className="bg-[#0A0A0A] text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-neutral-800">
               <tr>
                 <th className="p-4 min-w-[220px]">Lead Contact</th>
                 <th className="p-4 min-w-[140px]">Customer / Tenant</th>
@@ -315,22 +315,22 @@ export default function AdminLeadsPage() {
                 <th className="p-4 text-center w-12">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-neutral-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400">
+                  <td colSpan={8} className="p-12 text-center text-neutral-500">
                     <div className="inline-flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-[#B68A55] border-t-transparent rounded-full animate-spin" />
                       <span>Loading platform leads...</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400">
-                    <Users2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="font-semibold text-slate-600">No matching leads found</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                  <td colSpan={8} className="p-12 text-center text-neutral-500">
+                    <Users2 className="w-8 h-8 text-neutral-600 mx-auto mb-2" />
+                    <p className="font-semibold text-neutral-300">No matching leads found</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">
                       {leads.length === 0
                         ? "Leads captured by customer chatbots will appear here in real time."
                         : "Try adjusting your search query or filters."}
@@ -349,31 +349,31 @@ export default function AdminLeadsPage() {
                     <tr
                       key={l.id}
                       onClick={() => setSelectedLead(l)}
-                      className="hover:bg-indigo-50/30 transition-colors cursor-pointer group"
+                      className="hover:bg-neutral-900/60 transition-colors cursor-pointer group"
                     >
                       {/* Lead Contact */}
                       <td className="p-4">
-                        <div className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        <div className="font-bold text-white group-hover:text-[#B68A55] transition-colors">
                           {l.name || "Website Prospect"}
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                        <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
                           {l.phone ? (
-                            <span className="inline-flex items-center gap-1 font-mono text-slate-700">
-                              <Phone className="w-3 h-3 text-slate-400" />
+                            <span className="inline-flex items-center gap-1 font-mono text-neutral-300">
+                              <Phone className="w-3 h-3 text-neutral-500" />
                               {l.phone}
                             </span>
                           ) : l.email ? (
-                            <span className="inline-flex items-center gap-1 text-slate-700">
-                              <Mail className="w-3 h-3 text-slate-400" />
+                            <span className="inline-flex items-center gap-1 text-neutral-300">
+                              <Mail className="w-3 h-3 text-neutral-500" />
                               {l.email}
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">No contact shared yet</span>
+                            <span className="text-neutral-500 italic">No contact shared yet</span>
                           )}
                         </div>
                         {isRealInquiry && (
                           <p
-                            className="text-[11px] text-indigo-700 font-medium truncate max-w-sm mt-1 bg-indigo-50/60 border border-indigo-100/80 px-2 py-0.5 rounded-md"
+                            className="text-[11px] text-[#B68A55] font-medium truncate max-w-sm mt-1 bg-[#121212] border border-neutral-800 px-2 py-0.5 rounded-md"
                             title={cleanedInquiry}
                           >
                             {cleanedInquiry}
@@ -383,12 +383,12 @@ export default function AdminLeadsPage() {
 
                       {/* Customer / Tenant */}
                       <td className="p-4">
-                        <div className="flex items-center gap-1.5 font-medium text-slate-800">
-                          <Building className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <div className="flex items-center gap-1.5 font-medium text-neutral-200">
+                          <Building className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
                           <span className="truncate max-w-[130px]">{l.company || "Direct Inbound"}</span>
                         </div>
                         {l.organizationId && (
-                          <span className="text-[10px] font-mono text-slate-400 block mt-0.5 truncate max-w-[130px]">
+                          <span className="text-[10px] font-mono text-neutral-500 block mt-0.5 truncate max-w-[130px]">
                             {l.organizationId}
                           </span>
                         )}
@@ -396,8 +396,8 @@ export default function AdminLeadsPage() {
 
                       {/* Assisting Bot */}
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-medium text-xs border border-slate-200/60">
-                          <Bot className="w-3.5 h-3.5 text-indigo-500" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 text-neutral-200 font-medium text-xs border border-neutral-800">
+                          <Bot className="w-3.5 h-3.5 text-[#B68A55]" />
                           <span>{l.bot || l.botName || "aa"}</span>
                         </span>
                       </td>
@@ -409,8 +409,8 @@ export default function AdminLeadsPage() {
 
                       {/* Channel */}
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200/60 whitespace-nowrap">
-                          <Globe className="w-3 h-3 text-slate-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-900 text-neutral-300 text-[11px] font-medium border border-neutral-800 whitespace-nowrap">
+                          <Globe className="w-3 h-3 text-neutral-500" />
                           <span>{l.source || "Web Widget"}</span>
                         </span>
                       </td>
@@ -421,7 +421,7 @@ export default function AdminLeadsPage() {
                       </td>
 
                       {/* Created */}
-                      <td className="p-4 text-right text-slate-500 whitespace-nowrap text-[11px] font-mono">
+                      <td className="p-4 text-right text-neutral-400 whitespace-nowrap text-[11px] font-mono">
                         {l.created || (l.createdAt ? l.createdAt.split("T")[0] : "Just now")}
                       </td>
 
@@ -430,12 +430,12 @@ export default function AdminLeadsPage() {
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={(e) => handleDeleteLead(e, l.id)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-neutral-800 transition-colors cursor-pointer"
                             title="Delete Lead"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                           </button>
-                          <span className="p-1 rounded-lg text-slate-400 group-hover:text-indigo-600 group-hover:bg-indigo-50 transition-colors inline-block">
+                          <span className="p-1 rounded-lg text-neutral-500 group-hover:text-[#B68A55] group-hover:bg-neutral-800 transition-colors inline-block">
                             <ChevronRight className="w-4 h-4" />
                           </span>
                         </div>
@@ -451,44 +451,44 @@ export default function AdminLeadsPage() {
 
       {/* Lead Detail Slide-over Modal */}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-6 shadow-xl space-y-5 animate-scale-up">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#0D0D0D] rounded-2xl border border-neutral-800 max-w-lg w-full p-6 shadow-xl space-y-5 animate-scale-up text-white">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-lg font-bold text-white">
                     {selectedLead.name || "Website Prospect"}
                   </h3>
                   <StatusBadge status={selectedLead.score || "Medium"} size="sm" />
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-neutral-400 mt-0.5">
                   Captured on {selectedLead.created || selectedLead.createdAt || "Recent session"}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedLead(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Contact details */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/70 space-y-2.5">
+            <div className="bg-[#121212] rounded-xl p-4 border border-neutral-800 space-y-2.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" /> Phone:
+                <span className="text-neutral-400 font-medium flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-neutral-500" /> Phone:
                 </span>
-                <div className="flex items-center gap-2 font-mono font-semibold text-slate-800">
+                <div className="flex items-center gap-2 font-mono font-semibold text-white">
                   <span>{selectedLead.phone || "Not provided"}</span>
                   {selectedLead.phone && (
                     <button
                       onClick={() => copyToClipboard(selectedLead.phone, "phone")}
-                      className="text-slate-400 hover:text-indigo-600"
+                      className="text-neutral-400 hover:text-[#B68A55]"
                       title="Copy phone"
                     >
                       {copiedField === "phone" ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
@@ -498,19 +498,19 @@ export default function AdminLeadsPage() {
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" /> Email:
+                <span className="text-neutral-400 font-medium flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-neutral-500" /> Email:
                 </span>
-                <div className="flex items-center gap-2 font-semibold text-slate-800">
+                <div className="flex items-center gap-2 font-semibold text-white">
                   <span>{selectedLead.email || "Not provided"}</span>
                   {selectedLead.email && (
                     <button
                       onClick={() => copyToClipboard(selectedLead.email, "email")}
-                      className="text-slate-400 hover:text-indigo-600"
+                      className="text-neutral-400 hover:text-[#B68A55]"
                       title="Copy email"
                     >
                       {copiedField === "email" ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
@@ -520,19 +520,19 @@ export default function AdminLeadsPage() {
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                  <Building className="w-3.5 h-3.5 text-slate-400" /> Company / Tenant:
+                <span className="text-neutral-400 font-medium flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-neutral-500" /> Company / Tenant:
                 </span>
-                <span className="font-semibold text-slate-800">
+                <span className="font-semibold text-neutral-200">
                   {selectedLead.company || "Direct Inbound"}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium flex items-center gap-1.5">
-                  <Bot className="w-3.5 h-3.5 text-slate-400" /> Assisting Bot:
+                <span className="text-neutral-400 font-medium flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-neutral-500" /> Assisting Bot:
                 </span>
-                <span className="font-semibold text-indigo-600">
+                <span className="font-semibold text-[#B68A55]">
                   {selectedLead.bot || selectedLead.botName || "aa"}
                 </span>
               </div>
@@ -541,10 +541,10 @@ export default function AdminLeadsPage() {
             {/* Requirement / Inquiry */}
             {selectedLead.inquiry && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                   Lead Requirement & Inquiry
                 </label>
-                <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-xs text-slate-800 leading-relaxed">
+                <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-xs text-neutral-200 leading-relaxed">
                   {stripMarkdown(selectedLead.inquiry)}
                 </div>
               </div>
@@ -553,19 +553,19 @@ export default function AdminLeadsPage() {
             {/* Answers Breakdown if present */}
             {selectedLead.answers && Object.keys(selectedLead.answers).length > 0 && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                   Qualification Answers
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                   {Object.entries(selectedLead.answers).map(([k, v]) => (
                     <div
                       key={k}
-                      className="bg-slate-50 border border-slate-200/60 rounded-lg p-2 text-xs"
+                      className="bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-xs"
                     >
-                      <span className="text-[10px] text-slate-400 uppercase font-semibold block">
+                      <span className="text-[10px] text-neutral-500 uppercase font-semibold block">
                         {k.replace(/_/g, " ")}
                       </span>
-                      <span className="font-medium text-slate-800">{String(v)}</span>
+                      <span className="font-medium text-white">{String(v)}</span>
                     </div>
                   ))}
                 </div>
@@ -577,14 +577,14 @@ export default function AdminLeadsPage() {
                 onClick={(e) => {
                   handleDeleteLead(e, selectedLead.id);
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl transition-colors cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
                 <span>Delete Lead</span>
               </button>
               <button
                 onClick={() => setSelectedLead(null)}
-                className="px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold bg-[#B68A55] text-white rounded-xl hover:bg-[#a67c48] transition-colors cursor-pointer"
               >
                 Close
               </button>
