@@ -827,39 +827,51 @@ function DeployBotContent() {
                   <div
                     className={`absolute bottom-3 ${
                       launcherPosition === "bottom-left" ? "left-3" : "right-3"
-                    } w-[310px] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-[410px] z-30 animate-scale-in`}
+                    } w-[320px] bg-white rounded-2xl shadow-2xl border border-white/60 overflow-hidden flex flex-col h-[430px] z-30 animate-scale-in`}
+                    style={{
+                      boxShadow: "0 20px 40px -10px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.06)",
+                    }}
                   >
-                    {/* Header */}
+                    {/* Header with Luxury Gradient & Glass Sheen */}
                     <div
-                      className="p-3 text-white flex items-center justify-between shadow-xs transition-colors shrink-0"
-                      style={{ backgroundColor: widgetColor }}
+                      className="p-3 text-white flex items-center justify-between relative overflow-hidden shrink-0 shadow-xs"
+                      style={{
+                        background: `linear-gradient(135deg, ${widgetColor} 0%, #1e1b4b 100%)`,
+                      }}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-sm">
-                          {bot?.avatar || "🤖"}
+                      <div className="flex items-center gap-2.5 relative z-10">
+                        <div className="relative">
+                          <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-sm shadow-xs">
+                            {bot?.avatar || "🤖"}
+                          </div>
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-white shadow-xs" />
                         </div>
                         <div>
-                          <div className="font-bold text-xs leading-tight">
+                          <div className="font-bold text-xs leading-tight text-white drop-shadow-xs">
                             {bot?.name || "AI Assistant"}
                           </div>
-                          <div className="text-[9.5px] opacity-85">
-                            Online • Typically replies instantly
+                          <div className="text-[10px] text-white/90 flex items-center gap-1 mt-0.5 font-medium">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+                            Online • Replies instantly
                           </div>
                         </div>
                       </div>
                       <button
                         onClick={() => setSimulatorChatOpen(false)}
-                        className="text-white/80 hover:text-white p-1"
+                        className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/30 text-white/90 hover:text-white flex items-center justify-center transition-all cursor-pointer relative z-10 text-xs"
                       >
                         ✕
                       </button>
                     </div>
 
-                    {/* Messages Body */}
-                    <div className="flex-1 p-3 space-y-2.5 overflow-y-auto bg-slate-50 text-[11px]">
-                      {/* Bot Welcome Bubble */}
-                      <div className="flex flex-col items-start">
-                        <div className="max-w-[88%] p-2.5 rounded-xl rounded-bl-xs bg-white text-slate-800 border border-slate-200/80 shadow-2xs leading-relaxed">
+                    {/* Messages Body with Ambient Gradient */}
+                    <div className="flex-1 p-3 space-y-3 overflow-y-auto bg-linear-to-b from-slate-50 to-slate-100/70 text-[11px]">
+                      {/* Bot Welcome Bubble with Mini Avatar */}
+                      <div className="flex items-end gap-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-xs shrink-0 mb-0.5">
+                          {bot?.avatar || "🤖"}
+                        </div>
+                        <div className="max-w-[85%] p-2.5 rounded-2xl rounded-bl-xs bg-white text-slate-800 border border-slate-200/90 shadow-2xs leading-relaxed">
                           {welcomeMessage}
                         </div>
                       </div>
@@ -868,15 +880,29 @@ function DeployBotContent() {
                       {simulatorMessages.map((m, i) => (
                         <div
                           key={i}
-                          className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+                          className={`flex items-end gap-1.5 ${
+                            m.role === "user" ? "justify-end" : "justify-start"
+                          }`}
                         >
+                          {m.role !== "user" && (
+                            <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-xs shrink-0 mb-0.5">
+                              {bot?.avatar || "🤖"}
+                            </div>
+                          )}
                           <div
-                            className={`max-w-[88%] p-2.5 rounded-xl leading-relaxed ${
+                            className={`max-w-[85%] p-2.5 leading-relaxed ${
                               m.role === "user"
-                                ? "rounded-br-xs text-white shadow-2xs"
-                                : "rounded-bl-xs bg-white text-slate-800 border border-slate-200 shadow-2xs"
+                                ? "rounded-2xl rounded-br-xs text-white shadow-md font-normal"
+                                : "rounded-2xl rounded-bl-xs bg-white text-slate-800 border border-slate-200/90 shadow-2xs"
                             }`}
-                            style={m.role === "user" ? { backgroundColor: widgetColor } : {}}
+                            style={
+                              m.role === "user"
+                                ? {
+                                    background: `linear-gradient(135deg, ${widgetColor} 0%, #1e1b4b 100%)`,
+                                    boxShadow: `0 4px 12px -2px ${widgetColor}45`,
+                                  }
+                                : {}
+                            }
                           >
                             {m.content}
                           </div>
@@ -884,39 +910,48 @@ function DeployBotContent() {
                       ))}
 
                       {simulatorIsTyping && (
-                        <div className="flex items-center gap-1 p-2 bg-white rounded-lg border border-slate-200 w-fit">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
+                        <div className="flex items-end gap-1.5">
+                          <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-xs shrink-0 mb-0.5">
+                            {bot?.avatar || "🤖"}
+                          </div>
+                          <div className="flex items-center gap-1 py-2 px-3 bg-white rounded-2xl rounded-bl-xs border border-slate-200/90 shadow-2xs w-fit">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.15s]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.3s]" />
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Footer Input Bar */}
+                    {/* Footer Input Bar with Capsule Dock */}
                     <form
                       onSubmit={handleSimulatorSend}
-                      className="p-2 bg-white border-t border-slate-200 flex items-center gap-1.5"
+                      className="p-2.5 bg-white border-t border-slate-100 flex items-center gap-2"
                     >
                       <input
                         type="text"
                         value={simulatorInputText}
                         onChange={(e) => setSimulatorInputText(e.target.value)}
-                        placeholder="Ask the bot a question..."
-                        className="flex-1 px-2.5 py-1.5 text-[11px] bg-slate-50 rounded-lg border border-slate-200 text-slate-800 outline-hidden"
+                        placeholder="Type a message..."
+                        className="flex-1 px-3 py-1.5 text-[11px] bg-slate-50 rounded-full border border-slate-200 text-slate-800 focus:bg-white focus:border-indigo-500 outline-hidden transition-all"
                       />
                       <button
                         type="submit"
                         disabled={simulatorIsTyping}
-                        className="p-1.5 rounded-lg text-white shadow-2xs cursor-pointer disabled:opacity-50"
-                        style={{ backgroundColor: widgetColor }}
+                        className="w-7 h-7 rounded-full text-white shadow-sm flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, ${widgetColor} 0%, #1e1b4b 100%)`,
+                          boxShadow: `0 2px 8px ${widgetColor}40`,
+                        }}
                       >
                         <Send className="w-3.5 h-3.5" />
                       </button>
                     </form>
 
                     {brandingEnabled && (
-                      <div className="text-center py-1 text-[9.5px] text-slate-400 bg-white border-t border-slate-50 shrink-0">
-                        Powered by <strong className="text-indigo-600">NexusAI</strong>
+                      <div className="text-center py-1.5 text-[9.5px] text-slate-400 bg-white border-t border-slate-50 shrink-0 flex items-center justify-center gap-1 font-medium">
+                        <Sparkles className="w-2.5 h-2.5 text-indigo-500" />
+                        Powered by <strong className="text-indigo-600 font-semibold">NexusAI</strong>
                       </div>
                     )}
                   </div>
@@ -927,8 +962,11 @@ function DeployBotContent() {
                     onClick={() => setSimulatorChatOpen(true)}
                     className={`absolute bottom-3 ${
                       launcherPosition === "bottom-left" ? "left-3" : "right-3"
-                    } w-12 h-12 rounded-full shadow-xl flex items-center justify-center text-white cursor-pointer z-30 transition-transform hover:scale-105`}
-                    style={{ backgroundColor: widgetColor }}
+                    } w-12 h-12 rounded-full shadow-xl flex items-center justify-center text-white cursor-pointer z-30 transition-transform hover:scale-110 active:scale-95`}
+                    style={{
+                      background: `linear-gradient(135deg, ${widgetColor} 0%, #1e1b4b 100%)`,
+                      boxShadow: `0 8px 20px -3px ${widgetColor}60`,
+                    }}
                   >
                     <span className="text-lg">{bot?.avatar || "🤖"}</span>
                   </button>
