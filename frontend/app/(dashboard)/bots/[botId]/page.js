@@ -33,6 +33,26 @@ import { botsApi } from "@/lib/api/bots";
 import { knowledgeApi } from "@/lib/api/knowledge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
 
+function formatDocumentName(doc) {
+  if (!doc) return "Company Knowledge Document";
+  const raw = doc.title || doc.name || "";
+  if (!raw) return "Company Knowledge Document";
+  const rawLower = raw.toLowerCase();
+  if (
+    rawLower.includes("emperor") ||
+    rawLower.includes("company profile") ||
+    rawLower.includes("company identity") ||
+    rawLower.includes("knowledge_profile") ||
+    rawLower.includes("profile.pdf")
+  ) {
+    return "Emperor Smart Solutions Company Profile.pdf";
+  }
+  if (raw.length > 50) {
+    return raw.slice(0, 47) + "...";
+  }
+  return raw;
+}
+
 function BotDetailContent() {
   const routeParams = useParams();
   const searchParams = useSearchParams();
@@ -115,7 +135,7 @@ function BotDetailContent() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-16 font-sans">
+    <div className="space-y-8 animate-fade-in pb-16 font-sans min-w-0 max-w-full overflow-hidden">
       {/* Bot Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -245,53 +265,55 @@ function BotDetailContent() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {[
-          {
-            id: "company-profile",
-            label: "Company Profile Intake",
-            icon: Building2,
-            badge: !hasCompanyProfile ? "Mandatory ⚠️" : "Approved ✅",
-          },
-          { id: "overview", label: "Overview", icon: BarChart3 },
-          { id: "knowledge", label: "Knowledge Base", icon: BookOpen },
-          { id: "test", label: "Interactive Playground", icon: Sparkles },
-          { id: "settings", label: "Behavior & Instructions", icon: Settings },
-        ].map((t) => {
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.id}
-              onClick={() => handleTabClick(t.id)}
-              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap cursor-pointer ${
-                activeTab === t.id
-                  ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 font-bold"
-                  : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
-              } ${!hasCompanyProfile && t.id !== "company-profile" ? "opacity-60 cursor-not-allowed" : ""}`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{t.label}</span>
-              {t.badge && (
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    t.badge.includes("Mandatory")
-                      ? "bg-amber-500 text-slate-950"
-                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                  }`}
-                >
-                  {t.badge}
-                </span>
-              )}
-              {!hasCompanyProfile && t.id !== "company-profile" && (
-                <span className="text-[10px] text-amber-500 font-mono">🔒</span>
-              )}
-            </button>
-          );
-        })}
+      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-4 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden min-w-0">
+        <div className="flex items-center gap-5 sm:gap-6 shrink-0">
+          {[
+            {
+              id: "company-profile",
+              label: "Company Profile Intake",
+              icon: Building2,
+              badge: !hasCompanyProfile ? "Mandatory ⚠️" : "Approved ✅",
+            },
+            { id: "overview", label: "Overview", icon: BarChart3 },
+            { id: "knowledge", label: "Knowledge Base", icon: BookOpen },
+            { id: "test", label: "Interactive Playground", icon: Sparkles },
+            { id: "settings", label: "Behavior & Instructions", icon: Settings },
+          ].map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => handleTabClick(t.id)}
+                className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap cursor-pointer ${
+                  activeTab === t.id
+                    ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 font-bold"
+                    : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                } ${!hasCompanyProfile && t.id !== "company-profile" ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{t.label}</span>
+                {t.badge && (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      t.badge.includes("Mandatory")
+                        ? "bg-amber-500 text-slate-950"
+                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                    }`}
+                  >
+                    {t.badge}
+                  </span>
+                )}
+                {!hasCompanyProfile && t.id !== "company-profile" && (
+                  <span className="text-[10px] text-amber-500 font-mono">🔒</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
         <Link
           href={`/bots/${bot.id}/deploy`}
-          className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors ml-auto whitespace-nowrap"
+          className="flex items-center gap-1.5 pb-3.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors shrink-0 whitespace-nowrap"
         >
           <Share2 className="w-4 h-4 text-indigo-600" />
           <span>External Site Deploy &rarr;</span>
@@ -311,8 +333,8 @@ function BotDetailContent() {
 
       {/* Tab: Overview */}
       {activeTab === "overview" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="space-y-6 min-w-0 max-w-full overflow-hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 min-w-0">
             <StatCard
               title="Conversations"
               value={bot.conversationsCount || 0}
@@ -343,28 +365,36 @@ function BotDetailContent() {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-              <h3 className="font-semibold text-sm text-neutral-900 dark:text-white mb-3">
-                Active Knowledge Ingested
-              </h3>
-              <div className="space-y-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-w-0 max-w-full">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-xs min-w-0 overflow-hidden">
+              <div className="flex items-center justify-between mb-3.5">
+                <h3 className="font-semibold text-sm text-neutral-900 dark:text-white">
+                  Active Knowledge Ingested
+                </h3>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
+                  {documents.length} {documents.length === 1 ? "Source" : "Sources"}
+                </span>
+              </div>
+              <div className="space-y-2.5 min-w-0">
                 {documents.length === 0 ? (
                   <p className="text-xs text-neutral-400 italic">No documents ingested yet.</p>
                 ) : (
                   documents.map((d) => (
                     <div
                       key={d.id}
-                      className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs"
+                      className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs min-w-0 gap-3"
                     >
-                      <div className="flex items-center gap-2 overflow-hidden mr-2">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
                         <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <span className="font-medium text-neutral-800 dark:text-neutral-200 truncate" title={d.title || d.name}>
-                          {d.title || (d.name?.length > 45 ? d.name.slice(0, 45) + "..." : d.name) || "Company Knowledge Profile"}
+                        <span
+                          className="font-medium text-neutral-800 dark:text-neutral-200 truncate block"
+                          title={typeof d.name === "string" ? d.name : "Document"}
+                        >
+                          {formatDocumentName(d)}
                         </span>
                       </div>
-                      <span className="text-[10px] text-neutral-400 font-mono shrink-0">
-                        {d.chunks || 1} chunks
+                      <span className="text-[10px] text-neutral-400 font-mono shrink-0 whitespace-nowrap bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md">
+                        {Array.isArray(d.chunks) ? d.chunks.length : (d.chunksCount || 1)} chunks
                       </span>
                     </div>
                   ))
@@ -372,11 +402,11 @@ function BotDetailContent() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-xs">
-              <h3 className="font-semibold text-sm text-neutral-900 dark:text-white mb-3">
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 dark:border-neutral-800 shadow-xs min-w-0 overflow-hidden">
+              <h3 className="font-semibold text-sm text-neutral-900 dark:text-white mb-3.5">
                 System Persona & Rules
               </h3>
-              <div className="p-4 rounded-xl bg-neutral-50/70 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800 text-xs space-y-2.5">
+              <div className="p-4 rounded-xl bg-neutral-50/70 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800 text-xs space-y-2.5 min-w-0 break-words">
                 <p className="text-neutral-600 dark:text-neutral-300">
                   <span className="font-bold text-neutral-800 dark:text-white">Style:</span>{" "}
                   {bot.personality || "Professional"} ({bot.responseLength || "Concise"} responses)
