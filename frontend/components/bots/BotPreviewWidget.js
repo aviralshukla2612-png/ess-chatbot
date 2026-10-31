@@ -17,12 +17,21 @@ export default function BotPreviewWidget({
   botId = null,
   botName = "AI Sales Executive",
   avatar = "💼",
-  primaryColor = "#4f46e5",
+  primaryColor: rawPrimaryColor = "#B68A55",
   welcomeMessage = "Hello! Welcome to our workspace. How can I help you today?",
   placeholderText = "Ask a question...",
   position = "right",
   showLeadForm = false,
 }) {
+  const sanitizeColor = (c) => {
+    if (!c || typeof c !== "string") return "#B68A55";
+    const lower = c.trim().toLowerCase();
+    if (lower === "#4f46e5" || lower === "#6366f1" || lower === "#4338ca" || lower === "indigo") {
+      return "#B68A55";
+    }
+    return c;
+  };
+  const primaryColor = sanitizeColor(rawPrimaryColor);
   const [messages, setMessages] = useState([
     {
       id: "w_1",
@@ -237,9 +246,10 @@ export default function BotPreviewWidget({
             <div
               className={`max-w-[85%] rounded-2xl p-3 shadow-2xs ${
                 m.role === "user"
-                  ? "bg-indigo-600 text-white rounded-tr-xs"
-                  : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border border-neutral-200/70 dark:border-neutral-700/80 rounded-tl-xs whitespace-pre-line"
+                  ? "text-white rounded-tr-xs shadow-md"
+                  : "bg-white dark:bg-[#141414] text-neutral-800 dark:text-neutral-100 border border-neutral-200/70 dark:border-[#262626] rounded-tl-xs whitespace-pre-line"
               }`}
+              style={m.role === "user" ? { backgroundColor: primaryColor } : {}}
             >
               {m.content}
             </div>
@@ -252,7 +262,7 @@ export default function BotPreviewWidget({
                     key={i}
                     type="button"
                     onClick={() => handleSend(null, qr)}
-                    className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-indigo-600/70 dark:border-indigo-400/70 text-indigo-600 dark:text-indigo-400 bg-white dark:bg-neutral-800 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all shadow-xs cursor-pointer"
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 bg-white dark:bg-[#161616] hover:border-[#B68A55] hover:text-[#B68A55] hover:bg-[#B68A55]/10 dark:hover:border-[#B68A55] dark:hover:text-[#B68A55] dark:hover:bg-[#B68A55]/15 transition-all shadow-xs cursor-pointer"
                   >
                     {qr}
                   </button>
@@ -268,7 +278,7 @@ export default function BotPreviewWidget({
                     key={i}
                     className="inline-flex items-center gap-1 text-[10px] bg-neutral-200/70 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-1.5 py-0.5 rounded-sm"
                   >
-                    <FileText className="w-2.5 h-2.5 text-indigo-500" />
+                    <FileText className="w-2.5 h-2.5 text-[#B68A55]" />
                     {src}
                   </span>
                 ))}
@@ -278,17 +288,17 @@ export default function BotPreviewWidget({
         ))}
 
         {isTyping && (
-          <div className="flex items-center gap-1.5 p-2 rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 w-16">
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:0.2s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce [animation-delay:0.4s]" />
+          <div className="flex items-center gap-1.5 p-2 rounded-xl bg-white dark:bg-[#141414] border border-neutral-200 dark:border-[#262626] w-16">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] animate-bounce" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] animate-bounce [animation-delay:0.2s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] animate-bounce [animation-delay:0.4s]" />
           </div>
         )}
 
         {/* Lead Capture Interactive Trigger */}
         {showPromptLead && !leadCaptured && (
-          <div className="mt-2 p-3 bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-xl text-neutral-800 dark:text-neutral-200">
-            <p className="font-semibold text-xs text-indigo-900 dark:text-indigo-200 mb-1.5">
+          <div className="mt-2 p-3 bg-neutral-100 dark:bg-[#161616] border border-neutral-200 dark:border-[#262626] rounded-xl text-neutral-800 dark:text-neutral-200">
+            <p className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 mb-1.5">
               Request Founder Consultation:
             </p>
             <form onSubmit={handleLeadSubmit} className="space-y-1.5">
@@ -298,7 +308,7 @@ export default function BotPreviewWidget({
                 required
                 value={leadData.name}
                 onChange={(e) => setLeadData({ ...leadData, name: e.target.value })}
-                className="w-full px-2.5 py-1.5 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs outline-hidden"
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-[#1F1F1F] rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs outline-hidden text-neutral-900 dark:text-white"
               />
               <input
                 type="email"
@@ -306,11 +316,11 @@ export default function BotPreviewWidget({
                 required
                 value={leadData.email}
                 onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
-                className="w-full px-2.5 py-1.5 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs outline-hidden"
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-[#1F1F1F] rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs outline-hidden text-neutral-900 dark:text-white"
               />
               <button
                 type="submit"
-                className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-xs shadow-xs transition-colors"
+                className="w-full py-1.5 bg-[#B68A55] hover:bg-[#966E3A] text-white rounded-lg font-semibold text-xs shadow-xs transition-colors"
               >
                 Submit & Connect
               </button>
@@ -322,14 +332,14 @@ export default function BotPreviewWidget({
       {/* Input Form */}
       <form
         onSubmit={handleSend}
-        className="p-3 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 flex items-center gap-2"
+        className="p-3 bg-white dark:bg-[#0D0D0D] border-t border-neutral-200 dark:border-[#1F1F1F] flex items-center gap-2"
       >
         <input
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder={placeholderText}
-          className="flex-1 px-3 py-2 text-xs bg-neutral-100 dark:bg-neutral-800 rounded-xl border border-transparent focus:border-indigo-500 outline-hidden text-neutral-900 dark:text-white placeholder:text-neutral-400"
+          className="flex-1 px-3 py-2 text-xs bg-neutral-100 dark:bg-[#141414] rounded-xl border border-transparent focus:border-[#B68A55] outline-hidden text-neutral-900 dark:text-white placeholder:text-neutral-400"
         />
         <button
           type="submit"

@@ -19,8 +19,11 @@ import {
 function PreviewContent() {
   const searchParams = useSearchParams();
   const rawUrl = searchParams.get("url") || "https://emperorsmartsolutions.com";
-  const botId = searchParams.get("botId") || "bot_aa";
-  const primaryColor = searchParams.get("color") || "#4F46E5";
+  const rawColor = searchParams.get("color");
+  const primaryColor =
+    !rawColor || rawColor.toLowerCase() === "#4f46e5" || rawColor.toLowerCase() === "#6366f1"
+      ? "#B68A55"
+      : rawColor;
 
   const [targetUrl, setTargetUrl] = useState(rawUrl);
   const [currentIframeUrl, setCurrentIframeUrl] = useState(rawUrl);

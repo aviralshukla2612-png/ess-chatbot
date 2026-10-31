@@ -34,7 +34,7 @@ function DeployBotContent() {
   const [loading, setLoading] = useState(true);
 
   // Widget Customizer State
-  const [widgetColor, setWidgetColor] = useState("#4f46e5");
+  const [widgetColor, setWidgetColor] = useState("#B68A55");
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I help you today?");
   const [launcherPosition, setLauncherPosition] = useState("bottom-right");
   const [brandingEnabled, setBrandingEnabled] = useState(true);
@@ -71,7 +71,11 @@ function DeployBotContent() {
       const b = await botsApi.getBotById(botId);
       if (b) {
         setBot(b);
-        if (b.primaryColor) setWidgetColor(b.primaryColor);
+        if (b.primaryColor) {
+          setWidgetColor(
+            b.primaryColor === "#4f46e5" || b.primaryColor === "#6366f1" ? "#B68A55" : b.primaryColor
+          );
+        }
         if (b.welcomeMessage) setWelcomeMessage(b.welcomeMessage);
         if (b.websiteUrl) {
           setVerifyUrl(b.websiteUrl);
@@ -610,13 +614,13 @@ function DeployBotContent() {
                   Brand Color
                 </label>
                 <div className="flex items-center gap-3">
-                  {["#4f46e5", "#0ea5e9", "#10b981", "#8b5cf6", "#f43f5e", "#0f172a"].map((c) => (
+                  {["#B68A55", "#C89D66", "#0ea5e9", "#10b981", "#8b5cf6", "#141414"].map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setWidgetColor(c)}
                       className={`w-7 h-7 rounded-full transition-transform cursor-pointer ${
-                        widgetColor === c ? "scale-125 ring-2 ring-offset-2 ring-indigo-500" : "hover:scale-110"
+                        widgetColor === c ? "scale-125 ring-2 ring-offset-2 ring-[#B68A55]" : "hover:scale-110"
                       }`}
                       style={{ backgroundColor: c }}
                     />

@@ -25,7 +25,7 @@ const DEFAULT_BOTS = [
     description: "Official AI Sales Representative for Emperor Smart Solutions.",
     avatar: "🤖",
     status: "Active",
-    primaryColor: "#4f46e5",
+    primaryColor: "#B68A55",
     welcomeMessage: "Hello! I am Emperor AI, your AI Sales Consultant. How can I help you today?",
     placeholderText: "Type a message...",
     launcherPosition: "bottom-right",
@@ -61,7 +61,7 @@ const DEFAULT_BOTS = [
     description: "Official AI Sales Representative for Emperor Smart Solutions & Daily Cashbook.",
     avatar: "🤖",
     status: "Active",
-    primaryColor: "#4f46e5",
+    primaryColor: "#B68A55",
     welcomeMessage: "Hello! Welcome to Emperor Smart Solutions. How can I help you today?",
     placeholderText: "Type a message...",
     launcherPosition: "bottom-right",
@@ -110,6 +110,7 @@ function loadBotsFromDisk() {
       memoryBotsCache = parsed.map((b) => ({
         ...b,
         organizationId: b.organizationId || DEFAULT_ORG_ID,
+        primaryColor: (!b.primaryColor || b.primaryColor === "#4f46e5" || b.primaryColor === "#6366f1") ? "#B68A55" : b.primaryColor,
       }));
       return memoryBotsCache;
     }
@@ -298,7 +299,7 @@ export const botsStore = {
         year: "numeric",
       }),
       lastActive: "Just now",
-      primaryColor: "#4f46e5",
+      primaryColor: "#B68A55",
       welcomeMessage: `Hello! I am ${botData.name || "AI Assistant"}. How can I help you today?`,
       launcherPosition: "bottom-right",
       brandingEnabled: true,
@@ -337,7 +338,7 @@ export const botsStore = {
         orgId,
         merged.name || "AI Assistant",
         merged.description || null,
-        merged.primaryColor || "#4f46e5",
+        merged.primaryColor || "#B68A55",
         merged.status || "Active",
         merged.systemPrompt || null,
         merged.welcomeMessage || "Hello!",

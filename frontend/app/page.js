@@ -173,7 +173,7 @@ export default function HomePage() {
               botId="bot_aa"
               botName="AI Sales Executive"
               avatar="💼"
-              primaryColor="#4f46e5"
+              primaryColor="#B68A55"
               welcomeMessage="Hello! Welcome to Emperor Smart Solutions. Ask about our ERP modules, web apps, or project timelines!"
               placeholderText="Type 'pricing for ERP' or 'discounts'..."
               showLeadForm={true}

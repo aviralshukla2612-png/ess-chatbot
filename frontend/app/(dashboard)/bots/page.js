@@ -108,7 +108,7 @@ export default function BotsPage() {
   const s = document.createElement("script");
   s.src = "${appOrigin}/widget.js";
   s.setAttribute("data-bot-id", "${idToUse}");
-  s.setAttribute("data-color", "${bot.primaryColor || "#4f46e5"}");
+  s.setAttribute("data-color", "${(!bot.primaryColor || bot.primaryColor === "#4f46e5" || bot.primaryColor === "#6366f1") ? "#B68A55" : bot.primaryColor}");
   s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
   document.body.appendChild(s);
 })();`;

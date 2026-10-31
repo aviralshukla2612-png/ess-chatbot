@@ -50,7 +50,7 @@ export default function CreateBotWizard() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [avatarIndex, setAvatarIndex] = useState(0);
-  const [primaryColor, setPrimaryColor] = useState("#4F46E5");
+  const [primaryColor, setPrimaryColor] = useState("#B68A55");
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I assist you today?");
   const [placeholderText, setPlaceholderText] = useState("Ask a question...");
   const [position, setPosition] = useState("Bottom Right");
@@ -74,7 +74,7 @@ export default function CreateBotWizard() {
   ]);
 
   const avatarsList = ["🤖", "💼", "🎧", "⚡", "🩺", "💬"];
-  const colorSwatches = ["#4F46E5", "#3B82F6", "#06B6D4", "#10B981", "#8B5CF6", "#111827"];
+  const colorSwatches = ["#B68A55", "#C89D66", "#06B6D4", "#10B981", "#8B5CF6", "#111827"];
 
   const handleFileUpload = (files) => {
     if (!files || files.length === 0) return;
