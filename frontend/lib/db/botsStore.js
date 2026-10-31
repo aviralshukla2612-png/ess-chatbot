@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { queryDb } from "./dbPool.js";
 import { sseBroker } from "./sseBroker.js";
+import { conversationsStore } from "./conversationsStore.js";
 
 function resolveDataFile() {
   const frontendPath = path.join(process.cwd(), "frontend", "data", "bots.json");
@@ -14,6 +15,70 @@ function resolveDataFile() {
 
 const DATA_FILE = resolveDataFile();
 const DEFAULT_ORG_ID = "org_ess_default";
+
+function enrichBotWithMetrics(bot, allBotsCount = 1) {
+  if (!bot) return bot;
+  try {
+    const allConvs = conversationsStore.getConversations({
+      organizationId: bot.organizationId || undefined,
+    }) || [];
+
+    const botId = String(bot.id || "").trim();
+    const botName = String(bot.name || "").trim().toLowerCase();
+
+    // Match conversations belonging to this bot
+    let matched = allConvs.filter((c) => {
+      const cBotId = String(c.botId || "").trim();
+      const cBotName = String(c.botName || "").trim().toLowerCase();
+      if (cBotId && cBotId === botId) return true;
+      if (botId && (cBotId === `bot_${botId}` || cBotId === botId.replace(/^bot_/, ""))) return true;
+      if (botName && (cBotName === botName || cBotName.includes(botName) || botName.includes(cBotName))) return true;
+      // If there is only 1 bot in the workspace or organization, attribute all conversations to this active bot
+      if (allBotsCount === 1) return true;
+      return false;
+    });
+
+    const dbConvsCount = Number(bot.conversationsCount) || 0;
+    const dbQuestionsCount = Number(bot.questionsCount) || 0;
+    const dbLeadsCount = Number(bot.leadsCount) || 0;
+
+    const convCount = Math.max(dbConvsCount, matched.length);
+    const leadsCount = Math.max(
+      dbLeadsCount,
+      matched.filter((c) => c.isLead || c.leadScore || c.visitorEmail || c.visitorPhone).length
+    );
+    const questionsCount = Math.max(
+      dbQuestionsCount,
+      matched.reduce((acc, c) => {
+        const q = c.questionsCount || (Array.isArray(c.messages) ? c.messages.filter((m) => m.role === "user" || m.sender === "user").length : 0);
+        return acc + (q || 1);
+      }, 0)
+    );
+
+    // Calculate humanized last active string
+    let lastActive = bot.lastActive || "Just now";
+    const latestTimestamp = bot.lastActiveAt || (matched.length > 0 ? (matched[0].lastActivityAt || matched[0].updatedAt || matched[0].createdAt) : null);
+    if (latestTimestamp) {
+      const diffMs = Date.now() - new Date(latestTimestamp).getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (isNaN(diffMins) || diffMins < 2) lastActive = "Just now";
+      else if (diffMins < 60) lastActive = `${diffMins}m ago`;
+      else if (diffMins < 1440) lastActive = `${Math.floor(diffMins / 60)}h ago`;
+      else lastActive = `${Math.floor(diffMins / 1440)}d ago`;
+    }
+
+    return {
+      ...bot,
+      conversationsCount: convCount,
+      questionsCount: questionsCount,
+      leadsCount: leadsCount,
+      lastActive,
+    };
+  } catch (err) {
+    console.error("Error enriching bot with live metrics:", err);
+    return bot;
+  }
+}
 
 // Default single official seed bot: Emperor AI Assistant
 const DEFAULT_BOTS = [
@@ -114,31 +179,55 @@ export const botsStore = {
    * List bots scoped strictly by organizationId.
    */
   async getBotsAsync(organizationId) {
-    if (organizationId) {
-      const dbRes = await queryDb(
-        'SELECT * FROM "Bot" WHERE "organizationId" = $1 ORDER BY "createdAt" DESC;',
-        [organizationId]
-      );
+    let rows = [];
+    try {
+      const sql = `
+        SELECT b.*,
+          COALESCE((
+            SELECT COUNT(*)::int FROM "Conversation" c 
+            WHERE c."botId" = b.id OR c."botId" = 'bot_' || b.id OR c."botId" = REPLACE(b.id, 'bot_', '') OR LOWER(c."botName") = LOWER(b.name)
+          ), 0) AS "conversationsCount",
+          COALESCE((
+            SELECT COUNT(*)::int FROM "Message" m
+            JOIN "Conversation" c ON m."conversationId" = c.id
+            WHERE (c."botId" = b.id OR c."botId" = 'bot_' || b.id OR c."botId" = REPLACE(b.id, 'bot_', '') OR LOWER(c."botName") = LOWER(b.name))
+              AND (m."sender" = 'user' OR m."role" = 'user')
+          ), 0) AS "questionsCount",
+          COALESCE((
+            SELECT COUNT(*)::int FROM "Conversation" c
+            WHERE (c."botId" = b.id OR c."botId" = 'bot_' || b.id OR c."botId" = REPLACE(b.id, 'bot_', '') OR LOWER(c."botName") = LOWER(b.name))
+              AND (c."isLead" = TRUE OR c."leadScore" IS NOT NULL OR c."visitorEmail" IS NOT NULL OR c."visitorPhone" IS NOT NULL)
+          ), 0) AS "leadsCount",
+          (
+            SELECT c."lastActivityAt" FROM "Conversation" c
+            WHERE c."botId" = b.id OR c."botId" = 'bot_' || b.id OR c."botId" = REPLACE(b.id, 'bot_', '') OR LOWER(c."botName") = LOWER(b.name)
+            ORDER BY c."lastActivityAt" DESC LIMIT 1
+          ) AS "lastActiveAt"
+        FROM "Bot" b
+        ${organizationId ? 'WHERE b."organizationId" = $1' : ''}
+        ORDER BY b."createdAt" DESC;
+      `;
+      const params = organizationId ? [organizationId] : [];
+      const dbRes = await queryDb(sql, params);
       if (dbRes.ok && dbRes.rows.length > 0) {
-        return dbRes.rows;
+        rows = dbRes.rows;
       }
-    } else {
-      const dbRes = await queryDb(
-        'SELECT * FROM "Bot" ORDER BY "createdAt" DESC;'
-      );
-      if (dbRes.ok && dbRes.rows.length > 0) {
-        return dbRes.rows;
-      }
+    } catch (err) {
+      console.warn("Error in getBotsAsync DB query:", err);
     }
-    const all = loadBotsFromDisk();
-    if (!organizationId) return all;
-    return all.filter((b) => b.organizationId === organizationId);
+
+    if (rows.length === 0) {
+      const all = loadBotsFromDisk();
+      rows = organizationId ? all.filter((b) => b.organizationId === organizationId) : all;
+    }
+
+    return rows.map((b) => enrichBotWithMetrics(b, rows.length));
   },
 
   getBots(organizationId) {
     const all = loadBotsFromDisk();
-    if (!organizationId) return all;
-    return all.filter((b) => b.organizationId === organizationId);
+    const list = organizationId ? all.filter((b) => b.organizationId === organizationId) : all;
+    return list.map((b) => enrichBotWithMetrics(b, list.length));
   },
 
   /**
@@ -160,15 +249,15 @@ export const botsStore = {
 
     // 1. Exact ID match
     let match = scopedBots.find((b) => b.id === query);
-    if (match) return match;
+    if (match) return enrichBotWithMetrics(match, scopedBots.length);
 
     // 2. Case-insensitive ID match
     match = scopedBots.find((b) => b.id && b.id.toLowerCase() === queryLower);
-    if (match) return match;
+    if (match) return enrichBotWithMetrics(match, scopedBots.length);
 
     // 3. Exact Name match (case-insensitive)
     match = scopedBots.find((b) => b.name && b.name.trim().toLowerCase() === queryLower);
-    if (match) return match;
+    if (match) return enrichBotWithMetrics(match, scopedBots.length);
 
     // 4. Default seed bot fallback (ensure official default Emperor AI Assistant is always accessible)
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
@@ -179,7 +268,7 @@ export const botsStore = {
             bots.push(def);
             saveBotsToDisk(bots);
           }
-          return def;
+          return enrichBotWithMetrics(def, 1);
         }
       }
     }
@@ -230,7 +319,7 @@ export const botsStore = {
           all.push(bot);
         }
         memoryBotsCache = all;
-        return bot;
+        return enrichBotWithMetrics(bot, 1);
       }
     } catch (err) {
       console.warn("Database bot lookup error:", err);
@@ -239,7 +328,7 @@ export const botsStore = {
     // Default seed bot fallback
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
       if (queryLower === "bot_1791618269632" || queryLower === "bot_aa" || queryLower === "aa" || queryLower === "default") {
-        return DEFAULT_BOTS[0];
+        return enrichBotWithMetrics(DEFAULT_BOTS[0], 1);
       }
     }
 
