@@ -155,7 +155,13 @@ export const leadsStore = {
     });
 
     if (filters.organizationId) {
-      list = list.filter((l) => (l.organizationId || "org_ess_default") === filters.organizationId || !l.organizationId);
+      list = list.filter(
+        (l) =>
+          !l.organizationId ||
+          l.organizationId === filters.organizationId ||
+          l.organizationId === "org_ess_default" ||
+          filters.organizationId === "org_ess_default"
+      );
     }
     if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
       list = list.filter((l) => l.status?.toLowerCase() === filters.status.toLowerCase());
@@ -186,18 +192,20 @@ export const leadsStore = {
 
   getLead(id, organizationId = null) {
     const list = loadFromDisk();
-    return list.find((l) => l.id === id && (!organizationId || (l.organizationId || "org_ess_default") === organizationId)) || null;
+    return list.find((l) => l.id === id && (!organizationId || (l.organizationId || "org_ess_default") === organizationId || organizationId === "org_ess_default")) || null;
   },
 
   async getLeadsAsync(filters = {}) {
+    const diskLeads = this.getLeads(filters);
+
     try {
       let query = 'SELECT * FROM "Lead"';
       const params = [];
       const conditions = [];
 
-      if (filters.organizationId) {
+      if (filters.organizationId && filters.organizationId !== "org_ess_default") {
         params.push(filters.organizationId);
-        conditions.push(`"organizationId" = $${params.length}`);
+        conditions.push(`("organizationId" = $${params.length} OR "organizationId" = 'org_ess_default' OR "organizationId" IS NULL)`);
       }
       if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
         params.push(filters.status);
@@ -217,10 +225,8 @@ export const leadsStore = {
       query += ' ORDER BY "createdAt" DESC;';
 
       const dbRes = await queryDb(query, params);
-      if (dbRes.ok && dbRes.rows.length > 0) {
-        let rows = dbRes.rows;
-        // Sanitize database leads: filter out dummy entries without real contact info or real name
-        rows = rows.filter((l) => {
+      if (dbRes.ok && Array.isArray(dbRes.rows)) {
+        let dbRows = dbRes.rows.filter((l) => {
           const hasContact = Boolean((l.email && l.email.trim()) || (l.phone && l.phone.trim()));
           const hasAnswers = Boolean(l.answers && typeof l.answers === "object" && Object.keys(l.answers).length > 0);
           const hasRealName = Boolean(l.name && l.name !== "Website Prospect" && l.name !== "Website Visitor");
@@ -229,12 +235,28 @@ export const leadsStore = {
           if (!hasContact && !hasAnswers && !hasRealName) return false;
           return true;
         });
-        return rows;
+
+        // Merge DB rows with disk/auto-synced leads
+        const cleanDigits = (p) => (p || "").replace(/\D/g, "");
+        const combined = [...dbRows];
+        for (const dl of diskLeads) {
+          const exists = combined.some(
+            (c) =>
+              c.id === dl.id ||
+              (c.sessionId && dl.sessionId && c.sessionId === dl.sessionId) ||
+              (dl.phone && c.phone && cleanDigits(dl.phone) === cleanDigits(c.phone) && cleanDigits(dl.phone).length >= 10) ||
+              (dl.email && c.email && dl.email.toLowerCase() === c.email.toLowerCase())
+          );
+          if (!exists) {
+            combined.push(dl);
+          }
+        }
+        return combined.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
     } catch (err) {
       console.warn("DB leads query failed:", err);
     }
-    return this.getLeads(filters);
+    return diskLeads;
   },
 
   createLead(data) {

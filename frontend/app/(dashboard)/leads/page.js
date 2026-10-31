@@ -114,12 +114,16 @@ export default function LeadsPage() {
   });
 
   const filteredLeads = leads.filter((item) => {
+    const q = search.toLowerCase();
     const matchesSearch =
-      item.name?.toLowerCase().includes(search.toLowerCase()) ||
-      item.email?.toLowerCase().includes(search.toLowerCase()) ||
-      item.company?.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      item.name?.toLowerCase().includes(q) ||
+      item.email?.toLowerCase().includes(q) ||
+      item.company?.toLowerCase().includes(q) ||
+      item.phone?.toLowerCase().includes(q) ||
+      item.inquiry?.toLowerCase().includes(q);
     const matchesBot =
-      botFilter === "All Bots" || item.bot === botFilter;
+      botFilter === "All Bots" || item.bot === botFilter || item.botId === botFilter;
     const matchesStatus =
       statusFilter === "All Status" || item.status === statusFilter;
     return matchesSearch && matchesBot && matchesStatus;
