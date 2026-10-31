@@ -493,6 +493,10 @@ export const conversationsStore = {
   clearAll() {
     saveToDisk([]);
     sseBroker.broadcast("conversations_cleared", {});
+    try {
+      queryDb('DELETE FROM "Message";').catch(() => {});
+      queryDb('DELETE FROM "Conversation";').catch(() => {});
+    } catch (e) {}
     return { success: true };
   },
 };

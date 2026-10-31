@@ -87,4 +87,15 @@ export const conversationsApi = {
       return false;
     }
   },
+
+  async clearAll() {
+    try {
+      const res = await fetch("/api/conversations?clearAll=true", {
+        method: "DELETE",
+      });
+      return res.ok;
+    } catch (err) {
+      return false;
+    }
+  },
 };

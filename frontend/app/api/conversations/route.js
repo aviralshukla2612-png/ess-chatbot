@@ -59,3 +59,38 @@ export async function POST(request) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const auth = await requireAuth(request);
+    if (!auth.ok) return auth.response;
+
+    const { principal } = auth;
+    const { searchParams } = new URL(request.url);
+    const clearAll = searchParams.get("clearAll") === "true";
+    const id = searchParams.get("id");
+
+    const isSuperAdmin =
+      principal.platformRole === ROLES.SUPER_ADMIN ||
+      principal.orgRole === ROLES.SUPER_ADMIN ||
+      principal.platformRole === "Platform Super Admin" ||
+      principal.platformRole === "SUPER_ADMIN" ||
+      principal.orgRole === "SUPER_ADMIN" ||
+      (principal.email && principal.email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
+
+    if (clearAll) {
+      conversationsStore.clearAll();
+      return NextResponse.json({ success: true, message: "All conversations cleared." });
+    }
+
+    if (id) {
+      conversationsStore.deleteConversation(id, isSuperAdmin ? null : principal.organizationId);
+      return NextResponse.json({ success: true, message: "Conversation deleted." });
+    }
+
+    return NextResponse.json({ success: false, error: "Missing parameter: id or clearAll" }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
