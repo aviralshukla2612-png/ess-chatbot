@@ -306,20 +306,34 @@ export const botsStore = {
         );
       }
       if (dbRes.ok && dbRes.rows.length > 0) {
-        const bot = dbRes.rows[0];
-        if (!bot.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0) {
-          bot.allowedDomains = ["*"];
+        const dbBot = dbRes.rows[0];
+        if (!dbBot.allowedDomains || !Array.isArray(dbBot.allowedDomains) || dbBot.allowedDomains.length === 0) {
+          dbBot.allowedDomains = ["*"];
         }
         // Cache in memory store so subsequent synchronous lookups also succeed
         const all = loadBotsFromDisk();
-        const existingIdx = all.findIndex((b) => b.id === bot.id);
+        const existingIdx = all.findIndex((b) => b.id === dbBot.id);
+        const diskBot = existingIdx >= 0 ? all[existingIdx] : {};
+        const fullBot = {
+          ...diskBot,
+          ...dbBot,
+          launcherSize: dbBot.launcherSize || diskBot.launcherSize || "medium",
+          launcherShape: dbBot.launcherShape || diskBot.launcherShape || "circle",
+          launcherIcon: dbBot.launcherIcon || diskBot.launcherIcon || "bubble",
+          launcherLogoUrl: dbBot.launcherLogoUrl || diskBot.launcherLogoUrl || "",
+          launcherText: dbBot.launcherText || diskBot.launcherText || "",
+          launcherMarginBottom: dbBot.launcherMarginBottom ?? diskBot.launcherMarginBottom ?? 24,
+          launcherMarginRight: dbBot.launcherMarginRight ?? diskBot.launcherMarginRight ?? 24,
+          launcherMarginLeft: dbBot.launcherMarginLeft ?? diskBot.launcherMarginLeft ?? 24,
+          launcherMarginTop: dbBot.launcherMarginTop ?? diskBot.launcherMarginTop ?? 24,
+        };
         if (existingIdx >= 0) {
-          all[existingIdx] = { ...all[existingIdx], ...bot };
+          all[existingIdx] = fullBot;
         } else {
-          all.push(bot);
+          all.push(fullBot);
         }
         memoryBotsCache = all;
-        return enrichBotWithMetrics(bot, 1);
+        return enrichBotWithMetrics(fullBot, 1);
       }
     } catch (err) {
       console.warn("Database bot lookup error:", err);
@@ -381,8 +395,13 @@ export const botsStore = {
 
     // Sync to PostgreSQL
     queryDb(
-      `INSERT INTO "Bot" ("id", "organizationId", "name", "description", "primaryColor", "status", "systemPrompt", "welcomeMessage", "allowedDomains", "company", "websiteUrl", "phoneNumber")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `INSERT INTO "Bot" (
+         "id", "organizationId", "name", "description", "primaryColor", "status", "systemPrompt",
+         "welcomeMessage", "allowedDomains", "company", "websiteUrl", "phoneNumber",
+         "launcherPosition", "launcherShape", "launcherSize", "launcherIcon", "launcherLogoUrl",
+         "launcherText", "launcherMarginBottom", "launcherMarginRight", "launcherMarginLeft", "launcherMarginTop"
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
        ON CONFLICT ("id") DO UPDATE SET
          "name" = EXCLUDED."name",
          "description" = EXCLUDED."description",
@@ -394,6 +413,16 @@ export const botsStore = {
          "company" = EXCLUDED."company",
          "websiteUrl" = EXCLUDED."websiteUrl",
          "phoneNumber" = EXCLUDED."phoneNumber",
+         "launcherPosition" = EXCLUDED."launcherPosition",
+         "launcherShape" = EXCLUDED."launcherShape",
+         "launcherSize" = EXCLUDED."launcherSize",
+         "launcherIcon" = EXCLUDED."launcherIcon",
+         "launcherLogoUrl" = EXCLUDED."launcherLogoUrl",
+         "launcherText" = EXCLUDED."launcherText",
+         "launcherMarginBottom" = EXCLUDED."launcherMarginBottom",
+         "launcherMarginRight" = EXCLUDED."launcherMarginRight",
+         "launcherMarginLeft" = EXCLUDED."launcherMarginLeft",
+         "launcherMarginTop" = EXCLUDED."launcherMarginTop",
          "updatedAt" = CURRENT_TIMESTAMP;`,
       [
         id,
@@ -408,6 +437,16 @@ export const botsStore = {
         merged.company || null,
         merged.websiteUrl || null,
         merged.phoneNumber || null,
+        merged.launcherPosition || "bottom-right",
+        merged.launcherShape || "circle",
+        merged.launcherSize || "medium",
+        merged.launcherIcon || "bubble",
+        merged.launcherLogoUrl || null,
+        merged.launcherText || null,
+        typeof merged.launcherMarginBottom === "number" ? merged.launcherMarginBottom : 24,
+        typeof merged.launcherMarginRight === "number" ? merged.launcherMarginRight : 24,
+        typeof merged.launcherMarginLeft === "number" ? merged.launcherMarginLeft : 24,
+        typeof merged.launcherMarginTop === "number" ? merged.launcherMarginTop : 24,
       ]
     ).catch(() => {});
 

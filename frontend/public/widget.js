@@ -123,6 +123,16 @@
           ),
           welcomeMessage: (scriptTag && scriptTag.getAttribute("data-welcome")) || data.bot.welcomeMessage || "Hello! How can I help you today?",
           launcherPosition: (scriptTag && scriptTag.getAttribute("data-position")) || data.bot.launcherPosition || "bottom-right",
+          launcherSize:
+            data.bot.launcherSize || (scriptTag && scriptTag.getAttribute("data-size")) || "medium",
+          launcherShape:
+            data.bot.launcherShape || (scriptTag && scriptTag.getAttribute("data-shape")) || "circle",
+          launcherIcon:
+            data.bot.launcherIcon || (scriptTag && scriptTag.getAttribute("data-icon")) || "bubble",
+          launcherLogoUrl:
+            data.bot.launcherLogoUrl || (scriptTag && scriptTag.getAttribute("data-logo")) || "",
+          launcherText:
+            data.bot.launcherText || (scriptTag && scriptTag.getAttribute("data-launcher-text")) || "",
           launcherMarginBottom:
             scriptTag && scriptTag.getAttribute("data-margin-bottom")
               ? parseInt(scriptTag.getAttribute("data-margin-bottom"), 10)
@@ -998,7 +1008,16 @@
     if (!launcherEl) return;
 
     const shape = (botConfig.launcherShape || "circle").toLowerCase();
-    const size = botConfig.launcherSize === "compact" ? 52 : botConfig.launcherSize === "large" ? 72 : 62;
+    let size = 62;
+    const rawSize = String(botConfig.launcherSize || "medium").toLowerCase();
+    if (rawSize === "compact" || rawSize === "52" || rawSize === "52px" || rawSize === "small") {
+      size = 52;
+    } else if (rawSize === "large" || rawSize === "72" || rawSize === "72px") {
+      size = 72;
+    } else if (!isNaN(parseInt(rawSize, 10)) && parseInt(rawSize, 10) >= 36) {
+      size = parseInt(rawSize, 10);
+    }
+
     const iconType = botConfig.launcherIcon || "bubble";
     const rawLogo = (botConfig.launcherLogoUrl || "").trim();
     const logoUrl = rawLogo
@@ -1010,12 +1029,26 @@
     const darker = adjustColorBrightness(primary, -26);
     const glow = hexToRgba(primary, 0.45);
 
-    launcherEl.style.background = `linear-gradient(135deg, ${primary} 0%, ${darker} 100%)`;
-    launcherEl.style.boxShadow = `0 10px 28px -4px ${glow}, 0 4px 16px rgba(0, 0, 0, 0.7)`;
-    launcherEl.style.borderRadius = shape === "squircle" ? "18px" : shape === "pill" ? "9999px" : "50%";
-    launcherEl.style.width = shape === "pill" ? "auto" : `${size}px`;
-    launcherEl.style.height = `${size}px`;
-    launcherEl.style.padding = shape === "pill" ? "0 22px" : "0";
+    launcherEl.style.setProperty("background", `linear-gradient(135deg, ${primary} 0%, ${darker} 100%)`, "important");
+    launcherEl.style.setProperty("box-shadow", `0 10px 28px -4px ${glow}, 0 4px 16px rgba(0, 0, 0, 0.7)`, "important");
+    launcherEl.style.setProperty("border-radius", shape === "squircle" ? "18px" : shape === "pill" ? "9999px" : "50%", "important");
+    launcherEl.style.setProperty("width", shape === "pill" ? "auto" : `${size}px`, "important");
+    launcherEl.style.setProperty("height", `${size}px`, "important");
+    launcherEl.style.setProperty("min-width", shape === "pill" ? "auto" : `${size}px`, "important");
+    launcherEl.style.setProperty("min-height", `${size}px`, "important");
+    launcherEl.style.setProperty("padding", shape === "pill" ? "0 22px" : "0", "important");
+
+    const chatWin = document.getElementById("nexus-widget-window");
+    if (chatWin) {
+      const isTop = (botConfig.launcherPosition || "bottom-right").toLowerCase().includes("top");
+      if (isTop) {
+        chatWin.style.setProperty("top", `${size + 16}px`, "important");
+        chatWin.style.setProperty("bottom", "auto", "important");
+      } else {
+        chatWin.style.setProperty("bottom", `${size + 16}px`, "important");
+        chatWin.style.setProperty("top", "auto", "important");
+      }
+    }
 
     const iconOpen = document.getElementById("nexus-icon-open");
     if (iconOpen) {
