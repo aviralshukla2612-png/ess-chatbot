@@ -69,6 +69,9 @@ export async function PUT(request, { params }) {
       if (!ssrfCheck.valid) {
         return NextResponse.json({ success: false, error: ssrfCheck.error }, { status: 400 });
       }
+      body.websiteUrl = ssrfCheck.normalizedUrl;
+    }
+
     if (body.launcherMarginBottom !== undefined) body.launcherMarginBottom = Number(body.launcherMarginBottom) || 0;
     if (body.launcherMarginRight !== undefined) body.launcherMarginRight = Number(body.launcherMarginRight) || 0;
     if (body.launcherMarginLeft !== undefined) body.launcherMarginLeft = Number(body.launcherMarginLeft) || 0;
