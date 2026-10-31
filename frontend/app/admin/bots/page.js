@@ -9,6 +9,8 @@ import {
   ExternalLink,
   RefreshCw,
   AlertTriangle,
+  Ban,
+  ShieldCheck,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { botsApi } from "@/lib/api/bots";
@@ -33,6 +35,31 @@ export default function AdminBotsPage() {
   useEffect(() => {
     loadBots();
   }, [loadBots]);
+
+  const handleToggleBlockBot = async (botId, currentStatus) => {
+    const isBlocked = String(currentStatus).toLowerCase() === "blocked";
+    const nextStatus = isBlocked ? "Active" : "Blocked";
+    const confirmMsg = isBlocked
+      ? `Unblock bot "${botId}"? It will resume serving chats.`
+      : `BLOCK bot "${botId}"? It will immediately stop responding to visitor chats.`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/bots/${botId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (res.ok) {
+        setBots((prev) => prev.map((b) => (b.id === botId ? { ...b, status: nextStatus } : b)));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert("Failed to update bot: " + (data.error || res.statusText));
+      }
+    } catch (err) {
+      alert("Error updating bot status: " + err.message);
+    }
+  };
 
   const handleDeleteBot = async (botId) => {
     if (!confirm(`Are you sure you want to permanently delete bot "${botId}"?`)) return;
@@ -155,7 +182,22 @@ export default function AdminBotsPage() {
                       <StatusBadge status={b.status || "Active"} size="sm" />
                     </td>
                     <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleToggleBlockBot(b.id, b.status)}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                            String(b.status).toLowerCase() === "blocked"
+                              ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              : "text-amber-600 hover:text-rose-600 hover:bg-rose-50"
+                          }`}
+                          title={String(b.status).toLowerCase() === "blocked" ? "Unblock Bot" : "Block Bot"}
+                        >
+                          {String(b.status).toLowerCase() === "blocked" ? (
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <Ban className="w-4 h-4 text-amber-600" />
+                          )}
+                        </button>
                         <a
                           href={`/bots/${b.id}`}
                           target="_blank"

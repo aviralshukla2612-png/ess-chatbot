@@ -72,7 +72,7 @@ export async function PUT(request, { params }) {
       body.websiteUrl = ssrfCheck.normalizedUrl;
     }
 
-    const bot = botsStore.upsertBot({ ...body, id: botId, organizationId: targetOrgId }, targetOrgId);
+    const bot = botsStore.upsertBot({ ...existingBot, ...body, id: botId, organizationId: targetOrgId }, targetOrgId);
     return NextResponse.json({ success: true, bot });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

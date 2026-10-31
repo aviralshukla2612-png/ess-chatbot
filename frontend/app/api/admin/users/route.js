@@ -130,3 +130,38 @@ export async function GET(request) {
     );
   }
 }
+
+export async function POST(request) {
+  const auth = await requireSuperAdmin(request);
+  if (!auth.ok) return auth.response;
+
+  try {
+    const body = await request.json();
+    const { userId, action, status } = body;
+
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "userId is required" }, { status: 400 });
+    }
+
+    const newDbStatus = action === "unblock" ? "ACTIVE" : action === "block" ? "BLOCKED" : (status?.toUpperCase() || "BLOCKED");
+    const newStoreStatus = newDbStatus === "BLOCKED" ? "Blocked" : "Active";
+
+    // 1. Update in PostgreSQL database
+    try {
+      await queryDb('UPDATE "User" SET "status" = $1 WHERE "id" = $2 OR "email" = $2', [newDbStatus, userId]);
+    } catch (e) {
+      console.warn("[UPDATE_USER_STATUS_DB_FAIL]", e.message);
+    }
+
+    // 2. Update in persistent usersStore
+    usersStore.updateUserStatus(userId, newStoreStatus);
+
+    return NextResponse.json({
+      success: true,
+      message: `User status updated to ${newStoreStatus}`,
+      status: newStoreStatus,
+    });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}

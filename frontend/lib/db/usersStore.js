@@ -177,4 +177,18 @@ export const usersStore = {
     saveToDisk(users);
     return updatedUser;
   },
+
+  updateUserStatus(userId, status) {
+    const users = this.getUsers();
+    const idx = users.findIndex(
+      (u) => u.id === userId || (u.email && u.email.toLowerCase() === String(userId).toLowerCase())
+    );
+    if (idx >= 0) {
+      users[idx].status = status;
+      users[idx].updatedAt = new Date().toISOString();
+      saveToDisk(users);
+      return users[idx];
+    }
+    return null;
+  },
 };

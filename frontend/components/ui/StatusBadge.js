@@ -24,6 +24,14 @@ export default function StatusBadge({ status, size = "md" }) {
       badge: "bg-slate-100 text-slate-600 border-slate-200 font-medium",
       dot: "bg-slate-400",
     },
+    BLOCKED: {
+      badge: "bg-rose-50 text-rose-700 border-rose-200 font-bold",
+      dot: "bg-rose-600",
+    },
+    SUSPENDED: {
+      badge: "bg-rose-50 text-rose-700 border-rose-200 font-bold",
+      dot: "bg-rose-600",
+    },
 
     // Lead Commercial Scores
     HOT: {

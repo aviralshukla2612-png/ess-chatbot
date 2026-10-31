@@ -135,6 +135,30 @@ export async function requireAuth(request) {
       ),
     };
   }
+
+  // Enforce account block for non-superadmin users
+  if (principal.platformRole !== ROLES.SUPER_ADMIN && principal.orgRole !== ROLES.SUPER_ADMIN) {
+    try {
+      const { usersStore } = await import("../db/usersStore.js");
+      const user = usersStore.getUsers().find(
+        (u) => u.id === principal.userId || (u.email && u.email.toLowerCase() === principal.email?.toLowerCase())
+      );
+      if (user && (user.status === "Blocked" || user.status === "BLOCKED")) {
+        return {
+          ok: false,
+          response: NextResponse.json(
+            {
+              success: false,
+              error: "Your account has been blocked or suspended by platform administration.",
+              code: "ACCOUNT_BLOCKED",
+            },
+            { status: 403 }
+          ),
+        };
+      }
+    } catch (e) {}
+  }
+
   return { ok: true, principal };
 }
 

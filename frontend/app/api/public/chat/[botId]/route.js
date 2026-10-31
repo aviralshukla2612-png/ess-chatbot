@@ -202,10 +202,14 @@ export async function POST(request, { params }) {
     // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots)
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
-    if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
-      console.warn(`[PUBLIC_CHAT_404] Bot not found or inactive. botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status='${bot?.status}'`);
+    if (!bot || bot.status === "Inactive" || bot.status === "Deleted" || bot.status === "Blocked" || bot.status === "Suspended") {
+      console.warn(`[PUBLIC_CHAT_404] Bot not found, inactive, or blocked. botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status='${bot?.status}'`);
+      const isBlocked = bot?.status === "Blocked" || bot?.status === "Suspended";
       return corsResponse(
-        NextResponse.json({ error: "Chatbot not found or inactive" }, { status: 404 }),
+        NextResponse.json(
+          { error: isBlocked ? "This chatbot assistant has been blocked by system administration." : "Chatbot not found or inactive" },
+          { status: isBlocked ? 403 : 404 }
+        ),
         request
       );
     }

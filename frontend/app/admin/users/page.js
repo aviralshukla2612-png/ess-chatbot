@@ -12,6 +12,8 @@ import {
   ChevronRight,
   RefreshCw,
   UserCheck,
+  Ban,
+  ShieldCheck,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { adminApi } from "@/lib/api/admin";
@@ -20,6 +22,31 @@ import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const handleToggleBlockUser = async (userId, currentStatus, userName) => {
+    const isBlocked = String(currentStatus).toUpperCase() === "BLOCKED";
+    const nextStatus = isBlocked ? "ACTIVE" : "BLOCKED";
+    const confirmMsg = isBlocked
+      ? `Unblock user "${userName || userId}"? They will regain access to their account.`
+      : `BLOCK user "${userName || userId}"? They will immediately be denied access across the platform.`;
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action: isBlocked ? "unblock" : "block" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.success) {
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u)));
+      } else {
+        alert("Failed to update user: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Error updating user status: " + err.message);
+    }
+  };
 
   // Pagination & Filtering state
   const [page, setPage] = useState(1);
@@ -198,12 +225,13 @@ export default function AdminUsersPage() {
                 <th className="p-4">Bots</th>
                 <th className="p-4">Last Login</th>
                 <th className="p-4">Status</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                  <td colSpan={8} className="p-8 text-center text-slate-400">
                     <div className="flex items-center justify-center gap-2">
                       <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
                       <span>Loading users...</span>
@@ -212,7 +240,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500">
+                  <td colSpan={8} className="p-8 text-center text-slate-500">
                     <p className="font-semibold text-sm">No users found</p>
                     <p className="text-xs text-slate-400 mt-1">
                       No matching records for "{searchTerm}".
@@ -234,6 +262,37 @@ export default function AdminUsersPage() {
                     <td className="p-4 text-slate-500">{u.lastLogin}</td>
                     <td className="p-4">
                       <StatusBadge status={u.status} size="sm" />
+                    </td>
+                    <td className="p-4 text-right">
+                      {u.role === "Platform Super Admin" ||
+                      u.role === "SUPER_ADMIN" ||
+                      u.email === "admin@emperorsmartsolutions.com" ? (
+                        <span className="text-[11px] font-medium text-slate-400 italic">
+                          Protected
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleToggleBlockUser(u.id, u.status, u.name || u.email)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                            String(u.status).toUpperCase() === "BLOCKED"
+                              ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200"
+                              : "text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200"
+                          }`}
+                          title={String(u.status).toUpperCase() === "BLOCKED" ? "Unblock User" : "Block User"}
+                        >
+                          {String(u.status).toUpperCase() === "BLOCKED" ? (
+                            <>
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Unblock</span>
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Block</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
