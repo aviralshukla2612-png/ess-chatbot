@@ -25,6 +25,63 @@ import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import { cn } from "@/lib/utils";
 
+// Indian Standard Client & Visitor Formatter
+function formatVisitorDisplay(item) {
+  if (!item) {
+    return {
+      name: "Prospective Client",
+      initials: "",
+      isGeneric: true,
+      location: "Ahmedabad, Gujarat (India)",
+    };
+  }
+
+  const rawName = (item.visitorName || "").trim();
+  const email = (item.visitorEmail || "").trim();
+  const phone = (item.visitorPhone || "").trim();
+  let loc = (item.visitorLocation || "").trim();
+
+  // Normalize location from US-centric "Direct Session" to Indian Standard
+  if (!loc || loc === "Direct Session" || loc.toLowerCase() === "unknown") {
+    loc = "Ahmedabad, Gujarat (India)";
+  }
+
+  let name = "";
+  let isGeneric = false;
+
+  if (
+    rawName &&
+    rawName.toLowerCase() !== "website visitor" &&
+    rawName.toLowerCase() !== "direct session" &&
+    rawName.toLowerCase() !== "website prospect"
+  ) {
+    name = rawName;
+  } else if (email) {
+    const handle = email.split("@")[0].replace(/[._]/g, " ");
+    name = handle.replace(/\b\w/g, (c) => c.toUpperCase());
+  } else if (phone) {
+    name = `Client (${phone})`;
+  } else {
+    isGeneric = true;
+    const city = loc.split(",")[0].trim() || "Ahmedabad";
+    const shortId = item.id ? item.id.replace(/[^0-9]/g, "").slice(-4) : "";
+    name = shortId ? `Client #${shortId} • ${city}` : `Client Inquiry • ${city}`;
+  }
+
+  // Derive crisp initials (e.g. "Pooja Patel" -> "PP", "Amit" -> "A")
+  let initials = "";
+  if (!isGeneric && name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      initials = (parts[0][0] + parts[1][0]).toUpperCase();
+    } else if (parts.length === 1) {
+      initials = parts[0].slice(0, 2).toUpperCase();
+    }
+  }
+
+  return { name, initials, isGeneric, location: loc };
+}
+
 // Rich Markdown, Bold, Links, and Bullets Formatter
 function FormattedChatMessage({ text, isUser = false }) {
   if (!text) return null;
@@ -142,12 +199,17 @@ export default function ConversationsPage() {
   const loadConversations = async () => {
     try {
       const data = await conversationsApi.getConversations();
-      // Normalize all conversations to Emperor AI Assistant if legacy or dummy
-      const sanitized = (data || []).map((c) => ({
-        ...c,
-        botName: c.botName && c.botName !== "aa" ? c.botName : "Emperor AI Assistant",
-        botId: c.botId && c.botId !== "bot_aa" ? c.botId : "bot_1791618269632",
-      }));
+      // Normalize all conversations to Indian Standard and Emperor AI Assistant
+      const sanitized = (data || []).map((c) => {
+        const parsedDisplay = formatVisitorDisplay(c);
+        return {
+          ...c,
+          visitorName: parsedDisplay.name,
+          visitorLocation: parsedDisplay.location,
+          botName: c.botName && c.botName !== "aa" ? c.botName : "Emperor AI Assistant",
+          botId: c.botId && c.botId !== "bot_aa" ? c.botId : "bot_1791618269632",
+        };
+      });
       setConversations(sanitized);
       if (sanitized.length > 0) {
         setSelectedId((prev) =>
@@ -183,6 +245,8 @@ export default function ConversationsPage() {
   const currentChat =
     conversations.find((c) => c.id === selectedId) || filtered[0] || null;
 
+  const currentVisitor = formatVisitorDisplay(currentChat);
+
   const handleSendReply = async (e) => {
     e.preventDefault();
     if (!replyInput.trim() || !currentChat) return;
@@ -214,7 +278,7 @@ export default function ConversationsPage() {
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-            Monitor, inspect, and reply to visitor inquiries in real-time across your live chatbot.
+            Monitor, inspect, and reply to client inquiries in real-time across your live chatbot.
           </p>
         </div>
         <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
@@ -276,7 +340,7 @@ export default function ConversationsPage() {
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search conversations..."
+                placeholder="Search by client or message..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-8 pr-3 py-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#141414] text-xs text-[#252525] dark:text-white placeholder-neutral-500 outline-hidden focus:border-[#B68A55] dark:focus:border-[#B68A55] transition-colors shadow-xs"
@@ -302,8 +366,8 @@ export default function ConversationsPage() {
                 </h4>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed max-w-xs mx-auto">
                   {filterTab === "Leads"
-                    ? "Leads will appear here automatically as soon as visitors share contact details with your bot."
-                    : "New visitor sessions will appear here in real-time when users interact with your chatbot."}
+                    ? "Qualified leads will appear here automatically as soon as clients share contact details with your bot."
+                    : "New visitor sessions will appear here in real-time when clients interact with your chatbot."}
                 </p>
                 <div className="pt-2">
                   <Link
@@ -319,6 +383,7 @@ export default function ConversationsPage() {
 
             {filtered.map((item) => {
               const isSelected = item.id === (currentChat?.id || selectedId);
+              const visitor = formatVisitorDisplay(item);
               return (
                 <div
                   key={item.id}
@@ -330,21 +395,26 @@ export default function ConversationsPage() {
                       : "hover:bg-[#FAF9F6] dark:hover:bg-[#111111] text-[#252525] dark:text-neutral-300"
                   )}
                 >
+                  {/* Smart Initials or User Icon */}
                   <div
                     className={cn(
-                      "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border",
+                      "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border transition-all",
                       isSelected
                         ? "bg-[#252525] border-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:border-[#B68A55]"
                         : "bg-white border-[#EFE7DC] text-[#B68A55] dark:bg-[#141414] dark:border-neutral-800 dark:text-[#B68A55]"
                     )}
                   >
-                    {item.visitorName?.charAt(0) || "V"}
+                    {!visitor.isGeneric && visitor.initials ? (
+                      <span>{visitor.initials}</span>
+                    ) : (
+                      <User className="w-4 h-4 text-[#B68A55]" />
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-semibold text-xs text-[#252525] dark:text-white truncate">
-                        {item.visitorName || "Website Visitor"}
+                        {visitor.name}
                       </span>
                       <span className="text-[10px] text-neutral-500 dark:text-neutral-400 shrink-0 ml-1">
                         {item.startedAt || "Today"}
@@ -353,14 +423,19 @@ export default function ConversationsPage() {
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                       {item.lastMessage || "Started chat session"}
                     </p>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      {item.isLead && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                          Lead
+                    <div className="flex items-center justify-between mt-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {item.isLead && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                            Lead
+                          </span>
+                        )}
+                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
+                          {visitor.location.split(",")[0]}
                         </span>
-                      )}
-                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">
-                        {item.botName && item.botName !== "aa" ? item.botName : "Emperor AI Assistant"}
+                      </div>
+                      <span className="text-[10px] text-[#B68A55] font-medium shrink-0">
+                        Emperor AI
                       </span>
                     </div>
                   </div>
@@ -378,19 +453,21 @@ export default function ConversationsPage() {
               <div className="p-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#0E0E0E] shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-9 h-9 rounded-xl bg-white border border-[#EFE7DC] text-[#B68A55] dark:bg-[#161616] dark:border-neutral-800 dark:text-[#B68A55] font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
-                    {currentChat.visitorName?.charAt(0) || "V"}
+                    {!currentVisitor.isGeneric && currentVisitor.initials ? (
+                      <span>{currentVisitor.initials}</span>
+                    ) : (
+                      <User className="w-4 h-4 text-[#B68A55]" />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-sm text-[#252525] dark:text-white truncate">
-                      {currentChat.visitorName || "Website Visitor"}
+                      {currentVisitor.name}
                     </h3>
                     <div className="flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
-                      <span>{currentChat.visitorLocation || "Direct Session"}</span>
+                      <span className="truncate">{currentVisitor.location}</span>
                       <span>•</span>
                       <span className="text-[#B68A55] font-medium truncate">
-                        {currentChat.botName && currentChat.botName !== "aa"
-                          ? currentChat.botName
-                          : "Emperor AI Assistant"}
+                        Emperor AI Assistant
                       </span>
                     </div>
                   </div>
@@ -411,7 +488,7 @@ export default function ConversationsPage() {
               <div className="flex-1 p-5 overflow-y-auto overflow-x-hidden space-y-4 bg-[#FAF9F6]/50 dark:bg-[#070707]">
                 <div className="text-center">
                   <span className="text-[10px] bg-white dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold px-2.5 py-1 rounded-full shadow-xs">
-                    {currentChat.startedAt || "Today"}
+                    {currentChat.startedAt || "Today (IST)"}
                   </span>
                 </div>
 
@@ -472,47 +549,57 @@ export default function ConversationsPage() {
               </div>
               <h4 className="text-sm font-bold text-[#252525] dark:text-white">No conversation selected</h4>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xs">
-                Select a conversation from the left to view the complete live transcript and visitor details.
+                Select a client conversation from the left to view the complete live transcript and inquiry details.
               </p>
             </div>
           )}
         </div>
 
-        {/* COLUMN 3: Visitor & Conversation Metadata */}
+        {/* COLUMN 3: Client & Conversation Metadata */}
         <div className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto shrink-0 text-xs">
           {currentChat ? (
             <>
-              {/* VISITOR INFO */}
+              {/* CLIENT INFO */}
               <div className="space-y-3">
                 <h4 className="font-bold text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Visitor Info
+                  Client Info
                 </h4>
 
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-2.5 text-neutral-700 dark:text-neutral-200">
                     <User className="w-4 h-4 text-[#B68A55] shrink-0" />
                     <span className="font-semibold text-[#252525] dark:text-white truncate">
-                      {currentChat.visitorName || "Website Visitor"}
+                      {currentVisitor.name}
                     </span>
                   </div>
 
-                  {currentChat.visitorPhone && (
+                  {currentChat.visitorPhone ? (
                     <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-300">
                       <Phone className="w-4 h-4 text-neutral-400 shrink-0" />
                       <span className="break-all">{currentChat.visitorPhone}</span>
                     </div>
+                  ) : (
+                    <div className="flex items-center gap-2.5 text-neutral-500">
+                      <Phone className="w-4 h-4 text-neutral-600 shrink-0" />
+                      <span className="italic">Phone pending</span>
+                    </div>
                   )}
 
-                  {currentChat.visitorEmail && (
+                  {currentChat.visitorEmail ? (
                     <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-300">
                       <Mail className="w-4 h-4 text-neutral-400 shrink-0" />
                       <span className="truncate">{currentChat.visitorEmail}</span>
                     </div>
+                  ) : (
+                    <div className="flex items-center gap-2.5 text-neutral-500">
+                      <Mail className="w-4 h-4 text-neutral-600 shrink-0" />
+                      <span className="italic">Email pending</span>
+                    </div>
                   )}
 
                   <div className="flex items-center gap-2.5 text-neutral-600 dark:text-neutral-300">
-                    <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
-                    <span className="truncate">{currentChat.visitorLocation || "Direct Session"}</span>
+                    <MapPin className="w-4 h-4 text-[#B68A55] shrink-0" />
+                    <span className="truncate">{currentVisitor.location}</span>
                   </div>
                 </div>
               </div>
@@ -539,9 +626,7 @@ export default function ConversationsPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-neutral-500 dark:text-neutral-400">Bot:</span>
                     <span className="font-semibold text-[#B68A55] bg-[#B68A55]/10 border border-[#B68A55]/20 px-2 py-0.5 rounded-md truncate max-w-[140px]">
-                      {currentChat.botName && currentChat.botName !== "aa"
-                        ? currentChat.botName
-                        : "Emperor AI Assistant"}
+                      Emperor AI Assistant
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -584,7 +669,7 @@ export default function ConversationsPage() {
             </>
           ) : (
             <div className="text-neutral-500 dark:text-neutral-500 text-xs text-center py-12">
-              Select a conversation to view visitor details
+              Select a conversation to view client details
             </div>
           )}
         </div>

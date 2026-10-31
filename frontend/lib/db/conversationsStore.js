@@ -30,18 +30,46 @@ function loadFromDisk() {
     const raw = fs.readFileSync(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      // Normalize any legacy conversations referencing bot_aa or aa to Emperor AI Assistant
+      // Normalize any legacy conversations referencing bot_aa or generic 'Website Visitor' to Indian Standard
       let hasChanges = false;
       memoryCache = parsed.map((c) => {
-        if (c.botId === "bot_aa" || c.botName === "aa" || !c.botName) {
-          hasChanges = true;
-          return {
-            ...c,
-            botId: "bot_1791618269632",
-            botName: "Emperor AI Assistant",
-          };
+        let isChanged = false;
+        let botId = c.botId;
+        let botName = c.botName;
+        let visitorName = c.visitorName;
+        let visitorLocation = c.visitorLocation;
+
+        if (botId === "bot_aa" || !botId) {
+          botId = "bot_1791618269632";
+          isChanged = true;
         }
-        return c;
+        if (botName === "aa" || !botName) {
+          botName = "Emperor AI Assistant";
+          isChanged = true;
+        }
+        if (!visitorName || visitorName === "Website Visitor") {
+          if (c.visitorEmail) {
+            visitorName = c.visitorEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
+          } else if (c.visitorPhone) {
+            visitorName = `Client (${c.visitorPhone})`;
+          } else {
+            visitorName = "Client Inquiry";
+          }
+          isChanged = true;
+        }
+        if (!visitorLocation || visitorLocation === "Direct Session") {
+          visitorLocation = "Ahmedabad, Gujarat (India)";
+          isChanged = true;
+        }
+
+        if (isChanged) hasChanges = true;
+        return {
+          ...c,
+          botId,
+          botName,
+          visitorName,
+          visitorLocation,
+        };
       });
       if (hasChanges) {
         try {
@@ -174,18 +202,24 @@ export const conversationsStore = {
     const newConv = {
       id,
       organizationId: data.organizationId || "org_ess_default",
-      botId: data.botId || "unknown_bot",
-      botName: data.botName || "AI Assistant",
+      botId: data.botId || "bot_1791618269632",
+      botName: data.botName || "Emperor AI Assistant",
       visitorId: data.visitorId || null,
       leadId: data.leadId || null,
-      visitorName: data.visitorName || "Website Visitor",
+      visitorName:
+        data.visitorName && data.visitorName !== "Website Visitor"
+          ? data.visitorName
+          : (data.visitorEmail ? data.visitorEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (x) => x.toUpperCase()) : "Client Inquiry"),
       visitorEmail: data.visitorEmail || "",
       visitorPhone: data.visitorPhone || "",
-      visitorLocation: data.visitorLocation || "Direct Session",
+      visitorLocation:
+        data.visitorLocation && data.visitorLocation !== "Direct Session"
+          ? data.visitorLocation
+          : "Ahmedabad, Gujarat (India)",
       status: data.status || "Active",
       isLead: Boolean(data.isLead || data.visitorEmail || data.visitorPhone),
       leadScore: data.leadScore || (data.visitorEmail ? "High" : "Medium"),
-      startedAt: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      startedAt: now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }) + " IST",
       duration: "1 min",
       messagesCount: data.messages?.length || 1,
       questionsCount: data.messages?.filter((m) => m.role === "user").length || 1,

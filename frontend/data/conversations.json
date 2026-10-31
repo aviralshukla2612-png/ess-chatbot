@@ -1,108 +1,100 @@
 [
   {
-    "id": "test_deploy_1791608783005",
-    "visitorName": "Sarah Connor",
-    "visitorEmail": "sarah@sky.net",
-    "visitorPhone": "+1 555-0199",
-    "visitorLocation": "Direct Session",
+    "id": "c_ess_01_patel",
+    "visitorName": "Pooja Patel",
+    "visitorEmail": "pooja.patel@surattextiles.com",
+    "visitorPhone": "+91 98251 44220",
+    "visitorLocation": "Surat, Gujarat (India)",
     "botId": "bot_1791618269632",
     "botName": "Emperor AI Assistant",
     "status": "Active",
     "isLead": true,
     "leadScore": "High",
-    "startedAt": "10:36 am",
-    "duration": "1 min",
+    "startedAt": "07:54 AM IST",
+    "duration": "3 mins",
     "messagesCount": 2,
     "questionsCount": 1,
-    "lastMessage": "Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?",
-    "createdAt": "2026-10-10T05:06:23.811Z",
-    "updatedAt": "2026-10-10T05:06:23.811Z",
+    "lastMessage": "We need custom ERP and inventory automation for our 4 manufacturing facilities in Gujarat. Could you share project timeline and budget tiers?",
+    "createdAt": "2026-10-31T02:24:00.000Z",
+    "updatedAt": "2026-10-31T02:24:00.000Z",
     "messages": [
       {
+        "id": "m_01_user",
         "role": "user",
-        "content": "Hello! My name is Sarah Connor (sarah@sky.net). Do you offer enterprise CRM and ERP software?",
-        "timestamp": "10:36 am"
+        "content": "Hello! I am Pooja Patel (pooja.patel@surattextiles.com, +91 98251 44220). We need custom ERP and inventory automation for our 4 manufacturing facilities in Gujarat. Could you share project timeline and budget tiers?",
+        "timestamp": "07:53 AM IST"
       },
       {
+        "id": "m_01_bot",
         "role": "assistant",
-        "content": "Thank you for reaching out! We'd be glad to assist you with your inquiry. Feel free to leave your contact details or ask any questions about our services.",
-        "timestamp": "10:36 am"
+        "content": "Hello Pooja! Welcome to **Emperor Smart Solutions**. We specialize in comprehensive enterprise ERP and cloud automation across India.\n\nHere is how we can help your facilities:\n- **ERP Implementation:** Multi-warehouse inventory sync, production burndown, vendor dispatch, and GST-compliant billing.\n- **Engineering Standards:** Full ISO 27001 & ISO 9001 quality audits with 30 days of post-deployment support.\n- **Budget Tiers:** Comprehensive bespoke applications typically range between ₹2,00,000 – ₹5,00,000 depending on module scope.\n\nOur solutions architect will contact you directly at **+91 98251 44220** or **pooja.patel@surattextiles.com** within 24 hours.",
+        "timestamp": "07:54 AM IST"
       }
     ]
   },
   {
-    "id": "session_bot_aa_1791608185637",
-    "visitorName": "John Doe",
-    "visitorEmail": "john.doe@innovate.io",
-    "visitorPhone": "+91 99999 88888",
-    "visitorLocation": "Direct Session",
+    "id": "c_ess_02_sharma",
+    "visitorName": "Amit Sharma",
+    "visitorEmail": "amit.sharma@apexlogistics.in",
+    "visitorPhone": "+91 98790 12345",
+    "visitorLocation": "Mumbai, Maharashtra (India)",
     "botId": "bot_1791618269632",
     "botName": "Emperor AI Assistant",
     "status": "Active",
     "isLead": true,
     "leadScore": "High",
-    "startedAt": "10:26 am",
-    "duration": "1 min",
-    "messagesCount": 2,
-    "questionsCount": 1,
-    "lastMessage": "Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.",
-    "createdAt": "2026-10-10T04:56:25.638Z",
-    "updatedAt": "2026-10-10T04:56:25.638Z",
-    "messages": [
-      {
-        "role": "user",
-        "content": "Hi, my name is John Doe and my email is john.doe@innovate.io. We need pricing for your ERP web application.",
-        "timestamp": "10:26 am"
-      },
-      {
-        "role": "assistant",
-        "content": "Thank you for reaching out! We'd be glad to assist you with your inquiry. Feel free to leave your contact details or ask any questions about our services.",
-        "timestamp": "10:26 am"
-      }
-    ]
-  },
-  {
-    "id": "c_seed_01",
-    "visitorName": "Acme Logistics Inquiry",
-    "visitorEmail": "contact@acmelogistics.com",
-    "visitorPhone": "+91 98765 43210",
-    "visitorLocation": "Mumbai, India",
-    "botId": "bot_1791618269632",
-    "botName": "Emperor AI Assistant",
-    "status": "Active",
-    "isLead": true,
-    "leadScore": "High",
-    "startedAt": "10:15 AM",
+    "startedAt": "07:34 AM IST",
     "duration": "4 mins",
-    "messagesCount": 4,
-    "questionsCount": 2,
-    "lastMessage": "Can we schedule a live demo of the ERP integration modules?",
-    "createdAt": "2026-10-10T02:52:30.452Z",
-    "updatedAt": "2026-10-10T02:52:30.453Z",
+    "messagesCount": 2,
+    "questionsCount": 1,
+    "lastMessage": "Great! I've summarized your AI Chatbot & RAG platform requirements. Our technical solutions team will connect with you within 24 hours.",
+    "createdAt": "2026-10-31T02:04:00.000Z",
+    "updatedAt": "2026-10-31T02:04:00.000Z",
     "messages": [
       {
-        "id": "m_1",
+        "id": "m_02_user",
         "role": "user",
-        "content": "Hello, what ERP modules do you support for inventory and supply chain?",
-        "timestamp": "10:15 AM"
+        "content": "Hi, my name is Amit Sharma (+91 98790 12345, amit.sharma@apexlogistics.in). We want an AI-driven Customer Support chatbot connected to our company documents via RAG vector search.",
+        "timestamp": "07:33 AM IST"
       },
       {
-        "id": "m_2",
+        "id": "m_02_bot",
         "role": "assistant",
-        "content": "We provide comprehensive inventory tracking, multi-warehouse management, procurement orders, and real-time vendor dispatch portals.",
-        "timestamp": "10:16 AM"
-      },
+        "content": "Great! I've summarized your **AI Chatbot & RAG Platform** requirements.\n\n- **AI & Data:** Retrieval-augmented generation (RAG) using PostgreSQL pgvector, automated lead qualification, and WhatsApp integration.\n- **Team Deployment:** Our developers work under rigorous engineering standards with turn-key deployment on AWS/GCP.\n\nOur team in Ahmedabad will prepare an architecture proposal and reach out to you shortly at **amit.sharma@apexlogistics.in**.",
+        "timestamp": "07:34 AM IST"
+      }
+    ]
+  },
+  {
+    "id": "c_ess_03_joshi",
+    "visitorName": "Vikram Joshi",
+    "visitorEmail": "vikram.joshi@gujarat-enterprises.in",
+    "visitorPhone": "+91 99887 76655",
+    "visitorLocation": "Ahmedabad, Gujarat (India)",
+    "botId": "bot_1791618269632",
+    "botName": "Emperor AI Assistant",
+    "status": "Resolved",
+    "isLead": true,
+    "leadScore": "High",
+    "startedAt": "06:40 AM IST",
+    "duration": "2 mins",
+    "messagesCount": 2,
+    "questionsCount": 1,
+    "lastMessage": "Interested in hiring dedicated Full-Stack Next.js and Flutter developers for our fintech portal.",
+    "createdAt": "2026-10-31T01:10:00.000Z",
+    "updatedAt": "2026-10-31T01:10:00.000Z",
+    "messages": [
       {
-        "id": "m_3",
+        "id": "m_03_user",
         "role": "user",
-        "content": "Can we schedule a live demo of the ERP integration modules?",
-        "timestamp": "10:18 AM"
+        "content": "Hello, Vikram Joshi here from Ahmedabad (+91 99887 76655). We are looking to hire dedicated Flutter and Next.js developers for a 6-month fintech contract.",
+        "timestamp": "06:39 AM IST"
       },
       {
-        "id": "m_4",
+        "id": "m_03_bot",
         "role": "assistant",
-        "content": "Absolutely! I can connect you directly with our solutions team. Would you like to share your preferred date and time?",
-        "timestamp": "10:19 AM"
+        "content": "Hello Vikram! We offer dedicated developer hiring right here from our **Ahmedabad Tech Center** (Panchvati, Navrangpura).\n\n- **Dedicated Pods:** Experienced senior Next.js, Node.js, and Flutter developers with NDA protection and transparent sprint velocity.\n- **Office Location:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009.\n\nWe have scheduled a callback for you with our technical lead.",
+        "timestamp": "06:40 AM IST"
       }
     ]
   }

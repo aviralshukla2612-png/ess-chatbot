@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "id": "lead_ess_01_patel",
+    "name": "Pooja Patel",
+    "email": "pooja.patel@surattextiles.com",
+    "phone": "+91 98251 44220",
+    "company": "Surat Textiles & Manufacturing Ltd",
+    "bot": "Emperor AI Assistant",
+    "botId": "bot_1791618269632",
+    "score": "High",
+    "status": "New",
+    "created": "Oct 31, 2026",
+    "createdAt": "2026-10-31T02:24:00.000Z",
+    "updatedAt": "2026-10-31T02:24:00.000Z",
+    "inquiry": "Custom ERP and inventory automation for 4 manufacturing units across Gujarat.",
+    "budget": "₹2,50,000 – ₹5,00,000",
+    "source": "Web Chatbot Widget"
+  },
+  {
+    "id": "lead_ess_02_sharma",
+    "name": "Amit Sharma",
+    "email": "amit.sharma@apexlogistics.in",
+    "phone": "+91 98790 12345",
+    "company": "Apex Logistics India",
+    "bot": "Emperor AI Assistant",
+    "botId": "bot_1791618269632",
+    "score": "High",
+    "status": "Contacted",
+    "created": "Oct 31, 2026",
+    "createdAt": "2026-10-31T02:04:00.000Z",
+    "updatedAt": "2026-10-31T02:04:00.000Z",
+    "inquiry": "AI-driven Customer Support chatbot connected to internal documents via RAG vector search.",
+    "budget": "₹1,00,000 – ₹2,00,000",
+    "source": "Web Chatbot Widget"
+  },
+  {
+    "id": "lead_ess_03_joshi",
+    "name": "Vikram Joshi",
+    "email": "vikram.joshi@gujarat-enterprises.in",
+    "phone": "+91 99887 76655",
+    "company": "Gujarat Enterprise Solutions",
+    "bot": "Emperor AI Assistant",
+    "botId": "bot_1791618269632",
+    "score": "High",
+    "status": "Converted",
+    "created": "Oct 31, 2026",
+    "createdAt": "2026-10-31T01:10:00.000Z",
+    "updatedAt": "2026-10-31T01:10:00.000Z",
+    "inquiry": "Dedicated senior Next.js, Node.js, and Flutter developer pod for 6-month fintech contract.",
+    "budget": "₹3,00,000+",
+    "source": "Web Chatbot Widget"
+  }
+]
