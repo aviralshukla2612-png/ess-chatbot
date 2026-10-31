@@ -8,10 +8,10 @@ export default function TrialBanner({ subscription, onOpenCheckout }) {
   if (!subscription || !subscription.hasAutopay || subscription.status === "pending_autopay") {
     const trialUsed = Boolean(subscription?.hasUsedTrial);
     return (
-      <div className="mb-6 p-4 rounded-2xl bg-linear-to-r from-indigo-900/90 via-violet-900/90 to-indigo-950 border border-indigo-500/40 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-indigo-950/40 text-xs animate-fade-in">
+      <div className="mb-6 p-4 rounded-2xl bg-neutral-900 dark:bg-[#0D0D0D] border border-[#B68A55]/40 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md text-xs animate-fade-in">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
-            {trialUsed ? <ShieldAlert className="w-5 h-5 text-amber-300" /> : <Sparkles className="w-5 h-5 text-indigo-300" />}
+            {trialUsed ? <ShieldAlert className="w-5 h-5 text-amber-300" /> : <Sparkles className="w-5 h-5 text-[#B68A55]" />}
           </div>
           <div>
             <span className="font-extrabold text-white text-xs sm:text-sm block sm:inline">
@@ -26,7 +26,7 @@ export default function TrialBanner({ subscription, onOpenCheckout }) {
         </div>
         <button
           onClick={onOpenCheckout}
-          className="px-4 py-2.5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-500 hover:from-indigo-400 hover:to-violet-400 font-bold text-white text-xs shadow-md shadow-indigo-500/30 transition-all shrink-0 cursor-pointer"
+          className="px-4 py-2.5 rounded-xl bg-[#B68A55] hover:bg-[#9F7645] font-bold text-white text-xs shadow-md transition-all shrink-0 cursor-pointer"
         >
           {trialUsed ? "Choose a Plan & Subscribe" : "Activate Trial to Create Bot"}
         </button>
@@ -74,16 +74,16 @@ export default function TrialBanner({ subscription, onOpenCheckout }) {
   }
 
   return (
-    <div className="mb-6 p-3.5 sm:p-4 rounded-2xl bg-linear-to-r from-indigo-900/90 via-violet-900/90 to-indigo-950 border border-indigo-500/30 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md shadow-indigo-900/20 text-xs">
+    <div className="mb-6 p-3.5 sm:p-4 rounded-2xl bg-neutral-900 dark:bg-[#0D0D0D] border border-[#B68A55]/30 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md text-xs">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
-          <Sparkles className="w-4 h-4 text-indigo-300" />
+        <div className="w-8 h-8 rounded-xl bg-[#B68A55]/15 border border-[#B68A55]/30 flex items-center justify-center shrink-0 text-[#B68A55]">
+          <Sparkles className="w-4 h-4" />
         </div>
         <div>
           <span className="font-bold text-white text-xs sm:text-sm">
             7-Day Free Trial Active: {daysLeft} {daysLeft === 1 ? "day" : "days"} remaining
           </span>
-          <p className="text-[11px] text-indigo-200 mt-0.5">
+          <p className="text-[11px] text-neutral-300 mt-0.5">
             Autopay of ₹2,499/mo scheduled for <strong>{chargeDateStr}</strong> via Razorpay. Cancel anytime before Day 7.
           </p>
         </div>

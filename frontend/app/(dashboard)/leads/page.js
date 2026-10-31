@@ -190,9 +190,9 @@ export default function LeadsPage() {
               }
               alert("Exporting leads to CSV...");
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#111827] hover:bg-[#FAF9F6] dark:hover:bg-slate-800 border border-[#EFE7DC] dark:border-slate-800 text-[#252525] dark:text-slate-200 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer w-fit"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-neutral-200 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer w-fit"
           >
-            <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+            <Download className="w-4 h-4 text-slate-500 dark:text-neutral-400" />
             <span>Export</span>
           </button>
         </div>
@@ -201,12 +201,12 @@ export default function LeadsPage() {
       {/* 4 Top KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Leads */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {totalLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
               Total Leads
             </div>
           </div>
@@ -216,12 +216,12 @@ export default function LeadsPage() {
         </div>
 
         {/* Card 2: New Leads */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {newLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
               New Leads
             </div>
           </div>
@@ -231,12 +231,12 @@ export default function LeadsPage() {
         </div>
 
         {/* Card 3: Contacted */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {contactedLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
               Contacted
             </div>
           </div>
@@ -246,12 +246,12 @@ export default function LeadsPage() {
         </div>
 
         {/* Card 4: Converted */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
               {convertedLeads}
             </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
               Converted
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-3.5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-3.5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -319,7 +319,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Leads Table Container */}
-      <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 shadow-xs overflow-hidden">
         {!loading && filteredLeads.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto">
@@ -433,7 +433,7 @@ export default function LeadsPage() {
       {/* Lead Profile Drawer */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md bg-white dark:bg-[#111827] h-full shadow-2xl border-l border-[#EFE7DC] dark:border-slate-800 p-6 flex flex-col justify-between overflow-y-auto animate-slide-left text-[#252525] dark:text-slate-200">
+          <div className="w-full max-w-md bg-white dark:bg-[#0D0D0D] h-full shadow-2xl border-l border-[#EFE7DC] dark:border-neutral-800 p-6 flex flex-col justify-between overflow-y-auto animate-slide-left text-[#252525] dark:text-neutral-200">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-[#EFE7DC] dark:border-slate-800">
                 <div className="flex items-center gap-2.5">

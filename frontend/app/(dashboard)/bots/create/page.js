@@ -71,20 +71,20 @@ export default function CreateBotPage() {
       </div>
 
       {!loading && isLockedWithoutAutopay ? (
-        <div className="max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-indigo-200 dark:border-indigo-800/60 p-8 shadow-xs text-center space-y-5 my-8">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/80 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto">
+        <div className="max-w-xl mx-auto bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-8 shadow-xs text-center space-y-5 my-8">
+          <div className="w-14 h-14 rounded-2xl bg-[#B68A55]/10 dark:bg-[#B68A55]/15 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55] mx-auto">
             <Lock className="w-7 h-7" />
           </div>
 
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B68A55]/10 dark:bg-[#B68A55]/15 border border-[#B68A55]/20 text-[11px] font-bold text-[#B68A55]">
               <Sparkles className="w-3.5 h-3.5" />
               Mandatory Setup
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               7-Day Free Trial Setup Required (₹0 Today)
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-md mx-auto leading-relaxed">
               Bot creation is locked until you complete the 7-day free trial onboarding with Razorpay autopay.
               Zero money is charged today. You can create your AI chatbot and test knowledge ingestion immediately after authorization.
             </p>
@@ -93,7 +93,7 @@ export default function CreateBotPage() {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => setTrialModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white text-xs font-bold shadow-md transition-all cursor-pointer"
             >
               <CreditCard className="w-4 h-4" />
               <span>Set Up Autopay & Unlock Bot Creation</span>
@@ -101,14 +101,14 @@ export default function CreateBotPage() {
             </button>
             <Link
               href="/bots"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-700 dark:text-neutral-200 text-xs font-semibold hover:bg-neutral-50 dark:hover:bg-[#1A1A1A] transition-colors"
             >
               Back to Bots List
             </Link>
           </div>
         </div>
       ) : !loading && hasReachedLimit ? (
-        <div className="max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-amber-200 dark:border-amber-800/60 p-8 shadow-xs text-center space-y-5 my-8">
+        <div className="max-w-xl mx-auto bg-white dark:bg-[#0D0D0D] rounded-2xl border border-amber-200 dark:border-amber-800/60 p-8 shadow-xs text-center space-y-5 my-8">
           <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 flex items-center justify-center text-amber-600 dark:text-amber-400 mx-auto">
             <ShieldAlert className="w-7 h-7" />
           </div>

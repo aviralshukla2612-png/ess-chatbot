@@ -127,15 +127,15 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
 
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#FAF9F6] dark:bg-[#111827] text-[#252525] dark:text-slate-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 border-r border-[#EFE7DC] dark:border-slate-800/80 shrink-0 select-none",
+          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#FAF9F6] dark:bg-[#0A0A0A] text-[#252525] dark:text-neutral-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 border-r border-[#EFE7DC] dark:border-neutral-800 shrink-0 select-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Brand & Organization */}
-        <div className="p-5 border-b border-[#EFE7DC] dark:border-slate-800/60">
+        <div className="p-5 border-b border-[#EFE7DC] dark:border-neutral-800">
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-slate-900 border border-[#EFE7DC] dark:border-slate-700/80 shadow-xs">
+              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
                 <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
               </div>
               <span className="font-bold text-lg text-[#252525] dark:text-white tracking-tight">
@@ -155,24 +155,24 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
             <button
               type="button"
               onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-slate-800/60 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 border border-[#EFE7DC] dark:border-slate-700/60 transition-colors text-left shadow-xs"
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#121212] hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 transition-colors text-left shadow-xs"
             >
               <div className="flex items-center gap-2.5 overflow-hidden">
-                <div className="w-7 h-7 rounded-lg bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-indigo-500/15 dark:border-indigo-500/25 flex items-center justify-center shrink-0">
-                  <Building2 className="w-4 h-4 text-[#B68A55] dark:text-indigo-400" />
+                <div className="w-7 h-7 rounded-lg bg-[#B68A55]/15 border border-[#B68A55]/30 flex items-center justify-center shrink-0">
+                  <Building2 className="w-4 h-4 text-[#B68A55]" />
                 </div>
                 <div className="truncate">
                   <p className="text-xs font-semibold text-[#252525] dark:text-white truncate">
                     {currentOrg}
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Organization</p>
+                  <p className="text-[10px] text-slate-500 dark:text-neutral-400">Organization</p>
                 </div>
               </div>
               <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200", orgDropdownOpen && "rotate-180")} />
             </button>
 
             {orgDropdownOpen && (
-              <div className="absolute top-full left-[-6px] right-[-6px] mt-2 z-50 bg-white dark:bg-slate-900/98 backdrop-blur-xl border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl shadow-2xl p-1.5 text-xs animate-in fade-in-0 zoom-in-95 duration-100">
+              <div className="absolute top-full left-[-6px] right-[-6px] mt-2 z-50 bg-white dark:bg-[#0D0D0D] backdrop-blur-xl border border-[#EFE7DC] dark:border-neutral-800 rounded-xl shadow-2xl p-1.5 text-xs animate-in fade-in-0 zoom-in-95 duration-100">
                 <div className="px-2.5 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Workspaces
                 </div>
@@ -185,13 +185,13 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                       setOrgDropdownOpen(false);
                     }}
                     className={cn(
-                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 hover:text-[#252525] dark:hover:text-white transition-colors",
-                      org === currentOrg && "text-[#B68A55] dark:text-indigo-400 font-semibold bg-[#B68A55]/10 dark:bg-indigo-950/40 border border-[#B68A55]/20 dark:border-indigo-500/20"
+                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 hover:text-[#252525] dark:hover:text-white transition-colors",
+                      org === currentOrg && "text-[#B68A55] font-semibold bg-[#B68A55]/15 border border-[#B68A55]/30"
                     )}
                   >
                     <span className="truncate">{org}</span>
                     {org === currentOrg && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] dark:bg-indigo-400 shrink-0 shadow-xs" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] shrink-0 shadow-xs" />
                     )}
                   </button>
                 ))}
@@ -225,18 +225,18 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                             "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group",
                             isActive
                               ? "bg-[#252525] text-white shadow-sm font-semibold dark:bg-[#B68A55] dark:text-white"
-                              : "text-slate-600 dark:text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-white dark:hover:bg-slate-800/60"
+                              : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-white dark:hover:bg-neutral-900"
                           )}
                         >
                           <Icon
                             className={cn(
                               "w-4 h-4 transition-transform group-hover:scale-105",
-                              isActive ? "text-white" : "text-slate-500 dark:text-slate-400"
+                              isActive ? "text-white" : "text-slate-500 dark:text-neutral-400"
                             )}
                           />
                           <span className="flex-1">{item.name}</span>
                           {isBotsItem && activeBotId && (
-                            <span className="text-[9px] bg-[#B68A55]/15 dark:bg-indigo-400/20 text-[#B68A55] dark:text-indigo-300 px-1.5 py-0.5 rounded-md font-mono font-semibold">
+                            <span className="text-[9px] bg-[#B68A55]/15 text-[#B68A55] px-1.5 py-0.5 rounded-md font-mono font-semibold">
                               Open
                             </span>
                           )}
@@ -263,8 +263,8 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                                   className={cn(
                                     "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all",
                                     isSubActive
-                                      ? "bg-indigo-600/25 text-indigo-300 font-semibold"
-                                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                                      ? "bg-[#B68A55]/20 text-[#B68A55] font-semibold"
+                                      : "text-slate-400 hover:text-slate-200 hover:bg-neutral-800/60"
                                   )}
                                 >
                                   <SubIcon className="w-3.5 h-3.5 shrink-0 opacity-80" />
@@ -283,12 +283,12 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
 
                 {/* Razorpay Subscription Widget for Sub Admin */}
                 <div className="pt-2">
-                  <div className="p-3 rounded-2xl bg-white dark:bg-linear-to-b dark:from-slate-800/90 dark:to-slate-900 border border-[#EFE7DC] dark:border-slate-700/70 shadow-xs relative overflow-hidden group">
+                  <div className="p-3 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs relative overflow-hidden group">
                     <div
                       className={cn(
                         "absolute -top-8 -right-8 w-20 h-20 rounded-full blur-xl pointer-events-none transition-opacity",
                         subData?.hasActiveSubscription
-                          ? "bg-indigo-500/20 group-hover:bg-indigo-500/30"
+                          ? "bg-[#B68A55]/20 group-hover:bg-[#B68A55]/30"
                           : "bg-rose-500/20 group-hover:bg-rose-500/30"
                       )}
                     />
@@ -296,8 +296,8 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                     {/* Header: Razorpay & Status */}
                     <div className="flex items-center justify-between gap-1 mb-2 relative z-10">
                       <div className="flex items-center gap-1.5">
-                        <CreditCard className="w-3.5 h-3.5 text-[#B68A55] dark:text-indigo-400 shrink-0" />
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-[#252525] dark:text-slate-300">
+                        <CreditCard className="w-3.5 h-3.5 text-[#B68A55]" />
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-[#252525] dark:text-neutral-300">
                           Razorpay Plan
                         </span>
                       </div>
@@ -329,7 +329,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                             ? `${subData.subscription.plan.name} Plan`
                             : "No Active Plan"}
                         </span>
-                        <span className="text-[10px] font-mono text-[#B68A55] dark:text-indigo-300 font-semibold shrink-0 ml-1">
+                        <span className="text-[10px] font-mono text-[#B68A55] font-semibold shrink-0 ml-1">
                           {subData?.isTrial
                             ? "₹0 upfront"
                             : subData?.hasActiveSubscription
@@ -337,7 +337,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                             : "₹2,499/mo"}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                      <p className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 leading-snug">
                         {subData?.isTrial
                           ? `Autopay kicks in ${subData?.autopayDate || "Day 8"}. Cancel anytime.`
                           : subData?.hasActiveSubscription
@@ -352,7 +352,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                         <Link
                           href="/billing"
                           onClick={onClose}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#FAF9F6] hover:bg-[#EFE7DC]/60 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-[#EFE7DC] dark:border-slate-700/80 text-[#252525] dark:text-slate-200 text-[11px] font-semibold transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#FAF9F6] hover:bg-[#EFE7DC]/60 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-[#EFE7DC] dark:border-neutral-700 text-[#252525] dark:text-neutral-200 text-[11px] font-semibold transition-colors"
                         >
                           <span>Manage Subscription</span>
                           <ArrowRight className="w-3 h-3 text-slate-400" />
@@ -367,9 +367,9 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                             }
                             if (onClose) onClose();
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-linear-to-r dark:from-indigo-500 dark:via-indigo-600 dark:to-violet-600 text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer group-hover:scale-[1.01]"
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer group-hover:scale-[1.01]"
                         >
-                          <Sparkles className="w-3.5 h-3.5 text-[#B68A55]" />
+                          <Sparkles className="w-3.5 h-3.5 text-white" />
                           <span>Subscribe Now 🚀</span>
                         </button>
                       )}
@@ -379,14 +379,14 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
 
                 {/* Workspace / Bot status card */}
                 <div className="pt-2">
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-800/40 border border-[#EFE7DC] dark:border-slate-700/40 flex items-center justify-between text-[11px] shadow-xs">
+                  <div className="p-2 rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between text-[11px] shadow-xs">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="font-medium text-slate-700 dark:text-slate-300 text-[10px]">
+                      <span className="font-medium text-slate-700 dark:text-neutral-300 text-[10px]">
                         {activeBotId ? "Bot Console Active" : "AI Platform Online"}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono text-[#B68A55] bg-[#B68A55]/10 px-1 py-0.2 rounded border border-[#B68A55]/20 dark:text-indigo-400 dark:bg-indigo-500/10 dark:border-indigo-500/20">
+                    <span className="text-[9px] font-mono text-[#B68A55] bg-[#B68A55]/15 px-1 py-0.2 rounded border border-[#B68A55]/30">
                       LIVE
                     </span>
                   </div>
@@ -397,7 +397,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-[#EFE7DC] dark:border-slate-800/60 space-y-2">
+        <div className="p-3 border-t border-[#EFE7DC] dark:border-neutral-800 space-y-2">
           {/* Public Website Link */}
           <Link
             href="/"
@@ -418,18 +418,18 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
             className={cn(
               "flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors rounded-xl",
               pathname === "/support"
-                ? "bg-[#252525]/10 text-[#252525] font-semibold dark:bg-indigo-600/20 dark:text-indigo-300"
-                : "text-slate-600 dark:text-slate-400 hover:text-[#252525] dark:hover:text-slate-200"
+                ? "bg-[#252525]/10 text-[#252525] font-semibold dark:bg-[#B68A55]/20 dark:text-[#B68A55]"
+                : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-neutral-200"
             )}
           >
-            <HelpCircle className={cn("w-4 h-4", pathname === "/support" ? "text-[#B68A55] dark:text-indigo-400" : "text-slate-400 dark:text-slate-500")} />
+            <HelpCircle className={cn("w-4 h-4", pathname === "/support" ? "text-[#B68A55]" : "text-slate-400 dark:text-neutral-500")} />
             <span>Help & Support</span>
           </Link>
 
           {/* User Profile */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-800/40 border border-[#EFE7DC] dark:border-slate-700/40 shadow-xs">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-7 h-7 rounded-full bg-[#252525] dark:bg-linear-to-tr dark:from-indigo-500 dark:to-violet-500 text-[#FAF9F6] font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-[#252525] dark:bg-[#B68A55] text-[#FAF9F6] font-bold text-xs flex items-center justify-center shrink-0">
                 {currentUser?.name
                   ? currentUser.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
                   : currentUser?.email
@@ -440,7 +440,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                 <p className="text-xs font-semibold text-[#252525] dark:text-white truncate">
                   {currentUser?.name || "Administrator"}
                 </p>
-                <p className="text-[10px] text-[#B68A55] dark:text-indigo-400 font-medium truncate">
+                <p className="text-[10px] text-[#B68A55] font-medium truncate">
                   {currentUser?.email || "Workspace Owner"}
                 </p>
               </div>

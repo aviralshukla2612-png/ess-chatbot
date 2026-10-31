@@ -25,7 +25,7 @@ export default function AdminLayout({ children }) {
       </div>
 
       <div className="flex flex-1 min-h-[calc(100vh-32px)]">
-        <Suspense fallback={<aside className="w-64 hidden lg:block bg-[#111827] border-r border-slate-800/80 sticky top-0 h-screen shrink-0" />}>
+        <Suspense fallback={<aside className="w-64 hidden lg:block bg-[#0A0A0A] border-r border-neutral-800 sticky top-0 h-screen shrink-0" />}>
           <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         </Suspense>
 

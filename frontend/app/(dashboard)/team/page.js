@@ -66,17 +66,17 @@ export default function TeamPage() {
 
         <button
           onClick={() => setInviteModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs shadow-indigo-600/30 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-[#B68A55] dark:hover:bg-[#9F7645] dark:text-white font-semibold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           Invite Member
         </button>
       </div>
 
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-xs">
+      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-50 dark:bg-neutral-800/50 text-neutral-400 font-medium uppercase text-[10px] border-b border-neutral-200 dark:border-neutral-800">
+            <thead className="bg-[#FAF9F6] dark:bg-[#121212] text-neutral-400 font-medium uppercase text-[10px] border-b border-[#EFE7DC] dark:border-neutral-800">
               <tr>
                 <th className="p-4">Name & Email</th>
                 <th className="p-4">Role</th>
@@ -86,12 +86,12 @@ export default function TeamPage() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            <tbody className="divide-y divide-[#EFE7DC]/60 dark:divide-neutral-800">
               {members.map((m) => (
                 <tr key={m.id} className="hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-600 to-violet-600 text-white font-bold flex items-center justify-center text-xs">
+                      <div className="w-8 h-8 rounded-full bg-[#252525] dark:bg-[#B68A55] text-white font-bold flex items-center justify-center text-xs">
                         {(m.name || m.email || "U")
                           .split(" ")
                           .map((n) => n[0])
@@ -106,7 +106,7 @@ export default function TeamPage() {
                     </div>
                   </td>
                   <td className="p-4 font-semibold text-neutral-800 dark:text-neutral-200">
-                    <span className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800">
+                    <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] dark:bg-neutral-800 border border-[#EFE7DC] dark:border-neutral-700">
                       {m.role}
                     </span>
                   </td>
@@ -118,7 +118,7 @@ export default function TeamPage() {
                       : "View Analytics & Inbox"}
                   </td>
                   <td className="p-4">
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-2 py-0.5 rounded-full">
                       {m.status}
                     </span>
                   </td>
@@ -158,7 +158,7 @@ export default function TeamPage() {
               placeholder="e.g. Rahul Sharma"
               value={newMember.name}
               onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 shadow-2xs"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 text-xs outline-hidden focus:border-[#B68A55] shadow-2xs"
             />
           </div>
 
@@ -172,7 +172,7 @@ export default function TeamPage() {
               placeholder="rahul@company.com"
               value={newMember.email}
               onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 text-xs outline-hidden focus:border-indigo-500 shadow-2xs"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 text-xs outline-hidden focus:border-[#B68A55] shadow-2xs"
             />
           </div>
 
@@ -183,7 +183,7 @@ export default function TeamPage() {
             <select
               value={newMember.role}
               onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white text-xs outline-hidden focus:border-indigo-500 shadow-2xs"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55] shadow-2xs"
             >
               <option value="Admin">Admin (Can edit bots and train knowledge)</option>
               <option value="Member">Member (Can view conversations & leads)</option>
@@ -195,13 +195,13 @@ export default function TeamPage() {
             <button
               type="button"
               onClick={() => setInviteModalOpen(false)}
-              className="px-3.5 py-2 text-neutral-500 hover:bg-neutral-100 rounded-xl"
+              className="px-3.5 py-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl"
+              className="px-4 py-2 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-semibold rounded-xl transition-colors cursor-pointer"
             >
               Send Invitation
             </button>

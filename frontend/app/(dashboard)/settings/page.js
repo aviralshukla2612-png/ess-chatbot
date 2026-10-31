@@ -186,8 +186,8 @@ export default function SettingsPage() {
                   onClick={() => setActiveSection(s.id)}
                   className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold transition-all text-left cursor-pointer group ${
                     isActive
-                      ? "bg-[#252525] dark:bg-linear-to-r dark:from-indigo-600 dark:to-violet-600 text-white shadow-xs ring-1 ring-black/5 dark:ring-white/10"
-                      : "text-slate-600 dark:text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60"
+                      ? "bg-[#252525] dark:bg-[#B68A55] text-white shadow-xs"
+                      : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -195,16 +195,16 @@ export default function SettingsPage() {
                       className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
                         isActive
                           ? "bg-white/20 text-white"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:text-[#B68A55] dark:group-hover:text-indigo-400"
+                          : "bg-slate-100 dark:bg-[#1A1A1A] text-slate-500 dark:text-neutral-400 group-hover:text-[#B68A55] dark:group-hover:text-[#B68A55]"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className={`font-bold ${isActive ? "text-white" : "text-slate-800 dark:text-slate-200"}`}>
+                      <p className={`font-bold ${isActive ? "text-white" : "text-slate-800 dark:text-neutral-200"}`}>
                         {s.label}
                       </p>
-                      <p className={`text-[10px] truncate max-w-[150px] ${isActive ? "text-slate-200" : "text-slate-400 dark:text-slate-500"}`}>
+                      <p className={`text-[10px] truncate max-w-[150px] ${isActive ? "text-slate-200" : "text-slate-400 dark:text-neutral-500"}`}>
                         {s.desc}
                       </p>
                     </div>
@@ -212,7 +212,7 @@ export default function SettingsPage() {
 
                   <ChevronRight
                     className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
-                      isActive ? "text-white/80" : "text-slate-300 dark:text-slate-600"
+                      isActive ? "text-white/80" : "text-slate-300 dark:text-neutral-600"
                     }`}
                   />
                 </button>
@@ -221,27 +221,27 @@ export default function SettingsPage() {
           </div>
 
           {/* Infrastructure Specs Card */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-linear-to-br dark:from-slate-900/90 dark:to-slate-950 border border-[#EFE7DC] dark:border-slate-800 text-[#252525] dark:text-white shadow-xs space-y-3">
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-white shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Server className="w-3.5 h-3.5 text-[#B68A55] dark:text-indigo-400" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 flex items-center gap-1.5">
+                <Server className="w-3.5 h-3.5 text-[#B68A55]" />
                 Infrastructure
               </span>
               <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">
                 99.98% SLA
               </span>
             </div>
-            <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+            <div className="space-y-1.5 text-xs text-slate-600 dark:text-neutral-300">
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Database Engine:</span>
-                <span className="font-mono font-medium text-[#252525] dark:text-slate-200">PostgreSQL (RLS)</span>
+                <span className="text-slate-500 dark:text-neutral-400">Database Engine:</span>
+                <span className="font-mono font-medium text-[#252525] dark:text-neutral-200">PostgreSQL (RLS)</span>
               </div>
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Embedding Vector:</span>
-                <span className="font-mono font-medium text-[#B68A55] dark:text-indigo-300">1536-dim HNSW</span>
+                <span className="text-slate-500 dark:text-neutral-400">Embedding Vector:</span>
+                <span className="font-mono font-medium text-[#B68A55]">1536-dim HNSW</span>
               </div>
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Data Isolation:</span>
+                <span className="text-slate-500 dark:text-neutral-400">Data Isolation:</span>
                 <span className="font-medium text-emerald-600 dark:text-emerald-300">Tenant Level</span>
               </div>
             </div>
@@ -254,12 +254,12 @@ export default function SettingsPage() {
           {activeSection === "general" && (
             <div className="space-y-6">
               {/* Workspace Identity Hero Card */}
-              <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-linear-to-tr dark:from-slate-900 dark:via-indigo-950/70 dark:to-slate-900 border border-[#EFE7DC] dark:border-slate-800 p-6 sm:p-7 shadow-xs text-[#252525] dark:text-white">
-                <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#B68A55]/10 dark:bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-7 shadow-xs text-[#252525] dark:text-white">
+                <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#B68A55]/10 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#252525] dark:bg-linear-to-tr dark:from-indigo-500 dark:via-indigo-600 dark:to-violet-600 flex items-center justify-center text-white text-xl font-extrabold shadow-sm border border-black/10 dark:border-white/20 shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-[#252525] dark:bg-[#B68A55] flex items-center justify-center text-white text-xl font-extrabold shadow-sm border border-black/10 dark:border-white/20 shrink-0">
                       {orgNameInput?.slice(0, 2).toUpperCase() || "WS"}
                     </div>
                     <div>
@@ -267,17 +267,17 @@ export default function SettingsPage() {
                         <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#252525] dark:text-white">
                           {orgNameInput || "Enterprise Workspace"}
                         </h2>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] dark:bg-indigo-500/20 dark:text-indigo-300 border border-[#B68A55]/20 dark:border-indigo-500/30">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] border border-[#B68A55]/20">
                           {userProfile.role}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                        <span className="text-xs text-slate-500 dark:text-neutral-400 font-mono">
                           ID: {userProfile.organizationId || "org_default"}
                         </span>
                         <button
                           onClick={handleCopyTenant}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-[#FAF9F6] hover:bg-[#EFE7DC] text-[#252525] dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 border border-[#EFE7DC] dark:border-transparent transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-[#FAF9F6] hover:bg-[#EFE7DC] text-[#252525] dark:bg-[#1A1A1A] dark:hover:bg-[#252525] dark:text-neutral-300 border border-[#EFE7DC] dark:border-neutral-800 transition-colors cursor-pointer"
                           title="Copy Tenant ID"
                         >
                           {copiedTenantId ? (
@@ -287,7 +287,7 @@ export default function SettingsPage() {
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+                              <Copy className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
                               <span>Copy</span>
                             </>
                           )}
@@ -305,26 +305,26 @@ export default function SettingsPage() {
                 </div>
 
                 {/* 4 Live Workspace Metric Chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#EFE7DC] dark:border-slate-800/80">
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
-                      <Bot className="w-3.5 h-3.5 text-[#B68A55] dark:text-indigo-400" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#EFE7DC] dark:border-neutral-800">
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400 text-[11px] mb-1">
+                      <Bot className="w-3.5 h-3.5 text-[#B68A55]" />
                       <span>Live Bots</span>
                     </div>
                     <span className="text-base font-bold text-[#252525] dark:text-white">{botsCount} Assistant</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400 text-[11px] mb-1">
                       <Users2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Captured Leads</span>
                     </div>
                     <span className="text-base font-bold text-[#252525] dark:text-white">{leadsCount} Leads</span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
-                      <Database className="w-3.5 h-3.5 text-[#B68A55] dark:text-violet-400" />
+                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400 text-[11px] mb-1">
+                      <Database className="w-3.5 h-3.5 text-[#B68A55]" />
                       <span>Vector Search</span>
                     </div>
                     <span className="text-base font-bold text-[#252525] dark:text-white">Active (RAG)</span>
@@ -426,7 +426,7 @@ export default function SettingsPage() {
                     </span>
                     <button
                       type="submit"
-                      className="px-5 py-2.5 bg-linear-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] cursor-pointer flex items-center gap-2"
+                      className="px-5 py-2.5 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold rounded-xl shadow-md transition-all hover:scale-[1.02] cursor-pointer flex items-center gap-2"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Save Workspace Changes</span>
@@ -436,27 +436,27 @@ export default function SettingsPage() {
               </div>
 
               {/* Data Privacy & Compliance Architecture */}
-              <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
-                <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs">
+              <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-[#0A0A0A] border border-neutral-200 dark:border-neutral-800 space-y-4">
+                <div className="flex items-center gap-2 text-neutral-800 dark:text-neutral-200 font-bold text-xs">
                   <ShieldCheck className="w-4 h-4 text-emerald-500" />
                   <span>Enterprise Security & Data Isolation Protocols</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-                    <span className="font-bold text-slate-900 dark:text-white block mb-0.5">AES-256 Vector Store</span>
-                    <span className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800">
+                    <span className="font-bold text-neutral-900 dark:text-white block mb-0.5">AES-256 Vector Store</span>
+                    <span className="text-neutral-500 dark:text-neutral-400 leading-relaxed">
                       All uploaded PDF documents & URLs are isolated per organization ID.
                     </span>
                   </div>
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-                    <span className="font-bold text-slate-900 dark:text-white block mb-0.5">Anti-Hallucination Guard</span>
-                    <span className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800">
+                    <span className="font-bold text-neutral-900 dark:text-white block mb-0.5">Anti-Hallucination Guard</span>
+                    <span className="text-neutral-500 dark:text-neutral-400 leading-relaxed">
                       Cosine thresholding ensures bots only respond to grounded knowledge.
                     </span>
                   </div>
-                  <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-                    <span className="font-bold text-slate-900 dark:text-white block mb-0.5">Automated Backups</span>
-                    <span className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <div className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800">
+                    <span className="font-bold text-neutral-900 dark:text-white block mb-0.5">Automated Backups</span>
+                    <span className="text-neutral-500 dark:text-neutral-400 leading-relaxed">
                       Continuous write-ahead logging (WAL) with hourly snapshot verification.
                     </span>
                   </div>
@@ -468,17 +468,17 @@ export default function SettingsPage() {
           {/* TAB 2: MY PROFILE */}
           {activeSection === "profile" && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="flex items-center gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
-                  <div className="w-16 h-16 rounded-2xl bg-linear-to-tr from-indigo-600 via-indigo-500 to-violet-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-500/25">
+              <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="flex items-center gap-4 pb-6 border-b border-[#EFE7DC] dark:border-neutral-800">
+                  <div className="w-16 h-16 rounded-2xl bg-[#252525] dark:bg-[#B68A55] flex items-center justify-center text-white text-2xl font-bold shadow-md">
                     {userProfile.name?.slice(0, 2).toUpperCase() || "AD"}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
                       {userProfile.name || "Administrator"}
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium">{userProfile.email}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                    <p className="text-xs text-neutral-400 font-medium">{userProfile.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
                       {userProfile.role}
                     </span>
                   </div>
@@ -486,33 +486,33 @@ export default function SettingsPage() {
 
                 <form onSubmit={handleSave} className="space-y-4 text-xs">
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
                       Full Name
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         defaultValue={userProfile.name || "Administrator"}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 font-medium"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55] font-medium"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
                       Email Address (Login ID)
                     </label>
                     <div className="relative">
-                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="email"
                         defaultValue={userProfile.email}
                         disabled
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs font-medium cursor-not-allowed"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800/50 text-neutral-500 dark:text-neutral-400 text-xs font-medium cursor-not-allowed"
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">
+                    <p className="text-[10px] text-neutral-400 mt-1">
                       To modify your primary email, contact platform security administration.
                     </p>
                   </div>
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                      className="px-5 py-2.5 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
                     >
                       Update Profile
                     </button>
@@ -533,58 +533,58 @@ export default function SettingsPage() {
           {/* TAB 3: SECURITY & PASSWORDS */}
           {activeSection === "security" && (
             <div className="space-y-6">
-              <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="border-b border-[#EFE7DC] dark:border-neutral-800 pb-4">
+                  <h3 className="text-base font-bold text-neutral-900 dark:text-white">
                     Password & Credential Authentication
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                     Manage session tokens, cryptographic salt keys, and credential rotation.
                   </p>
                 </div>
 
                 <form onSubmit={handleSave} className="space-y-4 text-xs">
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
                       Current Password
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="password"
                         placeholder="••••••••••••"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55]"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
                         New Password
                       </label>
                       <input
                         type="password"
                         placeholder="Minimum 8 characters"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55]"
                       />
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
                         Confirm New Password
                       </label>
                       <input
                         type="password"
                         placeholder="Re-enter password"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55]"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
+                    className="px-5 py-2.5 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
                   >
                     Change Password
                   </button>
@@ -592,9 +592,9 @@ export default function SettingsPage() {
               </div>
 
               {/* Active Session & Device Card */}
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
+              <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-[#0A0A0A] border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-[#B68A55]/10 flex items-center justify-center text-[#B68A55] shrink-0">
                     <Laptop className="w-5 h-5" />
                   </div>
                   <div>

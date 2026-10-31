@@ -26,12 +26,12 @@ body {
 }
 
 .dark {
-  --background: #0B0F19;
-  --foreground: #F8FAFC;
-  --card: #111827;
-  --card-border: #1F2937;
+  --background: #000000;
+  --foreground: #F5F5F5;
+  --card: #0D0D0D;
+  --card-border: #222222;
   --accent: #B68A55;
-  --beige: #1F2937;
+  --beige: #222222;
 }
 
 .dark h1,

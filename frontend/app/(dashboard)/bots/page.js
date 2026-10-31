@@ -258,15 +258,15 @@ export default function BotsPage() {
 
       {/* Empty State when no bots exist */}
       {!loading && bots.length === 0 && (
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-dashed border-[#EFE7DC] dark:border-slate-800 p-12 text-center space-y-4 max-w-xl mx-auto shadow-xs my-8">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-indigo-950/60 border border-[#EFE7DC] dark:border-indigo-800/60 flex items-center justify-center text-[#B68A55] dark:text-indigo-400 mx-auto shadow-sm">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-dashed border-[#EFE7DC] dark:border-neutral-800 p-12 text-center space-y-4 max-w-xl mx-auto shadow-xs my-8">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-[#B68A55]/15 border border-[#EFE7DC] dark:border-[#B68A55]/30 flex items-center justify-center text-[#B68A55] mx-auto shadow-sm">
             <Bot className="w-8 h-8" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-[#252525] dark:text-white">
               No AI bots created yet
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-md mx-auto">
               Get started by creating your first AI assistant. You can give it a name, upload documents, and configure its personality in a few simple steps.
             </p>
           </div>
@@ -274,7 +274,7 @@ export default function BotsPage() {
           <div className="pt-2">
             <Link
               href="/bots/create"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white text-xs font-semibold shadow-md transition-all"
             >
               <Plus className="w-4 h-4" />
               <span>Create Your First Bot</span>
@@ -290,7 +290,7 @@ export default function BotsPage() {
           {filtered.map((bot) => (
             <div
               key={bot.id}
-              className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-[#EFE7DC] dark:border-slate-800/80 shadow-xs hover:border-[#B68A55]/40 dark:hover:border-slate-700 transition-all space-y-4"
+              className="bg-white dark:bg-[#0D0D0D] rounded-2xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs hover:border-[#B68A55]/40 transition-all space-y-4"
             >
               {/* Top row: Avatar, Name, Status, Description */}
               <div className="flex items-start justify-between gap-4">
@@ -456,9 +456,9 @@ export default function BotsPage() {
       {/* INSTANT DEPLOY MODAL */}
       {deployModalBot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#111827] rounded-3xl max-w-2xl w-full border border-[#EFE7DC] dark:border-slate-800 shadow-2xl overflow-hidden space-y-0 text-[#252525] dark:text-white animate-scale-in">
+          <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl max-w-2xl w-full border border-[#EFE7DC] dark:border-neutral-800 shadow-2xl overflow-hidden space-y-0 text-[#252525] dark:text-white animate-scale-in">
             {/* Modal Header */}
-            <div className="p-6 pb-4 border-b border-[#EFE7DC] dark:border-slate-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-slate-900/60">
+            <div className="p-6 pb-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#121212]">
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-xs"

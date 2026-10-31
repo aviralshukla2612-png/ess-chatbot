@@ -279,11 +279,11 @@ export default function CompanyKnowledgeBuilder({
       )}
 
       {/* Top Banner */}
-      <div className="bg-linear-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-xl border border-indigo-500/30">
+      <div className="bg-[#0D0D0D] text-white rounded-2xl p-6 shadow-xl border border-neutral-800">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shadow-inner shrink-0 mt-0.5">
-              <Building2 className="w-6 h-6 text-amber-400" />
+            <div className="w-12 h-12 rounded-xl bg-[#B68A55]/15 border border-[#B68A55]/30 flex items-center justify-center text-[#B68A55] shadow-inner shrink-0 mt-0.5">
+              <Building2 className="w-6 h-6 text-[#B68A55]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -945,10 +945,10 @@ export default function CompanyKnowledgeBuilder({
             {reviewTab === "document" ? (
               <div className="p-8 space-y-6 max-w-4xl mx-auto bg-slate-50 dark:bg-neutral-950 font-sans text-xs text-slate-800 dark:text-slate-200">
                 {/* Dossier Cover Header */}
-                <div className="p-6 rounded-2xl bg-linear-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white shadow-md">
+                <div className="p-6 rounded-2xl bg-[#0D0D0D] text-white shadow-md border border-neutral-800">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#B68A55]">
                         Official Company Knowledge Profile
                       </span>
                       <h2 className="text-2xl font-bold tracking-tight mt-1 text-white">

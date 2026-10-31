@@ -174,9 +174,9 @@ export default function DashboardPage() {
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-white dark:bg-[#111827] rounded-xl p-4 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs hover:shadow-xs transition-shadow"
+            className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs hover:shadow-xs transition-shadow"
           >
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block truncate">
+            <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 block truncate">
               {kpi.title}
             </span>
             <div className="mt-2 flex items-baseline justify-between">
@@ -203,7 +203,7 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Conversations Over Time (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-bold text-sm text-[#252525] dark:text-white">
@@ -211,13 +211,13 @@ export default function DashboardPage() {
               </h3>
             </div>
 
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-1 bg-[#FAF9F6] dark:bg-[#1A1A1A] p-0.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-neutral-300">
               {["daily", "weekly", "monthly"].map((t) => (
                 <button
                   key={t}
                   onClick={() => setTimeView(t)}
                   className={`px-2.5 py-1 rounded-md capitalize transition-all cursor-pointer ${
-                    timeView === t ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-2xs" : "hover:text-[#252525] dark:hover:text-white"
+                    timeView === t ? "bg-white dark:bg-[#0D0D0D] text-[#B68A55] dark:text-[#B68A55] font-bold shadow-2xs" : "hover:text-[#252525] dark:hover:text-white"
                   }`}
                 >
                   {t}
@@ -258,7 +258,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Questions by Bot (1 col) */}
-        <div className="bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between">
           <h3 className="font-bold text-sm text-[#252525] dark:text-white mb-2">
             Questions by Bot
           </h3>
@@ -287,12 +287,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-[#EFE7DC] dark:border-slate-800 text-xs">
+          <div className="space-y-1.5 pt-2 border-t border-[#EFE7DC] dark:border-neutral-800 text-xs">
             {botDonutData.map((b, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />
-                  <span className="text-slate-600 dark:text-slate-400 truncate max-w-[140px]">{b.name}</span>
+                  <span className="text-slate-600 dark:text-neutral-400 truncate max-w-[140px]">{b.name}</span>
                 </div>
                 <span className="font-semibold text-[#252525] dark:text-white">{b.value > 0 ? `${Math.round(b.value)}%` : "0%"}</span>
               </div>
@@ -304,12 +304,12 @@ export default function DashboardPage() {
       {/* Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Recent Conversations */}
-        <div className="bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Recent Conversations
             </h3>
-            <Link href="/conversations" className="text-xs font-semibold text-[#B68A55] dark:text-indigo-400 hover:underline">
+            <Link href="/conversations" className="text-xs font-semibold text-[#B68A55] hover:underline">
               View all
             </Link>
           </div>
@@ -318,25 +318,25 @@ export default function DashboardPage() {
             {conversations.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs space-y-1.5">
                 <MessageSquare className="w-6 h-6 mx-auto text-slate-400" />
-                <p className="font-medium text-[#252525] dark:text-slate-300">No conversations yet</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">When visitors chat with your AI assistant, sessions will appear here.</p>
+                <p className="font-medium text-[#252525] dark:text-neutral-300">No conversations yet</p>
+                <p className="text-[11px] text-slate-500 dark:text-neutral-400">When visitors chat with your AI assistant, sessions will appear here.</p>
               </div>
             ) : (
               conversations.slice(0, 4).map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 transition-colors">
+                <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] transition-colors">
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#252525] dark:text-slate-200 font-bold text-xs flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1A1A1A] text-[#252525] dark:text-neutral-200 font-bold text-xs flex items-center justify-center shrink-0">
                       {c.visitorName?.charAt(0) || "U"}
                     </div>
                     <div className="truncate">
                       <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{c.visitorName}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{c.lastMessage}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate">{c.lastMessage}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0 text-right">
                     <span className="text-[10px] text-slate-400">{c.startedAt || "Recently"}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                       {c.status}
                     </span>
                   </div>
@@ -347,12 +347,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white dark:bg-[#111827] rounded-xl p-5 border border-[#EFE7DC] dark:border-slate-800 shadow-2xs">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Recent Leads
             </h3>
-            <Link href="/leads" className="text-xs font-semibold text-[#B68A55] dark:text-indigo-400 hover:underline">
+            <Link href="/leads" className="text-xs font-semibold text-[#B68A55] hover:underline">
               View all
             </Link>
           </div>

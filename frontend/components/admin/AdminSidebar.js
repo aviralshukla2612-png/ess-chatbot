@@ -71,14 +71,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#111827] text-slate-200 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 shrink-0 select-none border-r border-slate-800/80",
+          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#0A0A0A] text-slate-200 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 shrink-0 select-none border-r border-neutral-800",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* ChatPilot Logo & Super Admin Header */}
         <div className="p-5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-slate-900 border border-slate-700/80 shadow-md shadow-indigo-500/15">
+            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-black border border-neutral-800 shadow-md">
               <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
             </div>
             <span className="font-bold text-lg text-white tracking-tight">
@@ -144,14 +144,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
           <Link
             href="/admin/keys"
             onClick={onClose}
-            className="block p-3 rounded-2xl bg-linear-to-b from-indigo-950/60 to-slate-900/90 border border-indigo-500/25 hover:border-indigo-400/50 transition-all group"
+            className="block p-3 rounded-2xl bg-[#121212] border border-neutral-800 hover:border-[#B68A55]/40 transition-all group"
           >
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-300">
-                <Key className="w-3.5 h-3.5 text-indigo-400 group-hover:rotate-12 transition-transform" />
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#B68A55]">
+                <Key className="w-3.5 h-3.5 text-[#B68A55] group-hover:rotate-12 transition-transform" />
                 <span>Groq Key Pool</span>
               </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#B68A55]/20 text-[#B68A55] border border-[#B68A55]/30">
                 {keyStats ? `${keyStats.activeKeysCount || 0} Active` : "1 Key"}
               </span>
             </div>
@@ -163,9 +163,9 @@ export default function AdminSidebar({ isOpen, onClose }) {
                   {keyStats ? `${keyStats.totalDailyRequests || 0} / ${((keyStats.totalCapacityRequests || 14400)/1000).toFixed(0)}k` : "0 / 14.4k"}
                 </span>
               </div>
-              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-linear-to-r from-indigo-500 to-purple-500 h-1.5 rounded-full transition-all duration-500"
+                  className="bg-[#B68A55] h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, keyStats?.overallDailyPercent || 0)}%` }}
                 />
               </div>
@@ -176,30 +176,30 @@ export default function AdminSidebar({ isOpen, onClose }) {
                     {(((keyStats?.totalAllTimeTokens || keyStats?.totalTokens || 6600)) / 1000).toFixed(1)}k
                   </b>
                 </span>
-                <span className="text-indigo-400 group-hover:text-indigo-200 font-medium">Manage →</span>
+                <span className="text-[#B68A55] group-hover:text-white font-medium">Manage →</span>
               </div>
             </div>
           </Link>
         </div>
 
         {/* Profile and Platform Status directly following menu items */}
-        <div className="p-3 border-t border-slate-800/80 space-y-2">
+        <div className="p-3 border-t border-neutral-800 space-y-2">
           {/* Platform Status indicator */}
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-400 bg-slate-800/30">
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-400 bg-neutral-900">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Platform Online</span>
           </div>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#121212] border border-neutral-800 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-[#B68A55] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
               ESS
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-slate-100 truncate">
                 Admin
               </p>
-              <p className="text-[11px] text-indigo-400 font-medium truncate">
+              <p className="text-[11px] text-[#B68A55] font-medium truncate">
                 Super Admin
               </p>
             </div>

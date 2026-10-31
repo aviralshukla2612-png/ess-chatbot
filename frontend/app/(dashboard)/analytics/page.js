@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
       {/* 8 KPI Cards Organized in 2 Rows of 4 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Row 1, Card 1: Conversations */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Conversations
@@ -141,7 +141,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 1, Card 2: Unique Visitors */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Unique Visitors
@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 1, Card 3: Total Questions */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Total Questions
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 1, Card 4: Leads */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Leads
@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 2, Card 5: Answer Rate */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Answer Rate
@@ -221,7 +221,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 2, Card 6: Avg. Response */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Avg. Response
@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 2, Card 7: Avg. Questions / Chat */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Avg. Questions / Chat
@@ -261,7 +261,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Row 2, Card 8: Lead Conversion */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Lead Conversion
@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
       {/* Analytics Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Chart 1: Conversations & Questions */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-[#252525] dark:text-white">
@@ -330,8 +330,8 @@ export default function AnalyticsPage() {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#111827",
-                    borderColor: "#334155",
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#222222",
                     color: "#f8fafc",
                     borderRadius: "12px",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
@@ -363,7 +363,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Chart 2: Leads Generated */}
-        <div className="bg-white dark:bg-[#111827] rounded-2xl border border-[#EFE7DC] dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#252525] dark:text-white">
               Leads Generated
@@ -390,8 +390,8 @@ export default function AnalyticsPage() {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#111827",
-                    borderColor: "#334155",
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#222222",
                     color: "#f8fafc",
                     borderRadius: "12px",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",

@@ -344,7 +344,7 @@ export default function BillingPage() {
                 window.dispatchEvent(new CustomEvent("open-subscription-modal"));
               }
             }}
-            className="px-6 py-3 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02] cursor-pointer shrink-0 flex items-center justify-center gap-2"
+            className="px-6 py-3 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold text-xs shadow-md transition-all hover:scale-[1.02] cursor-pointer shrink-0 flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
             <span>Choose Extension Plan ↓</span>
@@ -353,17 +353,17 @@ export default function BillingPage() {
       )}
 
       {/* Executive Razorpay Subscription Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-linear-to-tr dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 border border-[#EFE7DC] dark:border-slate-700/80 p-6 sm:p-9 text-[#252525] dark:text-white shadow-xs space-y-7">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#B68A55]/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-9 text-[#252525] dark:text-white shadow-xs space-y-7">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#B68A55]/10 dark:bg-[#B68A55]/5 rounded-full blur-3xl pointer-events-none" />
 
         {/* Card Header */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFE7DC] dark:border-white/10 pb-5">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFE7DC] dark:border-neutral-800 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-indigo-500/20 dark:border-indigo-400/30 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-[#B68A55] dark:text-indigo-300" />
+            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-[#B68A55]/15 dark:border-[#B68A55]/30 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-[#B68A55]" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#B68A55] dark:text-indigo-300 block">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#B68A55] block">
                 Official Payment Gateway
               </span>
               <span className="text-base font-extrabold text-[#252525] dark:text-white">
@@ -416,13 +416,13 @@ export default function BillingPage() {
           </div>
 
           <div className="sm:text-right flex flex-col justify-center sm:items-end">
-            <div className="text-3xl sm:text-4xl font-black text-[#B68A55] dark:text-indigo-300 font-mono">
+            <div className="text-3xl sm:text-4xl font-black text-[#B68A55] font-mono">
               {isTrial ? "₹0.00" : "₹2,499"}
-              <span className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 font-sans">
+              <span className="text-xs sm:text-sm font-normal text-slate-500 dark:text-neutral-400 font-sans">
                 {isTrial ? " (Upfront)" : " / month"}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
               {isTrial
                 ? `Recurring deduction of ₹2,499/mo begins on ${billingData?.autopayDate || "Day 8"}.`
                 : "Billed monthly via automatic bank mandate."}
@@ -442,7 +442,7 @@ export default function BillingPage() {
                 {billingData?.trialDaysRemaining ?? 7} Days Remaining
               </span>
             </div>
-            <div className="w-full bg-[#EFE7DC] dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-[#EFE7DC] dark:bg-neutral-800 rounded-full h-2.5 overflow-hidden">
               <div
                 className="bg-linear-to-r from-amber-500 via-amber-400 to-[#B68A55] h-2.5 rounded-full transition-all duration-500"
                 style={{
@@ -458,9 +458,9 @@ export default function BillingPage() {
 
         {/* Card Footer Details & Actions */}
         <div className="relative z-10 pt-5 border-t border-[#EFE7DC] dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+          <div className="text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-2">
             <span>Mandate ID:</span>
-            <span className="font-mono text-[#252525] dark:text-slate-200 bg-[#FAF9F6] dark:bg-white/10 px-2 py-0.5 rounded-md font-semibold border border-[#EFE7DC] dark:border-transparent">
+            <span className="font-mono text-[#252525] dark:text-neutral-200 bg-[#FAF9F6] dark:bg-neutral-900 px-2 py-0.5 rounded-md font-semibold border border-[#EFE7DC] dark:border-neutral-800">
               {billingData?.subscription?.providerSubscriptionId || "sub_unregistered"}
             </span>
           </div>
@@ -470,9 +470,9 @@ export default function BillingPage() {
               onClick={() => {
                 extensionSectionRef.current?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="px-4 py-2 rounded-xl bg-[#252525] hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <Zap className="w-3.5 h-3.5 text-[#B68A55]" />
+              <Zap className="w-3.5 h-3.5 text-[#B68A55] dark:text-white" />
               <span>Extend Plan Duration ⚡</span>
             </button>
 
@@ -491,25 +491,25 @@ export default function BillingPage() {
 
       {/* EXTEND PLAN SECTION */}
       <div ref={extensionSectionRef} className="space-y-5 pt-4">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
                 Extension Packages
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-semibold">
                 Instant Razorpay Checkout
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
               Extend Your Active Plan
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
               Add more duration to your active assistant or upgrade to multi-month passes to save up to 66%.
             </p>
           </div>
 
-          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+          <span className="text-xs text-neutral-400 dark:text-neutral-500 font-medium">
             Renews immediately upon payment
           </span>
         </div>
@@ -524,8 +524,8 @@ export default function BillingPage() {
                 key={pkg.id}
                 className={`relative rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between ${
                   pkg.isPopular
-                    ? "bg-white dark:bg-slate-900 border-2 border-[#B68A55] shadow-lg shadow-[#B68A55]/10 text-[#252525] dark:text-white scale-[1.02]"
-                    : "bg-white dark:bg-slate-900 border border-[#EFE7DC] dark:border-slate-800 shadow-xs hover:border-[#B68A55]/40 dark:hover:border-slate-700 text-[#252525] dark:text-white"
+                    ? "bg-white dark:bg-[#0D0D0D] border-2 border-[#B68A55] shadow-lg shadow-[#B68A55]/10 text-[#252525] dark:text-white scale-[1.02]"
+                    : "bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs hover:border-[#B68A55]/40 dark:hover:border-neutral-700 text-[#252525] dark:text-white"
                 }`}
               >
                 {/* Popular Pill */}
@@ -535,7 +535,7 @@ export default function BillingPage() {
                   >
                     {pkg.badge}
                   </span>
-                  <span className="text-[11px] font-bold text-[#B68A55] dark:text-indigo-400 flex items-center gap-1 font-mono">
+                  <span className="text-[11px] font-bold text-[#B68A55] flex items-center gap-1 font-mono">
                     <Calendar className="w-3 h-3" />
                     {pkg.duration}
                   </span>
@@ -544,20 +544,20 @@ export default function BillingPage() {
                 {/* Plan Info */}
                 <div>
                   <h4 className="text-lg font-black tracking-tight text-[#252525] dark:text-white">{pkg.name}</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
                     {pkg.description}
                   </p>
 
-                  <div className="mt-4 pt-4 border-t border-[#EFE7DC] dark:border-slate-800">
+                  <div className="mt-4 pt-4 border-t border-[#EFE7DC] dark:border-neutral-800">
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-black font-mono tracking-tight text-[#252525] dark:text-white">{pkg.price}</span>
                       {pkg.originalPrice && (
-                        <span className="text-xs text-slate-400 line-through font-mono">
+                        <span className="text-xs text-neutral-400 line-through font-mono">
                           {pkg.originalPrice}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#B68A55] dark:text-indigo-400 font-semibold mt-0.5">
+                    <p className="text-[11px] text-[#B68A55] font-semibold mt-0.5">
                       Equivalent to {pkg.equivalent}
                     </p>
                   </div>
@@ -567,21 +567,21 @@ export default function BillingPage() {
                     {pkg.features.map((feat, idx) => (
                       <li key={idx} className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="text-slate-600 dark:text-slate-300">{feat}</span>
+                        <span className="text-neutral-600 dark:text-neutral-300">{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 {/* Action CTA */}
-                <div className="mt-6 pt-4 border-t border-[#EFE7DC] dark:border-slate-800/80">
+                <div className="mt-6 pt-4 border-t border-[#EFE7DC] dark:border-neutral-800">
                   <button
                     onClick={() => handleExtendPlan(pkg)}
                     disabled={isProcessing}
                     className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 ${
                       pkg.isPopular
                         ? "bg-[#B68A55] hover:bg-[#a07746] text-white shadow-md shadow-[#B68A55]/25 hover:scale-[1.02]"
-                        : "bg-[#252525] hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white"
+                        : "bg-[#252525] hover:bg-black dark:bg-[#1A1A1A] dark:hover:bg-[#252525] text-white"
                     }`}
                   >
                     {isProcessing ? (
@@ -605,77 +605,77 @@ export default function BillingPage() {
 
       {/* Included Plan Entitlements Grid (4 Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white text-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
+          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <span>Unlimited AI Conversations</span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-9">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
             Zero hard tokens cap. Visitors can engage in unlimited multi-turn sales and support interactions across all deployed bots.
           </p>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white text-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
+          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <span>Custom Vector Knowledge (RAG)</span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-9">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
             Upload PDF price sheets, FAQs, and crawl web pages up to 50 URLs per assistant with instant re-indexing and strict tenant isolation.
           </p>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white text-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
+          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <span>Real-time Lead CRM & Export</span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-9">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
             Automatic capture of visitor phone, email, and intent scores with one-click CSV export and webhook push directly to your CRM.
           </p>
         </div>
 
-        <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white text-sm">
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
+          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <span>Meta WhatsApp Cloud Gateway</span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-9">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
             Official WhatsApp business integration to deploy your trained bot directly on your company WhatsApp number.
           </p>
         </div>
       </div>
 
       {/* Payment Security & Invoicing Details */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
-        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm">
+      <div className="p-6 sm:p-7 rounded-3xl bg-neutral-50 dark:bg-[#0A0A0A] border border-neutral-200 dark:border-neutral-800 space-y-4">
+        <div className="flex items-center gap-2 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
           <span>Payment Security & Invoicing Compliance</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
-            <span className="font-bold text-slate-900 dark:text-white block">PCI-DSS Level 1 Security</span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block">
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-1">
+            <span className="font-bold text-neutral-900 dark:text-white block">PCI-DSS Level 1 Security</span>
+            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block">
               Payment credentials are never stored on our servers. Razorpay processes all transactions with 256-bit bank grade encryption.
             </span>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
-            <span className="font-bold text-slate-900 dark:text-white block">UPI & Card Autopay</span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block">
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-1">
+            <span className="font-bold text-neutral-900 dark:text-white block">UPI & Card Autopay</span>
+            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block">
               Supports Google Pay, PhonePe, Paytm, BHIM UPI autopay mandates and all major domestic & international credit/debit cards.
             </span>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-1">
-            <span className="font-bold text-slate-900 dark:text-white block">GST Compliant Invoicing</span>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block">
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-1">
+            <span className="font-bold text-neutral-900 dark:text-white block">GST Compliant Invoicing</span>
+            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block">
               Automated invoice receipts with GST breakdown are dispatched to {currentUser?.email || "your registered email"} after each billing cycle.
             </span>
           </div>

@@ -300,17 +300,17 @@ function DeployBotContent() {
         {/* Left Column: Embed Code & Customizer (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Card 0: Zero-Code Live Web Mirror */}
-          <div className="bg-linear-to-r from-indigo-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl space-y-4 border border-indigo-500/40">
+          <div className="bg-[#0D0D0D] rounded-2xl p-6 text-white shadow-xl space-y-4 border border-neutral-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/30 flex items-center justify-center text-indigo-300 border border-indigo-400/30 shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-[#B68A55]/15 flex items-center justify-center text-[#B68A55] border border-[#B68A55]/30 shadow-md">
                   <Sparkles className="w-5 h-5 text-amber-300" />
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-white">
                     Zero-Code Live Web Mirror
                   </h3>
-                  <p className="text-xs text-indigo-200/80">
+                  <p className="text-xs text-neutral-400">
                     Launch on any website instantly — zero code edits, zero scripts to paste.
                   </p>
                 </div>
@@ -326,7 +326,7 @@ function DeployBotContent() {
                 value={verifyUrl}
                 onChange={(e) => setVerifyUrl(e.target.value)}
                 placeholder="https://yourwebsite.com"
-                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900/80 border border-indigo-400/30 text-white text-xs outline-hidden focus:border-indigo-400 font-mono"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#121212] border border-neutral-800 text-white text-xs outline-hidden focus:border-[#B68A55] font-mono"
               />
               <a
                 href={verifyUrl ? `/preview?url=${encodeURIComponent(verifyUrl)}&botId=${bot?.id || botId}&color=${encodeURIComponent(widgetColor)}` : "#"}
@@ -338,7 +338,7 @@ function DeployBotContent() {
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-linear-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold text-xs shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-[#B68A55] hover:bg-[#9F7645] text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer"
               >
                 <Globe className="w-4 h-4" />
                 <span>Launch Live Mirror 🚀</span>

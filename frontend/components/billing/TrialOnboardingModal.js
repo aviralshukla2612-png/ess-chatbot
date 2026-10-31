@@ -319,8 +319,8 @@ export default function TrialOnboardingModal({
                     onClick={() => setPlanId(p.id)}
                     className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                       isSelected
-                        ? "border-indigo-500 bg-gradient-to-b from-indigo-950/50 to-slate-900 ring-2 ring-indigo-500/40 shadow-lg shadow-indigo-950/50"
-                        : "border-slate-800/80 bg-slate-900/40 hover:bg-slate-800/50 hover:border-slate-700"
+                        ? "border-[#B68A55] bg-[#121212] ring-2 ring-[#B68A55]/40 shadow-lg"
+                        : "border-neutral-800 bg-[#0D0D0D] hover:bg-[#1A1A1A] hover:border-neutral-700"
                     }`}
                   >
                     <div>
@@ -329,7 +329,7 @@ export default function TrialOnboardingModal({
                           {p.name}
                         </span>
                         {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-indigo-500 text-white flex items-center justify-center shrink-0">
+                          <div className="w-4 h-4 rounded-full bg-[#B68A55] text-white flex items-center justify-center shrink-0">
                             <Check className="w-2.5 h-2.5" />
                           </div>
                         )}
@@ -417,7 +417,7 @@ export default function TrialOnboardingModal({
           </div>
 
           {/* Guarantee / Cancel info */}
-          <div className="flex items-center gap-2.5 text-[11px] text-slate-300 bg-indigo-950/30 border border-indigo-500/20 p-2.5 rounded-xl">
+          <div className="flex items-center gap-2.5 text-[11px] text-slate-300 bg-[#B68A55]/10 border border-[#B68A55]/20 p-2.5 rounded-xl">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
               <strong>1-Click Cancel Guarantee:</strong> Cancel anytime in Settings before Day {trialDays}. Zero money will ever be deducted from your account.
@@ -429,7 +429,7 @@ export default function TrialOnboardingModal({
             type="button"
             onClick={handleStartTrial}
             disabled={loading}
-            className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full py-3.5 px-4 rounded-xl bg-[#B68A55] hover:bg-[#9F7645] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <>

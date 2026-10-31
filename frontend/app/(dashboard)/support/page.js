@@ -162,28 +162,28 @@ export default function SupportPage() {
   return (
     <div className="space-y-8 animate-fade-in pb-16">
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-linear-to-r dark:from-indigo-900 dark:via-indigo-950 dark:to-neutral-900 border border-[#EFE7DC] dark:border-indigo-500/20 p-6 sm:p-10 text-[#252525] dark:text-white shadow-xs">
+      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-10 text-[#252525] dark:text-white shadow-xs">
         <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B68A55]/10 border border-[#B68A55]/20 text-xs font-semibold text-[#B68A55] dark:bg-white/10 dark:border-white/15 dark:text-indigo-300">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#B68A55]/10 border border-[#B68A55]/20 text-xs font-semibold text-[#B68A55]">
             <Sparkles className="w-3.5 h-3.5" />
             24/7 Dedicated Support & Assistance
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#252525] dark:text-white">
             How can we help you today?
           </h1>
-          <p className="text-sm text-slate-600 dark:text-indigo-200/90 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
             Search our knowledge base for instant answers on bot deployment, 7-day trials, Razorpay autopay, and knowledge base vector training.
           </p>
 
           {/* Search Bar */}
           <div className="relative pt-2">
-            <Search className="w-4 h-4 text-slate-400 dark:text-indigo-300 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 dark:text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search guides, FAQs, error messages, or setup instructions..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF9F6] border border-[#EFE7DC] text-[#252525] placeholder-slate-400 dark:bg-white/10 dark:border-white/20 dark:text-white dark:placeholder-indigo-200/60 text-xs sm:text-sm outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-400 transition-all shadow-xs"
+              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#FAF9F6] border border-[#EFE7DC] text-[#252525] placeholder-slate-400 dark:bg-[#121212] dark:border-neutral-800 dark:text-white dark:placeholder-neutral-500 text-xs sm:text-sm outline-hidden focus:border-[#B68A55] transition-all shadow-xs"
             />
           </div>
         </div>
@@ -197,9 +197,9 @@ export default function SupportPage() {
 
       {/* 3 Quick Contact Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col justify-between">
           <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-indigo-950/50 dark:border-indigo-900/60 flex items-center justify-center text-[#B68A55] dark:text-indigo-400">
+            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55]">
               <Mail className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-sm text-[#252525] dark:text-white">
@@ -211,14 +211,12 @@ export default function SupportPage() {
           </div>
           <a
             href="mailto:support@empoweringstartups.org"
-            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#B68A55] hover:underline"
           >
             <span>support@empoweringstartups.org</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        </div>        <div className="p-5 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col justify-between">
           <div className="space-y-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <MessageSquare className="w-5 h-5" />
@@ -239,9 +237,9 @@ export default function SupportPage() {
           </a>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xs flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col justify-between">
           <div className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-950/50 border border-violet-100 dark:border-violet-900/60 flex items-center justify-center text-violet-600 dark:text-violet-400">
+            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 dark:bg-[#B68A55]/15 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55]">
               <Clock className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-sm text-neutral-900 dark:text-white">
@@ -252,7 +250,7 @@ export default function SupportPage() {
             </p>
           </div>
           <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[#B68A55]" />
             <span>Guaranteed 24-hr resolution</span>
           </div>
         </div>
@@ -261,7 +259,7 @@ export default function SupportPage() {
       {/* Quick Guides Grid */}
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-indigo-600" />
+          <BookOpen className="w-4 h-4 text-[#B68A55]" />
           <span>Recommended Setup Guides</span>
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -271,27 +269,27 @@ export default function SupportPage() {
               <Link
                 key={idx}
                 href={guide.href}
-                className="group p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50 hover:shadow-md transition-all flex flex-col justify-between"
+                className="group p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 hover:border-[#B68A55]/50 hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                    <div className="p-2 rounded-xl bg-[#B68A55]/10 dark:bg-[#B68A55]/15 text-[#B68A55] group-hover:bg-[#B68A55] group-hover:text-white transition-colors">
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
                       {guide.tag}
                     </span>
                   </div>
-                  <h3 className="font-bold text-xs text-neutral-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <h3 className="font-bold text-xs text-neutral-900 dark:text-white group-hover:text-[#B68A55] transition-colors">
                     {guide.title}
                   </h3>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
                     {guide.description}
                   </p>
                 </div>
-                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                <div className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#B68A55]">
                   <span>Open Guide</span>
-                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
             );
@@ -304,7 +302,7 @@ export default function SupportPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <FileQuestion className="w-4 h-4 text-indigo-600" />
+              <FileQuestion className="w-4 h-4 text-[#B68A55]" />
               <span>Frequently Asked Questions</span>
             </h2>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -321,8 +319,8 @@ export default function SupportPage() {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? "bg-indigo-600 text-white shadow-xs shadow-indigo-600/30"
-                  : "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                  ? "bg-[#252525] dark:bg-[#B68A55] text-white shadow-xs"
+                  : "bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               }`}
             >
               {cat}
@@ -333,7 +331,7 @@ export default function SupportPage() {
         {/* FAQ Accordion List */}
         <div className="space-y-2.5">
           {filteredFaqs.length === 0 ? (
-            <div className="p-8 text-center bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500">
+            <div className="p-8 text-center bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 text-xs text-neutral-500">
               No questions found matching &quot;{search}&quot;. Try submitting a support ticket below!
             </div>
           ) : (
@@ -342,7 +340,7 @@ export default function SupportPage() {
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-2xs transition-colors"
+                  className="rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-2xs transition-colors"
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? -1 : idx)}
@@ -352,11 +350,11 @@ export default function SupportPage() {
                       {faq.question}
                     </span>
                     <span className="p-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 shrink-0">
-                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      {isOpen ? <ChevronUp className="w-4 h-4 text-[#B68A55]" /> : <ChevronDown className="w-4 h-4" />}
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-1 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed border-t border-neutral-100 dark:border-neutral-800/60 animate-fade-in">
+                    <div className="px-4 pb-4 pt-1 text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed border-t border-[#EFE7DC]/60 dark:border-neutral-800/60 animate-fade-in">
                       <p>{faq.answer}</p>
                     </div>
                   )}
@@ -368,9 +366,9 @@ export default function SupportPage() {
       </div>
 
       {/* Ticket Submission Form */}
-      <div id="ticket-form" className="rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
+      <div id="ticket-form" className="rounded-3xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <div className="w-10 h-10 rounded-2xl bg-[#B68A55]/10 dark:bg-[#B68A55]/15 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55]">
             <Send className="w-5 h-5" />
           </div>
           <div>
@@ -409,7 +407,7 @@ export default function SupportPage() {
                 value={ticketSubject}
                 onChange={(e) => setTicketSubject(e.target.value)}
                 required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-xs text-neutral-900 dark:text-white outline-hidden focus:border-indigo-600"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-xs text-neutral-900 dark:text-white outline-hidden focus:border-[#B68A55]"
               />
             </div>
 
@@ -420,7 +418,7 @@ export default function SupportPage() {
               <select
                 value={ticketCategory}
                 onChange={(e) => setTicketCategory(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-xs text-neutral-900 dark:text-white outline-hidden focus:border-indigo-600"
+                className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-xs text-neutral-900 dark:text-white outline-hidden focus:border-[#B68A55]"
               >
                 <option value="Billing & Autopay">Billing & Autopay</option>
                 <option value="AI Bot Training">AI Bot Training</option>
@@ -442,7 +440,7 @@ export default function SupportPage() {
               value={ticketMessage}
               onChange={(e) => setTicketMessage(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-xs text-neutral-900 dark:text-white outline-hidden focus:border-indigo-600"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-xs text-neutral-900 dark:text-white outline-hidden focus:border-[#B68A55]"
             />
           </div>
 
@@ -453,7 +451,7 @@ export default function SupportPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 rounded-xl bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+              className="px-6 py-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
             >
               {submitting ? "Submitting Ticket..." : "Submit Ticket"}
               <Send className="w-3.5 h-3.5" />

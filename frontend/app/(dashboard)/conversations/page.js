@@ -108,16 +108,16 @@ export default function ConversationsPage() {
       </div>
 
       {/* 3-Column Inbox Panel */}
-      <div className="bg-white dark:bg-[#111827]/90 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 shadow-sm overflow-hidden flex flex-col lg:flex-row h-[760px]">
+      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 shadow-sm overflow-hidden flex flex-col lg:flex-row h-[760px]">
         {/* COLUMN 1: Conversation List */}
-        <div className="w-full lg:w-72 xl:w-84 border-r border-[#EFE7DC] dark:border-slate-800/80 flex flex-col shrink-0 bg-[#FAF9F6] dark:bg-slate-900/40">
-          <div className="p-4 border-b border-[#EFE7DC] dark:border-slate-800/80 space-y-3">
+        <div className="w-full lg:w-72 xl:w-84 border-r border-[#EFE7DC] dark:border-neutral-800 flex flex-col shrink-0 bg-[#FAF9F6] dark:bg-[#0A0A0A]">
+          <div className="p-4 border-b border-[#EFE7DC] dark:border-neutral-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-[#252525] dark:text-white tracking-wide">
                   Conversations
                 </h2>
-                <span className="text-[11px] font-semibold text-[#B68A55] bg-[#B68A55]/10 border border-[#B68A55]/20 dark:text-indigo-400 dark:bg-indigo-500/10 dark:border-indigo-500/20 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-semibold text-[#B68A55] bg-[#B68A55]/10 border border-[#B68A55]/20 px-2 py-0.5 rounded-full">
                   {filtered.length}
                   {filtered.length !== conversations.length ? ` / ${conversations.length}` : ""}
                 </span>
@@ -140,7 +140,7 @@ export default function ConversationsPage() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1 text-xs bg-white dark:bg-slate-950/60 p-1 rounded-xl border border-[#EFE7DC] dark:border-slate-800 shadow-xs">
+            <div className="flex items-center gap-1 text-xs bg-white dark:bg-[#121212] p-1 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
               {["All", "Active", "Leads", "Resolved"].map((tab) => (
                 <button
                   key={tab}
@@ -213,16 +213,16 @@ export default function ConversationsPage() {
                   className={cn(
                     "p-3.5 flex items-start gap-3 cursor-pointer transition-colors relative",
                     isSelected
-                      ? "bg-white dark:bg-indigo-950/40 border-l-3 border-[#B68A55] dark:border-indigo-500 shadow-xs"
-                      : "hover:bg-[#FAF9F6] dark:hover:bg-slate-800/40 text-[#252525] dark:text-slate-300"
+                      ? "bg-white dark:bg-[#1A1A1A] border-l-3 border-[#B68A55] dark:border-[#B68A55] shadow-xs"
+                      : "hover:bg-[#FAF9F6] dark:hover:bg-[#121212] text-[#252525] dark:text-neutral-300"
                   )}
                 >
                   <div
                     className={cn(
                       "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border",
                       isSelected
-                        ? "bg-[#252525] border-[#252525] text-white shadow-xs dark:bg-indigo-600 dark:border-indigo-500"
-                        : "bg-white border-[#EFE7DC] text-[#B68A55] dark:bg-slate-800 dark:border-slate-700/80 dark:text-indigo-400"
+                        ? "bg-[#252525] border-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:border-[#B68A55]"
+                        : "bg-white border-[#EFE7DC] text-[#B68A55] dark:bg-[#121212] dark:border-neutral-800 dark:text-[#B68A55]"
                     )}
                   >
                     {item.visitorName?.charAt(0) || "V"}
@@ -328,30 +328,30 @@ export default function ConversationsPage() {
               {/* Reply Box */}
               <form
                 onSubmit={handleSendReply}
-                className="p-3.5 border-t border-[#EFE7DC] dark:border-slate-800/80 bg-white dark:bg-slate-900/70 flex items-center gap-2"
+                className="p-3.5 border-t border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#0D0D0D] flex items-center gap-2"
               >
                 <input
                   type="text"
                   placeholder="Type a message to reply in real-time..."
                   value={replyInput}
                   onChange={(e) => setReplyInput(e.target.value)}
-                  className="flex-1 text-xs bg-[#FAF9F6] dark:bg-slate-800/80 px-3.5 py-2.5 rounded-xl border border-[#EFE7DC] dark:border-slate-700 text-[#252525] dark:text-white placeholder-slate-400 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 transition-colors shadow-xs"
+                  className="flex-1 text-xs bg-[#FAF9F6] dark:bg-[#121212] px-3.5 py-2.5 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-white placeholder-slate-400 outline-hidden focus:border-[#B68A55] transition-colors shadow-xs"
                 />
                 <button
                   type="submit"
-                  className="p-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white shadow-xs transition-all cursor-pointer"
+                  className="p-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white shadow-xs transition-all cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400 space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#FAF9F6] dark:bg-slate-800/60 border border-[#EFE7DC] dark:border-slate-700/60 flex items-center justify-center text-[#B68A55] dark:text-slate-400 shadow-xs">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-neutral-400 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF9F6] dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-center text-[#B68A55] shadow-xs">
                 <MessageSquare className="w-6 h-6" />
               </div>
               <h4 className="text-sm font-bold text-[#252525] dark:text-white">No conversation selected</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+              <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-xs">
                 Select a conversation from the left to view the complete live transcript and visitor details.
               </p>
             </div>
@@ -359,7 +359,7 @@ export default function ConversationsPage() {
         </div>
 
         {/* COLUMN 3: Visitor & Conversation Metadata */}
-        <div className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-slate-900/60 space-y-6 overflow-y-auto shrink-0 text-xs">
+        <div className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto shrink-0 text-xs">
           {currentChat ? (
             <>
               {/* VISITOR INFO */}
