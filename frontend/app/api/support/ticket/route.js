@@ -46,7 +46,7 @@ export async function POST(request) {
       success: true,
       ticketId: ticket.id,
       ticket,
-      message: `Your support ticket #${ticket.id} has been registered and forwarded to Super Admin. Our support team will reply to ${principal.email} shortly.`,
+      message: `Your support ticket #${ticket.id} has been registered and forwarded to our support team. Our support team will reply to ${principal.email} shortly.`,
     });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

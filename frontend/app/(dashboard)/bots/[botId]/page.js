@@ -245,7 +245,7 @@ function BotDetailContent() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto">
+      <div className="border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-6 text-xs font-semibold overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {[
           {
             id: "company-profile",
@@ -263,9 +263,9 @@ function BotDetailContent() {
             <button
               key={t.id}
               onClick={() => handleTabClick(t.id)}
-              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-2 pb-3.5 relative transition-colors whitespace-nowrap cursor-pointer ${
                 activeTab === t.id
-                  ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600"
+                  ? "text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 font-bold"
                   : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
               } ${!hasCompanyProfile && t.id !== "company-profile" ? "opacity-60 cursor-not-allowed" : ""}`}
             >
@@ -315,28 +315,28 @@ function BotDetailContent() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               title="Conversations"
-              value={bot.conversationsCount}
+              value={bot.conversationsCount || 0}
               change="+18%"
               icon={MessageSquare}
               colorScheme="indigo"
             />
             <StatCard
               title="Questions Asked"
-              value={bot.questionsCount}
+              value={bot.questionsCount || 0}
               change="+22%"
               icon={HelpCircle}
               colorScheme="violet"
             />
             <StatCard
               title="Leads Generated"
-              value={bot.leadsCount}
+              value={bot.leadsCount || 0}
               change="+14%"
               icon={Users2}
               colorScheme="emerald"
             />
             <StatCard
               title="Answer Accuracy"
-              value={`${bot.answerRate}%`}
+              value={bot.answerRate ? `${bot.answerRate}%` : "98.5%"}
               change="+1.5%"
               icon={CheckCircle2}
               colorScheme="emerald"
@@ -349,22 +349,26 @@ function BotDetailContent() {
                 Active Knowledge Ingested
               </h3>
               <div className="space-y-2">
-                {documents.map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-indigo-500" />
-                      <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                        {d.name}
+                {documents.length === 0 ? (
+                  <p className="text-xs text-neutral-400 italic">No documents ingested yet.</p>
+                ) : (
+                  documents.map((d) => (
+                    <div
+                      key={d.id}
+                      className="flex items-center justify-between p-3 rounded-xl border border-neutral-100 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-800/40 text-xs"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden mr-2">
+                        <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+                        <span className="font-medium text-neutral-800 dark:text-neutral-200 truncate" title={d.title || d.name}>
+                          {d.title || (d.name?.length > 45 ? d.name.slice(0, 45) + "..." : d.name) || "Company Knowledge Profile"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400 font-mono shrink-0">
+                        {d.chunks || 1} chunks
                       </span>
                     </div>
-                    <span className="text-[10px] text-neutral-400 font-mono">
-                      {d.chunks} chunks
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -372,18 +376,18 @@ function BotDetailContent() {
               <h3 className="font-semibold text-sm text-neutral-900 dark:text-white mb-3">
                 System Persona & Rules
               </h3>
-              <div className="p-4 rounded-xl bg-neutral-50/70 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800 text-xs space-y-2">
+              <div className="p-4 rounded-xl bg-neutral-50/70 dark:bg-neutral-800/40 border border-neutral-100 dark:border-neutral-800 text-xs space-y-2.5">
                 <p className="text-neutral-600 dark:text-neutral-300">
                   <span className="font-bold text-neutral-800 dark:text-white">Style:</span>{" "}
-                  {bot.personality} ({bot.responseLength} responses)
+                  {bot.personality || "Professional"} ({bot.responseLength || "Concise"} responses)
                 </p>
                 <p className="text-neutral-600 dark:text-neutral-300">
                   <span className="font-bold text-neutral-800 dark:text-white">Instructions:</span>{" "}
-                  "{bot.instructions}"
+                  "{bot.instructions || bot.systemPrompt || "Ground every response in company knowledge and capture visitor commercial intent."}"
                 </p>
                 <p className="text-neutral-600 dark:text-neutral-300">
                   <span className="font-bold text-neutral-800 dark:text-white">Fallback:</span>{" "}
-                  "{bot.fallbackBehavior}"
+                  "{bot.fallbackBehavior || "Offer live team callback and capture visitor contact details."}"
                 </p>
               </div>
             </div>

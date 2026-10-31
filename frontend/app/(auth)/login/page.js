@@ -458,25 +458,15 @@ export default function LoginPage() {
             )}
           </div>
 
-          <div className="text-center pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div className="text-center pt-3 border-t border-slate-100 flex items-center justify-center">
             <Link
               href="/"
               className="text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-all inline-flex items-center gap-1.5 group"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 group-hover:-translate-x-0.5 transition-transform" />
               <Globe className="w-3.5 h-3.5 text-indigo-500 group-hover:rotate-12 transition-transform" />
-              <span>Public Website</span>
+              <span>Back to Website</span>
             </Link>
-
-            <button
-              type="button"
-              onClick={() => handleDirectLogin("superadmin")}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-all inline-flex items-center gap-1 cursor-pointer hover:underline"
-              title="One-click direct login for Super Admin"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Super Admin Quick Login</span>
-            </button>
           </div>
         </div>
       </div>

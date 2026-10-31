@@ -37,7 +37,7 @@ const FAQ_ITEMS = [
     category: "Bots & Creation",
     question: "How many AI bots can I create?",
     answer:
-      "Standard and Sub-Admin accounts can create 1 active AI chatbot per workspace. Your chatbot comes with unlimited conversational messages and full vector knowledge retrieval. Super Admin accounts have unlimited bot capabilities across organizations.",
+      "Workspaces can create and train active AI chatbots with unlimited conversational messages, lead capture capabilities, and full vector knowledge retrieval.",
   },
   {
     category: "Website Widget",
