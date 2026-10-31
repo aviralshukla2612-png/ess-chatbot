@@ -97,8 +97,8 @@ const QUICK_GUIDES = [
     title: "Meta WhatsApp Cloud API",
     description: "Connect your official WhatsApp Business number for autonomous lead sales.",
     icon: MessageSquare,
-    href: "/integrations",
-    tag: "Integrations",
+    href: "/bots",
+    tag: "Bots",
   },
 ];
 

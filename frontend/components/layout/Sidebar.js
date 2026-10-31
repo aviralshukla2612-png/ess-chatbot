@@ -35,7 +35,6 @@ const navItems = [
   { name: "Conversations", href: "/conversations", icon: MessageSquare },
   { name: "Leads", href: "/leads", icon: Users2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Integrations", href: "/integrations", icon: Puzzle },
   { name: "Team", href: "/team", icon: UserPlus },
   { name: "Billing & Plans", href: "/billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
