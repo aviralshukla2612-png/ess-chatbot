@@ -129,7 +129,7 @@ function BotDetailContent() {
   );
 
   const handleTabClick = (tabId) => {
-    if (!hasCompanyProfile && tabId !== "company-profile") {
+    if (!hasCompanyProfile && tabId !== "company-profile" && tabId !== "appearance" && tabId !== "overview") {
       alert("⚠️ Mandatory Setup: Please complete and approve your Company Profile Intake form before accessing this section.");
       setActiveTab("company-profile");
       return;
@@ -168,6 +168,17 @@ function BotDetailContent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Direct Redesign & Launcher Button */}
+          <button
+            type="button"
+            onClick={() => setRedesignModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl border border-[#B68A55]/40 bg-[#B68A55]/15 hover:bg-[#B68A55]/25 text-[#B68A55] shadow-xs transition-colors cursor-pointer"
+            title="Customize chat launcher shape, logo, colors, and styling"
+          >
+            <Palette className="w-3.5 h-3.5" />
+            <span>Launcher & Redesign 🎨</span>
+          </button>
+
           {/* Direct Live Website Deploy Button */}
           <button
             type="button"

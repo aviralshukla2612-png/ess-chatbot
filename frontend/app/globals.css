@@ -91,60 +91,43 @@ body {
   -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
 }
 
-/* Color scheme dark mode binding for native OS controls & scrollbars */
+/* Color scheme dark mode binding for native OS controls */
 html.dark,
 .dark {
-  color-scheme: dark;
+  color-scheme: dark !important;
 }
 
 html:not(.dark) {
-  color-scheme: light;
+  color-scheme: light !important;
 }
 
-/* Global sleek scrollbars to eliminate ugly default white browser scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Universal complete removal of all browser scrollbars (Chromium, Firefox, Safari, Edge) */
+html,
+body,
+*,
+*::before,
+*::after {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+::-webkit-scrollbar,
+*::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+  opacity: 0 !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(140, 140, 140, 0.25);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 140, 140, 0.45);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
-  border-radius: 9999px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(140, 140, 140, 0.25) transparent;
-}
-
-.dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
-}
-
-/* Hide scrollbar completely for modern sidebar and chat aesthetics */
+/* Specific utilities */
 .sidebar-scroll,
 .no-scrollbar,
 .scrollbar-none {
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 .sidebar-scroll::-webkit-scrollbar,
@@ -155,6 +138,7 @@ html:not(.dark) {
   height: 0px !important;
   background: transparent !important;
 }
+
 
 
 

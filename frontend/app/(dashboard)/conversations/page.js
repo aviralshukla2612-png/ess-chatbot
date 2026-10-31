@@ -268,6 +268,10 @@ export default function ConversationsPage() {
 
   return (
     <div className="space-y-5 pb-12 animate-fade-in font-sans text-neutral-200">
+      <style>{`
+        *::-webkit-scrollbar, ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; background: transparent !important; }
+        * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+      `}</style>
       {/* Top Header with Real-Time Badge */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -349,7 +353,10 @@ export default function ConversationsPage() {
           </div>
 
           {/* List items or Empty state */}
-          <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-[#EFE7DC] dark:divide-neutral-800/80">
+          <div
+            className="flex-1 overflow-y-auto no-scrollbar divide-y divide-[#EFE7DC] dark:divide-neutral-800/80"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {!loading && filtered.length === 0 && (
               <div className="p-8 text-center space-y-3.5 my-auto">
                 <div className="w-12 h-12 rounded-2xl bg-[#B68A55]/10 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55] mx-auto shadow-inner">
@@ -485,7 +492,10 @@ export default function ConversationsPage() {
               </div>
 
               {/* Messages Flow (Horizontal overflow strictly prevented) */}
-              <div className="flex-1 p-5 overflow-y-auto overflow-x-hidden no-scrollbar space-y-4 bg-[#FAF9F6]/50 dark:bg-[#070707]">
+              <div
+                className="flex-1 p-5 overflow-y-auto overflow-x-hidden no-scrollbar space-y-4 bg-[#FAF9F6]/50 dark:bg-[#070707]"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
                 <div className="text-center">
                   <span className="text-[10px] bg-white dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold px-2.5 py-1 rounded-full shadow-xs">
                     {currentChat.startedAt || "Today (IST)"}
@@ -556,7 +566,10 @@ export default function ConversationsPage() {
         </div>
 
         {/* COLUMN 3: Client & Conversation Metadata */}
-        <div className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs">
+        <div
+          className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {currentChat ? (
             <>
               {/* CLIENT INFO */}

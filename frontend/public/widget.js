@@ -81,6 +81,11 @@
     placeholderText: "Type your message...",
     launcherPosition:
       (scriptTag && scriptTag.getAttribute("data-position")) || "bottom-right",
+    launcherShape: (scriptTag && scriptTag.getAttribute("data-shape")) || "circle",
+    launcherSize: (scriptTag && scriptTag.getAttribute("data-size")) || "medium",
+    launcherIcon: (scriptTag && scriptTag.getAttribute("data-icon")) || "bubble",
+    launcherLogoUrl: (scriptTag && scriptTag.getAttribute("data-logo")) || "",
+    launcherText: (scriptTag && scriptTag.getAttribute("data-launcher-text")) || "",
     brandingEnabled:
       scriptTag && scriptTag.getAttribute("data-branding") === "false" ? false : true,
     quickReplies: [],
@@ -915,8 +920,61 @@
   document.body.appendChild(container);
 
   // 7. Dynamic Style Applier
+  function updateLauncher() {
+    const launcherEl = document.getElementById("nexus-widget-launcher");
+    if (!launcherEl) return;
+
+    const shape = (botConfig.launcherShape || "circle").toLowerCase();
+    const size = botConfig.launcherSize === "compact" ? 52 : botConfig.launcherSize === "large" ? 72 : 62;
+    const iconType = botConfig.launcherIcon || "bubble";
+    const logoUrl = (botConfig.launcherLogoUrl || "").trim();
+    const launcherText = (botConfig.launcherText || "").trim();
+
+    launcherEl.style.borderRadius = shape === "squircle" ? "20px" : shape === "pill" ? "9999px" : "50%";
+    launcherEl.style.width = shape === "pill" ? "auto" : `${size}px`;
+    launcherEl.style.height = `${size}px`;
+    launcherEl.style.padding = shape === "pill" ? "0 22px" : "0";
+
+    const iconOpen = document.getElementById("nexus-icon-open");
+    if (iconOpen) {
+      let iconHtml = "";
+      if (logoUrl) {
+        iconHtml = `<img src="${logoUrl}" alt="${botConfig.name}" style="width:${Math.round(size * 0.58)}px; height:${Math.round(size * 0.58)}px; object-fit:contain; border-radius:inherit;" />`;
+      } else if (iconType === "avatar") {
+        iconHtml = `<span style="font-size:${Math.round(size * 0.44)}px; line-height:1;">${botConfig.avatar || "🤖"}</span>`;
+      } else if (iconType === "robot") {
+        iconHtml = `<svg width="${Math.round(size * 0.46)}" height="${Math.round(size * 0.46)}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+          <circle cx="12" cy="5" r="2"></circle>
+          <path d="M12 7v4"></path>
+          <line x1="8" y1="16" x2="8" y2="16"></line>
+          <line x1="16" y1="16" x2="16" y2="16"></line>
+        </svg>`;
+      } else if (iconType === "sparkles") {
+        iconHtml = `<svg width="${Math.round(size * 0.46)}" height="${Math.round(size * 0.46)}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+        </svg>`;
+      } else if (iconType === "headset") {
+        iconHtml = `<svg width="${Math.round(size * 0.46)}" height="${Math.round(size * 0.46)}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path>
+        </svg>`;
+      } else {
+        iconHtml = `<svg width="${Math.round(size * 0.46)}" height="${Math.round(size * 0.46)}" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>`;
+      }
+
+      const textHtml = (shape === "pill" && launcherText)
+        ? `<span style="color:#ffffff; font-weight:700; font-size:13px; margin-left:8px; white-space:nowrap;">${launcherText}</span>`
+        : "";
+
+      iconOpen.innerHTML = `${iconHtml}${textHtml}`;
+    }
+  }
+
   function applyTheme() {
     updateThemeVariables();
+    updateLauncher();
 
     const title = document.getElementById("nexus-header-title");
     if (title) title.textContent = botConfig.name;

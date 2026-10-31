@@ -14,6 +14,12 @@ import {
   ShieldCheck,
   Building2,
   CheckCircle2,
+  MessageCircle,
+  Headphones,
+  Image as ImageIcon,
+  Circle,
+  Square,
+  Maximize2,
 } from "lucide-react";
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 
@@ -30,6 +36,27 @@ const PRESET_COLORS = [
 
 const PRESET_AVATARS = ["🤖", "⚡", "🚀", "💬", "👑", "🛡️", "💎", "💼", "🧠", "🌟", "🎯", "🌐"];
 
+const LAUNCHER_ICONS = [
+  { id: "bubble", label: "Speech Bubble", icon: MessageCircle },
+  { id: "robot", label: "AI Robot", icon: Bot },
+  { id: "sparkles", label: "Magic Sparkles", icon: Sparkles },
+  { id: "headset", label: "Support Headset", icon: Headphones },
+  { id: "avatar", label: "Bot Avatar Emoji", icon: null },
+  { id: "custom", label: "Company Logo Image", icon: ImageIcon },
+];
+
+const LAUNCHER_SHAPES = [
+  { id: "circle", label: "Circle (Default)", desc: "Classic 100% round floating button" },
+  { id: "squircle", label: "Squircle", desc: "Modern iOS-style rounded square" },
+  { id: "pill", label: "Pill with Text", desc: "Horizontal button with customizable text" },
+];
+
+const LAUNCHER_SIZES = [
+  { id: "compact", label: "Compact (52px)" },
+  { id: "medium", label: "Standard (62px)" },
+  { id: "large", label: "Large (72px)" },
+];
+
 const PERSONALITY_OPTIONS = [
   { id: "Professional", label: "Professional & Corporate", desc: "Crisp, polite, and executive-oriented" },
   { id: "Friendly", label: "Warm & Helpful", desc: "Approachable, conversational, and welcoming" },
@@ -45,6 +72,11 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
     welcomeMessage: "",
     placeholderText: "Ask anything about our solutions...",
     launcherPosition: "bottom-right",
+    launcherShape: "circle",
+    launcherSize: "medium",
+    launcherIcon: "bubble",
+    launcherLogoUrl: "",
+    launcherText: "Chat with us",
     personality: "Professional",
     collectLeads: true,
   });
@@ -64,6 +96,11 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
           `Hello! Welcome to ${bot.company || bot.name || "our company"}. How can I assist you with your project today?`,
         placeholderText: bot.placeholderText || "Ask anything about our solutions...",
         launcherPosition: bot.launcherPosition || "bottom-right",
+        launcherShape: bot.launcherShape || "circle",
+        launcherSize: bot.launcherSize || "medium",
+        launcherIcon: bot.launcherIcon || (bot.launcherLogoUrl ? "custom" : "bubble"),
+        launcherLogoUrl: bot.launcherLogoUrl || "",
+        launcherText: bot.launcherText || "Chat with us",
         personality: bot.personality || "Professional",
         collectLeads: bot.collectLeads !== false,
       });
@@ -115,32 +152,45 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
     }
   };
 
+  const launcherPx = formData.launcherSize === "compact" ? 52 : formData.launcherSize === "large" ? 72 : 62;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
       <div
-        className="w-full max-w-5xl max-h-[92vh] bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-neutral-900 dark:text-neutral-100"
+        className="w-full max-w-5xl max-h-[94vh] bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-neutral-900 dark:text-neutral-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="px-6 py-4.5 border-b border-[#EFE7DC] dark:border-neutral-800/80 flex items-center justify-between shrink-0 bg-[#FAF9F6] dark:bg-[#111111]">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm transition-all"
+              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm transition-all overflow-hidden"
               style={{ backgroundColor: formData.primaryColor }}
             >
-              <span className="text-xl">{formData.avatar}</span>
+              {formData.launcherLogoUrl ? (
+                <img
+                  src={formData.launcherLogoUrl}
+                  alt={formData.name}
+                  className="w-6 h-6 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <span className="text-xl">{formData.avatar}</span>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-extrabold text-[#252525] dark:text-white">
-                  Redesign & Style Assistant
+                  Redesign Bot & Chat Launcher
                 </h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#B68A55]/15 text-[#B68A55] font-bold border border-[#B68A55]/30">
                   {bot.id}
                 </span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Customize colors, avatar, welcome greeting, and live widget presentation.
+                Customize chat button logo, circle shape, brand colors, and widget appearance (available to all workspace admins).
               </p>
             </div>
           </div>
@@ -171,10 +221,162 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
               </div>
             )}
 
-            {/* 1. Bot Name & Identity */}
+            {/* 1. Chat Launcher Button & Logo Customization (USER REQUESTED: CHANGE LOGO AND CIRCLE) */}
+            <div className="space-y-4 bg-[#FAF9F6] dark:bg-[#141414] p-4.5 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#B68A55]">
+                  1. Chat Button Logo & Circle Styling
+                </label>
+                <span className="text-[10px] text-neutral-500 font-medium">Floating Launcher</span>
+              </div>
+
+              {/* Launcher Shape: Circle vs Squircle vs Pill */}
+              <div>
+                <span className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 block mb-2">
+                  Launcher Shape (Circle / Shape)
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {LAUNCHER_SHAPES.map((s) => {
+                    const isSelected = formData.launcherShape === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, launcherShape: s.id })}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#B68A55] bg-white dark:bg-[#1E1E1E] shadow-xs"
+                            : "border-[#EFE7DC] dark:border-neutral-800 bg-white/60 dark:bg-[#181818]/60 hover:border-neutral-400"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {s.id === "circle" && <div className="w-3.5 h-3.5 rounded-full border border-current" />}
+                          {s.id === "squircle" && <div className="w-3.5 h-3.5 rounded-md border border-current" />}
+                          {s.id === "pill" && <div className="w-5 h-3 rounded-full border border-current" />}
+                          <span className="font-bold text-xs">{s.label}</span>
+                        </div>
+                        <p className="text-[10px] text-neutral-500 line-clamp-1">{s.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Pill text if pill shape */}
+              {formData.launcherShape === "pill" && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                    Launcher Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.launcherText}
+                    onChange={(e) => setFormData({ ...formData, launcherText: e.target.value })}
+                    placeholder="e.g. Chat with us"
+                    className="w-full text-xs bg-white dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3.5 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
+                  />
+                </div>
+              )}
+
+              {/* Launcher Icon / Logo Type */}
+              <div>
+                <span className="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300 block mb-2">
+                  Launcher Button Icon / Logo
+                </span>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {LAUNCHER_ICONS.map((item) => {
+                    const isSelected = formData.launcherIcon === item.id;
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, launcherIcon: item.id })}
+                        className={`p-2 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#B68A55] bg-white dark:bg-[#1E1E1E] shadow-xs text-[#B68A55]"
+                            : "border-[#EFE7DC] dark:border-neutral-800 bg-white/60 dark:bg-[#181818]/60 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400"
+                        }`}
+                      >
+                        {item.id === "avatar" ? (
+                          <span className="text-base">{formData.avatar}</span>
+                        ) : Icon ? (
+                          <Icon className="w-4 h-4" />
+                        ) : null}
+                        <span className="text-[10px] font-semibold truncate w-full">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Image / Logo URL Field */}
+              {formData.launcherIcon === "custom" && (
+                <div className="p-3 bg-white dark:bg-[#1A1A1A] rounded-xl border border-[#EFE7DC] dark:border-neutral-700 space-y-2">
+                  <label className="block text-[11px] font-bold text-neutral-700 dark:text-neutral-300">
+                    Custom Logo Image URL
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={formData.launcherLogoUrl}
+                      onChange={(e) => setFormData({ ...formData, launcherLogoUrl: e.target.value })}
+                      placeholder="https://yourdomain.com/logo.png or /e-logoicon.webp"
+                      className="flex-1 text-xs bg-[#FAF9F6] dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, launcherLogoUrl: "/e-logoicon.webp" })}
+                      className="px-2.5 py-2 text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] rounded-lg border border-[#B68A55]/30 hover:bg-[#B68A55]/25 whitespace-nowrap cursor-pointer"
+                    >
+                      Use ESS Logo
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-neutral-500">
+                    PNG, SVG, or WEBP with transparent background recommended.
+                  </p>
+                </div>
+              )}
+
+              {/* Button Size & Position */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
+                    Button Size
+                  </label>
+                  <select
+                    value={formData.launcherSize}
+                    onChange={(e) => setFormData({ ...formData, launcherSize: e.target.value })}
+                    className="w-full text-xs bg-white dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
+                  >
+                    {LAUNCHER_SIZES.map((sz) => (
+                      <option key={sz.id} value={sz.id}>
+                        {sz.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
+                    Screen Position
+                  </label>
+                  <select
+                    value={formData.launcherPosition}
+                    onChange={(e) => setFormData({ ...formData, launcherPosition: e.target.value })}
+                    className="w-full text-xs bg-white dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
+                  >
+                    <option value="bottom-right">Bottom Right (Standard)</option>
+                    <option value="bottom-left">Bottom Left</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Bot Identity & Avatar */}
             <div className="space-y-3 bg-[#FAF9F6] dark:bg-[#141414] p-4.5 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
               <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                1. Bot Identity & Name
+                2. Assistant Name & Avatar
               </label>
               <div>
                 <input
@@ -188,9 +390,9 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
               </div>
 
               {/* Avatar Picker */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 block mb-2">
-                  Select Bot Avatar
+                  Header Avatar Emoji
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {PRESET_AVATARS.map((av) => (
@@ -221,10 +423,10 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
               </div>
             </div>
 
-            {/* 2. Brand Accent Color */}
+            {/* 3. Theme & Colors */}
             <div className="space-y-3 bg-[#FAF9F6] dark:bg-[#141414] p-4.5 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
               <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                2. Theme & Widget Color
+                3. Brand Accent Color
               </label>
 
               <div className="grid grid-cols-4 sm:grid-cols-4 gap-2.5">
@@ -254,9 +456,9 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
               </div>
 
               {/* Custom Color Input */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-1">
                 <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">
-                  Custom Hex:
+                  Custom Hex Code:
                 </span>
                 <div className="flex items-center gap-2 bg-white dark:bg-[#1A1A1A] px-2.5 py-1.5 rounded-xl border border-[#EFE7DC] dark:border-neutral-700">
                   <input
@@ -275,15 +477,15 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
               </div>
             </div>
 
-            {/* 3. Messages & Prompts */}
+            {/* 4. Messages & Welcome */}
             <div className="space-y-3 bg-[#FAF9F6] dark:bg-[#141414] p-4.5 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
               <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                3. Chat Messages & Placeholder
+                4. Welcome Message & Inputs
               </label>
 
               <div>
                 <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
-                  Welcome Greeting Message
+                  Welcome Greeting
                 </label>
                 <textarea
                   rows={2}
@@ -297,7 +499,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
 
               <div>
                 <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
-                  Input Box Placeholder
+                  Input Placeholder
                 </label>
                 <input
                   type="text"
@@ -308,44 +510,28 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
-                    Widget Position
-                  </label>
-                  <select
-                    value={formData.launcherPosition}
-                    onChange={(e) => setFormData({ ...formData, launcherPosition: e.target.value })}
-                    className="w-full text-xs bg-white dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
-                  >
-                    <option value="bottom-right">Bottom Right (Default)</option>
-                    <option value="bottom-left">Bottom Left</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
-                    Tone / Personality
-                  </label>
-                  <select
-                    value={formData.personality}
-                    onChange={(e) => setFormData({ ...formData, personality: e.target.value })}
-                    className="w-full text-xs bg-white dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
-                  >
-                    {PERSONALITY_OPTIONS.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-neutral-600 dark:text-neutral-300 mb-1">
+                  Personality & Tone
+                </label>
+                <select
+                  value={formData.personality}
+                  onChange={(e) => setFormData({ ...formData, personality: e.target.value })}
+                  className="w-full text-xs bg-white dark:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-700 rounded-xl px-3 py-2 text-[#252525] dark:text-white outline-hidden focus:border-[#B68A55]"
+                >
+                  {PERSONALITY_OPTIONS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </form>
 
-          {/* RIGHT: Live Widget Real-Time Preview (5 Cols) */}
-          <div className="lg:col-span-5 flex flex-col items-center">
-            <div className="w-full flex items-center justify-between mb-3 px-1">
+          {/* RIGHT: Live Real-Time Preview (5 Cols) */}
+          <div className="lg:col-span-5 flex flex-col items-center space-y-4">
+            <div className="w-full flex items-center justify-between px-1">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-[#B68A55]" />
                 <span>Live Interactive Preview</span>
@@ -353,7 +539,73 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
               <span className="text-[10px] text-neutral-400">Updates in real-time</span>
             </div>
 
-            <div className="w-full flex justify-center bg-[#FAF9F6] dark:bg-[#070707] p-4 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
+            {/* Live Launcher Button Preview Card */}
+            <div className="w-full bg-[#FAF9F6] dark:bg-[#121212] p-4 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 space-y-2.5">
+              <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+                Launcher Button Appearance
+              </span>
+              <div className="flex items-center justify-between p-4 bg-black/40 rounded-xl border border-neutral-800/80">
+                <div className="text-xs text-neutral-300">
+                  <span className="font-semibold block text-white capitalize">
+                    {formData.launcherShape} • {formData.launcherSize}
+                  </span>
+                  <span className="text-[10px] text-neutral-400">Position: {formData.launcherPosition}</span>
+                </div>
+
+                {/* THE LIVE BUTTON PREVIEW */}
+                <div
+                  className="flex items-center justify-center text-white font-bold shadow-xl border border-white/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  style={{
+                    backgroundColor: formData.primaryColor,
+                    borderRadius:
+                      formData.launcherShape === "squircle"
+                        ? "18px"
+                        : formData.launcherShape === "pill"
+                        ? "9999px"
+                        : "50%",
+                    width: formData.launcherShape === "pill" ? "auto" : `${launcherPx}px`,
+                    height: `${launcherPx}px`,
+                    padding: formData.launcherShape === "pill" ? "0 18px" : "0",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    {formData.launcherLogoUrl ? (
+                      <img
+                        src={formData.launcherLogoUrl}
+                        alt="Logo"
+                        className="object-contain"
+                        style={{
+                          width: `${Math.round(launcherPx * 0.55)}px`,
+                          height: `${Math.round(launcherPx * 0.55)}px`,
+                        }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : formData.launcherIcon === "avatar" ? (
+                      <span style={{ fontSize: `${Math.round(launcherPx * 0.44)}px` }}>{formData.avatar}</span>
+                    ) : formData.launcherIcon === "robot" ? (
+                      <Bot style={{ width: `${Math.round(launcherPx * 0.44)}px`, height: `${Math.round(launcherPx * 0.44)}px` }} />
+                    ) : formData.launcherIcon === "sparkles" ? (
+                      <Sparkles style={{ width: `${Math.round(launcherPx * 0.44)}px`, height: `${Math.round(launcherPx * 0.44)}px` }} />
+                    ) : formData.launcherIcon === "headset" ? (
+                      <Headphones style={{ width: `${Math.round(launcherPx * 0.44)}px`, height: `${Math.round(launcherPx * 0.44)}px` }} />
+                    ) : (
+                      <MessageCircle style={{ width: `${Math.round(launcherPx * 0.44)}px`, height: `${Math.round(launcherPx * 0.44)}px` }} />
+                    )}
+
+                    {formData.launcherShape === "pill" && formData.launcherText && (
+                      <span className="text-xs font-bold whitespace-nowrap text-white">
+                        {formData.launcherText}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Window Live Preview */}
+            <div className="w-full flex justify-center bg-[#FAF9F6] dark:bg-[#070707] p-3 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800">
               <BotPreviewWidget
                 botId={bot.id}
                 botName={formData.name || "AI Assistant"}
@@ -393,7 +645,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
             ) : savedSuccess ? (
               <>
                 <Check className="w-4 h-4" />
-                <span>Saved!</span>
+                <span>Saved & Applied!</span>
               </>
             ) : (
               <>

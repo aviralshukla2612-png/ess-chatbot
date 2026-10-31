@@ -23,8 +23,14 @@ import {
   Terminal,
   Server,
   Layers,
+  Palette,
+  Bot as BotIcon,
+  MessageCircle,
+  Headphones,
+  Image as ImageIcon,
 } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
+import RedesignBotModal from "@/components/bots/RedesignBotModal";
 
 function DeployBotContent() {
   const routeParams = useParams();
@@ -37,8 +43,16 @@ function DeployBotContent() {
   const [widgetColor, setWidgetColor] = useState("#B68A55");
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I help you today?");
   const [launcherPosition, setLauncherPosition] = useState("bottom-right");
+  const [launcherShape, setLauncherShape] = useState("circle"); // circle | squircle | pill
+  const [launcherSize, setLauncherSize] = useState("medium"); // compact | medium | large
+  const [launcherIcon, setLauncherIcon] = useState("bubble"); // bubble | robot | sparkles | headset | avatar | custom
+  const [launcherLogoUrl, setLauncherLogoUrl] = useState("");
+  const [launcherText, setLauncherText] = useState("Chat with us");
   const [brandingEnabled, setBrandingEnabled] = useState(true);
   const [activeCms, setActiveCms] = useState("html"); // html, wordpress, shopify, webflow, ssh
+  const [redesignModalOpen, setRedesignModalOpen] = useState(false);
+  const [savingAppearance, setSavingAppearance] = useState(false);
+  const [appearanceSaved, setAppearanceSaved] = useState(false);
 
   // Host URL (defaults to active server origin, e.g. https://ess-chatbot.vardaansmartsolutions.com)
   const [customHost, setCustomHost] = useState("");
@@ -77,6 +91,13 @@ function DeployBotContent() {
           );
         }
         if (b.welcomeMessage) setWelcomeMessage(b.welcomeMessage);
+        if (b.launcherPosition) setLauncherPosition(b.launcherPosition);
+        if (b.brandingEnabled !== undefined) setBrandingEnabled(b.brandingEnabled);
+        if (b.launcherShape) setLauncherShape(b.launcherShape);
+        if (b.launcherSize) setLauncherSize(b.launcherSize);
+        if (b.launcherIcon) setLauncherIcon(b.launcherIcon);
+        if (b.launcherLogoUrl) setLauncherLogoUrl(b.launcherLogoUrl);
+        if (b.launcherText) setLauncherText(b.launcherText);
         if (b.websiteUrl) {
           setVerifyUrl(b.websiteUrl);
           setPreviewSiteUrl(b.websiteUrl);
@@ -127,6 +148,41 @@ function DeployBotContent() {
     navigator.clipboard.writeText(sshSedCommand);
     setCopiedSsh(true);
     setTimeout(() => setCopiedSsh(false), 2000);
+  };
+
+  const handleSaveAppearance = async () => {
+    setSavingAppearance(true);
+    setAppearanceSaved(false);
+    try {
+      const res = await fetch(`/api/bots/${bot?.id || botId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          primaryColor: widgetColor,
+          welcomeMessage,
+          launcherPosition,
+          launcherShape,
+          launcherSize,
+          launcherIcon,
+          launcherLogoUrl,
+          launcherText,
+          brandingEnabled,
+        }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setAppearanceSaved(true);
+        if (data.bot) setBot(data.bot);
+        setTimeout(() => setAppearanceSaved(false), 3000);
+      } else {
+        alert(data.error || "Failed to save launcher appearance.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to communicate with server.");
+    } finally {
+      setSavingAppearance(false);
+    }
   };
 
   const handleDownloadSampleHtml = () => {
@@ -598,13 +654,23 @@ function DeployBotContent() {
             )}
           </div>
 
-          {/* Card 3: Widget Appearance Customizer */}
+          {/* Card 3: Widget Appearance & Launcher Customizer */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-xs space-y-5">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <Sliders className="w-4 h-4 text-indigo-600" />
-              <h3 className="font-bold text-sm text-slate-900">
-                Widget Appearance & Host Settings
-              </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <Sliders className="w-4 h-4 text-[#B68A55]" />
+                <h3 className="font-bold text-sm text-slate-900">
+                  Chat Launcher & Appearance Studio
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRedesignModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl border border-[#B68A55]/40 bg-[#B68A55]/10 hover:bg-[#B68A55]/20 text-[#B68A55] text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <Palette className="w-3.5 h-3.5" />
+                <span>Open Studio Redesigner 🎨</span>
+              </button>
             </div>
 
             <div className="space-y-4 text-xs">
@@ -631,21 +697,139 @@ function DeployBotContent() {
                 </div>
               </div>
 
-              {/* Welcome Message */}
+              {/* Launcher Shape Selector (Circle, Squircle, Pill) */}
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Welcome Greeting
+                <label className="block font-semibold text-slate-700 mb-1.5">
+                  Launcher Button Shape
                 </label>
-                <input
-                  type="text"
-                  value={welcomeMessage}
-                  onChange={(e) => setWelcomeMessage(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600"
-                />
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { id: "circle", label: "Circle (Default)", desc: "100% Round" },
+                    { id: "squircle", label: "Squircle", desc: "iOS Rounded" },
+                    { id: "pill", label: "Pill Badge", desc: "With Text Label" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setLauncherShape(s.id)}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        launcherShape === s.id
+                          ? "border-[#B68A55] bg-amber-50/50 text-[#B68A55] shadow-xs"
+                          : "border-slate-200 bg-slate-50/70 text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 font-bold text-xs mb-0.5">
+                        {s.id === "circle" && <div className="w-3 h-3 rounded-full border border-current" />}
+                        {s.id === "squircle" && <div className="w-3 h-3 rounded-md border border-current" />}
+                        {s.id === "pill" && <div className="w-4 h-2.5 rounded-full border border-current" />}
+                        <span>{s.label}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block">{s.desc}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Launcher Position & Branding Toggle */}
+              {/* Pill Text Input (If Pill selected) */}
+              {launcherShape === "pill" && (
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Pill Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={launcherText}
+                    onChange={(e) => setLauncherText(e.target.value)}
+                    placeholder="e.g. Chat with us"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-[#B68A55]"
+                  />
+                </div>
+              )}
+
+              {/* Launcher Icon / Logo Type */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1.5">
+                  Launcher Button Icon & Brand Logo
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[
+                    { id: "bubble", label: "Speech Bubble", icon: MessageCircle },
+                    { id: "robot", label: "AI Robot", icon: BotIcon },
+                    { id: "sparkles", label: "Magic Sparkles", icon: Sparkles },
+                    { id: "headset", label: "Support Headset", icon: Headphones },
+                    { id: "avatar", label: "Bot Avatar", icon: null },
+                    { id: "custom", label: "Custom Logo", icon: ImageIcon },
+                  ].map((item) => {
+                    const isSelected = launcherIcon === item.id;
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setLauncherIcon(item.id)}
+                        className={`p-2 rounded-xl border flex flex-col items-center justify-center text-center gap-1 transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#B68A55] bg-amber-50/60 shadow-xs text-[#B68A55] font-bold"
+                            : "border-slate-200 bg-slate-50/60 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        {item.id === "avatar" ? (
+                          <span className="text-base">{bot?.avatar || "🤖"}</span>
+                        ) : Icon ? (
+                          <Icon className="w-4 h-4" />
+                        ) : null}
+                        <span className="text-[10px] truncate w-full">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Logo Image URL Field */}
+              {launcherIcon === "custom" && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-800">
+                    Custom Logo Image URL
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={launcherLogoUrl}
+                      onChange={(e) => setLauncherLogoUrl(e.target.value)}
+                      placeholder="https://yourdomain.com/logo.png or /e-logoicon.webp"
+                      className="flex-1 text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-hidden focus:border-[#B68A55]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLauncherLogoUrl("/e-logoicon.webp")}
+                      className="px-2.5 py-2 text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] rounded-lg border border-[#B68A55]/30 hover:bg-[#B68A55]/25 whitespace-nowrap cursor-pointer"
+                    >
+                      Use ESS Logo
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    Paste a link to your company brand logo (transparent PNG, WEBP, or SVG).
+                  </p>
+                </div>
+              )}
+
+              {/* Button Size & Position */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Button Size
+                  </label>
+                  <select
+                    value={launcherSize}
+                    onChange={(e) => setLauncherSize(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden cursor-pointer"
+                  >
+                    <option value="compact">Compact (52px)</option>
+                    <option value="medium">Standard (62px)</option>
+                    <option value="large">Large (72px)</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
                     Launcher Position
@@ -659,20 +843,116 @@ function DeployBotContent() {
                     <option value="bottom-left">Bottom Left</option>
                   </select>
                 </div>
+              </div>
 
+              {/* Welcome Message */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Welcome Greeting
+                </label>
+                <input
+                  type="text"
+                  value={welcomeMessage}
+                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-[#B68A55]"
+                />
+              </div>
+
+              {/* White-Label Branding Toggle */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  NexusAI Branding
+                </label>
+                <select
+                  value={brandingEnabled ? "yes" : "no"}
+                  onChange={(e) => setBrandingEnabled(e.target.value === "yes")}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden cursor-pointer"
+                >
+                  <option value="yes">Show "Powered by NexusAI"</option>
+                  <option value="no">Hide Branding (White-label)</option>
+                </select>
+              </div>
+
+              {/* Live Launcher Button Preview Card */}
+              <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-between">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    NexusAI Branding
-                  </label>
-                  <select
-                    value={brandingEnabled ? "yes" : "no"}
-                    onChange={(e) => setBrandingEnabled(e.target.value === "yes")}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden cursor-pointer"
-                  >
-                    <option value="yes">Show "Powered by NexusAI"</option>
-                    <option value="no">Hide Branding (White-label)</option>
-                  </select>
+                  <span className="text-[11px] font-bold text-slate-300 block">
+                    Live Launcher Preview
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    {launcherShape.toUpperCase()} • {launcherSize.toUpperCase()} • {launcherIcon.toUpperCase()}
+                  </span>
                 </div>
+
+                <div
+                  className="flex items-center justify-center text-white font-bold shadow-lg transition-all"
+                  style={{
+                    backgroundColor: widgetColor,
+                    borderRadius:
+                      launcherShape === "squircle" ? "18px" : launcherShape === "pill" ? "9999px" : "50%",
+                    width: launcherShape === "pill" ? "auto" : launcherSize === "compact" ? "48px" : launcherSize === "large" ? "64px" : "54px",
+                    height: launcherSize === "compact" ? "48px" : launcherSize === "large" ? "64px" : "54px",
+                    padding: launcherShape === "pill" ? "0 18px" : "0",
+                    gap: "8px",
+                  }}
+                >
+                  {launcherLogoUrl ? (
+                    <img
+                      src={launcherLogoUrl}
+                      alt="Logo"
+                      className="w-6 h-6 object-contain rounded-xs"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : launcherIcon === "avatar" ? (
+                    <span className="text-xl">{bot?.avatar || "🤖"}</span>
+                  ) : launcherIcon === "robot" ? (
+                    <BotIcon className="w-5 h-5 text-white" />
+                  ) : launcherIcon === "sparkles" ? (
+                    <Sparkles className="w-5 h-5 text-white" />
+                  ) : launcherIcon === "headset" ? (
+                    <Headphones className="w-5 h-5 text-white" />
+                  ) : (
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  )}
+                  {launcherShape === "pill" && (
+                    <span className="text-xs font-bold text-white whitespace-nowrap">
+                      {launcherText || "Chat with us"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Save & Apply Button */}
+              <div className="pt-2 flex items-center justify-between gap-3">
+                <span className="text-[11px] text-slate-500">
+                  {appearanceSaved ? (
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Appearance Saved & Live!
+                    </span>
+                  ) : (
+                    "Saves permanently for your live widget snippet."
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveAppearance}
+                  disabled={savingAppearance}
+                  className="px-5 py-2.5 rounded-xl bg-[#B68A55] hover:bg-[#9F7645] text-white font-bold text-xs shadow-md flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {savingAppearance ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save & Apply Appearance</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -960,19 +1240,42 @@ function DeployBotContent() {
                     )}
                   </div>
                 ) : (
-                  /* Floating Circular Launcher Button on Website */
+                  /* Floating Circular Launcher Button on Website Simulator */
                   <button
                     type="button"
                     onClick={() => setSimulatorChatOpen(true)}
                     className={`absolute bottom-3 ${
                       launcherPosition === "bottom-left" ? "left-3" : "right-3"
-                    } w-12 h-12 rounded-full shadow-xl flex items-center justify-center text-white cursor-pointer z-30 transition-transform hover:scale-110 active:scale-95`}
+                    } shadow-xl flex items-center justify-center text-white cursor-pointer z-30 transition-transform hover:scale-105 active:scale-95`}
                     style={{
                       background: `linear-gradient(135deg, ${widgetColor} 0%, #1e1b4b 100%)`,
                       boxShadow: `0 8px 20px -3px ${widgetColor}60`,
+                      borderRadius:
+                        launcherShape === "squircle" ? "14px" : launcherShape === "pill" ? "9999px" : "50%",
+                      width: launcherShape === "pill" ? "auto" : launcherSize === "compact" ? "42px" : launcherSize === "large" ? "54px" : "48px",
+                      height: launcherSize === "compact" ? "42px" : launcherSize === "large" ? "54px" : "48px",
+                      padding: launcherShape === "pill" ? "0 14px" : "0",
+                      gap: "6px",
                     }}
                   >
-                    <span className="text-lg">{bot?.avatar || "🤖"}</span>
+                    {launcherLogoUrl ? (
+                      <img src={launcherLogoUrl} alt="Logo" className="w-5 h-5 object-contain rounded-xs" />
+                    ) : launcherIcon === "avatar" ? (
+                      <span className="text-base">{bot?.avatar || "🤖"}</span>
+                    ) : launcherIcon === "robot" ? (
+                      <BotIcon className="w-4 h-4 text-white" />
+                    ) : launcherIcon === "sparkles" ? (
+                      <Sparkles className="w-4 h-4 text-white" />
+                    ) : launcherIcon === "headset" ? (
+                      <Headphones className="w-4 h-4 text-white" />
+                    ) : (
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    )}
+                    {launcherShape === "pill" && (
+                      <span className="text-[11px] font-bold text-white whitespace-nowrap">
+                        {launcherText || "Chat with us"}
+                      </span>
+                    )}
                   </button>
                 )}
               </div>
@@ -980,6 +1283,39 @@ function DeployBotContent() {
           </div>
         </div>
       </div>
+
+      {/* Redesign Studio Modal for Sub-Admins and Admins */}
+      {bot && (
+        <RedesignBotModal
+          isOpen={redesignModalOpen}
+          onClose={() => setRedesignModalOpen(false)}
+          bot={{
+            ...bot,
+            primaryColor: widgetColor,
+            welcomeMessage,
+            launcherPosition,
+            launcherShape,
+            launcherSize,
+            launcherIcon,
+            launcherLogoUrl,
+            launcherText,
+            brandingEnabled,
+          }}
+          onBotUpdated={(updated) => {
+            setBot(updated);
+            if (updated.primaryColor) setWidgetColor(updated.primaryColor);
+            if (updated.welcomeMessage) setWelcomeMessage(updated.welcomeMessage);
+            if (updated.launcherPosition) setLauncherPosition(updated.launcherPosition);
+            if (updated.launcherShape) setLauncherShape(updated.launcherShape);
+            if (updated.launcherSize) setLauncherSize(updated.launcherSize);
+            if (updated.launcherIcon) setLauncherIcon(updated.launcherIcon);
+            if (updated.launcherLogoUrl !== undefined) setLauncherLogoUrl(updated.launcherLogoUrl);
+            if (updated.launcherText) setLauncherText(updated.launcherText);
+            if (updated.brandingEnabled !== undefined) setBrandingEnabled(updated.brandingEnabled);
+            setRedesignModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

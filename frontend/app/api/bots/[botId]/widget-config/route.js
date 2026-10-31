@@ -48,6 +48,12 @@ export async function GET(request, { params }) {
               : bot.primaryColor,
           welcomeMessage: bot.welcomeMessage || `Hello! I am ${bot.name}. How can I help you today?`,
           launcherPosition: bot.launcherPosition || "bottom-right",
+          launcherShape: bot.launcherShape || "circle",
+          launcherSize: bot.launcherSize || "medium",
+          launcherIcon: bot.launcherIcon || "bubble",
+          launcherLogoUrl: bot.launcherLogoUrl || "",
+          launcherText: bot.launcherText || "",
+          launcherColor: bot.launcherColor || null,
           brandingEnabled: bot.brandingEnabled !== false,
           placeholderText: bot.placeholderText || "Type your message...",
           quickReplies:
