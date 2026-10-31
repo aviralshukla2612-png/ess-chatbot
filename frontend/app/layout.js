@@ -30,6 +30,9 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <head>
+        <link rel="icon" href="/e-logoicon.webp" type="image/webp" />
+        <link rel="shortcut icon" href="/e-logoicon.webp" type="image/webp" />
+        <link rel="apple-touch-icon" href="/e-logoicon.webp" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
