@@ -1421,7 +1421,7 @@ export function handleSalesFlowTurn({
   const isGenericOrPlaceholder = (n) =>
     !n ||
     typeof n !== "string" ||
-    /^(?:there|website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(n.trim());
+    /^(?:there|website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(n.trim());
 
   const cleanVisitorName = isGenericOrPlaceholder(visitorName) ? "" : visitorName.trim();
   const hasRealName = Boolean(cleanVisitorName);

@@ -41,17 +41,17 @@ export function extractLeadDetails(message = "", history = []) {
     if (digits.length === 12 && digits.startsWith("91") && /^[6-9]/.test(digits.slice(2))) {
       return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
     }
-    if (digits.length === 10) {
+    if (digits.length >= 10 && digits.length <= 14) {
       return digits;
     }
     return clean;
   }
 
   let phone = "";
-  const indianPhoneRegex = /(?:(?:\+|00)91[\s.-]?|0)?[6-9]\d{4}[\s.-]?\d{5,6}\b/;
-  const labeledPhoneRegex = /(?:phone|number|nunmber|mobile|mobilenumber|nmobiele|nmobile|whatsapp|contact|no)\s*(?:is|:|-)?\s*(\+?\d{10,12})\b/i;
-  const rawDigitsRegex = /\b[6-9]\d{9,11}\b/;
-  const globalPhoneRegex = /(?:\+\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/;
+  const indianPhoneRegex = /(?<!\d)(?:(?:\+|00)91[\s.-]?|0)?[6-9]\d{9,12}(?!\d)/;
+  const labeledPhoneRegex = /(?:phone|number|nunmber|mobile|mobilenumber|nmobiele|nmobile|whatsapp|contact|no)\s*(?:is|:|-)?\s*(\+?\d{10,14})\b/i;
+  const rawDigitsRegex = /(?<!\d)[6-9]\d{9,13}(?!\d)/;
+  const globalPhoneRegex = /(?<!\d)(?:\+\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)/;
 
   let indianMatch = null;
   for (const text of userTexts.slice().reverse()) {
@@ -147,42 +147,70 @@ export function extractLeadDetails(message = "", history = []) {
     return true;
   }
 
+  // Direct combined Name and Phone pattern: e.g. "aviral shukla 767676767676", "767676767676 aviral shukla"
+  for (const text of recentTexts.slice().reverse()) {
+    const cleanT = text.trim();
+    const nameThenPhone = cleanT.match(/^([A-Za-z.']+(?:\s+[A-Za-z.']+){1,3})\s*[,:\-\/]?\s*(\+?(?:91[\s.-]?)?\d{10,14})$/i);
+    if (nameThenPhone && !name) {
+      const candName = nameThenPhone[1].trim();
+      const candPhone = nameThenPhone[2].trim();
+      if (isValidPersonName(candName)) {
+        name = candName.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+        if (!phone) {
+          phone = formatPhoneNumber(candPhone);
+        }
+        break;
+      }
+    }
+    const phoneThenName = cleanT.match(/^(\+?(?:91[\s.-]?)?\d{10,14})\s*[,:\-\/]?\s*([A-Za-z.']+(?:\s+[A-Za-z.']+){1,3})$/i);
+    if (phoneThenName && !name) {
+      const candPhone = phoneThenName[1].trim();
+      const candName = phoneThenName[2].trim();
+      if (isValidPersonName(candName)) {
+        name = candName.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+        if (!phone) {
+          phone = formatPhoneNumber(candPhone);
+        }
+        break;
+      }
+    }
+  }
+
   const namePatterns = [
     /(?:(?:my\s+)?name\s*(?:is|:|-|\s)\s*|(?:i\s+am|i'm|this\s+is|call\s+me|myself)\s+|mera\s+naam\s*(?:hai|:|-|\s)?\s*)([A-Za-z.']{2,20}(?:\s+[A-Za-z.']{2,20})?)/i,
     /(?:name\s*[:\-\s]\s*)([A-Za-z.']{2,20}(?:\s+[A-Za-z.']{2,20})?)/i,
   ];
 
-  for (const text of recentTexts.slice().reverse()) {
-    for (const pattern of namePatterns) {
-      const match = text.match(pattern);
-      if (match && match[1]) {
-        let candidate = match[1].replace(/[,:;!?&]+.*$/, "").replace(/\.+$/, "").trim();
-        candidate = candidate.replace(/\s+(?:and|with|my|mobile|phone|number|mobilenumber|whatsapp|email|contact).*$/i, "").trim();
-        const candidateWords = candidate.split(/\s+/).filter(Boolean);
-        while (candidateWords.length > 0 && NON_NAME_WORDS.has(candidateWords[candidateWords.length - 1].toLowerCase())) {
-          candidateWords.pop();
-        }
-        candidate = candidateWords.join(" ");
+  if (!name) {
+    for (const text of recentTexts.slice().reverse()) {
+      for (const pattern of namePatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          let candidate = match[1].replace(/[,:;!?&]+.*$/, "").replace(/\.+$/, "").trim();
+          candidate = candidate.replace(/\s+(?:and|with|my|mobile|phone|number|mobilenumber|whatsapp|email|contact).*$/i, "").trim();
+          const candidateWords = candidate.split(/\s+/).filter(Boolean);
+          while (candidateWords.length > 0 && NON_NAME_WORDS.has(candidateWords[candidateWords.length - 1].toLowerCase())) {
+            candidateWords.pop();
+          }
+          candidate = candidateWords.join(" ");
 
-        if (isValidPersonName(candidate)) {
-          name = candidate.split(/\s+/).map((w) => w.includes(".") ? (w.charAt(0).toUpperCase() + w.slice(1)) : (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(" ");
-          break;
+          if (isValidPersonName(candidate)) {
+            name = candidate.split(/\s+/).map((w) => w.includes(".") ? (w.charAt(0).toUpperCase() + w.slice(1)) : (w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())).join(" ");
+            break;
+          }
         }
       }
+      if (name) break;
     }
-    if (name) break;
   }
 
   // If no explicit pattern, check for input containing phone: e.g. "Aviral, 9876543210" or "Aviral 9876543210"
   if (!name && phone) {
     for (const msg of recentTexts.slice().reverse()) {
-      if (msg.includes(phone) || (indianMatch && msg.includes(indianMatch[0]))) {
-        const rawPhone = indianMatch ? indianMatch[0] : phone;
-        const remainder = msg.replace(rawPhone, "").replace(/[,:\n-]/g, " ").trim();
-        if (isValidPersonName(remainder)) {
-          name = remainder.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-          break;
-        }
+      const remainder = msg.replace(/\+?(?:91[\s.-]?)?\d{10,14}/g, "").replace(/[,:\n\-]/g, " ").trim();
+      if (isValidPersonName(remainder)) {
+        name = remainder.split(/\s+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+        break;
       }
     }
   }

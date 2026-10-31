@@ -48,11 +48,9 @@ function loadFromDisk() {
           botName = "Emperor AI Assistant";
           isChanged = true;
         }
-        if (!visitorName || visitorName === "Website Visitor" || visitorName === "Client Inquiry") {
+        if (!visitorName || visitorName === "Website Visitor" || visitorName === "Client Inquiry" || visitorName.startsWith("Client (")) {
           if (c.visitorEmail) {
             visitorName = c.visitorEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (x) => x.toUpperCase());
-          } else if (c.visitorPhone) {
-            visitorName = `Client (${c.visitorPhone})`;
           } else {
             visitorName = "";
           }

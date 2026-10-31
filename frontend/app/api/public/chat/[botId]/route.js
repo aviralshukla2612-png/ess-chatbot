@@ -441,7 +441,7 @@ export async function POST(request, { params }) {
     const isPlaceholderName = (n) =>
       !n ||
       typeof n !== "string" ||
-      /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(n.trim());
+      /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(n.trim());
 
     // 1. Phone Resolution (Current message has top priority!)
     let resolvedPhone = "";
@@ -809,6 +809,21 @@ export async function POST(request, { params }) {
         : lang === "hinglish"
         ? `Sure! Please apna **Name aur Phone Number (ya WhatsApp)** share karein, hum ise note kar lenge aur hamari technical team aapse connect karegi.`
         : `Sure! Please share your **Name and Phone Number (or WhatsApp)** here, and I'll make sure our technical team connects with you promptly.`;
+    } else if (/^(?:what(?:'s|\s+is)\s+my\s+name|do\s+you\s+(?:know|remember)\s+my\s+name|can\s+you\s+tell\s+me\s+my\s+name|who\s+am\s+i|mera\s+naam\s+kya\s+hai|mera\s+naam\s+batao|tell\s+me\s+my\s+name|what\s+name\s+do\s+you\s+have\s+for\s+me)\??$/i.test(message.trim())) {
+      if (resolvedName && !isPlaceholderName(resolvedName)) {
+        deterministicReply = lang === "hindi"
+          ? `आपका नाम **${resolvedName}** है! 👤\n\nमैं Emperor Smart Solutions की ओर से आज आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ?`
+          : lang === "hinglish"
+          ? `Aapka naam **${resolvedName}** hai! 👤\n\nMain Emperor Smart Solutions ki taraf se aapke project mein kaise help kar sakta hoon?`
+          : `Your name is **${resolvedName}**! 👤\n\nHow can Emperor Smart Solutions assist you with your digital project today?`;
+      } else {
+        deterministicReply = lang === "hindi"
+          ? `मेरे पास अभी आपका नाम दर्ज नहीं है। कृपया अपना **नाम** साझा करें!`
+          : lang === "hinglish"
+          ? `Mere paas abhi aapka name recorded nahi hai. Please apna **Name** share karein!`
+          : `I don't have your name recorded yet. Could you please share your **Name**?`;
+      }
+      quickReplies = isEssBot ? [...ALL_ESS_SERVICES] : (bot?.quickReplies || []);
     } else if (isContactSubmission) {
       const activeQual = existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
       const displayName = (resolvedName && !isPlaceholderName(resolvedName)) ? resolvedName : "";

@@ -87,7 +87,7 @@ export const leadsStore = {
             visitorId: conv.visitorId || null,
             sessionId: conv.id,
             organizationId: conv.organizationId || "org_ess_default",
-            name: conv.visitorName && !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(conv.visitorName.trim())
+            name: conv.visitorName && !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(conv.visitorName.trim())
               ? conv.visitorName
               : (conv.visitorEmail ? conv.visitorEmail.split("@")[0].replace(/[._]/g, " ") : (conv.visitorPhone ? `Client (${conv.visitorPhone})` : "Client Lead")),
             email: conv.visitorEmail || "",
@@ -147,7 +147,7 @@ export const leadsStore = {
     list = list.filter((l) => {
       const hasContact = Boolean(l.email || l.phone);
       const hasAnswers = Boolean(l.answers && Object.keys(l.answers).length > 0);
-      const isPlaceholder = !l.name || /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*#\d+)?)$/i.test(l.name.trim());
+      const isPlaceholder = !l.name || /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(l.name.trim());
       const hasRealName = Boolean(l.name && !isPlaceholder);
       const isBogusName = /^(?:who\s+is|what\s+is|can\s+you|tell\s+me|i\s+want|how\s+much|hello|hi)\b/i.test(l.name || "");
       if (isBogusName) return false;
