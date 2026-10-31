@@ -349,7 +349,7 @@ export default function ConversationsPage() {
           </div>
 
           {/* List items or Empty state */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[#EFE7DC] dark:divide-neutral-800/80">
+          <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-[#EFE7DC] dark:divide-neutral-800/80">
             {!loading && filtered.length === 0 && (
               <div className="p-8 text-center space-y-3.5 my-auto">
                 <div className="w-12 h-12 rounded-2xl bg-[#B68A55]/10 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55] mx-auto shadow-inner">
@@ -485,7 +485,7 @@ export default function ConversationsPage() {
               </div>
 
               {/* Messages Flow (Horizontal overflow strictly prevented) */}
-              <div className="flex-1 p-5 overflow-y-auto overflow-x-hidden space-y-4 bg-[#FAF9F6]/50 dark:bg-[#070707]">
+              <div className="flex-1 p-5 overflow-y-auto overflow-x-hidden no-scrollbar space-y-4 bg-[#FAF9F6]/50 dark:bg-[#070707]">
                 <div className="text-center">
                   <span className="text-[10px] bg-white dark:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 font-semibold px-2.5 py-1 rounded-full shadow-xs">
                     {currentChat.startedAt || "Today (IST)"}
@@ -556,7 +556,7 @@ export default function ConversationsPage() {
         </div>
 
         {/* COLUMN 3: Client & Conversation Metadata */}
-        <div className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto shrink-0 text-xs">
+        <div className="w-full lg:w-68 xl:w-76 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs">
           {currentChat ? (
             <>
               {/* CLIENT INFO */}
