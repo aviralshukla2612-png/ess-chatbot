@@ -285,12 +285,12 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
             onClick={() => setIsTestChatOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <Sparkles className="w-4 h-4 text-[#B68A55]" />
             <span>Test with Website Knowledge</span>
           </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Website</span>

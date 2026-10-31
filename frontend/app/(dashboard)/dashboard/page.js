@@ -161,7 +161,7 @@ export default function DashboardPage() {
 
           <Link
             href="/bots/create"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition-all"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Create AI Bot</span>

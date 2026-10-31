@@ -179,9 +179,9 @@ export default function CreateBotWizard() {
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
                     isCurrent
-                      ? "bg-[#4f46e5] text-white shadow-sm"
+                      ? "bg-[#B68A55] text-white shadow-sm"
                       : isPast
-                      ? "bg-indigo-100 text-indigo-700 font-semibold"
+                      ? "bg-[#B68A55]/20 text-[#B68A55] font-semibold"
                       : "bg-slate-100 text-slate-400"
                   }`}
                 >
@@ -1053,7 +1053,7 @@ export default function CreateBotWizard() {
           <button
             type="button"
             onClick={() => setCurrentStep((prev) => Math.min(7, prev + 1))}
-            className="px-5 py-2 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-5 py-2 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all cursor-pointer flex items-center gap-1.5"
           >
             Next →
           </button>

@@ -8,8 +8,12 @@ import Link from "next/link";
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  React.useEffect(() => {
+    document.documentElement.classList.add("dark");
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#000000] text-slate-100 flex flex-col font-sans">
+    <div className="dark min-h-screen bg-[#000000] text-slate-100 flex flex-col font-sans">
       {/* Top Banner Notice for Super Admin Mode */}
       <div className="bg-[#0A0A0A] border-b border-neutral-800 px-4 py-1.5 text-xs font-medium text-neutral-300 flex items-center justify-between">
         <div className="flex items-center gap-2">

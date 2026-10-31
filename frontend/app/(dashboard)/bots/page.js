@@ -205,7 +205,7 @@ export default function BotsPage() {
           ) : (
             <Link
               href="/bots/create"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-semibold shadow-md shadow-indigo-600/25 transition-all w-fit cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all w-fit cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Create AI Bot</span>
@@ -374,7 +374,7 @@ export default function BotsPage() {
               <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#EFE7DC] dark:border-slate-800/80 text-xs">
                 <Link
                   href={`/bots/${bot.id}`}
-                  className="px-3.5 py-1.5 rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  className="px-3.5 py-1.5 rounded-lg bg-[#B68A55] hover:bg-[#966E3A] text-white font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs shadow-[#B68A55]/20"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Open</span>
@@ -383,10 +383,10 @@ export default function BotsPage() {
                 {/* Mandatory Company Profile Intake Form Button */}
                 <Link
                   href={`/bots/${bot.id}?tab=company-profile`}
-                  className="px-3.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   title="Complete mandatory Company Profile Intake & Business Hours form"
                 >
-                  <Building2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <Building2 className="w-3.5 h-3.5 text-[#B68A55]" />
                   <span>Company Profile Intake 🏢</span>
                 </Link>
 
