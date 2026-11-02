@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import IndustriesSection from "@/components/IndustriesSection";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -64,65 +65,6 @@ export default function HomePage() {
     setSelectedIndustry(indId);
     setExperienceModalOpen(true);
   };
-
-  const industriesDeepDive = [
-    {
-      id: "real-estate",
-      category: "Real Estate",
-      title: "Horizon Edge — Glass Façade Solutions",
-      subtitle: "Property details, pricing and project enquiries.",
-      tagline: "Unit Specs & Pricing",
-      icon: Building2,
-      img: "https://images.openai.com/static-rsc-4/bhxjo1KnM48AtN2-0ihMdpI48LvHI1QeSp43wdBbpwoDLMMc-4hMo_FhIguQpLD9mUrkYH8xH2xEof-rIMZwPdsaBr-0AyNctvCbanY5diNd3mJ0BRoJfowuSu10UJDol4GDXtjxLEy8ct12NBawbpbURs4Ik51lWsRal0HfvQo?purpose=inline",
-      fallbackBg: "linear-gradient(135deg, #1E1233 0%, #0B0B14 100%)",
-      description:
-        "Guide commercial developers and buyers through thermal ratings, unit dimensions, glass façade specs, and pricing structures.",
-      questionExample: "What are the thermal insulation ratings and lead times for unitized façade glass panels?",
-      metrics: "3.4x Faster Viewing Bookings",
-    },
-    {
-      id: "healthcare",
-      category: "Healthcare",
-      title: "Medical Clinic & Wellness Suite",
-      subtitle: "Treatments, doctors and consultation information.",
-      tagline: "Clinical Intake & Eligibility",
-      icon: PlusSquare,
-      img: "https://images.openai.com/static-rsc-4/2jq0Rok6gYbmP6SqRsv3gC58bnz2qV8feTR3ABvlxw0mbo9zaCOxDZ-4aL3K9lwt0znqO_LcqV6R9yCClKlx_Tfn6PkfsaZb1_BMgF5fCGt6oH2qmn_99dwdKdFMgLkHGT2wBS1NQpLBz6Ugu3LjntKdrasPbakdQ3wD0tEzLrE?purpose=inline",
-      fallbackBg: "linear-gradient(135deg, #122233 0%, #080D14 100%)",
-      description:
-        "Instantly answer questions about clinical treatments, doctor credentials, diagnostic scans, and coordinate patient consultations.",
-      questionExample: "Are orthopedic consultations and diagnostic scans covered under international insurance?",
-      metrics: "88% Reduction in Support Wait Times",
-    },
-    {
-      id: "education",
-      category: "Education",
-      title: "USTP Campus & Higher Education",
-      subtitle: "Admissions, courses and fee enquiries.",
-      tagline: "Programs & Admissions",
-      icon: GraduationCap,
-      img: "https://images.openai.com/static-rsc-4/M9VJrdy3ggMu426pzfuw2otoLMtAcuRe_omuJWKz5t8Xqmv6k_DG9xF4mRFLwDp504lPXG8Yy7ihgGp_OwNgWwzxBTHiW1xrdP-v_dUCdIzre_CtzN3fUyDeT1nKcOcAwpMzrgnnvTXMjct14xeIL7CR28kMrRvwviRhvFOAZTg?purpose=inline",
-      fallbackBg: "linear-gradient(135deg, #241433 0%, #0C0814 100%)",
-      description:
-        "Direct prospective students to degree programs, scholarship eligibility, fee structures, and application deadline requirements.",
-      questionExample: "What are the application deadlines and scholarship criteria for the Fall 2026 intake?",
-      metrics: "62% Increase in Completed Applications",
-    },
-    {
-      id: "hospitality",
-      category: "Hospitality",
-      title: "Grand Horizon Luxury Hotel & Resort",
-      subtitle: "Rooms, facilities and accommodation information.",
-      tagline: "Suites & Bespoke Stays",
-      icon: BedDouble,
-      img: "https://images.openai.com/static-rsc-4/0kABJj0RgRdu6YugoGN2wcoTb_4E7HtbjDwc11vePEH7U5osQvubLqXbzn5TJgNnnan_hKkdD-veiqRt1wdUmEF7E0zmknQkCqoZkGB-QzaXLHevs-o2xhyH51a7INz3y1q664Ai0DXrPLBbkfeT_OapvF8Nxe311Zsn3WCCCjg?purpose=inline",
-      fallbackBg: "linear-gradient(135deg, #1E1A33 0%, #090812 100%)",
-      description:
-        "Deliver 24/7 concierge assistance for ocean-view suites, dining reservations, private wellness sessions, and VIP booking upgrades.",
-      questionExample: "Can we reserve an executive ocean-view suite with private dinner and late checkout?",
-      metrics: "2.1x Boost in Direct Booking Value",
-    },
-  ];
 
   const benefits = [
     {
@@ -367,19 +309,11 @@ export default function HomePage() {
         id="home"
         className="relative min-h-screen w-full flex flex-col justify-between items-center pt-32 pb-16 px-4 sm:px-6 md:px-8 overflow-hidden bg-[#050507]"
       >
-        {/* Underlying Metallic Wave (bg.png) */}
+        {/* User's Exact Clean Background - Pure bg.png without artificial square box grids */}
         <div
-          className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none opacity-95 transition-opacity duration-1000"
+          className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none"
           style={{ backgroundImage: `url('/bg.png')` }}
         />
-
-        {/* Technical Dotted & Line Grid */}
-        <div className="absolute inset-0 z-1 nexus-grid-overlay pointer-events-none opacity-40" />
-        <div className="absolute inset-0 z-1 nexus-dotted-grid pointer-events-none opacity-30" />
-
-        {/* Ambient Radial Lighting */}
-        <div className="absolute inset-0 z-2 pointer-events-none glow-hero-ambient" />
-        <div className="absolute top-0 left-0 right-0 h-40 z-2 bg-gradient-to-b from-[#050507] via-[#050507]/60 to-transparent pointer-events-none" />
 
         {/* Central Hero Headline & CTA */}
         <div className="relative z-10 max-w-6xl w-full mx-auto flex flex-col items-center text-center mt-6 sm:mt-12 md:mt-16">
@@ -454,113 +388,11 @@ export default function HomePage() {
         <div className="relative z-10 w-full h-8 mt-6 pointer-events-none" />
       </section>
 
-      {/* 3. DEEP DIVE INDUSTRIES SECTION */}
-      <section id="industries" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#0B0B10] overflow-hidden">
-        <div className="absolute top-1/4 right-0 w-96 h-96 bg-[#963DFF]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 left-0 w-96 h-96 bg-[#55A9FF]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute inset-0 nexus-grid-overlay opacity-20 pointer-events-none" />
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-xs font-bold uppercase tracking-wider mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>02. Customized Business Experience — Every Business is Different</span>
-            </div>
-
-            <h2 className="font-headline tracking-normal text-white uppercase text-4xl sm:text-6xl md:text-7xl leading-tight">
-              Your Business Is Unique. <br />
-              <span className="text-glow-purple text-gradient-purple-blue">
-                Your Customer Experience Should Be Too.
-              </span>
-            </h2>
-
-            <p className="mt-4 text-base sm:text-lg text-[#9898A6] leading-relaxed">
-              Every business has its own services, offerings, customers and way of working.
-              Create a customized assistant around your business information, so visitors can explore
-              what you offer and get relevant answers to their questions.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {industriesDeepDive.map((ind) => {
-              const Icon = ind.icon;
-              return (
-                <div
-                  key={ind.id}
-                  className="group relative rounded-3xl glass-panel glass-panel-hover overflow-hidden flex flex-col justify-between cursor-pointer border border-white/[0.08] hover:border-[#963DFF]/40 transition-all duration-300"
-                  onClick={() => handleOpenExperience(ind.id)}
-                >
-                  {/* Top Image Banner */}
-                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-black/40">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
-                      style={{
-                        backgroundImage: `url('${ind.img}'), ${ind.fallbackBg}`,
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#12121A] via-black/20 to-transparent" />
-
-                    {/* Category Pill Tag */}
-                    <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white text-xs font-bold">
-                      <Icon className="w-3.5 h-3.5 text-[#C28AFF]" />
-                      <span>{ind.category}</span>
-                    </div>
-
-                    {/* Metric Tag */}
-                    <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-500/40 text-emerald-400 text-xs font-bold">
-                      {ind.metrics}
-                    </div>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="p-6 sm:p-8 flex flex-col justify-between flex-1">
-                    <div>
-                      <h3 className="font-bold text-xl sm:text-2xl text-white group-hover:text-[#F5F5F7] transition-colors">
-                        {ind.title}
-                      </h3>
-                      <p className="mt-2 text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-                        {ind.subtitle}
-                      </p>
-
-                      {/* Sample Customer Question Block */}
-                      <div className="mt-6 p-4 rounded-2xl bg-black/50 border border-white/[0.06] space-y-1.5">
-                        <span className="text-[10px] uppercase font-bold text-[#C28AFF] tracking-wider block">
-                          Sample Customer Question Handled:
-                        </span>
-                        <p className="text-xs sm:text-sm text-[#F5F5F7] italic font-medium">
-                          "{ind.questionExample}"
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Card Footer Action */}
-                    <div className="mt-8 pt-5 border-t border-white/[0.06] flex items-center justify-between">
-                      <span className="text-xs font-semibold text-[#9898A6]">
-                        {ind.tagline}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenExperience(ind.id);
-                        }}
-                        className="inline-flex items-center gap-2 text-xs font-bold text-[#C28AFF] group-hover:text-white transition-colors"
-                      >
-                        <span>Test Assistant Live</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* 3. SCROLL-PINNED MOSAIC INDUSTRIES SECTION */}
+      <IndustriesSection onOpenExperience={handleOpenExperience} />
 
       {/* 4. BENEFITS SECTION */}
       <section id="benefits" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#050507] overflow-hidden">
-        <div className="absolute inset-0 nexus-grid-overlay opacity-25 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#963DFF]/10 rounded-full blur-[140px] pointer-events-none" />
 
         <div className="relative z-10 max-w-7xl mx-auto">

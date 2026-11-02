@@ -69,7 +69,6 @@ export default function PricingSection({ onOpenTrial }) {
     <section id="pricing" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#050507] overflow-hidden">
       {/* Background Ambience */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#963DFF]/10 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute inset-0 nexus-grid-overlay opacity-20 pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Section Header */}

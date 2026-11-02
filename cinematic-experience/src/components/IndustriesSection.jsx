@@ -273,9 +273,7 @@ export default function IndustriesSection({ onOpenExperience }) {
           ============================================================ */}
       <div ref={stageRef} className="relative w-full h-[400vh]">
         <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#050507] flex flex-col justify-center items-center">
-          {/* Background Ambient Lighting & Grids */}
-          <div className="absolute inset-0 pointer-events-none nexus-grid-overlay opacity-30" />
-          <div className="absolute inset-0 pointer-events-none nexus-dotted-grid opacity-25" />
+          {/* Subtle Ambient Radial Glows */}
           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none" />
           <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-[#55A9FF]/12 rounded-full blur-[140px] pointer-events-none" />
 

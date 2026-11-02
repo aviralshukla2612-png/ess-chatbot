@@ -26,12 +26,14 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       // 1. Initial fade-in of background ambient glow
-      tl.fromTo(
-        ambientLightRef.current,
-        { opacity: 0, scale: 0.9 },
-        { opacity: 1, scale: 1, duration: 1.6, ease: "sine.out" },
-        0
-      );
+      if (ambientLightRef.current) {
+        tl.fromTo(
+          ambientLightRef.current,
+          { opacity: 0, scale: 0.9 },
+          { opacity: 1, scale: 1, duration: 1.6, ease: "sine.out" },
+          0
+        );
+      }
 
       // 2. Reveal the main headline with cinematic rise & mask
       if (headlineRef.current) {
@@ -126,28 +128,15 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
       ref={heroRef}
       className="relative min-h-screen w-full flex flex-col justify-between items-center pt-32 pb-16 px-4 sm:px-6 md:px-8 overflow-hidden bg-[#050507]"
     >
-      {/* 1. Underlying Metallic Wave Background (User provided bg.png) */}
+      {/* 1. Underlying Metallic Wave Background (User provided bg.png) - Clean without square box grid */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none opacity-95 transition-opacity duration-1000"
+        className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none"
         style={{
           backgroundImage: `url('/bg.png')`,
         }}
       />
 
-      {/* 2. Technical Dotted & Line Grid Overlays */}
-      <div className="absolute inset-0 z-1 nexus-grid-overlay pointer-events-none opacity-40" />
-      <div className="absolute inset-0 z-1 nexus-dotted-grid pointer-events-none opacity-30" />
-
-      {/* 3. Ambient Radial Lighting (Lower-Left Purple + Upper-Right Blue) */}
-      <div
-        ref={ambientLightRef}
-        className="absolute inset-0 z-2 pointer-events-none glow-hero-ambient"
-      />
-
-      {/* 4. Top subtle vignette mask */}
-      <div className="absolute top-0 left-0 right-0 h-40 z-2 bg-gradient-to-b from-[#050507] via-[#050507]/60 to-transparent pointer-events-none" />
-
-      {/* 5. Central Hero Content Block */}
+      {/* 2. Central Hero Content Block */}
       <div className="relative z-10 max-w-6xl w-full mx-auto flex flex-col items-center text-center mt-6 sm:mt-12 md:mt-16">
         {/* Main Headline */}
         <h1

@@ -72,7 +72,6 @@ export default function BenefitsSection({ onOpenTrial }) {
   return (
     <section id="benefits" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#050507] overflow-hidden">
       {/* Background Ambience */}
-      <div className="absolute inset-0 nexus-grid-overlay opacity-25 pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#963DFF]/10 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto">

@@ -44,7 +44,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
       {/* Background Ambience */}
       <div className="absolute top-1/3 left-10 w-96 h-96 bg-[#963DFF]/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#55A9FF]/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute inset-0 nexus-grid-overlay opacity-20 pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Section Header */}
