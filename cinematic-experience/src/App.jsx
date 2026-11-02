@@ -78,6 +78,7 @@ export default function App() {
       {/* 3. Deep Dive Industries Section */}
       <IndustriesSection
         onOpenExperience={(indId) => handleOpenExperience(indId)}
+        onOpenTrial={handleOpenTrial}
       />
 
       {/* 4. Architectural Benefits & Governance */}

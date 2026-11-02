@@ -421,7 +421,10 @@ export default function HomePage() {
       </section>
 
       {/* 3. SCROLL-PINNED MOSAIC INDUSTRIES SECTION */}
-      <IndustriesSection onOpenExperience={handleOpenExperience} />
+      <IndustriesSection
+        onOpenExperience={handleOpenExperience}
+        onOpenTrial={() => (window.location.href = "/register")}
+      />
 
       {/* 4. BENEFITS SECTION */}
       <section id="benefits" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#050507] overflow-hidden">
