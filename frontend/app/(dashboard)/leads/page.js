@@ -718,7 +718,15 @@ export default function LeadsPage() {
         description={
           deleteLeadTarget?.type === "batch"
             ? `Are you sure you want to permanently delete the ${deleteLeadTarget.count} selected leads? All contact and inquiry history will be removed.`
-            : `Are you sure you want to permanently delete the lead "${deleteLeadTarget?.name || "this client"}" (${deleteLeadTarget?.phone || deleteLeadTarget?.email || "No contact info"})? This action cannot be undone.`
+            : `Are you sure you want to delete ${
+                deleteLeadTarget?.name &&
+                deleteLeadTarget.name !== "Website Prospect" &&
+                deleteLeadTarget.name !== "Website Visitor"
+                  ? `"${deleteLeadTarget.name}"`
+                  : deleteLeadTarget?.phone
+                  ? `client (${deleteLeadTarget.phone})`
+                  : deleteLeadTarget?.email || "this lead"
+              }? All contact details and qualification history will be permanently removed.`
         }
         confirmText={deleteLeadTarget?.type === "batch" ? `Delete ${deleteLeadTarget.count} Leads` : "Delete Lead"}
         cancelText="Cancel"

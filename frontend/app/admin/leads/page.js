@@ -62,11 +62,17 @@ export default function AdminLeadsPage() {
   const handleDeleteLead = (e, leadId) => {
     if (e && e.stopPropagation) e.stopPropagation();
     const lead = leads.find((l) => l.id === leadId) || { id: leadId, name: "this lead" };
+    const leadLabel =
+      lead.name && lead.name !== "Website Prospect" && lead.name !== "Website Visitor"
+        ? `"${lead.name}"`
+        : lead.phone
+        ? `client (${lead.phone})`
+        : lead.email || "this lead";
+
     setConfirmConfig({
       title: "Delete Lead?",
-      description: `Are you sure you want to permanently delete the lead "${lead.name || "this prospect"}" (${lead.phone || lead.email || "No contact info"})? This action cannot be reversed.`,
+      description: `Are you sure you want to delete ${leadLabel}? All contact details, qualification answers, and activity logs will be permanently removed.`,
       confirmText: "Delete Lead",
-      badgeText: "Permanent Action",
       variant: "danger",
       onConfirm: async () => {
         try {
