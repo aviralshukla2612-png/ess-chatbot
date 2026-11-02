@@ -246,3 +246,4 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
     </section>
   );
 }
+

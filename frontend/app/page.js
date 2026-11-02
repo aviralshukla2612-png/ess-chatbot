@@ -68,63 +68,59 @@ export default function HomePage() {
   const industriesDeepDive = [
     {
       id: "real-estate",
-      title: "Real Estate & Developers",
-      tagline: "High-Ticket Property Discovery",
+      category: "Real Estate",
+      title: "Horizon Edge — Glass Façade Solutions",
+      subtitle: "Property details, pricing and project enquiries.",
+      tagline: "Unit Specs & Pricing",
       icon: Building2,
+      img: "https://images.openai.com/static-rsc-4/bhxjo1KnM48AtN2-0ihMdpI48LvHI1QeSp43wdBbpwoDLMMc-4hMo_FhIguQpLD9mUrkYH8xH2xEof-rIMZwPdsaBr-0AyNctvCbanY5diNd3mJ0BRoJfowuSu10UJDol4GDXtjxLEy8ct12NBawbpbURs4Ik51lWsRal0HfvQo?purpose=inline",
+      fallbackBg: "linear-gradient(135deg, #1E1233 0%, #0B0B14 100%)",
       description:
-        "Guide buyers through unit dimensions, floor plans, payment schedules, and view orientations while pre-qualifying purchasing budgets.",
-      questionExample: "What are the floor plans for the 3BHK penthouse with sunset view?",
+        "Guide commercial developers and buyers through thermal ratings, unit dimensions, glass façade specs, and pricing structures.",
+      questionExample: "What are the thermal insulation ratings and lead times for unitized façade glass panels?",
       metrics: "3.4x Faster Viewing Bookings",
     },
     {
       id: "healthcare",
-      title: "Healthcare & Clinics",
-      tagline: "Clinical Intake & Navigation",
+      category: "Healthcare",
+      title: "Medical Clinic & Wellness Suite",
+      subtitle: "Treatments, doctors and consultation information.",
+      tagline: "Clinical Intake & Eligibility",
       icon: PlusSquare,
+      img: "https://images.openai.com/static-rsc-4/2jq0Rok6gYbmP6SqRsv3gC58bnz2qV8feTR3ABvlxw0mbo9zaCOxDZ-4aL3K9lwt0znqO_LcqV6R9yCClKlx_Tfn6PkfsaZb1_BMgF5fCGt6oH2qmn_99dwdKdFMgLkHGT2wBS1NQpLBz6Ugu3LjntKdrasPbakdQ3wD0tEzLrE?purpose=inline",
+      fallbackBg: "linear-gradient(135deg, #122233 0%, #080D14 100%)",
       description:
-        "Instantly answer questions about clinical treatments, insurance eligibility, specialist qualifications, and schedule outpatient consultations.",
-      questionExample: "Do you accept international insurance for cardiology consultation?",
+        "Instantly answer questions about clinical treatments, doctor credentials, diagnostic scans, and coordinate patient consultations.",
+      questionExample: "Are orthopedic consultations and diagnostic scans covered under international insurance?",
       metrics: "88% Reduction in Support Wait Times",
     },
     {
       id: "education",
-      title: "Education & Universities",
-      tagline: "Admissions & Counseling",
+      category: "Education",
+      title: "USTP Campus & Higher Education",
+      subtitle: "Admissions, courses and fee enquiries.",
+      tagline: "Programs & Admissions",
       icon: GraduationCap,
+      img: "https://images.openai.com/static-rsc-4/M9VJrdy3ggMu426pzfuw2otoLMtAcuRe_omuJWKz5t8Xqmv6k_DG9xF4mRFLwDp504lPXG8Yy7ihgGp_OwNgWwzxBTHiW1xrdP-v_dUCdIzre_CtzN3fUyDeT1nKcOcAwpMzrgnnvTXMjct14xeIL7CR28kMrRvwviRhvFOAZTg?purpose=inline",
+      fallbackBg: "linear-gradient(135deg, #241433 0%, #0C0814 100%)",
       description:
-        "Direct prospective students to course curricula, application deadlines, tuition requirements, and scholarship eligibility criteria.",
-      questionExample: "What are the prerequisites and deadlines for the Executive MBA?",
+        "Direct prospective students to degree programs, scholarship eligibility, fee structures, and application deadline requirements.",
+      questionExample: "What are the application deadlines and scholarship criteria for the Fall 2026 intake?",
       metrics: "62% Increase in Completed Applications",
     },
     {
       id: "hospitality",
-      title: "Hospitality & Resorts",
-      tagline: "VIP Concierge & Booking",
+      category: "Hospitality",
+      title: "Grand Horizon Luxury Hotel & Resort",
+      subtitle: "Rooms, facilities and accommodation information.",
+      tagline: "Suites & Bespoke Stays",
       icon: BedDouble,
+      img: "https://images.openai.com/static-rsc-4/0kABJj0RgRdu6YugoGN2wcoTb_4E7HtbjDwc11vePEH7U5osQvubLqXbzn5TJgNnnan_hKkdD-veiqRt1wdUmEF7E0zmknQkCqoZkGB-QzaXLHevs-o2xhyH51a7INz3y1q664Ai0DXrPLBbkfeT_OapvF8Nxe311Zsn3WCCCjg?purpose=inline",
+      fallbackBg: "linear-gradient(135deg, #1E1A33 0%, #090812 100%)",
       description:
-        "Upsell suite upgrades, explain resort amenities, coordinate dining reservations, and automate late checkout inquiries 24 hours a day.",
-      questionExample: "Can we book an overwater villa with private jacuzzi and late checkout?",
+        "Deliver 24/7 concierge assistance for ocean-view suites, dining reservations, private wellness sessions, and VIP booking upgrades.",
+      questionExample: "Can we reserve an executive ocean-view suite with private dinner and late checkout?",
       metrics: "2.1x Boost in Direct Booking Value",
-    },
-    {
-      id: "retail",
-      title: "Luxury Retail & E-Commerce",
-      tagline: "High-Value Sales Conversion",
-      icon: ShoppingBag,
-      description:
-        "Act as an expert boutique stylist that advises on sizing, material provenance, return guarantees, and expedites high-value checkout.",
-      questionExample: "Is this chronograph certified and covered by international warranty?",
-      metrics: "41% Higher Average Order Volume",
-    },
-    {
-      id: "and-more",
-      title: "B2B SaaS & Financial Services",
-      tagline: "Enterprise Lead Discovery",
-      icon: Layers,
-      description:
-        "Equip complex software and wealth advisory firms with assistants that answer security compliance, pricing tiers, and API capabilities.",
-      questionExample: "What are your SOC 2 compliance certifications and enterprise SLA terms?",
-      metrics: "5.2x Pipeline Acceleration",
     },
   ];
 
@@ -468,66 +464,91 @@ export default function HomePage() {
           <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-xs font-bold uppercase tracking-wider mb-4">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Versatile Commercial Intelligence</span>
+              <span>02. Customized Business Experience — Every Business is Different</span>
             </div>
 
             <h2 className="font-headline tracking-normal text-white uppercase text-4xl sm:text-6xl md:text-7xl leading-tight">
-              Tailored For The Specifics Of <br />
+              Your Business Is Unique. <br />
               <span className="text-glow-purple text-gradient-purple-blue">
-                Your Business Model
+                Your Customer Experience Should Be Too.
               </span>
             </h2>
 
             <p className="mt-4 text-base sm:text-lg text-[#9898A6] leading-relaxed">
-              Every vertical has unique buyer journeys, terminology, and qualification gates.
-              Emperor Nexus adapts instantly to your domain knowledge.
+              Every business has its own services, offerings, customers and way of working.
+              Create a customized assistant around your business information, so visitors can explore
+              what you offer and get relevant answers to their questions.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {industriesDeepDive.map((ind) => {
               const Icon = ind.icon;
               return (
                 <div
                   key={ind.id}
-                  className="group relative p-7 rounded-3xl glass-panel glass-panel-hover flex flex-col justify-between overflow-hidden cursor-pointer"
+                  className="group relative rounded-3xl glass-panel glass-panel-hover overflow-hidden flex flex-col justify-between cursor-pointer border border-white/[0.08] hover:border-[#963DFF]/40 transition-all duration-300"
                   onClick={() => handleOpenExperience(ind.id)}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] group-hover:border-[#963DFF]/40 group-hover:bg-[#963DFF]/15 flex items-center justify-center transition-all duration-300 shadow-sm">
-                        <Icon className="w-6 h-6 text-[#D9D9E2] group-hover:text-[#C28AFF] transition-colors" />
-                      </div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#C28AFF] px-2.5 py-1 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/25">
-                        {ind.tagline}
-                      </span>
+                  {/* Top Image Banner */}
+                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-black/40">
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
+                      style={{
+                        backgroundImage: `url('${ind.img}'), ${ind.fallbackBg}`,
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#12121A] via-black/20 to-transparent" />
+
+                    {/* Category Pill Tag */}
+                    <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white text-xs font-bold">
+                      <Icon className="w-3.5 h-3.5 text-[#C28AFF]" />
+                      <span>{ind.category}</span>
                     </div>
 
-                    <h3 className="font-bold text-xl text-white group-hover:text-[#F5F5F7] transition-colors">
-                      {ind.title}
-                    </h3>
-
-                    <p className="mt-3 text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-                      {ind.description}
-                    </p>
-
-                    <div className="mt-5 p-3.5 rounded-2xl bg-black/40 border border-white/[0.06] space-y-1">
-                      <span className="text-[10px] uppercase font-bold text-[#9898A6] tracking-wider block">
-                        Common Question Handled:
-                      </span>
-                      <p className="text-xs text-[#D9D9E2] italic font-medium">
-                        "{ind.questionExample}"
-                      </p>
+                    {/* Metric Tag */}
+                    <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-500/40 text-emerald-400 text-xs font-bold">
+                      {ind.metrics}
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-400">
-                      {ind.metrics}
-                    </span>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#C28AFF] group-hover:translate-x-1 transition-transform">
-                      <span>Try Assistant</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                  {/* Card Body */}
+                  <div className="p-6 sm:p-8 flex flex-col justify-between flex-1">
+                    <div>
+                      <h3 className="font-bold text-xl sm:text-2xl text-white group-hover:text-[#F5F5F7] transition-colors">
+                        {ind.title}
+                      </h3>
+                      <p className="mt-2 text-xs sm:text-sm text-[#9898A6] leading-relaxed">
+                        {ind.subtitle}
+                      </p>
+
+                      {/* Sample Customer Question Block */}
+                      <div className="mt-6 p-4 rounded-2xl bg-black/50 border border-white/[0.06] space-y-1.5">
+                        <span className="text-[10px] uppercase font-bold text-[#C28AFF] tracking-wider block">
+                          Sample Customer Question Handled:
+                        </span>
+                        <p className="text-xs sm:text-sm text-[#F5F5F7] italic font-medium">
+                          "{ind.questionExample}"
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card Footer Action */}
+                    <div className="mt-8 pt-5 border-t border-white/[0.06] flex items-center justify-between">
+                      <span className="text-xs font-semibold text-[#9898A6]">
+                        {ind.tagline}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenExperience(ind.id);
+                        }}
+                        className="inline-flex items-center gap-2 text-xs font-bold text-[#C28AFF] group-hover:text-white transition-colors"
+                      >
+                        <span>Test Assistant Live</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </button>
                     </div>
                   </div>
                 </div>
