@@ -65,30 +65,42 @@ export const PRICING_PLANS = [
   },
 ];
 
-const HEADLINE_LINE1 = "SIMPLE PRICING.";
-const HEADLINE_LINE2 = "POWERFUL CONVERSATIONS.";
+const WORDS_LINE1 = ["SIMPLE", "PRICING."];
+const WORDS_LINE2 = ["POWERFUL", "CONVERSATIONS."];
 
-// Precompute deterministic 3D explosion vectors for every letter (Physics scatter inspired by Made With GSAP)
-function computeExplosionVectors(text, isTopLine) {
-  const chars = text.split("");
-  const mid = (chars.length - 1) / 2;
+// Compute powerful radial firework blast vectors for each character
+function computeExplosionVectors(words, isTopLine) {
+  let charIdx = 0;
+  const list = [];
+  words.forEach((w, wIdx) => {
+    w.split("").forEach((char) => {
+      list.push({ char, wIdx, overallIdx: charIdx++ });
+    });
+  });
 
-  return chars.map((char, i) => {
-    if (char === " ") return null;
-    const relX = (i - mid) / mid; // -1 to +1
-    const seed = ((i * 7 + (isTopLine ? 13 : 29)) % 11) / 11;
-    const seed2 = ((i * 13 + (isTopLine ? 5 : 17)) % 7) / 7;
+  const total = list.length;
+  const mid = (total - 1) / 2;
 
-    const x = Math.round(relX * (isTopLine ? 440 : 500) + (seed - 0.5) * 160);
-    const y = isTopLine
-      ? Math.round(-190 - Math.abs(relX) * 170 - seed * 150)
-      : Math.round(190 + Math.abs(relX) * 170 + seed * 150);
-    const z = Math.round((seed2 - 0.5) * 400);
-    const rotateZ = Math.round(relX * 65 + (seed - 0.5) * 60);
-    const rotateX = Math.round((seed - 0.5) * 100);
-    const rotateY = Math.round((seed2 - 0.5) * 100);
-    const scale = Number((0.35 + seed * 0.75).toFixed(2));
-    const delay = Number((Math.abs(relX) * 0.08 + seed * 0.04).toFixed(3));
+  return list.map(({ char, wIdx, overallIdx }, i) => {
+    const relX = (i - mid) / (mid || 1); // -1.0 to +1.0
+    const seed = ((i * 17 + (isTopLine ? 23 : 41)) % 13) / 13;
+    const seed2 = ((i * 29 + (isTopLine ? 11 : 37)) % 11) / 11;
+
+    // Explosive horizontal blast: left characters shoot left, right shoot right
+    const signX = relX >= 0 ? 1 : -1;
+    const x = Math.round(signX * (420 + Math.abs(relX) * 480) + (seed - 0.5) * 200);
+    // Powerful upward firework detonation
+    const y = Math.round(
+      isTopLine
+        ? -280 - Math.abs(relX) * 220 - seed * 260
+        : -160 + (seed > 0.5 ? -200 : 180) - seed2 * 200
+    );
+    const z = Math.round((seed2 - 0.5) * 550);
+    const rotateZ = Math.round(signX * (90 + seed * 160));
+    const rotateX = Math.round((seed - 0.5) * 240);
+    const rotateY = Math.round((seed2 - 0.5) * 240);
+    const scale = Number((0.25 + seed * 0.45).toFixed(2));
+    const delay = Number((Math.abs(relX) * 0.05 + seed * 0.03).toFixed(3));
 
     return { char, i, x, y, z, rotateZ, rotateX, rotateY, scale, delay };
   });
@@ -108,8 +120,8 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
   const [activePlan, setActivePlan] = useState("annual");
 
-  const line1Vectors = useMemo(() => computeExplosionVectors(HEADLINE_LINE1, true), []);
-  const line2Vectors = useMemo(() => computeExplosionVectors(HEADLINE_LINE2, false), []);
+  const line1Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE1, true), []);
+  const line2Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE2, false), []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -127,7 +139,6 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         const { isDesktop, isTablet, isMobile, reduceMotion } = context.conditions;
 
         if (reduceMotion) {
-          // Static layout for reduced motion
           gsap.set(circleRefs.current, { opacity: 1, visibility: "visible", rotation: 0 });
           gsap.set(cardMediaRefs.current, { scale: 1, rotation: 0, x: 0, y: 0, pointerEvents: "auto" });
           gsap.set(compactHeaderRef.current, { opacity: 1, y: 0 });
@@ -137,10 +148,15 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
         const scrollDist = isDesktop ? "+=3000" : isTablet ? "+=2400" : "+=1800";
 
-        // ============================================================
-        // 1. INITIAL SETUP
-        // ============================================================
-        // Reset headline characters
+        // Step angle: 6.5 degrees
+        const s = 6.5;
+
+        // Reset headline & characters
+        if (headlineWrapperRef.current) {
+          headlineWrapperRef.current.style.display = "flex";
+          headlineWrapperRef.current.style.opacity = "1";
+        }
+
         line1CharRefs.current.forEach((el) => {
           if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, scale: 1, opacity: 1, filter: "blur(0px)" });
         });
@@ -150,23 +166,23 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
         gsap.set(compactHeaderRef.current, { opacity: 0, y: -20 });
 
-        // Wheel step angle (s = 7.2 degrees, matching madewithgsap.com's s = 6.2)
-        const s = 7.2;
-
         if (isDesktop) {
-          // Reset wheel & cards
-          gsap.set(wheelRef.current, { rotation: 0 });
-          circleRefs.current.forEach((el) => {
-            if (el) gsap.set(el, { opacity: 0, visibility: "hidden", rotation: 0 });
-          });
+          // Circle 0 base: -s (-6.5deg)
+          // Circle 1 base: 0 (0deg)
+          // Circle 2 base: +s (+6.5deg)
+          // Initial wheel rotation: +s (so card 0 is centered at 0deg)
+          if (circleRefs.current[0]) gsap.set(circleRefs.current[0], { rotation: -s, opacity: 0, visibility: "hidden" });
+          if (circleRefs.current[1]) gsap.set(circleRefs.current[1], { rotation: 0, opacity: 0, visibility: "hidden" });
+          if (circleRefs.current[2]) gsap.set(circleRefs.current[2], { rotation: s, opacity: 0, visibility: "hidden" });
+
+          if (wheelRef.current) gsap.set(wheelRef.current, { rotation: s });
+
           cardMediaRefs.current.forEach((el) => {
             if (el) gsap.set(el, { scale: 1, x: 0, y: 0, rotation: 0, pointerEvents: "none" });
           });
         }
 
-        // ============================================================
-        // 2. MASTER SCRUBBED TIMELINE (Headline Explosion & Phase Sync)
-        // ============================================================
+        // Master Scrubbed Timeline
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: sectionRef.current,
@@ -182,7 +198,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
         const distMult = isMobile ? 0.45 : isTablet ? 0.75 : 1.0;
 
-        // Phase 1 -> 2 (0.16 -> 0.36): Headline Characters Burst Outward
+        // ============================================================
+        // 1. MASSIVE WORD BLAST (0.12 -> 0.28)
+        // High-velocity kinetic dispersion with 3D tumble & motion blur
+        // ============================================================
         line1Vectors.forEach((v) => {
           if (!v) return;
           const el = line1CharRefs.current[v.i];
@@ -199,11 +218,11 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
               rotationY: v.rotateY,
               scale: v.scale,
               opacity: 0,
-              filter: "blur(10px)",
-              duration: 0.18,
+              filter: "blur(14px)",
+              duration: 0.16,
               ease: "power2.in",
             },
-            0.16 + v.delay
+            0.12 + v.delay
           );
         });
 
@@ -223,13 +242,32 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
               rotationY: v.rotateY,
               scale: v.scale,
               opacity: 0,
-              filter: "blur(10px)",
-              duration: 0.18,
+              filter: "blur(14px)",
+              duration: 0.16,
               ease: "power2.in",
             },
-            0.18 + v.delay
+            0.14 + v.delay
           );
         });
+
+        // Hard-remove headline background layer at 0.28 so ZERO text lingers behind the cards
+        if (headlineWrapperRef.current) {
+          tl.to(
+            headlineWrapperRef.current,
+            {
+              opacity: 0,
+              duration: 0.08,
+              ease: "power1.out",
+              onComplete: () => {
+                if (headlineWrapperRef.current) headlineWrapperRef.current.style.display = "none";
+              },
+              onReverseComplete: () => {
+                if (headlineWrapperRef.current) headlineWrapperRef.current.style.display = "flex";
+              },
+            },
+            0.26
+          );
+        }
 
         // Compact top header reveals as headline clears
         tl.to(
@@ -237,32 +275,83 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           {
             opacity: 1,
             y: 0,
-            duration: 0.20,
+            duration: 0.18,
             ease: "power2.out",
           },
-          0.32
+          0.30
         );
 
         // ============================================================
-        // 3. MADE WITH GSAP ROTATING WHEEL STEP CONTROLLER (0.35 -> 0.78)
-        // Dynamically springs cards in with elastic.out(0.6, 0.3)
+        // 2. MADE WITH GSAP ROTATING WHEEL STEP CONTROLLER (0.30 -> 0.78)
+        // Card 1 (Monthly) -> Card 2 (Six Months) -> Card 3 (Annual)
+        // Symmetrical fan: Card 1 at -s, Card 2 at 0, Card 3 at +s (EXACT same height!)
         // ============================================================
         let activeStep = -1;
 
         const triggerWheelStep = (step) => {
           if (step === activeStep || !isDesktop) return;
-          const prev = activeStep;
           activeStep = step;
 
           if (step === 0) {
-            // Card 0 (Monthly) emerges into apex center
+            // Card 0 (Monthly) pops in apex center (wheel at +s, circle 0 at -s => net 0deg)
             const c0 = circleRefs.current[0];
             const m0 = cardMediaRefs.current[0];
             if (c0 && m0) {
               c0.style.visibility = "visible";
-              gsap.to(c0, { opacity: 1, duration: 0.25, overwrite: "auto" });
-              gsap.set(c0, { rotation: 0 });
+              gsap.to(c0, { opacity: 1, duration: 0.22, overwrite: "auto" });
               gsap.from(m0, {
+                scale: 0.92,
+                ease: "elastic.out(0.6, 0.3)",
+                duration: 0.55,
+                overwrite: "auto",
+              });
+            }
+            if (wheelRef.current) {
+              gsap.to(wheelRef.current, {
+                rotation: s,
+                ease: "elastic.out(0.6, 0.3)",
+                duration: 0.55,
+                overwrite: "auto",
+              });
+            }
+            if (circleRefs.current[1]) gsap.to(circleRefs.current[1], { opacity: 0, duration: 0.2 });
+            if (circleRefs.current[2]) gsap.to(circleRefs.current[2], { opacity: 0, duration: 0.2 });
+          } else if (step === 1) {
+            // Card 1 (Six Months) pops in (wheel counter-rotates to +s/2 => Card 0 at -s/2, Card 1 at +s/2)
+            const c1 = circleRefs.current[1];
+            const m1 = cardMediaRefs.current[1];
+            if (c1 && m1) {
+              c1.style.visibility = "visible";
+              gsap.to(c1, { opacity: 1, duration: 0.22, overwrite: "auto" });
+              gsap.from(m1, {
+                scale: 0.92,
+                ease: "elastic.out(0.6, 0.3)",
+                duration: 0.55,
+                overwrite: "auto",
+              });
+            }
+            if (wheelRef.current) {
+              gsap.to(wheelRef.current, {
+                rotation: s / 2,
+                ease: "elastic.out(0.6, 0.3)",
+                duration: 0.55,
+                overwrite: "auto",
+              });
+            }
+            if (circleRefs.current[0]) {
+              circleRefs.current[0].style.visibility = "visible";
+              gsap.to(circleRefs.current[0], { opacity: 1, duration: 0.22 });
+            }
+            if (circleRefs.current[2]) gsap.to(circleRefs.current[2], { opacity: 0, duration: 0.2 });
+          } else if (step === 2) {
+            // Card 2 (Annual) pops in (wheel counter-rotates to 0deg => Card 0 at -s, Card 1 at 0, Card 2 at +s)
+            // Symmetrical 3-card fan: Card 1 and Card 3 at the EXACT SAME vertical height!
+            const c2 = circleRefs.current[2];
+            const m2 = cardMediaRefs.current[2];
+            if (c2 && m2) {
+              c2.style.visibility = "visible";
+              gsap.to(c2, { opacity: 1, duration: 0.22, overwrite: "auto" });
+              gsap.from(m2, {
                 scale: 0.92,
                 ease: "elastic.out(0.6, 0.3)",
                 duration: 0.55,
@@ -277,72 +366,17 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 overwrite: "auto",
               });
             }
-            if (circleRefs.current[1]) gsap.to(circleRefs.current[1], { opacity: 0, duration: 0.2 });
-            if (circleRefs.current[2]) gsap.to(circleRefs.current[2], { opacity: 0, duration: 0.2 });
-          } else if (step === 1) {
-            // Card 1 (Six Months) pops in, wheel counter-rotates to -s/2 (-3.6deg)
-            const c1 = circleRefs.current[1];
-            const m1 = cardMediaRefs.current[1];
-            if (c1 && m1) {
-              c1.style.visibility = "visible";
-              gsap.to(c1, { opacity: 1, duration: 0.25, overwrite: "auto" });
-              gsap.set(c1, { rotation: s });
-              gsap.from(m1, {
-                scale: 0.92,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (wheelRef.current) {
-              gsap.to(wheelRef.current, {
-                rotation: -s / 2,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
             if (circleRefs.current[0]) {
               circleRefs.current[0].style.visibility = "visible";
-              gsap.to(circleRefs.current[0], { opacity: 1, duration: 0.25 });
-            }
-            if (circleRefs.current[2]) gsap.to(circleRefs.current[2], { opacity: 0, duration: 0.2 });
-          } else if (step === 2) {
-            // Card 2 (Annual) pops in, wheel counter-rotates to -s (-7.2deg)
-            // Left card at -7.2deg, Center at 0deg, Right at +7.2deg
-            const c2 = circleRefs.current[2];
-            const m2 = cardMediaRefs.current[2];
-            if (c2 && m2) {
-              c2.style.visibility = "visible";
-              gsap.to(c2, { opacity: 1, duration: 0.25, overwrite: "auto" });
-              gsap.set(c2, { rotation: 2 * s });
-              gsap.from(m2, {
-                scale: 0.92,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (wheelRef.current) {
-              gsap.to(wheelRef.current, {
-                rotation: -s,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (circleRefs.current[0]) {
-              circleRefs.current[0].style.visibility = "visible";
-              gsap.to(circleRefs.current[0], { opacity: 1, duration: 0.25 });
+              gsap.to(circleRefs.current[0], { opacity: 1, duration: 0.22 });
             }
             if (circleRefs.current[1]) {
               circleRefs.current[1].style.visibility = "visible";
-              gsap.to(circleRefs.current[1], { opacity: 1, duration: 0.25 });
+              gsap.to(circleRefs.current[1], { opacity: 1, duration: 0.22 });
             }
           }
         };
 
-        // ScrollTrigger onUpdate listener coordinating wheel thresholds
         ScrollTrigger.create({
           trigger: sectionRef.current,
           start: "top top",
@@ -352,16 +386,26 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
             if (!isDesktop) return;
 
-            if (p < 0.34) {
+            // Strict background text visibility toggle
+            if (headlineWrapperRef.current) {
+              if (p >= 0.28) {
+                headlineWrapperRef.current.style.opacity = "0";
+                headlineWrapperRef.current.style.display = "none";
+              } else {
+                headlineWrapperRef.current.style.display = "flex";
+              }
+            }
+
+            if (p < 0.30) {
               if (activeStep !== -1) {
                 activeStep = -1;
                 circleRefs.current.forEach((el) => {
                   if (el) gsap.to(el, { opacity: 0, duration: 0.2 });
                 });
               }
-            } else if (p >= 0.34 && p < 0.48) {
+            } else if (p >= 0.30 && p < 0.46) {
               triggerWheelStep(0);
-            } else if (p >= 0.48 && p < 0.62) {
+            } else if (p >= 0.46 && p < 0.62) {
               triggerWheelStep(1);
             } else if (p >= 0.62 && p < 0.78) {
               triggerWheelStep(2);
@@ -369,6 +413,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           },
           onLeaveBack: () => {
             activeStep = -1;
+            if (headlineWrapperRef.current) {
+              headlineWrapperRef.current.style.display = "flex";
+              headlineWrapperRef.current.style.opacity = "1";
+            }
             if (isDesktop) {
               circleRefs.current.forEach((el) => {
                 if (el) {
@@ -381,17 +429,17 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         });
 
         // ============================================================
-        // 4. PHASE 4 & 5 (0.78 -> 1.00): UN-TILT & FAN OUT INTO 3 COLUMNS
-        // Cards ease from wheel arc into level side-by-side composition
+        // 3. PHASE 4 & 5 (0.78 -> 1.00): UN-TILT & FAN OUT INTO 3 COLUMNS
+        // Cards un-tilt from -s / 0 / +s into level 0deg cards in 3 columns
         // ============================================================
         if (isDesktop) {
-          // Spread Card 0 horizontally left and un-tilt to 0deg
+          // Card 0 (Monthly): Slides to left (-390px), un-tilts +s => net 0deg
           tl.to(
             cardMediaRefs.current[0],
             {
-              x: -375,
+              x: -390,
               y: 0,
-              rotation: s, // counter-acts wheel rotation -s so card is exactly 0deg level
+              rotation: s,
               duration: 0.14,
               ease: "power2.out",
               pointerEvents: "auto",
@@ -399,7 +447,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             0.78
           );
 
-          // Card 1 stays in center, un-tilts
+          // Card 1 (Six Months): Sits in center (0px), net 0deg
           tl.to(
             cardMediaRefs.current[1],
             {
@@ -413,13 +461,13 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             0.78
           );
 
-          // Spread Card 2 horizontally right and un-tilt to 0deg
+          // Card 2 (Annual): Slides to right (+390px), un-tilts -s => net 0deg, EXACT SAME Y LEVEL!
           tl.to(
             cardMediaRefs.current[2],
             {
-              x: 375,
+              x: 390,
               y: 0,
-              rotation: -s, // counter-acts wheel rotation so card is exactly 0deg level
+              rotation: -s,
               duration: 0.14,
               ease: "power2.out",
               pointerEvents: "auto",
@@ -427,7 +475,6 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             0.78
           );
         } else {
-          // Mobile / Tablet presentation
           circleRefs.current.forEach((el) => {
             if (el) {
               el.style.visibility = "visible";
@@ -439,7 +486,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           });
         }
 
-        // Buffer hold (0.92 -> 1.00): Stable reading and interaction
+        // Buffer hold (0.92 -> 1.00): Complete stability for reading and clicking
         tl.to({}, { duration: 0.08 }, 0.92);
       },
       sectionRef
@@ -498,54 +545,57 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         </div>
 
         {/* ============================================================
-            PHASE 1 & 2: MASSIVE TYPOGRAPHY LAYER (EXPLODING CHARACTERS)
+            PHASE 1 & 2: MASSIVE EDITORIAL TYPOGRAPHY LAYER
+            Wrapped in whitespace-nowrap spans to NEVER break words awkwardly!
             ============================================================ */}
         <div
           ref={headlineWrapperRef}
-          className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none px-4 text-center"
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none px-4 text-center will-change-transform"
           style={{ perspective: "1200px" }}
         >
           {/* Line 1: SIMPLE PRICING. (Individual character spans) */}
-          <h2 className="font-sans font-extrabold tracking-tight text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] leading-[0.98] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center flex-wrap">
-            {HEADLINE_LINE1.split("").map((char, idx) => {
-              if (char === " ") {
-                return (
-                  <span key={idx} className="inline-block w-[0.28em]">
-                    &nbsp;
-                  </span>
-                );
-              }
+          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+            {WORDS_LINE1.map((word, wIdx) => {
+              const startIdx = wIdx === 0 ? 0 : WORDS_LINE1[0].length;
               return (
-                <span
-                  key={idx}
-                  ref={(el) => (line1CharRefs.current[idx] = el)}
-                  className="inline-block will-change-transform transform-gpu"
-                  style={{ transformStyle: "preserve-3d" }}
-                >
-                  {char}
+                <span key={wIdx} className="inline-flex whitespace-nowrap">
+                  {word.split("").map((char, cIdx) => {
+                    const idx = startIdx + cIdx;
+                    return (
+                      <span
+                        key={cIdx}
+                        ref={(el) => (line1CharRefs.current[idx] = el)}
+                        className="inline-block will-change-transform transform-gpu"
+                        style={{ transformStyle: "preserve-3d" }}
+                      >
+                        {char}
+                      </span>
+                    );
+                  })}
                 </span>
               );
             })}
           </h2>
 
           {/* Line 2: POWERFUL CONVERSATIONS. (Individual character spans in gradient) */}
-          <h2 className="font-sans font-extrabold tracking-tight text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] leading-[0.98] uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_40px_rgba(194,138,255,0.4)] mt-2 sm:mt-3 flex items-center justify-center flex-wrap">
-            {HEADLINE_LINE2.split("").map((char, idx) => {
-              if (char === " ") {
-                return (
-                  <span key={idx} className="inline-block w-[0.28em]">
-                    &nbsp;
-                  </span>
-                );
-              }
+          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_40px_rgba(194,138,255,0.45)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+            {WORDS_LINE2.map((word, wIdx) => {
+              const startIdx = wIdx === 0 ? 0 : WORDS_LINE2[0].length;
               return (
-                <span
-                  key={idx}
-                  ref={(el) => (line2CharRefs.current[idx] = el)}
-                  className="inline-block will-change-transform transform-gpu"
-                  style={{ transformStyle: "preserve-3d" }}
-                >
-                  {char}
+                <span key={wIdx} className="inline-flex whitespace-nowrap">
+                  {word.split("").map((char, cIdx) => {
+                    const idx = startIdx + cIdx;
+                    return (
+                      <span
+                        key={cIdx}
+                        ref={(el) => (line2CharRefs.current[idx] = el)}
+                        className="inline-block will-change-transform transform-gpu"
+                        style={{ transformStyle: "preserve-3d" }}
+                      >
+                        {char}
+                      </span>
+                    );
+                  })}
                 </span>
               );
             })}
@@ -598,7 +648,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             PHASE 3, 4 & 5: THE MADE WITH GSAP ROTATING WHEEL
             Radius: 1800px (3600px diameter circle).
             The top edge of the circle is placed right at 50vh (center of pinned stage).
-            Each card sits at the apex and swings in an arc with elastic bounce.
+            Card 1 at -s, Card 2 at 0, Card 3 at +s (Symmetrical, same vertical height!)
             ============================================================ */}
         <div
           ref={wheelContainerRef}
@@ -650,7 +700,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                           : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
                       }`}
                     >
-                      {/* Oversized Signature Watermark Number (Inspired by Made With GSAP 1, 2, 3) */}
+                      {/* Oversized Signature Watermark Number */}
                       <span className="absolute bottom-5 right-6 text-7xl font-mono font-black text-white/[0.04] pointer-events-none select-none">
                         {plan.number}
                       </span>
