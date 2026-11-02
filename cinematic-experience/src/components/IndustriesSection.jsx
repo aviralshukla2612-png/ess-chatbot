@@ -6,8 +6,6 @@ import {
   BedDouble,
   ArrowRight,
   Sparkles,
-  CheckCircle2,
-  TrendingUp,
 } from "lucide-react";
 
 const BUSINESS_EXAMPLES = [
@@ -63,15 +61,28 @@ const BUSINESS_EXAMPLES = [
     metrics: "2.1x Boost in Direct Booking Value",
     badge: "Suites & Bespoke Stays",
   },
+  {
+    id: "nexus-core",
+    category: "AI Sales Engine",
+    name: "Emperor Nexus Commercial AI",
+    subtitle: "Autonomous conversational sales qualification.",
+    icon: Sparkles,
+    img: "https://images.openai.com/static-rsc-4/bhxjo1KnM48AtN2-0ihMdpI48LvHI1QeSp43wdBbpwoDLMMc-4hMo_FhIguQpLD9mUrkYH8xH2xEof-rIMZwPdsaBr-0AyNctvCbanY5diNd3mJ0BRoJfowuSu10UJDol4GDXtjxLEy8ct12NBawbpbURs4Ik51lWsRal0HfvQo?purpose=inline",
+    fallbackBg: "linear-gradient(135deg, #2A1040 0%, #080512 100%)",
+    accentColor: "#C28AFF",
+    sampleQuestion: "Can your assistant integrate with our website and qualify enterprise leads 24/7?",
+    metrics: "99.4% Precision",
+    badge: "Enterprise Commercial AI",
+  },
 ];
 
 const STATS = [
-  ["99.4%", "Citation Precision"],
-  ["600ms", "Sub-second Response"],
-  ["3.4x", "Faster Enquiries"],
-  ["24/7", "Zero Support Latency"],
-  ["88%", "Reduction in Wait Times"],
-  ["2,500+", "Qualified Inquiries/Day"],
+  ["40%", "Faster delivery"],
+  ["35%+", "Better retention"],
+  ["Weeks,", "not months"],
+  ["1,500+", "Deliverables per year"],
+  ["3x", "Longer user sessions"],
+  ["240+", "Awards"],
 ];
 
 const BRANDS = [
@@ -81,9 +92,13 @@ const BRANDS = [
   "Grand Horizon Resort",
   "Haute Horlogerie Boutique",
   "Enterprise FinTech",
+  "IKEA",
+  "Pomelo",
+  "Vista",
+  "UNICEF",
 ];
 
-// Mosaic percentage coordinates: start rect (single centered) -> end rect (5-tile mosaic)
+// Start rect (everything collapsed into tile 0) -> End rect (mosaic 5-tile collage)
 const MOSAIC = [
   { s: [0, 0, 100, 100], e: [0, 0, 33.5, 100], d: 0 },
   { s: [50, 50, 0, 0], e: [34.5, 0, 33, 56], d: 0.0 },
@@ -92,8 +107,17 @@ const MOSAIC = [
   { s: [50, 50, 0, 0], e: [68.5, 47, 31.5, 53], d: 0.2 },
 ];
 
+function splitWord(word, offset = 0) {
+  return [...word].map((char, i) => (
+    <span key={i} className="ch" style={{ display: "inline-block", overflow: "hidden", verticalAlign: "top", padding: "0.04em 0.01em 0.12em" }}>
+      <b style={{ display: "block", fontWeight: "inherit", color: "#FFFFFF" }}>{char}</b>
+    </span>
+  ));
+}
+
 export default function IndustriesSection({ onOpenExperience }) {
   const stageRef = useRef(null);
+  const pinRef = useRef(null);
   const heroRef = useRef(null);
   const cardRef = useRef(null);
   const slotRef = useRef(null);
@@ -105,15 +129,15 @@ export default function IndustriesSection({ onOpenExperience }) {
 
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
-  // Auto-cycle through the 4 business examples periodically
+  // Auto-cycle through the business examples periodically
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlideIndex((prev) => (prev + 1) % BUSINESS_EXAMPLES.length);
-    }, 3200);
+    }, 2800);
     return () => clearInterval(timer);
   }, []);
 
-  // Scroll-driven pinned timeline calculation
+  // Scroll-driven pinned timeline calculation matching exact reference mathematics
   useEffect(() => {
     let animId;
     let P = 0;
@@ -131,21 +155,31 @@ export default function IndustriesSection({ onOpenExperience }) {
 
     const measure = () => {
       const stage = stageRef.current;
+      const pin = pinRef.current;
       const hero = heroRef.current;
       const slot = slotRef.current;
-      if (!stage || !hero || !slot) return;
+      if (!stage || !pin || !hero || !slot) return;
 
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const prev = hero.style.transform;
       hero.style.transform = "none";
+
+      const pinRect = pin.getBoundingClientRect();
       const r = slot.getBoundingClientRect();
       hero.style.transform = prev;
 
-      start = { x: r.left, y: r.top, w: r.width, h: r.height };
+      // Position relative to .pin container for exact docking
+      start = {
+        x: r.left - pinRect.left,
+        y: r.top - pinRect.top,
+        w: r.width,
+        h: r.height,
+      };
+
       const side = vw * 0.04;
-      const top = vh * 0.18;
-      endR = { x: side, y: top, w: vw - side * 2, h: vh - top - vh * 0.12 };
+      const top = vh * 0.2;
+      endR = { x: side, y: top, w: vw - side * 2, h: vh - top - vh * 0.1 };
       range = Math.max(1, stage.offsetHeight - vh);
     };
 
@@ -162,22 +196,22 @@ export default function IndustriesSection({ onOpenExperience }) {
       const vh = window.innerHeight;
       const p = P;
 
-      /* Phase A: Big showcase card shrinks to center card (0 -> 0.40)
-         Phase B: Card travels into slot while headline rises (0.40 -> 0.90)
-         Phase C: Card splits into the 5-tile mosaic (0.72 -> 1.0) */
+      /* Phase A: Big showcase card shrinks to small centered card (0 -> 0.40)
+         Phase B: Card travels into slot beside "Build" while text rises from below (0.40 -> 0.90)
+         Phase C: Card splits into the 5-tile mosaic collage (0.72 -> 1.0) */
       const A = ease(clamp(p / 0.4));
       const B = ease(clamp((p - 0.4) / 0.5));
       const C = ease(clamp((p - 0.72) / 0.28));
 
       // Headline block rises from below and fades in
-      const off = (1 - B) * vh * 0.75;
+      const off = (1 - B) * vh * 0.8;
       hero.style.transform = `translate3d(0,${off}px,0)`;
       hero.style.opacity = String(clamp(B * 1.8));
 
       // Card geometry morphing
-      const mw = Math.min(vw * 0.36, 580);
+      const mw = Math.min(vw * 0.3, 560);
       const mh = mw * 0.58;
-      const mid = { x: (vw - mw) / 2, y: (vh - mh) / 2 - vh * 0.02, w: mw, h: mh };
+      const mid = { x: (vw - mw) / 2, y: (vh - mh) / 2 - vh * 0.03, w: mw, h: mh };
       const slotNow = { x: start.x, y: start.y + off, w: start.w, h: start.h };
 
       const r1 = {
@@ -195,9 +229,9 @@ export default function IndustriesSection({ onOpenExperience }) {
       card.style.transform = `translate3d(${x}px,${y}px,0)`;
       card.style.width = `${w}px`;
       card.style.height = `${hh}px`;
-      card.style.borderRadius = `${lerp(18, 10, A)}px`;
+      card.style.borderRadius = `${lerp(10, 6, A)}px`;
 
-      // Mosaic tiles splitting
+      // Mosaic tiles splitting into the 5-tile collage
       const tileEls = card.querySelectorAll(".mosaic-tile");
       tileEls.forEach((tileEl, i) => {
         const m = MOSAIC[i];
@@ -226,7 +260,9 @@ export default function IndustriesSection({ onOpenExperience }) {
 
     const loop = (now) => {
       const stage = stageRef.current;
-      if (!stage) return;
+      const pin = pinRef.current;
+      if (!stage || !pin) return;
+
       const rect = stage.getBoundingClientRect();
       const currentScroll = -rect.top;
       target = clamp(currentScroll / range);
@@ -240,14 +276,14 @@ export default function IndustriesSection({ onOpenExperience }) {
       const s = (now - t0) / 1000;
       if (beltStatsRef.current) {
         beltStatsRef.current.style.transform = `translate3d(${-(
-          (s * 35 + P * 850) %
-          1200
+          (s * 40 + P * 900) %
+          1000
         )}px,0,0)`;
       }
       if (beltBrandsRef.current) {
         beltBrandsRef.current.style.transform = `translate3d(${-(
-          (s * 35 + P * 850) %
-          1200
+          (s * 40 + P * 900) %
+          1000
         )}px,0,0)`;
       }
 
@@ -271,22 +307,33 @@ export default function IndustriesSection({ onOpenExperience }) {
       {/* ============================================================
           PINNED SCROLL-DRIVEN STAGE (420vh total height)
           ============================================================ */}
-      <div ref={stageRef} className="relative w-full h-[400vh]">
-        <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#050507] flex flex-col justify-center items-center">
-          {/* Subtle Ambient Radial Glows */}
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none" />
-          <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-[#55A9FF]/12 rounded-full blur-[140px] pointer-events-none" />
+      <div ref={stageRef} className="relative w-full h-[420vh]">
+        <div ref={pinRef} className="sticky top-0 h-screen w-full overflow-hidden bg-[#050507] flex flex-col justify-center items-center">
+          {/* Subtle isometric diagonal line grid from reference */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-80"
+            style={{
+              backgroundImage: `
+                linear-gradient(60deg, transparent 49.8%, rgba(255,255,255,0.06) 50%, transparent 50.3%),
+                linear-gradient(-60deg, transparent 49.8%, rgba(255,255,255,0.06) 50%, transparent 50.3%),
+                linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)
+              `,
+              backgroundSize: "160px 277px, 160px 277px, 160px 100%",
+              maskImage: "radial-gradient(70% 60% at 50% 45%, #000 30%, transparent 100%)",
+              WebkitMaskImage: "radial-gradient(70% 60% at 50% 45%, #000 30%, transparent 100%)",
+            }}
+          />
 
           {/* Top Marquee Row: Client Verticals Belt */}
           <div
             ref={clientsRowRef}
-            className="absolute top-20 left-0 right-0 z-20 flex items-center gap-6 px-8 pointer-events-none transition-transform"
+            className="absolute top-24 left-0 right-0 z-20 flex items-center gap-6 px-8 pointer-events-none transition-transform"
           >
             <div className="text-xs uppercase font-bold tracking-widest text-[#9898A6] flex items-center gap-1.5 shrink-0">
-              <span className="text-[#963DFF] font-black">/</span>
-              <span>Every business has questions. We deliver clear answers.</span>
+              <span className="text-[#7ee8b8] font-black">/</span>
+              <span>The ambitious brands we help move forward.</span>
             </div>
-            <div className="flex-1 overflow-hidden mask-linear-gradient">
+            <div className="flex-1 overflow-hidden" style={{ maskImage: "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)" }}>
               <div ref={beltBrandsRef} className="flex gap-8 items-center w-max">
                 {[...BRANDS, ...BRANDS, ...BRANDS].map((brand, i) => (
                   <span
@@ -300,47 +347,81 @@ export default function IndustriesSection({ onOpenExperience }) {
             </div>
           </div>
 
-          {/* Central Hero Text Block with Headline & Slot */}
+          {/* Central Hero Headline matching the exact reference typography & structure */}
           <div
             ref={heroRef}
-            className="relative z-10 max-w-5xl w-full px-6 flex flex-col items-center text-center opacity-0 transition-opacity"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center px-6 opacity-0 will-change-transform"
           >
-            {/* 02 Category Tag */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-xs font-bold uppercase tracking-wider mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>02. Customized Business Experience — Every Business is Different</span>
-            </div>
-
-            {/* Headline */}
-            <h2 className="font-headline tracking-normal text-white uppercase text-center leading-[0.92] text-4xl sm:text-6xl md:text-7xl lg:text-[88px] select-none">
-              <span className="block text-[#F5F5F7] relative">
-                Your Business Is Unique.
-                {/* Slot marker where the morphing card docks */}
-                <span ref={slotRef} className="inline-block w-28 sm:w-40 h-10 sm:h-14 align-middle ml-2" />
+            <h1
+              aria-label="Build clarity."
+              className="select-none tracking-tight font-medium"
+              style={{
+                fontSize: "clamp(76px, 12.2vw, 250px)",
+                lineHeight: "0.86",
+                letterSpacing: "-0.055em",
+                marginTop: "-9vh",
+                color: "#FFFFFF",
+              }}
+            >
+              <span className="block relative">
+                <span className="inline-block relative">
+                  {splitWord("Build", 0)}
+                  {/* Slot marker where the card docks at left: 100% */}
+                  <span
+                    ref={slotRef}
+                    className="absolute pointer-events-none"
+                    style={{
+                      left: "100%",
+                      top: "0.1em",
+                      marginLeft: "0.06em",
+                      width: "1.38em",
+                      height: "0.78em",
+                    }}
+                  />
+                </span>
               </span>
-              <span className="block text-glow-purple text-gradient-purple-blue mt-1">
-                Your Customer Experience Should Be Too.
+              <span className="block relative">
+                <span className="inline-block relative">
+                  {splitWord("clarity", 5)}
+                  <span
+                    className="inline-block rounded-full ml-[0.04em]"
+                    style={{
+                      width: "0.15em",
+                      height: "0.15em",
+                      backgroundColor: "#7ee8b8",
+                      boxShadow: "0 0 20px rgba(126, 232, 184, 0.7)",
+                    }}
+                  />
+                </span>
               </span>
-            </h2>
+            </h1>
 
             {/* Supporting Lede */}
-            <p className="mt-6 max-w-2xl text-sm sm:text-base text-[#9898A6] leading-relaxed">
-              Every business has its own services, offerings, customers and way of working.
-              Create a customized assistant around your business information, so visitors can explore
-              what you offer and get relevant answers to their questions.
+            <p
+              className="text-[#9898A6] font-normal leading-relaxed text-center"
+              style={{
+                maxWidth: "34em",
+                fontSize: "clamp(15px, 1.25vw, 19px)",
+                marginTop: "4.5vh",
+              }}
+            >
+              Growth brings new questions. Every business has its own services, offerings, customers and way of working. Create a customized assistant around your business information, so visitors can explore what you offer and get relevant answers to their questions.
             </p>
 
             {/* CTA Button */}
-            <div className="mt-8">
-              <button
-                type="button"
-                onClick={() => onOpenExperience?.("real-estate")}
-                className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-xs sm:text-sm font-bold text-white btn-primary-gradient cursor-pointer shadow-[0_0_25px_rgba(150,61,255,0.4)]"
-              >
-                <span>Explore Industry Assistants</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            <a
+              href="#industries-wall"
+              className="uppercase font-bold tracking-wider inline-block transition-opacity hover:opacity-80"
+              style={{
+                marginTop: "4.5vh",
+                fontSize: "clamp(15px, 1.3vw, 20px)",
+                paddingBottom: "4px",
+                background: "linear-gradient(#7ee8b8, #7ee8b8) left bottom / 100% 2px no-repeat",
+                color: "#FFFFFF",
+              }}
+            >
+              See the outcomes →
+            </a>
           </div>
 
           {/* Morphing Mosaic Showcase Card */}
@@ -350,12 +431,12 @@ export default function IndustriesSection({ onOpenExperience }) {
             style={{ width: "80vw", height: "65vh" }}
           >
             {MOSAIC.map((_, tileIdx) => {
-              const currentEx = BUSINESS_EXAMPLES[activeSlideIndex % BUSINESS_EXAMPLES.length];
+              const currentEx = BUSINESS_EXAMPLES[(tileIdx + activeSlideIndex) % BUSINESS_EXAMPLES.length];
               const Icon = currentEx.icon;
               return (
                 <div
                   key={tileIdx}
-                  className="mosaic-tile absolute overflow-hidden rounded-xl border border-white/[0.08] transition-all duration-300"
+                  className="mosaic-tile absolute overflow-hidden rounded-md border border-white/[0.08] transition-all duration-300 cursor-pointer"
                   style={{
                     left: "0%",
                     top: "0%",
@@ -374,12 +455,12 @@ export default function IndustriesSection({ onOpenExperience }) {
                   />
 
                   {/* Dark Glass Shade Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
                   {/* Card Content Overlay */}
-                  <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between z-10">
+                  <div className="absolute inset-0 p-3.5 sm:p-5 flex flex-col justify-between z-10">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[#C28AFF]">
+                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[#7ee8b8]">
                         {currentEx.category}
                       </span>
                       <div className="w-7 h-7 rounded-lg bg-black/50 backdrop-blur-md border border-white/10 flex items-center justify-center text-white">
@@ -388,16 +469,12 @@ export default function IndustriesSection({ onOpenExperience }) {
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-sm sm:text-base text-white leading-tight drop-shadow-md">
+                      <h4 className="font-bold text-xs sm:text-sm text-white leading-tight drop-shadow-md line-clamp-1">
                         {currentEx.name}
                       </h4>
-                      <p className="text-[11px] text-[#D9D9E2] line-clamp-1 mt-0.5">
+                      <p className="text-[10px] text-[#D9D9E2] line-clamp-1 mt-0.5">
                         {currentEx.subtitle}
                       </p>
-                      <div className="mt-2 text-[10px] text-emerald-400 font-semibold flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>{currentEx.metrics}</span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -414,7 +491,7 @@ export default function IndustriesSection({ onOpenExperience }) {
               <span className="text-[#55A9FF] font-black">/</span>
               <span>The difference our work makes where it matters.</span>
             </div>
-            <div className="flex-1 overflow-hidden mask-linear-gradient">
+            <div className="flex-1 overflow-hidden" style={{ maskImage: "linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)" }}>
               <div ref={beltStatsRef} className="flex gap-10 items-center w-max">
                 {[...STATS, ...STATS, ...STATS].map((st, i) => (
                   <div key={i} className="flex items-center gap-2 whitespace-nowrap">
@@ -443,18 +520,18 @@ export default function IndustriesSection({ onOpenExperience }) {
       {/* ============================================================
           DETAILED SHOWCASE WALL GRID (4 Business Examples)
           ============================================================ */}
-      <div className="relative py-24 px-4 sm:px-6 lg:px-8 bg-[#0B0B10] border-t border-white/[0.08]">
+      <div id="industries-wall" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-[#0B0B10] border-t border-white/[0.08]">
         <div className="max-w-7xl mx-auto">
           {/* Wall Header */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#C28AFF] block mb-2">
-                Proven Industry Deployments
+              <span className="text-xs font-bold uppercase tracking-wider text-[#7ee8b8] block mb-2">
+                02. Customized Business Deployments
               </span>
               <h3 className="font-headline tracking-normal text-white uppercase text-4xl sm:text-5xl md:text-6xl leading-tight">
-                Four Business Examples. <br />
+                Work. <br />
                 <span className="text-glow-purple text-gradient-purple-blue">
-                  Customization In Action.
+                  What We Build.
                 </span>
               </h3>
             </div>
@@ -466,12 +543,12 @@ export default function IndustriesSection({ onOpenExperience }) {
 
           {/* 4 Architectural Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {BUSINESS_EXAMPLES.map((ex) => {
+            {BUSINESS_EXAMPLES.slice(0, 4).map((ex) => {
               const Icon = ex.icon;
               return (
                 <div
                   key={ex.id}
-                  className="group relative rounded-3xl glass-panel glass-panel-hover overflow-hidden flex flex-col justify-between cursor-pointer border border-white/[0.08] hover:border-[#963DFF]/40"
+                  className="group relative rounded-3xl glass-panel glass-panel-hover overflow-hidden flex flex-col justify-between cursor-pointer border border-white/[0.08] hover:border-[#7ee8b8]/40 transition-all duration-300"
                   onClick={() => onOpenExperience?.(ex.id)}
                 >
                   {/* Top Image Banner */}
@@ -486,7 +563,7 @@ export default function IndustriesSection({ onOpenExperience }) {
 
                     {/* Category Pill Tag */}
                     <div className="absolute top-4 left-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white text-xs font-bold">
-                      <Icon className="w-3.5 h-3.5 text-[#C28AFF]" />
+                      <Icon className="w-3.5 h-3.5 text-[#7ee8b8]" />
                       <span>{ex.category}</span>
                     </div>
 
@@ -508,11 +585,11 @@ export default function IndustriesSection({ onOpenExperience }) {
 
                       {/* Sample Customer Question Block */}
                       <div className="mt-6 p-4 rounded-2xl bg-black/50 border border-white/[0.06] space-y-1.5">
-                        <span className="text-[10px] uppercase font-bold text-[#C28AFF] tracking-wider block">
+                        <span className="text-[10px] uppercase font-bold text-[#7ee8b8] tracking-wider block">
                           Sample Customer Question Handled:
                         </span>
                         <p className="text-xs sm:text-sm text-[#F5F5F7] italic font-medium">
-                          "{ex.sampleQuestion}"
+                          &quot;{ex.sampleQuestion}&quot;
                         </p>
                       </div>
                     </div>
@@ -528,7 +605,7 @@ export default function IndustriesSection({ onOpenExperience }) {
                           e.stopPropagation();
                           onOpenExperience?.(ex.id);
                         }}
-                        className="inline-flex items-center gap-2 text-xs font-bold text-[#C28AFF] group-hover:text-white transition-colors"
+                        className="inline-flex items-center gap-2 text-xs font-bold text-[#7ee8b8] group-hover:text-white transition-colors"
                       >
                         <span>Test Assistant Live</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
