@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { leadsApi } from "@/lib/api/leads";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 function stripMarkdown(text) {
   if (!text) return "";
@@ -40,6 +41,7 @@ export default function AdminLeadsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedLead, setSelectedLead] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
   const loadLeads = React.useCallback(async () => {
     setLoading(true);
@@ -57,39 +59,54 @@ export default function AdminLeadsPage() {
     loadLeads();
   }, [loadLeads]);
 
-  const handleDeleteLead = async (e, leadId) => {
+  const handleDeleteLead = (e, leadId) => {
     if (e && e.stopPropagation) e.stopPropagation();
-    if (!confirm("Are you sure you want to permanently delete this lead?")) return;
-    try {
-      const res = await fetch(`/api/leads?id=${leadId}`, { method: "DELETE" });
-      if (res.ok) {
-        setLeads((prev) => prev.filter((l) => l.id !== leadId));
-        if (selectedLead?.id === leadId) setSelectedLead(null);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        alert("Failed to delete lead: " + (data.error || "Unknown error"));
-      }
-    } catch (err) {
-      alert("Error deleting lead: " + err.message);
-    }
+    const lead = leads.find((l) => l.id === leadId) || { id: leadId, name: "this lead" };
+    setConfirmConfig({
+      title: "Delete Lead?",
+      description: `Are you sure you want to permanently delete the lead "${lead.name || "this prospect"}" (${lead.phone || lead.email || "No contact info"})? This action cannot be reversed.`,
+      confirmText: "Delete Lead",
+      badgeText: "Permanent Action",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/leads?id=${leadId}`, { method: "DELETE" });
+          if (res.ok) {
+            setLeads((prev) => prev.filter((l) => l.id !== leadId));
+            if (selectedLead?.id === leadId) setSelectedLead(null);
+          } else {
+            const data = await res.json().catch(() => ({}));
+            console.error("Failed to delete lead:", data.error);
+          }
+        } catch (err) {
+          console.error("Error deleting lead:", err);
+        }
+      },
+    });
   };
 
-  const handlePurgeDummyLeads = async () => {
-    if (!confirm("Purge all dummy and incomplete test leads from the database and storage?")) return;
-    setPurging(true);
-    try {
-      const res = await fetch("/api/leads?purgeDummy=true", { method: "DELETE" });
-      const data = await res.json().catch(() => ({}));
-      if (data.success) {
-        await loadLeads();
-      } else {
-        alert("Failed to purge dummy leads: " + (data.error || "Unknown error"));
-      }
-    } catch (err) {
-      alert("Error purging dummy leads: " + err.message);
-    } finally {
-      setPurging(false);
-    }
+  const handlePurgeDummyLeads = () => {
+    setConfirmConfig({
+      title: "Purge All Test & Dummy Leads?",
+      description: "Purge all dummy and incomplete test leads from the database and storage? Verified live customer leads will remain untouched.",
+      confirmText: "Purge Dummy Leads",
+      badgeText: "Admin Cleanup",
+      variant: "danger",
+      onConfirm: async () => {
+        setPurging(true);
+        try {
+          const res = await fetch("/api/leads?purgeDummy=true", { method: "DELETE" });
+          const data = await res.json().catch(() => ({}));
+          if (data.success) {
+            await loadLeads();
+          }
+        } catch (err) {
+          console.error("Error purging dummy leads:", err);
+        } finally {
+          setPurging(false);
+        }
+      },
+    });
   };
 
   const copyToClipboard = (text, field) => {
@@ -592,6 +609,18 @@ export default function AdminLeadsPage() {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Permanent Action"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }

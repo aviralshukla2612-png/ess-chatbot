@@ -18,34 +18,40 @@ import {
 import StatusBadge from "@/components/ui/StatusBadge";
 import { adminApi } from "@/lib/api/admin";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
-  const handleToggleBlockUser = async (userId, currentStatus, userName) => {
+  const handleToggleBlockUser = (userId, currentStatus, userName) => {
     const isBlocked = String(currentStatus).toUpperCase() === "BLOCKED";
     const nextStatus = isBlocked ? "ACTIVE" : "BLOCKED";
-    const confirmMsg = isBlocked
-      ? `Unblock user "${userName || userId}"? They will regain access to their account.`
-      : `BLOCK user "${userName || userId}"? They will immediately be denied access across the platform.`;
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, action: isBlocked ? "unblock" : "block" }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (data.success) {
-        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u)));
-      } else {
-        alert("Failed to update user: " + (data.error || "Unknown error"));
-      }
-    } catch (err) {
-      alert("Error updating user status: " + err.message);
-    }
+    setConfirmConfig({
+      title: isBlocked ? "Unblock User Account?" : "Block User Account?",
+      description: isBlocked
+        ? `Are you sure you want to unblock "${userName || userId}"? They will regain complete access to their account and chatbots.`
+        : `Are you sure you want to BLOCK "${userName || userId}"? They will immediately be denied access across the entire platform.`,
+      confirmText: isBlocked ? "Unblock User" : "Block User",
+      badgeText: isBlocked ? "Access Restored" : "Security Action",
+      variant: isBlocked ? "gold" : "warning",
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/admin/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, action: isBlocked ? "unblock" : "block" }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (data.success) {
+            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u)));
+          }
+        } catch (err) {
+          console.error("Error updating user status:", err);
+        }
+      },
+    });
   };
 
   // Pagination & Filtering state
@@ -342,6 +348,18 @@ export default function AdminUsersPage() {
           </div>
         </div>
       </div>
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Action Required"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }

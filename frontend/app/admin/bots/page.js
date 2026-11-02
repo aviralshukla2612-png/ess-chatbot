@@ -16,12 +16,14 @@ import {
 import StatusBadge from "@/components/ui/StatusBadge";
 import { botsApi } from "@/lib/api/bots";
 import RedesignBotModal from "@/components/bots/RedesignBotModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminBotsPage() {
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [purging, setPurging] = useState(false);
   const [redesignBot, setRedesignBot] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
   const loadBots = useCallback(async () => {
     setLoading(true);
@@ -39,57 +41,75 @@ export default function AdminBotsPage() {
     loadBots();
   }, [loadBots]);
 
-  const handleToggleBlockBot = async (botId, currentStatus) => {
+  const handleToggleBlockBot = (botId, currentStatus) => {
     const isBlocked = String(currentStatus).toLowerCase() === "blocked";
     const nextStatus = isBlocked ? "Active" : "Blocked";
-    const confirmMsg = isBlocked
-      ? `Unblock bot "${botId}"? It will resume serving chats.`
-      : `BLOCK bot "${botId}"? It will immediately stop responding to visitor chats.`;
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const res = await fetch(`/api/bots/${botId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      if (res.ok) {
-        setBots((prev) => prev.map((b) => (b.id === botId ? { ...b, status: nextStatus } : b)));
-      } else {
-        const data = await res.json().catch(() => ({}));
-        alert("Failed to update bot: " + (data.error || res.statusText));
-      }
-    } catch (err) {
-      alert("Error updating bot status: " + err.message);
-    }
+    setConfirmConfig({
+      title: isBlocked ? "Unblock Chatbot?" : "Block Chatbot?",
+      description: isBlocked
+        ? `Are you sure you want to unblock bot "${botId}"? It will immediately resume serving visitor conversations.`
+        : `Are you sure you want to BLOCK bot "${botId}"? It will immediately stop responding to visitor chats and disable widget connectivity.`,
+      confirmText: isBlocked ? "Unblock Bot" : "Block Bot",
+      badgeText: isBlocked ? "Status Change" : "Security Restriction",
+      variant: isBlocked ? "gold" : "warning",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/bots/${botId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: nextStatus }),
+          });
+          if (res.ok) {
+            setBots((prev) => prev.map((b) => (b.id === botId ? { ...b, status: nextStatus } : b)));
+          }
+        } catch (err) {
+          console.error("Error updating bot status:", err);
+        }
+      },
+    });
   };
 
-  const handleDeleteBot = async (botId) => {
-    if (!confirm(`Are you sure you want to permanently delete bot "${botId}"?`)) return;
-    try {
-      await fetch(`/api/bots/${botId}`, { method: "DELETE" });
-      setBots((prev) => prev.filter((b) => b.id !== botId));
-    } catch (err) {
-      alert("Failed to delete bot: " + err.message);
-    }
+  const handleDeleteBot = (botId) => {
+    const bot = bots.find((b) => b.id === botId) || { id: botId, name: botId };
+    setConfirmConfig({
+      title: "Delete Chatbot?",
+      description: `Are you sure you want to permanently delete chatbot "${bot.name || botId}"? All training documents, conversational logs, and widget keys will be removed.`,
+      confirmText: "Delete Bot",
+      badgeText: "Permanent Action",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/bots/${botId}`, { method: "DELETE" });
+          setBots((prev) => prev.filter((b) => b.id !== botId));
+        } catch (err) {
+          console.error("Failed to delete bot:", err);
+        }
+      },
+    });
   };
 
-  const handlePurgeTestData = async () => {
-    if (!confirm("This will permanently remove all test/dummy bots created during development. Proceed?")) return;
-    setPurging(true);
-    try {
-      const res = await fetch("/api/admin/clean-dummy", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        await loadBots();
-      } else {
-        alert("Failed to purge test data: " + data.error);
-      }
-    } catch (err) {
-      alert("Error purging test data: " + err.message);
-    } finally {
-      setPurging(false);
-    }
+  const handlePurgeTestData = () => {
+    setConfirmConfig({
+      title: "Purge Test & Development Bots?",
+      description: "This will permanently remove all test/dummy bots created during development. Live production bots will not be affected.",
+      confirmText: "Purge Test Bots",
+      badgeText: "Cleanup Action",
+      variant: "danger",
+      onConfirm: async () => {
+        setPurging(true);
+        try {
+          const res = await fetch("/api/admin/clean-dummy", { method: "POST" });
+          const data = await res.json();
+          if (data.success) {
+            await loadBots();
+          }
+        } catch (err) {
+          console.error("Error purging test data:", err);
+        } finally {
+          setPurging(false);
+        }
+      },
+    });
   };
 
   return (
@@ -244,6 +264,18 @@ export default function AdminBotsPage() {
           );
           setRedesignBot(null);
         }}
+      />
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Action Required"}
+        variant={confirmConfig?.variant || "danger"}
       />
     </div>
   );

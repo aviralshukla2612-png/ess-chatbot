@@ -22,12 +22,14 @@ import {
   ShieldCheck,
   Building2,
 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminTicketsPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -88,23 +90,30 @@ export default function AdminTicketsPage() {
     }
   };
 
-  const handleDeleteTicket = async (ticketId) => {
-    if (!confirm(`Are you sure you want to permanently delete Ticket #${ticketId}?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/tickets/${ticketId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg(`Ticket #${ticketId} deleted.`);
-        fetchTickets();
-        if (selectedTicket?.id === ticketId) setSelectedTicket(null);
-        setTimeout(() => setSuccessMsg(""), 3000);
-      } else {
-        alert(data.error || "Failed to delete ticket");
-      }
-    } catch {
-      alert("Error deleting ticket");
-    }
+  const handleDeleteTicket = (ticketId) => {
+    setConfirmConfig({
+      title: "Delete Support Ticket?",
+      description: `Are you sure you want to permanently delete Ticket #${ticketId}? The client message history and support logs will be erased.`,
+      confirmText: "Delete Ticket",
+      badgeText: "Permanent Action",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/tickets/${ticketId}`, { method: "DELETE" });
+          const data = await res.json();
+          if (data.success) {
+            setSuccessMsg(`Ticket #${ticketId} deleted.`);
+            fetchTickets();
+            if (selectedTicket?.id === ticketId) setSelectedTicket(null);
+            setTimeout(() => setSuccessMsg(""), 3000);
+          } else {
+            console.error(data.error || "Failed to delete ticket");
+          }
+        } catch {
+          console.error("Error deleting ticket");
+        }
+      },
+    });
   };
 
   const filteredTickets = tickets.filter((t) => {
@@ -460,6 +469,18 @@ export default function AdminTicketsPage() {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Permanent Action"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   Bot,
   Sparkles,
 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
   const [websites, setWebsites] = useState([]);
@@ -49,6 +50,7 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
 
   // Pages Drawer State
   const [selectedWebsite, setSelectedWebsite] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState(null);
   const [pages, setPages] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const [pageSearch, setPageSearch] = useState("");
@@ -179,17 +181,24 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
   };
 
   // Delete Website Knowledge
-  const handleDeleteWebsite = async (websiteId) => {
-    if (!confirm("Are you sure you want to delete this website knowledge and its vector embeddings?")) {
-      return;
-    }
-    try {
-      await fetch(`/api/websites/${websiteId}`, { method: "DELETE" });
-      loadWebsites();
-      if (selectedWebsite?.id === websiteId) setSelectedWebsite(null);
-    } catch (e) {
-      console.error(e);
-    }
+  const handleDeleteWebsite = (websiteId) => {
+    const web = websites.find((w) => w.id === websiteId) || { id: websiteId, name: "this website" };
+    setConfirmConfig({
+      title: "Delete Website Knowledge?",
+      description: `Are you sure you want to delete "${web.name || web.baseUrl || "this website"}"? All indexed pages, text extractions, and vector embeddings will be permanently removed from this bot.`,
+      confirmText: "Delete Website",
+      badgeText: "Knowledge Base",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await fetch(`/api/websites/${websiteId}`, { method: "DELETE" });
+          loadWebsites();
+          if (selectedWebsite?.id === websiteId) setSelectedWebsite(null);
+        } catch (e) {
+          console.error(e);
+        }
+      },
+    });
   };
 
   // View Indexed Pages Drawer
@@ -764,6 +773,18 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Action Required"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }

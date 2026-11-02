@@ -17,12 +17,14 @@ import {
   Layers,
   ArrowUpRight,
 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminKeysPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [addingKey, setAddingKey] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
   // New key form
   const [newLabel, setNewLabel] = useState("");
@@ -114,22 +116,30 @@ export default function AdminKeysPage() {
     }
   };
 
-  const handleDelete = async (id, label) => {
-    if (!confirm(`Are you sure you want to remove '${label}' from the pool?`)) return;
-    try {
-      const res = await fetch("/api/admin/keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", id }),
-      });
-      if (res.ok) {
-        setNotification({ type: "success", message: "Key removed from pool." });
-        loadStats();
-        setTimeout(() => setNotification(null), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDelete = (id, label) => {
+    setConfirmConfig({
+      title: "Remove API Key?",
+      description: `Are you sure you want to remove '${label}' from the rotation pool? Inference traffic will immediately fall back to remaining keys.`,
+      confirmText: "Remove Key",
+      badgeText: "Key Rotation",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/admin/keys", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete", id }),
+          });
+          if (res.ok) {
+            setNotification({ type: "success", message: "Key removed from pool." });
+            loadStats();
+            setTimeout(() => setNotification(null), 3000);
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      },
+    });
   };
 
   const handleSetPrimary = async (id, label) => {
@@ -598,6 +608,18 @@ export default function AdminKeysPage() {
           </table>
         </div>
       </div>
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Remove"}
+        badgeText={confirmConfig?.badgeText || "Action Required"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import {
   FileType,
 } from "lucide-react";
 import { knowledgeApi } from "@/lib/api/knowledge";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function DocumentKnowledgeManager({ botId }) {
   const [documents, setDocuments] = useState([]);
@@ -47,6 +48,7 @@ export default function DocumentKnowledgeManager({ botId }) {
 
   // Viewer Modal State
   const [viewingDoc, setViewingDoc] = useState(null);
+  const [confirmConfig, setConfirmConfig] = useState(null);
 
   // Load documents
   const loadDocs = async () => {
@@ -231,16 +233,23 @@ export default function DocumentKnowledgeManager({ botId }) {
   };
 
   // Delete Document
-  const handleDelete = async (docId, docName) => {
-    if (confirm(`Are you sure you want to delete "${docName}"? It will be removed from this bot's knowledge.`)) {
-      try {
-        await knowledgeApi.deleteDocument(botId, docId);
-        setSuccessToast(`Document "${docName}" deleted.`);
-        await loadDocs();
-      } catch (e) {
-        console.error(e);
-      }
-    }
+  const handleDelete = (docId, docName) => {
+    setConfirmConfig({
+      title: "Delete Training Document?",
+      description: `Are you sure you want to delete "${docName}"? It will be removed from this bot's knowledge base and associated vector embeddings will be erased.`,
+      confirmText: "Delete Document",
+      badgeText: "Knowledge Base",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await knowledgeApi.deleteDocument(botId, docId);
+          setSuccessToast(`Document "${docName}" deleted.`);
+          await loadDocs();
+        } catch (e) {
+          console.error(e);
+        }
+      },
+    });
   };
 
   // Word and Chunk Estimation
@@ -870,6 +879,18 @@ export default function DocumentKnowledgeManager({ botId }) {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Action Required"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }

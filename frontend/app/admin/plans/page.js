@@ -20,9 +20,11 @@ import {
   ArrowRight,
   TrendingUp,
 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function AdminPlansPage() {
   const [plans, setPlans] = useState([]);
+  const [confirmConfig, setConfirmConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -167,24 +169,31 @@ export default function AdminPlansPage() {
     }
   };
 
-  const handleDeletePlan = async (planId, planName) => {
-    if (!confirm(`Are you sure you want to delete the plan "${planName}"?`)) return;
-
-    try {
-      const res = await fetch(`/api/admin/plans/${planId}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg(`Plan "${planName}" deleted.`);
-        fetchPlans();
-        setTimeout(() => setSuccessMsg(""), 3000);
-      } else {
-        alert(data.error || "Failed to delete plan");
-      }
-    } catch {
-      alert("Error deleting plan");
-    }
+  const handleDeletePlan = (planId, planName) => {
+    setConfirmConfig({
+      title: "Delete Subscription Plan?",
+      description: `Are you sure you want to delete the plan "${planName}"? Existing subscriptions will be preserved, but new signups will not be able to choose this tier.`,
+      confirmText: "Delete Plan",
+      badgeText: "Permanent Action",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/plans/${planId}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (data.success) {
+            setSuccessMsg(`Plan "${planName}" deleted.`);
+            fetchPlans();
+            setTimeout(() => setSuccessMsg(""), 3000);
+          } else {
+            console.error(data.error || "Failed to delete plan");
+          }
+        } catch {
+          console.error("Error deleting plan");
+        }
+      },
+    });
   };
 
   const filteredPlans = plans.filter((p) => {
@@ -629,6 +638,18 @@ export default function AdminPlansPage() {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal */}
+      <ConfirmModal
+        isOpen={Boolean(confirmConfig)}
+        onClose={() => setConfirmConfig(null)}
+        onConfirm={confirmConfig?.onConfirm}
+        title={confirmConfig?.title}
+        description={confirmConfig?.description}
+        confirmText={confirmConfig?.confirmText || "Confirm"}
+        badgeText={confirmConfig?.badgeText || "Action Required"}
+        variant={confirmConfig?.variant || "danger"}
+      />
     </div>
   );
 }
