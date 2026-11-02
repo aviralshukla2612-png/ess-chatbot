@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import ExperienceModal from "./components/ExperienceModal";
@@ -9,11 +11,14 @@ import HowItWorksSection from "./components/HowItWorksSection";
 import PricingSection from "./components/PricingSection";
 import Footer from "./components/Footer";
 
+// Register ScrollTrigger globally
+gsap.registerPlugin(ScrollTrigger);
+
 export default function App() {
   const [experienceModalOpen, setExperienceModalOpen] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState("real-estate");
 
-  // Initialize Lenis Smooth Scrolling
+  // Coordinate Lenis Smooth Scrolling with GSAP ScrollTrigger
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -22,15 +27,26 @@ export default function App() {
       touchMultiplier: 1.5,
     });
 
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    const reqId = requestAnimationFrame(raf);
+    // 1. Forward Lenis scroll updates to GSAP ScrollTrigger
+    lenis.on("scroll", ScrollTrigger.update);
+
+    // 2. Drive Lenis via GSAP ticker for synchronized frame delivery
+    const updateTicker = (time) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(updateTicker);
+    gsap.ticker.lagSmoothing(0);
+
+    // 3. Initial ScrollTrigger layout refresh after paint
+    const refreshTimer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 150);
 
     return () => {
-      cancelAnimationFrame(reqId);
+      clearTimeout(refreshTimer);
+      gsap.ticker.remove(updateTicker);
       lenis.destroy();
+      ScrollTrigger.getAll().forEach((st) => st.kill());
     };
   }, []);
 
