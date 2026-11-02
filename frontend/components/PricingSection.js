@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -17,14 +17,12 @@ export const PRICING_PLANS = [
     tagline: "Flexible Month-to-Month Plan",
     price: "₹999",
     period: "/ month",
-    billingNote: "Cancel according to subscription terms",
     savings: null,
     popular: false,
     features: [
       "1 account",
       "1 chatbot",
       "7-day free trial",
-      "Cancel according to subscription terms",
     ],
     ctaText: "Start 7-Day Free Trial",
   },
@@ -34,7 +32,6 @@ export const PRICING_PLANS = [
     tagline: "Commercial Half-Year Access",
     price: "₹5,999",
     period: "/ 6 months",
-    billingNote: "Billed every 6 months",
     savings: null,
     popular: false,
     features: [
@@ -50,31 +47,61 @@ export const PRICING_PLANS = [
     tagline: "Full Year Maximum Value",
     price: "₹8,999",
     period: "/ year",
-    billingNote: "Billed annually",
-    savings: "Save ₹2,989 compared with twelve monthly payments",
+    savings: "Save ₹2,989 compared with twelve monthly payments.",
     popular: true,
     features: [
       "1 account",
       "1 chatbot",
       "7-day free trial",
-      "Save ₹2,989 compared with twelve monthly payments",
+      "Save ₹2,989 compared with twelve monthly payments.",
     ],
     ctaText: "Start 7-Day Free Trial",
   },
 ];
 
+const HEADLINE_LINE1 = "SIMPLE PRICING.";
+const HEADLINE_LINE2 = "POWERFUL CONVERSATIONS.";
+
+// Precompute deterministic 3D explosion vectors for every letter
+function computeExplosionVectors(text, isTopLine) {
+  const chars = text.split("");
+  const mid = (chars.length - 1) / 2;
+
+  return chars.map((char, i) => {
+    if (char === " ") return null;
+    const relX = (i - mid) / mid; // -1 to +1
+    const seed = ((i * 7 + (isTopLine ? 13 : 29)) % 11) / 11;
+    const seed2 = ((i * 13 + (isTopLine ? 5 : 17)) % 7) / 7;
+
+    const x = Math.round(relX * (isTopLine ? 420 : 480) + (seed - 0.5) * 140);
+    const y = isTopLine
+      ? Math.round(-180 - Math.abs(relX) * 160 - seed * 140)
+      : Math.round(180 + Math.abs(relX) * 160 + seed * 140);
+    const z = Math.round((seed2 - 0.5) * 350);
+    const rotateZ = Math.round(relX * 60 + (seed - 0.5) * 55);
+    const rotateX = Math.round((seed - 0.5) * 95);
+    const rotateY = Math.round((seed2 - 0.5) * 95);
+    const scale = Number((0.35 + seed * 0.75).toFixed(2));
+    const delay = Number((Math.abs(relX) * 0.08 + seed * 0.04).toFixed(3));
+
+    return { char, i, x, y, z, rotateZ, rotateX, rotateY, scale, delay };
+  });
+}
+
 export default function PricingSection({ isAuthenticated = false, onOpenTrial }) {
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
-  const introHeadlineRef = useRef(null);
-  const introLine1Ref = useRef(null);
-  const introLine2Ref = useRef(null);
-  const introSubRef = useRef(null);
+  const headlineWrapperRef = useRef(null);
   const compactHeaderRef = useRef(null);
-  const cardsWrapperRef = useRef(null);
+  const cardsStageRef = useRef(null);
   const cardRefs = useRef([]);
+  const line1CharRefs = useRef([]);
+  const line2CharRefs = useRef([]);
 
   const [activePlan, setActivePlan] = useState("annual");
+
+  const line1Vectors = useMemo(() => computeExplosionVectors(HEADLINE_LINE1, true), []);
+  const line2Vectors = useMemo(() => computeExplosionVectors(HEADLINE_LINE2, false), []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -92,14 +119,23 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         const { isDesktop, isTablet, isMobile, reduceMotion } = context.conditions;
 
         if (reduceMotion) {
-          // Static layout for users preferring reduced motion
-          gsap.set(cardRefs.current, { opacity: 1, scale: 1, xPercent: 0, yPercent: 0, rotation: 0, pointerEvents: "auto" });
+          // Static layout for reduced motion
+          gsap.set(cardRefs.current, {
+            opacity: 1,
+            scale: 1,
+            xPercent: 0,
+            yPercent: 0,
+            rotationY: 0,
+            rotationZ: 0,
+            z: 0,
+            pointerEvents: "auto",
+          });
           gsap.set(compactHeaderRef.current, { opacity: 1, y: 0 });
-          gsap.set(introHeadlineRef.current, { display: "none" });
+          gsap.set(headlineWrapperRef.current, { display: "none" });
           return;
         }
 
-        const scrollDist = isDesktop ? "+=2600" : isTablet ? "+=2000" : "+=1600";
+        const scrollDist = isDesktop ? "+=2800" : isTablet ? "+=2200" : "+=1800";
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -115,235 +151,287 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         });
 
         // ============================================================
-        // PHASE 1 (0.00 -> 0.20): Full Editorial Headline Centered
-        // Cards initially hidden and positioned for emergence
+        // INITIAL STATES (Phase 1: 0.00 -> 0.15)
+        // Typography is crisp & centered.
+        // Cards are hidden in deep 3D background.
         // ============================================================
         gsap.set(cardRefs.current[0], {
-          xPercent: isDesktop ? 60 : 0,
-          yPercent: isDesktop ? 20 : 35,
-          rotation: isDesktop ? -10 : -4,
-          scale: 0.82,
           opacity: 0,
+          z: -450,
+          scale: 0.55,
+          rotationY: isDesktop ? 25 : 0,
+          rotationZ: isDesktop ? -12 : -4,
+          xPercent: isDesktop ? 40 : 0,
+          yPercent: isDesktop ? 18 : 30,
           pointerEvents: "none",
+          transformOrigin: "center center",
           zIndex: 1,
         });
 
         gsap.set(cardRefs.current[1], {
-          xPercent: 0,
-          yPercent: isDesktop ? -10 : 0,
-          rotation: 0,
-          scale: 0.88,
           opacity: 0,
+          z: -350,
+          scale: 0.65,
+          rotationY: 0,
+          rotationZ: 0,
+          xPercent: 0,
+          yPercent: 0,
           pointerEvents: "none",
-          zIndex: 3,
+          transformOrigin: "center center",
+          zIndex: 10, // Center card on top in deck
         });
 
         gsap.set(cardRefs.current[2], {
-          xPercent: isDesktop ? -60 : 0,
-          yPercent: isDesktop ? 20 : -35,
-          rotation: isDesktop ? 10 : 4,
-          scale: 0.82,
           opacity: 0,
+          z: -450,
+          scale: 0.55,
+          rotationY: isDesktop ? -25 : 0,
+          rotationZ: isDesktop ? 12 : 4,
+          xPercent: isDesktop ? -40 : 0,
+          yPercent: isDesktop ? 18 : -30,
           pointerEvents: "none",
+          transformOrigin: "center center",
           zIndex: 2,
         });
 
         gsap.set(compactHeaderRef.current, {
           opacity: 0,
-          y: -20,
+          y: -25,
+        });
+
+        // Reset all exploding letters
+        line1CharRefs.current.forEach((el) => {
+          if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, scale: 1, opacity: 1, filter: "blur(0px)" });
+        });
+        line2CharRefs.current.forEach((el) => {
+          if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, scale: 1, opacity: 1, filter: "blur(0px)" });
         });
 
         // ============================================================
-        // PHASE 2 (0.20 -> 0.45): Headline Separates & Panels Emerge
+        // PHASE 2 (0.15 -> 0.35): INDIVIDUAL LETTER EXPLOSION
+        // Characters burst outward with distinct 3D trajectories
         // ============================================================
-        // Headline line 1 splits out toward top-left
-        tl.to(
-          introLine1Ref.current,
-          {
-            x: isDesktop ? -130 : -40,
-            y: isDesktop ? -70 : -35,
-            opacity: 0,
-            filter: "blur(8px)",
-            duration: 0.28,
-            ease: "power2.inOut",
-          },
-          0.18
-        );
+        const distMult = isMobile ? 0.42 : isTablet ? 0.72 : 1.0;
 
-        // Headline line 2 splits out toward top-right
-        tl.to(
-          introLine2Ref.current,
-          {
-            x: isDesktop ? 130 : 40,
-            y: isDesktop ? -70 : -35,
-            opacity: 0,
-            filter: "blur(8px)",
-            duration: 0.28,
-            ease: "power2.inOut",
-          },
-          0.18
-        );
+        line1Vectors.forEach((v) => {
+          if (!v) return;
+          const el = line1CharRefs.current[v.i];
+          if (!el) return;
 
-        // Subtitle fades out downward
-        tl.to(
-          introSubRef.current,
-          {
-            opacity: 0,
-            y: 25,
-            duration: 0.2,
-            ease: "power2.out",
-          },
-          0.16
-        );
+          tl.to(
+            el,
+            {
+              x: v.x * distMult,
+              y: v.y * distMult,
+              z: v.z * distMult,
+              rotationZ: v.rotateZ,
+              rotationX: v.rotateX,
+              rotationY: v.rotateY,
+              scale: v.scale,
+              opacity: 0,
+              filter: "blur(10px)",
+              duration: 0.18,
+              ease: "power2.in",
+            },
+            0.15 + v.delay
+          );
+        });
 
-        // Compact header enters at top
+        line2Vectors.forEach((v) => {
+          if (!v) return;
+          const el = line2CharRefs.current[v.i];
+          if (!el) return;
+
+          tl.to(
+            el,
+            {
+              x: v.x * distMult,
+              y: v.y * distMult,
+              z: v.z * distMult,
+              rotationZ: v.rotateZ,
+              rotationX: v.rotateX,
+              rotationY: v.rotateY,
+              scale: v.scale,
+              opacity: 0,
+              filter: "blur(10px)",
+              duration: 0.18,
+              ease: "power2.in",
+            },
+            0.16 + v.delay
+          );
+        });
+
+        // Compact top header reveals as characters disperse
         tl.to(
           compactHeaderRef.current,
           {
             opacity: 1,
             y: 0,
-            duration: 0.3,
+            duration: 0.28,
             ease: "power2.out",
           },
           0.32
         );
 
-        // Three panels emerge from the headline composition with different timings & rotation
-        // Card 1 (Monthly)
-        tl.to(
-          cardRefs.current[0],
-          {
-            opacity: 1,
-            xPercent: isDesktop ? 40 : 0,
-            yPercent: isDesktop ? 15 : 20,
-            rotation: isDesktop ? -8 : -3,
-            scale: 0.86,
-            duration: 0.28,
-            ease: "power1.out",
-          },
-          0.22
-        );
-
-        // Card 2 (Six Months)
+        // ============================================================
+        // PHASE 3 (0.30 -> 0.50): PRICING CARDS EMERGE (Compact Overlapping Fan)
+        // Three cards surge forward from the depth like a premium card deck
+        // Middle card is more prominent in front
+        // ============================================================
+        // Center Card (Six Months) rises forward first
         tl.to(
           cardRefs.current[1],
           {
             opacity: 1,
+            z: 60,
+            scale: isDesktop ? 0.92 : 0.88,
             xPercent: 0,
-            yPercent: 0,
-            rotation: 0,
-            scale: 0.92,
-            duration: 0.26,
-            ease: "power1.out",
+            yPercent: -5,
+            rotationY: 0,
+            rotationZ: 0,
+            duration: 0.20,
+            ease: "power2.out",
           },
-          0.26
+          0.30
         );
 
-        // Card 3 (Annual)
+        // Left Card (Monthly) peeks in behind left
+        tl.to(
+          cardRefs.current[0],
+          {
+            opacity: 1,
+            z: -25,
+            scale: isDesktop ? 0.84 : 0.80,
+            xPercent: isDesktop ? 38 : 0,
+            yPercent: isDesktop ? 12 : 20,
+            rotationY: isDesktop ? 14 : 0,
+            rotationZ: isDesktop ? -8 : -3,
+            duration: 0.20,
+            ease: "power2.out",
+          },
+          0.33
+        );
+
+        // Right Card (Annual) peeks in behind right
         tl.to(
           cardRefs.current[2],
           {
             opacity: 1,
-            xPercent: isDesktop ? -40 : 0,
-            yPercent: isDesktop ? 15 : -20,
-            rotation: isDesktop ? 8 : 3,
-            scale: 0.86,
-            duration: 0.28,
-            ease: "power1.out",
+            z: -20,
+            scale: isDesktop ? 0.84 : 0.80,
+            xPercent: isDesktop ? -38 : 0,
+            yPercent: isDesktop ? 12 : -20,
+            rotationY: isDesktop ? -14 : 0,
+            rotationZ: isDesktop ? 8 : 3,
+            duration: 0.20,
+            ease: "power2.out",
           },
-          0.24
+          0.35
         );
 
         // ============================================================
-        // PHASE 3 (0.45 -> 0.72): Cards rotate, overlap & spread apart
+        // PHASE 4 (0.45 -> 0.70): CARDS FAN OUT
+        // Left card moves left, center settles, right moves right
+        // Rotations ease back towards 0, scale increases
         // ============================================================
         tl.to(
           cardRefs.current[0],
           {
-            xPercent: isDesktop ? 15 : 0,
-            yPercent: 0,
-            rotation: isDesktop ? -3 : 0,
+            z: -10,
             scale: 0.95,
-            duration: 0.28,
-            ease: "power2.inOut",
+            xPercent: isDesktop ? 14 : 0,
+            yPercent: 4,
+            rotationY: isDesktop ? 4 : 0,
+            rotationZ: isDesktop ? -2 : 0,
+            duration: 0.25,
+            ease: "power1.inOut",
           },
-          0.45
+          0.48
         );
 
         tl.to(
           cardRefs.current[1],
           {
+            z: 10,
+            scale: 0.98,
             xPercent: 0,
             yPercent: 0,
-            rotation: 0,
-            scale: 1.0,
-            duration: 0.28,
-            ease: "power2.inOut",
+            duration: 0.25,
+            ease: "power1.inOut",
           },
-          0.45
+          0.48
         );
 
         tl.to(
           cardRefs.current[2],
           {
-            xPercent: isDesktop ? -15 : 0,
-            yPercent: 0,
-            rotation: isDesktop ? 3 : 0,
+            z: -10,
             scale: 0.95,
-            duration: 0.28,
-            ease: "power2.inOut",
+            xPercent: isDesktop ? -14 : 0,
+            yPercent: 4,
+            rotationY: isDesktop ? -4 : 0,
+            rotationZ: isDesktop ? 2 : 0,
+            duration: 0.25,
+            ease: "power1.inOut",
           },
-          0.45
+          0.48
         );
 
         // ============================================================
-        // PHASE 4 (0.72 -> 0.92): Final Assembly into Balanced Layout
-        // Settle completely into place and enable user interactions
+        // PHASE 5 (0.70 -> 0.90): FINAL THREE-COLUMN ASSEMBLY
+        // Perspective depth disappears, cards lock flush into columns
+        // Pointer events enable for full interactivity
         // ============================================================
         tl.to(
           cardRefs.current[0],
           {
+            z: 0,
+            scale: 1.0,
             xPercent: 0,
             yPercent: 0,
-            rotation: 0,
-            scale: 1.0,
+            rotationY: 0,
+            rotationZ: 0,
             pointerEvents: "auto",
-            duration: 0.25,
+            duration: 0.20,
             ease: "power2.out",
           },
-          0.72
+          0.70
         );
 
         tl.to(
           cardRefs.current[1],
           {
+            z: 0,
+            scale: 1.0,
             xPercent: 0,
             yPercent: 0,
-            rotation: 0,
-            scale: 1.0,
+            rotationY: 0,
+            rotationZ: 0,
             pointerEvents: "auto",
-            duration: 0.25,
+            duration: 0.20,
             ease: "power2.out",
           },
-          0.72
+          0.70
         );
 
         tl.to(
           cardRefs.current[2],
           {
+            z: 0,
+            scale: 1.0,
             xPercent: 0,
             yPercent: 0,
-            rotation: 0,
-            scale: 1.0,
+            rotationY: 0,
+            rotationZ: 0,
             pointerEvents: "auto",
-            duration: 0.25,
+            duration: 0.20,
             ease: "power2.out",
           },
-          0.72
+          0.70
         );
 
-        // Buffer hold: (0.92 -> 1.00) Cards remain completely stable and readable
-        tl.to({}, { duration: 0.15 }, 0.92);
+        // Buffer hold: (0.90 -> 1.00) Layout remains 100% stable and readable
+        tl.to({}, { duration: 0.10 }, 0.90);
       },
       sectionRef
     );
@@ -356,7 +444,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
       clearTimeout(refreshTimer);
       mm.revert();
     };
-  }, []);
+  }, [line1Vectors, line2Vectors]);
 
   const getCheckoutUrl = (planId) => {
     return isAuthenticated ? `/billing?plan=${planId}` : `/register?plan=${planId}`;
@@ -371,9 +459,9 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
       {/* PINNED STAGE (Controlled by GSAP ScrollTrigger scrub) */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen min-h-[640px] max-h-[1080px] bg-[#050507] overflow-hidden flex flex-col justify-between py-6 sm:py-8 lg:py-10 px-4 sm:px-8 lg:px-12 select-none"
+        className="relative w-full h-screen min-h-[660px] max-h-[1080px] bg-[#050507] overflow-hidden flex flex-col justify-between py-5 sm:py-7 lg:py-9 px-4 sm:px-8 lg:px-12 select-none"
       >
-        {/* Subtle Technical Grid Background & Ambient Purple Lighting */}
+        {/* Technical Grid Background & Ambient Lighting */}
         <div
           className="absolute inset-0 pointer-events-none opacity-30"
           style={{
@@ -386,72 +474,100 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
           }}
         />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#963DFF]/15 rounded-full blur-[160px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] bg-[#963DFF]/15 rounded-full blur-[170px] pointer-events-none" />
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#55A9FF]/10 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* Top Eyebrow Badge (Always visible at top of viewport) */}
-        <div className="relative z-20 w-full max-w-7xl mx-auto flex items-center justify-between">
+        {/* Top Eyebrow Badge (Always visible) */}
+        <div className="relative z-30 w-full max-w-7xl mx-auto flex items-center justify-between">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF]">
             <span>/ TRANSPARENT PRICING</span>
           </div>
           <div className="hidden sm:inline-flex items-center gap-2 text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
-            <span>7-Day Evaluation Included</span>
+            <span>7-Day Free Evaluation Included</span>
           </div>
         </div>
 
         {/* ============================================================
-            PHASE 1: EDITORIAL HEADLINE INTRODUCTION (Center Screen)
-            Separates and transforms as user scrolls
+            PHASE 1 & 2: MASSIVE TYPOGRAPHY LAYER (EXPLODING CHARACTERS)
+            Absolute positioned layer so individual letter transforms do not cause layout shift
             ============================================================ */}
         <div
-          ref={introHeadlineRef}
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none px-4 text-center"
+          ref={headlineWrapperRef}
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none px-4 text-center"
+          style={{ perspective: "1200px" }}
         >
-          <h2 className="font-sans font-extrabold tracking-tight text-4xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.98] uppercase">
-            <span
-              ref={introLine1Ref}
-              className="inline-block text-white will-change-transform drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]"
-            >
-              Simple Pricing.
-            </span>
-            <br />
-            <span
-              ref={introLine2Ref}
-              className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] will-change-transform drop-shadow-[0_0_35px_rgba(194,138,255,0.45)] mt-1 sm:mt-2"
-            >
-              Powerful Conversations.
-            </span>
+          {/* Line 1: SIMPLE PRICING. (Individual character spans) */}
+          <h2 className="font-sans font-extrabold tracking-tight text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] leading-[0.98] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center flex-wrap">
+            {HEADLINE_LINE1.split("").map((char, idx) => {
+              if (char === " ") {
+                return (
+                  <span key={idx} className="inline-block w-[0.28em]">
+                    &nbsp;
+                  </span>
+                );
+              }
+              return (
+                <span
+                  key={idx}
+                  ref={(el) => (line1CharRefs.current[idx] = el)}
+                  className="inline-block will-change-transform transform-gpu"
+                  style={{ transformStyle: "preserve-3d" }}
+                >
+                  {char}
+                </span>
+              );
+            })}
           </h2>
 
-          <p
-            ref={introSubRef}
-            className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-[#9898A6] max-w-lg font-medium will-change-transform"
-          >
+          {/* Line 2: POWERFUL CONVERSATIONS. (Individual character spans in gradient) */}
+          <h2 className="font-sans font-extrabold tracking-tight text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.25rem] leading-[0.98] uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_40px_rgba(194,138,255,0.4)] mt-2 sm:mt-3 flex items-center justify-center flex-wrap">
+            {HEADLINE_LINE2.split("").map((char, idx) => {
+              if (char === " ") {
+                return (
+                  <span key={idx} className="inline-block w-[0.28em]">
+                    &nbsp;
+                  </span>
+                );
+              }
+              return (
+                <span
+                  key={idx}
+                  ref={(el) => (line2CharRefs.current[idx] = el)}
+                  className="inline-block will-change-transform transform-gpu"
+                  style={{ transformStyle: "preserve-3d" }}
+                >
+                  {char}
+                </span>
+              );
+            })}
+          </h2>
+
+          <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-[#9898A6] max-w-lg font-medium">
             Choose the plan that works for your business.
           </p>
         </div>
 
         {/* ============================================================
-            COMPACT HEADER (Fades in at top during Phase 2-4)
+            COMPACT HEADER (Reveals during Phase 2-5 at top)
             ============================================================ */}
         <div
           ref={compactHeaderRef}
-          className="relative z-20 w-full max-w-4xl mx-auto text-center will-change-transform pt-2"
+          className="relative z-30 w-full max-w-4xl mx-auto text-center will-change-transform pt-1"
         >
-          <h3 className="font-sans font-extrabold tracking-tight text-2xl sm:text-3xl md:text-4xl text-white uppercase leading-tight">
+          <h3 className="font-sans font-extrabold tracking-tight text-xl sm:text-3xl text-white uppercase leading-tight">
             <span>Simple Pricing. </span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] to-[#55A9FF]">
               Powerful Conversations.
             </span>
           </h3>
-          <p className="mt-1 text-xs sm:text-sm text-[#9898A6]">
+          <p className="mt-0.5 text-xs text-[#9898A6]">
             Choose the plan that works for your business.
           </p>
         </div>
 
         {/* Mobile Plan Quick Switcher (Visible on small screens) */}
-        <div className="relative z-20 sm:hidden flex justify-center mt-2 mb-1">
+        <div className="relative z-30 sm:hidden flex justify-center mt-2 mb-1">
           <div className="inline-flex p-1 rounded-full bg-white/[0.05] border border-white/[0.08]">
             {PRICING_PLANS.map((p) => (
               <button
@@ -471,27 +587,33 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         </div>
 
         {/* ============================================================
-            PHASE 3 & 4: THREE-CARD ASSEMBLY (3 Column Layout)
-            Cards emerge, overlap, rotate and settle into 3 columns
+            PHASE 3, 4 & 5: 3D PRICING CARDS PERSPECTIVE STAGE
+            Cards emerge from depth in an overlapping fan, then fan out into 3 columns
             ============================================================ */}
         <div
-          ref={cardsWrapperRef}
-          className="relative z-20 w-full max-w-6xl mx-auto my-auto grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 items-stretch px-2 sm:px-4"
+          ref={cardsStageRef}
+          className="relative z-20 w-full max-w-6xl mx-auto my-auto grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 items-stretch px-2 sm:px-4 will-change-transform"
+          style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
         >
           {PRICING_PLANS.map((plan, idx) => {
             const isAnnual = plan.id === "annual";
+            const isSixMonths = plan.id === "six-months";
             const isMobileHidden = activePlan !== plan.id;
+
             return (
               <div
                 key={plan.id}
                 ref={(el) => (cardRefs.current[idx] = el)}
                 className={`relative rounded-2xl p-5 sm:p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 will-change-transform backdrop-blur-xl ${
                   isAnnual
-                    ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_40px_rgba(150,61,255,0.25)]"
+                    ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_40px_rgba(150,61,255,0.28)]"
+                    : isSixMonths
+                    ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_35px_rgba(0,0,0,0.6)]"
                     : "bg-[#12121A]/80 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_35px_rgba(0,0,0,0.5)]"
                 } ${isMobileHidden ? "hidden sm:flex" : "flex"}`}
+                style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
               >
-                {/* Popular Savings Badge for Annual */}
+                {/* Best Value Badge for Annual */}
                 {isAnnual && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap">
                     Best Value — Save ₹2,989
@@ -531,7 +653,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                     )}
                   </div>
 
-                  {/* Feature Checklist (Exact specifications from user) */}
+                  {/* Feature Checklist (Exact User Specifications) */}
                   <div className="space-y-2.5 mb-6">
                     {plan.features.map((feat, fIdx) => (
                       <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
@@ -561,8 +683,8 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           })}
         </div>
 
-        {/* Bottom Security / Trial Assurance Bar */}
-        <div className="relative z-20 w-full max-w-5xl mx-auto flex items-center justify-between text-[10px] sm:text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold pt-2 px-2">
+        {/* Bottom Evaluation / Security Assurance Bar */}
+        <div className="relative z-30 w-full max-w-5xl mx-auto flex items-center justify-between text-[10px] sm:text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold pt-1 px-2">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>Full 7-Day Free Evaluation on Every Plan</span>
