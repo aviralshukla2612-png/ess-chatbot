@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
 
 const BUSINESS_EXAMPLES = [
