@@ -890,7 +890,7 @@ export default function HomePage() {
           </div>
 
           <div className="pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#9898A6]">
-            <p>© {new Date().getFullYear()} Emperor Smart Solutions. All rights reserved. Emperor Nexus AI.</p>
+            <p>© 2026 Emperor Smart Solutions. All rights reserved. Emperor Nexus AI.</p>
             <div className="flex items-center gap-6">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
