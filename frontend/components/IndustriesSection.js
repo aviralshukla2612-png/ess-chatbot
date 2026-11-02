@@ -102,6 +102,20 @@ export const INDUSTRIES = [
     badge: "Advisory & Case Scoping",
     capability: "Lead Qualification & Partner Routing",
   },
+  {
+    id: "ai-assistant",
+    category: "AI Sales & Assistants",
+    name: "Autonomous Sales & Enterprise Intelligence",
+    subtitle: "Interactive product walkthroughs, intelligent qualification and 24/7 autonomous closing.",
+    icon: Sparkles,
+    video: "/videos/industries/ai-assistant.mp4",
+    poster: "/images/industries/ai-assistant.webp",
+    fallbackBg: "linear-gradient(135deg, #2A123E 0%, #090818 100%)",
+    accentColor: "#C28AFF",
+    sampleQuestion: "How does the AI assistant demonstrate product value and convert high-intent inbound visitors?",
+    badge: "Autonomous Sales & Q&A",
+    capability: "24/7 Autonomous Sales & Conversion",
+  },
 ];
 
 export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
@@ -222,17 +236,17 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
       {/* ============================================================
           MAIN HERO COMPOSITION:
           Left: Bold Editorial Headline + Supporting Copy + CTA Button
-          Right: The 6-Video Mosaic Collage (Seamless, Borderless, ALL 6 VISIBLE)
+          Right: The 7-Video Mosaic Collage (Seamless, Borderless, ALL 7 VISIBLE)
           Everything fits harmoniously in ONE PAGE
           ============================================================ */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-12 px-2 sm:px-4">
+      <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10 px-2 sm:px-4">
         {/* Left Column: Bold Typography + Description + CTA */}
         <div
           ref={headlineRef}
-          className="flex-1 w-full lg:max-w-[52%] xl:max-w-[54%] flex flex-col justify-center will-change-transform"
+          className="flex-1 w-full lg:max-w-[48%] xl:max-w-[50%] flex flex-col justify-center will-change-transform"
         >
           {/* Main Heading matching user requirement */}
-          <h2 className="text-white font-sans font-extrabold tracking-tight text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-[3.85rem] leading-[1.02] uppercase">
+          <h2 className="text-white font-sans font-extrabold tracking-tight text-3xl sm:text-4xl md:text-5xl lg:text-[3.15rem] xl:text-[3.65rem] leading-[1.02] uppercase">
             <span>DIFFERENT</span>
             <br />
             <span>INDUSTRIES.</span>
@@ -247,7 +261,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           </h2>
 
           {/* Supporting Copy */}
-          <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-[15px] text-[#9898A6] max-w-xl leading-relaxed">
+          <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-[14px] text-[#9898A6] max-w-xl leading-relaxed">
             From finding the right property to choosing a healthcare provider, exploring educational opportunities or discovering a new service — every industry has its own conversations.
           </p>
 
@@ -263,22 +277,22 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           </div>
         </div>
 
-        {/* Right Column: The 6-Video Mosaic Collage (Border-free, All 6 visible) */}
+        {/* Right Column: The 7-Video Mosaic Collage (Border-free, All 7 visible) */}
         <div
           ref={collageRef}
-          className="w-full lg:w-[460px] xl:w-[520px] 2xl:w-[560px] shrink-0 flex items-center justify-center will-change-transform"
+          className="w-full lg:w-[500px] xl:w-[560px] 2xl:w-[600px] shrink-0 flex items-center justify-center will-change-transform"
         >
-          {/* 3 Asymmetric Columns forming the 6-video collage */}
-          <div className="w-full h-[220px] sm:h-[260px] md:h-[300px] lg:h-[330px] xl:h-[350px] flex gap-1.5 sm:gap-2 rounded-xl overflow-hidden shadow-2xl">
-            {/* Column 1 (37% width): Real Estate (58%) + Hospitality (42%) */}
-            <div className="w-[37%] h-full flex flex-col gap-1.5 sm:gap-2">
+          {/* 3 Asymmetric Columns forming the balanced 7-video collage (2 - 3 - 2) */}
+          <div className="w-full h-[240px] sm:h-[280px] md:h-[320px] lg:h-[350px] xl:h-[370px] flex gap-1.5 sm:gap-2 rounded-xl overflow-hidden shadow-2xl">
+            {/* Column 1 (31% width): Real Estate (57%) + Hospitality (43%) */}
+            <div className="w-[31%] h-full flex flex-col gap-1.5 sm:gap-2">
               {/* Tile 0: Real Estate */}
               <div
                 ref={(el) => (tileRefs.current[0] = el)}
                 onClick={() => onOpenExperience?.("real-estate")}
                 onMouseEnter={() => setActiveHover("real-estate")}
                 onMouseLeave={() => setActiveHover(null)}
-                className="relative w-full h-[58%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                className="relative w-full h-[57%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                 style={{ background: INDUSTRIES[0].fallbackBg }}
               >
                 <video
@@ -311,7 +325,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                 onClick={() => onOpenExperience?.("hospitality")}
                 onMouseEnter={() => setActiveHover("hospitality")}
                 onMouseLeave={() => setActiveHover(null)}
-                className="relative w-full h-[42%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                className="relative w-full h-[43%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                 style={{ background: INDUSTRIES[3].fallbackBg }}
               >
                 <video
@@ -339,7 +353,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               </div>
             </div>
 
-            {/* Column 2 (38% width): Healthcare (46%) + Retail & E-commerce (54%) */}
+            {/* Column 2 (38% width, Center Hero Column): Healthcare (29%) + AI Assistant (42%) + Retail (29%) */}
             <div className="w-[38%] h-full flex flex-col gap-1.5 sm:gap-2">
               {/* Tile 1: Healthcare */}
               <div
@@ -347,7 +361,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                 onClick={() => onOpenExperience?.("healthcare")}
                 onMouseEnter={() => setActiveHover("healthcare")}
                 onMouseLeave={() => setActiveHover(null)}
-                className="relative w-full h-[46%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                className="relative w-full h-[29%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                 style={{ background: INDUSTRIES[1].fallbackBg }}
               >
                 <video
@@ -374,13 +388,47 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                 </span>
               </div>
 
+              {/* Tile 6: AI Sales Assistant (Featured Center Tile) */}
+              <div
+                ref={(el) => (tileRefs.current[6] = el)}
+                onClick={() => onOpenExperience?.("ai-assistant")}
+                onMouseEnter={() => setActiveHover("ai-assistant")}
+                onMouseLeave={() => setActiveHover(null)}
+                className="relative w-full h-[42%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                style={{ background: INDUSTRIES[6].fallbackBg }}
+              >
+                <video
+                  ref={(el) => (videoRefs.current[6] = el)}
+                  src={INDUSTRIES[6].video}
+                  poster={INDUSTRIES[6].poster}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                <img
+                  src={INDUSTRIES[6].poster}
+                  alt="AI Sales"
+                  className="absolute inset-0 w-full h-full object-cover -z-10"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-[#963DFF]/80 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase flex items-center gap-1 shadow-sm">
+                  <Sparkles className="w-2.5 h-2.5 text-[#55A9FF]" />
+                  <span>AI Sales</span>
+                </span>
+              </div>
+
               {/* Tile 4: Retail & E-commerce */}
               <div
                 ref={(el) => (tileRefs.current[4] = el)}
                 onClick={() => onOpenExperience?.("retail")}
                 onMouseEnter={() => setActiveHover("retail")}
                 onMouseLeave={() => setActiveHover(null)}
-                className="relative w-full h-[54%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                className="relative w-full h-[29%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                 style={{ background: INDUSTRIES[4].fallbackBg }}
               >
                 <video
@@ -408,8 +456,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               </div>
             </div>
 
-            {/* Column 3 (25% width): Education (50%) + Professional Services (50%) */}
-            <div className="w-[25%] h-full flex flex-col gap-1.5 sm:gap-2">
+            {/* Column 3 (31% width): Education (50%) + Professional Services (50%) */}
+            <div className="w-[31%] h-full flex flex-col gap-1.5 sm:gap-2">
               {/* Tile 2: Education */}
               <div
                 ref={(el) => (tileRefs.current[2] = el)}
@@ -482,7 +530,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
 
       {/* ============================================================
           BOTTOM NAVIGATION:
-          Capsule Pill Navigation Bar (matching prompt 1 screenshots)
+          Capsule Pill Navigation Bar (supporting all 7 industries)
           + Subtle Ambient Purple Bottom Glow
           ============================================================ */}
       <div
