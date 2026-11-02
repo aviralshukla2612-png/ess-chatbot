@@ -22,6 +22,22 @@ import {
   Maximize2,
   Upload,
   Trash2,
+  Ban,
+  Heart,
+  HeartPulse,
+  SlidersHorizontal,
+  CircleDot,
+  ArrowLeftRight,
+  Bell,
+  RotateCw,
+  RotateCcw,
+  Loader2,
+  Sun,
+  Activity,
+  Feather,
+  Box,
+  MoveHorizontal,
+  Hand,
 } from "lucide-react";
 import BotPreviewWidget from "@/components/bots/BotPreviewWidget";
 
@@ -115,6 +131,28 @@ const LAUNCHER_SIZES = [
   { id: "large", label: "Large (72px)" },
 ];
 
+const LAUNCHER_ANIMATIONS = [
+  { id: "none", label: "No Animation", desc: "Static button", icon: Ban },
+  { id: "beat", label: "Beat", desc: "Pulse scale", icon: Heart },
+  { id: "beat-fade", label: "Beat Fade", desc: "Pulse scale + opacity", icon: HeartPulse },
+  { id: "fade", label: "Fade", desc: "Smooth opacity breathing", icon: SlidersHorizontal },
+  { id: "bounce", label: "Bounce", desc: "Playful bounce up & down", icon: CircleDot },
+  { id: "flip", label: "Flip", desc: "Flip horizontal (180°)", icon: ArrowLeftRight },
+  { id: "flip-360", label: "Flip 360", desc: "Full 360° flip", icon: RefreshCw },
+  { id: "shake", label: "Shake", desc: "Attention rattle shake", icon: Bell },
+  { id: "spin", label: "Spin", desc: "Continuous smooth spin", icon: RotateCw },
+  { id: "spin-reverse", label: "Spin Reverse", desc: "Counter-clockwise spin", icon: RotateCcw },
+  { id: "spin-pulse", label: "Spin Pulse", desc: "8-step rotation pulse", icon: Loader2 },
+  { id: "spin-snap", label: "Spin Snap", desc: "2-stage snap rotation", icon: RefreshCw },
+  { id: "spin-snap-4", label: "Spin Snap 4", desc: "4-stage quarter turn", icon: Square },
+  { id: "spin-snap-8", label: "Spin Snap 8", desc: "8-stage octagonal snap", icon: Sun },
+  { id: "buzz", label: "Buzz", desc: "High-frequency vibration", icon: Activity },
+  { id: "float", label: "Float", desc: "Gentle floating bob", icon: Feather },
+  { id: "jello", label: "Jello", desc: "Elastic wobble squash", icon: Box },
+  { id: "swing", label: "Swing", desc: "Pendulum swing from top", icon: MoveHorizontal },
+  { id: "wag", label: "Wag", desc: "Rhythmic wagging sweep", icon: Hand },
+];
+
 const PERSONALITY_OPTIONS = [
   { id: "Professional", label: "Professional & Corporate", desc: "Crisp, polite, and executive-oriented" },
   { id: "Friendly", label: "Warm & Helpful", desc: "Approachable, conversational, and welcoming" },
@@ -131,6 +169,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
     placeholderText: "Ask anything about our solutions...",
     launcherPosition: "bottom-right",
     launcherShape: "circle",
+    launcherAnimation: "none",
     launcherSize: "medium",
     launcherIcon: "bubble",
     launcherLogoUrl: "",
@@ -202,6 +241,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
         placeholderText: bot.placeholderText || "Ask anything about our solutions...",
         launcherPosition: bot.launcherPosition || "bottom-right",
         launcherShape: bot.launcherShape || "circle",
+        launcherAnimation: bot.launcherAnimation || "none",
         launcherSize: bot.launcherSize || "medium",
         launcherIcon: bot.launcherIcon || (bot.launcherLogoUrl ? "custom" : "bubble"),
         launcherLogoUrl: bot.launcherLogoUrl || "",
@@ -512,6 +552,61 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                   </div>
                 </div>
               )}
+
+              {/* Launcher Button Motion & Attention Animation (19 Font Awesome Options) */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-700 dark:text-neutral-300">
+                      ANIMATE
+                    </span>
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-neutral-200 dark:bg-neutral-800 text-[9px] font-bold text-neutral-500 cursor-help"
+                      title="Choose an eye-catching motion to attract site visitors"
+                    >
+                      i
+                    </span>
+                  </div>
+                  {formData.launcherAnimation && formData.launcherAnimation !== "none" && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, launcherAnimation: "none" })}
+                      className="text-[11px] text-[#B68A55] hover:underline font-semibold cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 max-h-[220px] overflow-y-auto p-1.5 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 bg-white/50 dark:bg-[#181818]/50">
+                  {LAUNCHER_ANIMATIONS.map((item) => {
+                    const isSelected = (formData.launcherAnimation || "none") === item.id;
+                    const Icon = item.icon;
+                    const animClass = item.id !== "none" ? `fa-anim-${item.id}` : "";
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, launcherAnimation: item.id })}
+                        className={`group px-2.5 py-2 rounded-xl border flex items-center gap-2 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#B68A55] bg-white dark:bg-[#1E1E1E] shadow-xs text-[#B68A55] ring-1 ring-[#B68A55]/30 font-bold"
+                            : "border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#161616] text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-600"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 flex items-center justify-center shrink-0 ${
+                            isSelected ? "text-[#B68A55]" : "text-neutral-500 dark:text-neutral-400"
+                          } ${isSelected ? animClass : "group-hover:" + animClass}`}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[11px] truncate">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               {/* Button Size & Position */}
               <div className="grid grid-cols-2 gap-3 pt-1">
@@ -859,6 +954,11 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                 <div className="text-xs text-neutral-300">
                   <span className="font-semibold block text-white capitalize">
                     {formData.launcherShape} • {formData.launcherSize}
+                    {formData.launcherAnimation && formData.launcherAnimation !== "none" && (
+                      <span className="ml-1 text-[11px] text-[#B68A55] uppercase font-bold">
+                        • {formData.launcherAnimation}
+                      </span>
+                    )}
                   </span>
                   <span className="text-[10px] text-neutral-400">
                     Position: {formData.launcherPosition} • Margins: ↓{formData.launcherMarginBottom ?? 24}px →{formData.launcherMarginRight ?? 24}px
@@ -867,7 +967,11 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
 
                 {/* THE LIVE BUTTON PREVIEW */}
                 <div
-                  className="flex items-center justify-center text-white font-bold shadow-xl border border-white/20 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                  className={`flex items-center justify-center text-white font-bold shadow-xl border border-white/20 transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+                    formData.launcherAnimation && formData.launcherAnimation !== "none"
+                      ? `fa-anim-${formData.launcherAnimation}`
+                      : ""
+                  }`}
                   style={{
                     backgroundColor: formData.primaryColor,
                     borderRadius:

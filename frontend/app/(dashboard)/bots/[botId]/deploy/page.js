@@ -30,9 +30,47 @@ import {
   Image as ImageIcon,
   Upload,
   Trash2,
+  Ban,
+  Heart,
+  HeartPulse,
+  SlidersHorizontal,
+  CircleDot,
+  ArrowLeftRight,
+  Bell,
+  RotateCcw,
+  Loader2,
+  Sun,
+  Activity,
+  Feather,
+  Box,
+  MoveHorizontal,
+  Hand,
+  Square,
 } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
 import RedesignBotModal from "@/components/bots/RedesignBotModal";
+
+const LAUNCHER_ANIMATIONS = [
+  { id: "none", label: "No Animation", desc: "Static button", icon: Ban },
+  { id: "beat", label: "Beat", desc: "Pulse scale", icon: Heart },
+  { id: "beat-fade", label: "Beat Fade", desc: "Pulse scale + opacity", icon: HeartPulse },
+  { id: "fade", label: "Fade", desc: "Smooth opacity breathing", icon: SlidersHorizontal },
+  { id: "bounce", label: "Bounce", desc: "Playful bounce up & down", icon: CircleDot },
+  { id: "flip", label: "Flip", desc: "Flip horizontal (180°)", icon: ArrowLeftRight },
+  { id: "flip-360", label: "Flip 360", desc: "Full 360° flip", icon: RefreshCw },
+  { id: "shake", label: "Shake", desc: "Attention rattle shake", icon: Bell },
+  { id: "spin", label: "Spin", desc: "Continuous smooth spin", icon: RefreshCw },
+  { id: "spin-reverse", label: "Spin Reverse", desc: "Counter-clockwise spin", icon: RotateCcw },
+  { id: "spin-pulse", label: "Spin Pulse", desc: "8-step rotation pulse", icon: Loader2 },
+  { id: "spin-snap", label: "Spin Snap", desc: "2-stage snap rotation", icon: RefreshCw },
+  { id: "spin-snap-4", label: "Spin Snap 4", desc: "4-stage quarter turn", icon: Square },
+  { id: "spin-snap-8", label: "Spin Snap 8", desc: "8-stage octagonal snap", icon: Sun },
+  { id: "buzz", label: "Buzz", desc: "High-frequency vibration", icon: Activity },
+  { id: "float", label: "Float", desc: "Gentle floating bob", icon: Feather },
+  { id: "jello", label: "Jello", desc: "Elastic wobble squash", icon: Box },
+  { id: "swing", label: "Swing", desc: "Pendulum swing from top", icon: MoveHorizontal },
+  { id: "wag", label: "Wag", desc: "Rhythmic wagging sweep", icon: Hand },
+];
 
 function DeployBotContent() {
   const routeParams = useParams();
@@ -46,6 +84,7 @@ function DeployBotContent() {
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I help you today?");
   const [launcherPosition, setLauncherPosition] = useState("bottom-right");
   const [launcherShape, setLauncherShape] = useState("circle"); // circle | squircle | pill
+  const [launcherAnimation, setLauncherAnimation] = useState("none"); // 19 Font Awesome options
   const [launcherSize, setLauncherSize] = useState("medium"); // compact | medium | large
   const [launcherIcon, setLauncherIcon] = useState("bubble"); // bubble | robot | sparkles | headset | avatar | custom
   const [launcherLogoUrl, setLauncherLogoUrl] = useState("");
@@ -135,6 +174,7 @@ function DeployBotContent() {
         if (b.launcherPosition) setLauncherPosition(b.launcherPosition);
         if (b.brandingEnabled !== undefined) setBrandingEnabled(b.brandingEnabled);
         if (b.launcherShape) setLauncherShape(b.launcherShape);
+        if (b.launcherAnimation) setLauncherAnimation(b.launcherAnimation);
         if (b.launcherSize) setLauncherSize(b.launcherSize);
         if (b.launcherIcon) setLauncherIcon(b.launcherIcon);
         if (b.launcherLogoUrl) setLauncherLogoUrl(b.launcherLogoUrl);
@@ -207,6 +247,7 @@ function DeployBotContent() {
           welcomeMessage,
           launcherPosition,
           launcherShape,
+          launcherAnimation,
           launcherSize,
           launcherIcon,
           launcherLogoUrl,
@@ -975,6 +1016,61 @@ function DeployBotContent() {
                 </div>
               )}
 
+              {/* Launcher Button Motion & Attention Animation (19 Font Awesome Options) */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      ANIMATE
+                    </span>
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-slate-200 text-[9px] font-bold text-slate-600 cursor-help"
+                      title="Choose an eye-catching motion to attract site visitors"
+                    >
+                      i
+                    </span>
+                  </div>
+                  {launcherAnimation && launcherAnimation !== "none" && (
+                    <button
+                      type="button"
+                      onClick={() => setLauncherAnimation("none")}
+                      className="text-xs text-[#B68A55] hover:underline font-semibold cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 max-h-[220px] overflow-y-auto p-2 rounded-2xl border border-slate-200 bg-slate-50/70">
+                  {LAUNCHER_ANIMATIONS.map((item) => {
+                    const isSelected = (launcherAnimation || "none") === item.id;
+                    const Icon = item.icon;
+                    const animClass = item.id !== "none" ? `fa-anim-${item.id}` : "";
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setLauncherAnimation(item.id)}
+                        className={`group px-2.5 py-2 rounded-xl border flex items-center gap-2 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-[#B68A55] bg-white shadow-xs text-[#B68A55] ring-1 ring-[#B68A55]/30 font-bold"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 flex items-center justify-center shrink-0 ${
+                            isSelected ? "text-[#B68A55]" : "text-slate-500"
+                          } ${isSelected ? animClass : "group-hover:" + animClass}`}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[11px] truncate">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Button Size & Position */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1136,11 +1232,18 @@ function DeployBotContent() {
                   </span>
                   <span className="text-[10px] text-slate-400">
                     {launcherShape.toUpperCase()} • {launcherSize.toUpperCase()} • {launcherIcon.toUpperCase()}
+                    {launcherAnimation && launcherAnimation !== "none" && (
+                      <span className="text-[#B68A55] font-bold uppercase ml-1">
+                        • {launcherAnimation}
+                      </span>
+                    )}
                   </span>
                 </div>
 
                 <div
-                  className="flex items-center justify-center text-white font-bold shadow-lg transition-all"
+                  className={`flex items-center justify-center text-white font-bold shadow-lg transition-all ${
+                    launcherAnimation && launcherAnimation !== "none" ? `fa-anim-${launcherAnimation}` : ""
+                  }`}
                   style={{
                     backgroundColor: widgetColor,
                     borderRadius:
@@ -1506,7 +1609,9 @@ function DeployBotContent() {
                     onClick={() => setSimulatorChatOpen(true)}
                     className={`absolute bottom-3 ${
                       launcherPosition === "bottom-left" ? "left-3" : "right-3"
-                    } shadow-xl flex items-center justify-center text-white cursor-pointer z-30 transition-transform hover:scale-105 active:scale-95`}
+                    } shadow-xl flex items-center justify-center text-white cursor-pointer z-30 transition-transform hover:scale-105 active:scale-95 ${
+                      launcherAnimation && launcherAnimation !== "none" ? `fa-anim-${launcherAnimation}` : ""
+                    }`}
                     style={{
                       background: `linear-gradient(135deg, ${widgetColor} 0%, #1e1b4b 100%)`,
                       boxShadow: `0 8px 20px -3px ${widgetColor}60`,
@@ -1555,6 +1660,7 @@ function DeployBotContent() {
             welcomeMessage,
             launcherPosition,
             launcherShape,
+            launcherAnimation,
             launcherSize,
             launcherIcon,
             launcherLogoUrl,
@@ -1571,6 +1677,7 @@ function DeployBotContent() {
             if (updated.welcomeMessage) setWelcomeMessage(updated.welcomeMessage);
             if (updated.launcherPosition) setLauncherPosition(updated.launcherPosition);
             if (updated.launcherShape) setLauncherShape(updated.launcherShape);
+            if (updated.launcherAnimation) setLauncherAnimation(updated.launcherAnimation);
             if (updated.launcherSize) setLauncherSize(updated.launcherSize);
             if (updated.launcherIcon) setLauncherIcon(updated.launcherIcon);
             if (updated.launcherLogoUrl !== undefined) setLauncherLogoUrl(updated.launcherLogoUrl);

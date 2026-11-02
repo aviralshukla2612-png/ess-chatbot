@@ -134,6 +134,7 @@ export async function initPostgresTables() {
           ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherMarginRight" INTEGER DEFAULT 24;
           ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherMarginLeft" INTEGER DEFAULT 24;
           ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherMarginTop" INTEGER DEFAULT 24;
+          ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherAnimation" VARCHAR(64) DEFAULT 'none';
         `);
 
         // 3.5. Visitors Table (Persistent identity, opaque token hashes)

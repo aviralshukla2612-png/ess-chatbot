@@ -275,6 +275,125 @@ body::-webkit-scrollbar {
   background: transparent !important;
 }
 
+/* ============================================================
+   CHATBOT LAUNCHER BUTTON ANIMATIONS (Font Awesome Parity)
+   ============================================================ */
+@keyframes fa-beat {
+  0%, 90% { transform: scale(1); }
+  45% { transform: scale(1.18); }
+}
+
+@keyframes fa-beat-fade {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@keyframes fa-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes fa-bounce {
+  0%, 15%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-12px); }
+  55% { transform: translateY(0); }
+  70% { transform: translateY(-6px); }
+  85% { transform: translateY(0); }
+}
+
+@keyframes fa-flip {
+  0% { transform: perspective(400px) rotateY(0deg); }
+  50% { transform: perspective(400px) rotateY(180deg); }
+  100% { transform: perspective(400px) rotateY(0deg); }
+}
+
+@keyframes fa-flip-360 {
+  0% { transform: perspective(400px) rotateY(0deg); }
+  100% { transform: perspective(400px) rotateY(360deg); }
+}
+
+@keyframes fa-shake {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-12deg); }
+  30% { transform: rotate(10deg); }
+  45% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+  85% { transform: rotate(0deg); }
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fa-spin-reverse {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes fa-buzz {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2px, -1px); }
+  20% { transform: translate(2px, 1px); }
+  30% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  50% { transform: translate(-1px, 1px); }
+  60% { transform: translate(1px, -1px); }
+  70% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+  90% { transform: translate(0, 0); }
+}
+
+@keyframes fa-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes fa-jello {
+  0%, 100% { transform: scale3d(1, 1, 1); }
+  30% { transform: scale3d(1.18, 0.82, 1); }
+  40% { transform: scale3d(0.82, 1.18, 1); }
+  50% { transform: scale3d(1.1, 0.9, 1); }
+  65% { transform: scale3d(0.95, 1.05, 1); }
+  75% { transform: scale3d(1.02, 0.98, 1); }
+}
+
+@keyframes fa-swing {
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-10deg); }
+  60% { transform: rotate(5deg); }
+  80% { transform: rotate(-5deg); }
+  0%, 100% { transform: rotate(0deg); }
+}
+
+@keyframes fa-wag {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(14deg); }
+  75% { transform: rotate(-14deg); }
+}
+
+.fa-anim-none { animation: none !important; }
+.fa-anim-beat { animation: fa-beat 1.4s ease-in-out infinite !important; }
+.fa-anim-beat-fade { animation: fa-beat-fade 1.6s ease-in-out infinite !important; }
+.fa-anim-fade { animation: fa-fade 2s ease-in-out infinite !important; }
+.fa-anim-bounce { animation: fa-bounce 1.8s ease infinite !important; }
+.fa-anim-flip { animation: fa-flip 2.4s ease-in-out infinite !important; }
+.fa-anim-flip-360 { animation: fa-flip-360 2s ease-in-out infinite !important; }
+.fa-anim-shake { animation: fa-shake 2.2s ease-in-out infinite !important; }
+.fa-anim-spin { animation: fa-spin 2s linear infinite !important; }
+.fa-anim-spin-reverse { animation: fa-spin-reverse 2s linear infinite !important; }
+.fa-anim-spin-pulse { animation: fa-spin 1.2s steps(8) infinite !important; }
+.fa-anim-spin-snap { animation: fa-spin 1.4s steps(2) infinite !important; }
+.fa-anim-spin-snap-4 { animation: fa-spin 1.6s steps(4) infinite !important; }
+.fa-anim-spin-snap-8 { animation: fa-spin 1.6s steps(8) infinite !important; }
+.fa-anim-buzz { animation: fa-buzz 1.8s ease-in-out infinite !important; }
+.fa-anim-float { animation: fa-float 2.6s ease-in-out infinite !important; }
+.fa-anim-jello { animation: fa-jello 2s ease-in-out infinite !important; }
+.fa-anim-swing { transform-origin: top center !important; animation: fa-swing 2.2s ease-in-out infinite !important; }
+.fa-anim-wag { transform-origin: bottom center !important; animation: fa-wag 1.8s ease-in-out infinite !important; }
+
+
 
 
 

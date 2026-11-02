@@ -51,6 +51,7 @@ export async function GET(request, { params }) {
           welcomeMessage: bot.welcomeMessage || `Hello! I am ${bot.name}. How can I help you today?`,
           launcherPosition: bot.launcherPosition || "bottom-right",
           launcherShape: bot.launcherShape || "circle",
+          launcherAnimation: bot.launcherAnimation || "none",
           launcherSize: bot.launcherSize || "medium",
           launcherIcon: bot.launcherIcon || "bubble",
           launcherLogoUrl: bot.launcherLogoUrl || "",

@@ -326,6 +326,7 @@ export const botsStore = {
           launcherMarginRight: dbBot.launcherMarginRight ?? diskBot.launcherMarginRight ?? 24,
           launcherMarginLeft: dbBot.launcherMarginLeft ?? diskBot.launcherMarginLeft ?? 24,
           launcherMarginTop: dbBot.launcherMarginTop ?? diskBot.launcherMarginTop ?? 24,
+          launcherAnimation: dbBot.launcherAnimation || diskBot.launcherAnimation || "none",
         };
         if (existingIdx >= 0) {
           all[existingIdx] = fullBot;
@@ -378,6 +379,7 @@ export const botsStore = {
       primaryColor: "#B68A55",
       welcomeMessage: `Hello! I am ${botData.name || "AI Assistant"}. How can I help you today?`,
       launcherPosition: "bottom-right",
+      launcherAnimation: "none",
       brandingEnabled: true,
       company: botData.company || null,
       websiteUrl: botData.websiteUrl || null,
@@ -399,9 +401,9 @@ export const botsStore = {
          "id", "organizationId", "name", "description", "primaryColor", "status", "systemPrompt",
          "welcomeMessage", "allowedDomains", "company", "websiteUrl", "phoneNumber",
          "launcherPosition", "launcherShape", "launcherSize", "launcherIcon", "launcherLogoUrl",
-         "launcherText", "launcherMarginBottom", "launcherMarginRight", "launcherMarginLeft", "launcherMarginTop"
+         "launcherText", "launcherMarginBottom", "launcherMarginRight", "launcherMarginLeft", "launcherMarginTop", "launcherAnimation"
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
        ON CONFLICT ("id") DO UPDATE SET
          "name" = EXCLUDED."name",
          "description" = EXCLUDED."description",
@@ -423,6 +425,7 @@ export const botsStore = {
          "launcherMarginRight" = EXCLUDED."launcherMarginRight",
          "launcherMarginLeft" = EXCLUDED."launcherMarginLeft",
          "launcherMarginTop" = EXCLUDED."launcherMarginTop",
+         "launcherAnimation" = EXCLUDED."launcherAnimation",
          "updatedAt" = CURRENT_TIMESTAMP;`,
       [
         id,
@@ -447,6 +450,7 @@ export const botsStore = {
         typeof merged.launcherMarginRight === "number" ? merged.launcherMarginRight : 24,
         typeof merged.launcherMarginLeft === "number" ? merged.launcherMarginLeft : 24,
         typeof merged.launcherMarginTop === "number" ? merged.launcherMarginTop : 24,
+        merged.launcherAnimation || "none",
       ]
     ).catch(() => {});
 
