@@ -102,17 +102,6 @@ export const INDUSTRIES = [
   },
 ];
 
-const CAPABILITIES = [
-  "Verified Knowledge Base Retrieval",
-  "24/7 Autonomous Customer Q&A",
-  "Zero-Hallucination Grounding",
-  "Sub-Second Edge Response Latency",
-  "Automated High-Intent CRM Lead Routing",
-  "Isolated Multi-Tenant Governance",
-  "Live Document & URL Synchronization",
-  "Multi-Format Ingestion: PDF, DOCX, CSV",
-];
-
 export default function IndustriesSection({ onOpenExperience }) {
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
@@ -120,7 +109,6 @@ export default function IndustriesSection({ onOpenExperience }) {
   const collageRef = useRef(null);
   const coverVideoRef = useRef(null);
   const tileRefs = useRef([]);
-  const beltRef = useRef(null);
   const videoRefs = useRef([]);
 
   const [activeHover, setActiveHover] = useState(null);
@@ -260,19 +248,6 @@ export default function IndustriesSection({ onOpenExperience }) {
             0.26 + idx * 0.04
           );
         });
-
-        // 5. Marquee belt drift
-        if (beltRef.current) {
-          tl.to(
-            beltRef.current,
-            {
-              x: -600,
-              ease: "none",
-              duration: 1.0,
-            },
-            0
-          );
-        }
       },
       sectionRef
     );
@@ -315,32 +290,6 @@ export default function IndustriesSection({ onOpenExperience }) {
         />
         <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/15 rounded-full blur-[140px] pointer-events-none" />
-
-        {/* Top Marquee Belt: Verified Capabilities */}
-        <div className="relative z-20 w-full max-w-7xl mx-auto flex items-center gap-6 shrink-0 pointer-events-none">
-          <div className="text-[11px] sm:text-xs uppercase font-bold tracking-widest text-[#9898A6] flex items-center gap-2 shrink-0">
-            <span className="text-[#C28AFF] font-black">/</span>
-            <span>INDUSTRIES WE SERVE</span>
-          </div>
-          <div
-            className="flex-1 overflow-hidden"
-            style={{
-              maskImage: "linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)",
-              WebkitMaskImage: "linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent)",
-            }}
-          >
-            <div ref={beltRef} className="flex gap-4 sm:gap-6 items-center w-max will-change-transform">
-              {[...CAPABILITIES, ...CAPABILITIES, ...CAPABILITIES].map((cap, i) => (
-                <span
-                  key={i}
-                  className="text-[11px] sm:text-xs font-semibold tracking-wider text-[#D9D9E2] uppercase whitespace-nowrap bg-white/[0.03] px-3 py-1 rounded-full border border-white/[0.07]"
-                >
-                  {cap}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
 
         {/* ============================================================
             MAIN HERO COMPOSITION:
