@@ -98,7 +98,143 @@ html.dark,
 }
 
 html:not(.dark) {
+  --background: #FAF9F6;
+  --foreground: #252525;
+  --card: #FFFFFF;
+  --card-border: #EFE7DC;
+  --accent: #B68A55;
+  --beige: #EFE7DC;
   color-scheme: light !important;
+}
+
+/* =========================================================================
+   LIGHT THEME: Ivory & Champagne Luxury Platform Theme
+   Ensures Super Admin and Sub Admin share the identical elegant palette
+   ========================================================================= */
+
+html:not(.dark) body {
+  background-color: #FAF9F6 !important;
+  color: #252525 !important;
+}
+
+/* Backgrounds: Convert dark containers to Ivory & White */
+html:not(.dark) .bg-\[\#000000\],
+html:not(.dark) .bg-\[\#0A0A0A\],
+html:not(.dark) .bg-\[\#0a0a0a\],
+html:not(.dark) .bg-\[\#09090b\] {
+  background-color: #FAF9F6 !important;
+}
+
+html:not(.dark) .bg-\[\#0D0D0D\],
+html:not(.dark) .bg-\[\#0d0d0d\],
+html:not(.dark) .bg-\[\#121212\],
+html:not(.dark) .bg-\[\#18181b\] {
+  background-color: #FFFFFF !important;
+}
+
+html:not(.dark) .bg-\[\#141414\],
+html:not(.dark) .bg-\[\#161616\],
+html:not(.dark) .bg-neutral-900,
+html:not(.dark) .bg-neutral-950,
+html:not(.dark) .bg-zinc-900,
+html:not(.dark) .bg-zinc-950 {
+  background-color: #FAF9F6 !important;
+}
+
+/* Borders: Convert dark borders to champagne hairline border */
+html:not(.dark) .border-neutral-800,
+html:not(.dark) .border-neutral-700,
+html:not(.dark) .border-neutral-900,
+html:not(.dark) .border-zinc-800,
+html:not(.dark) .border-zinc-700 {
+  border-color: #EFE7DC !important;
+}
+
+html:not(.dark) .divide-neutral-800 > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-neutral-800\/60 > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-neutral-700 > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #EFE7DC !important;
+}
+
+/* Hover effects in tables & list rows */
+html:not(.dark) .hover\:bg-neutral-900:hover,
+html:not(.dark) .hover\:bg-neutral-900\/60:hover,
+html:not(.dark) .hover\:bg-neutral-900\/40:hover,
+html:not(.dark) .hover\:bg-\[\#161616\]:hover,
+html:not(.dark) .hover\:bg-\[\#141414\]:hover,
+html:not(.dark) .hover\:bg-zinc-900:hover {
+  background-color: #FAF9F6 !important;
+}
+
+/* Typography in light mode */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) h5.text-white,
+html:not(.dark) h6.text-white,
+html:not(.dark) th.text-white,
+html:not(.dark) td .text-white,
+html:not(.dark) p.text-white,
+html:not(.dark) div > span.text-white:not(button span):not(a.bg-\[\#B68A55\] span):not(a.bg-\[\#252525\] span):not([class*="bg-rose-"] span):not([class*="bg-emerald-"] span) {
+  color: #252525 !important;
+}
+
+/* Neutral text shades in light mode */
+html:not(.dark) .text-neutral-400,
+html:not(.dark) .text-zinc-400 {
+  color: #64748B !important;
+}
+
+html:not(.dark) .text-neutral-300,
+html:not(.dark) .text-neutral-200,
+html:not(.dark) .text-zinc-300,
+html:not(.dark) .text-zinc-200 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .text-neutral-500,
+html:not(.dark) .text-zinc-500 {
+  color: #94A3B8 !important;
+}
+
+/* Inputs, selects, and textareas */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) select,
+html:not(.dark) textarea {
+  color: #252525 !important;
+  -webkit-text-fill-color: #252525 !important;
+  background-color: #FFFFFF !important;
+  border-color: #EFE7DC !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #94A3B8 !important;
+  -webkit-text-fill-color: #94A3B8 !important;
+  opacity: 1 !important;
+}
+
+html:not(.dark) select option {
+  background-color: #FFFFFF !important;
+  color: #252525 !important;
+}
+
+/* Buttons or badges with solid vibrant backgrounds must keep crisp white text in both themes */
+html:not(.dark) button.text-white,
+html:not(.dark) a.text-white,
+html:not(.dark) [class*="bg-rose-600"] .text-white,
+html:not(.dark) [class*="bg-emerald-600"] .text-white,
+html:not(.dark) [class*="bg-indigo-600"] .text-white,
+html:not(.dark) [class*="bg-[#B68A55]"] .text-white,
+html:not(.dark) [class*="bg-[#252525]"] .text-white,
+html:not(.dark) .bg-\[\#B68A55\],
+html:not(.dark) .bg-\[\#252525\],
+html:not(.dark) .bg-rose-600,
+html:not(.dark) .bg-emerald-600,
+html:not(.dark) .bg-indigo-600 {
+  color: #FFFFFF !important;
 }
 
 /* Universal complete removal of all browser scrollbars (Chromium, Firefox, Safari, Edge) */

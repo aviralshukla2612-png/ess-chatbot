@@ -219,10 +219,10 @@ export default function AdminPlansPage() {
             <Sparkles className="w-3.5 h-3.5" />
             Super Admin Billing Controller
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
             Razorpay Subscription Plans & Pricing
           </h1>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
             Configure subscription pricing amounts (e.g. ₹2,500/month, ₹5,000/6 months, ₹9,999/year), trial durations, and customer quotas.
           </p>
         </div>

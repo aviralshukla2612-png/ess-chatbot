@@ -113,13 +113,13 @@ export default function AdminBotsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
+    <div className="space-y-8 animate-fade-in pb-12 font-sans">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
             Global Bot Registry
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
             Inspect, evaluate performance, and audit every AI assistant created across all tenants.
           </p>
         </div>
@@ -128,28 +128,28 @@ export default function AdminBotsPage() {
           <button
             onClick={loadBots}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-neutral-200 bg-[#0D0D0D] border border-neutral-800 hover:bg-neutral-900 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-[#252525] dark:text-neutral-200 bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 rounded-xl shadow-xs transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-neutral-400"}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-slate-400 dark:text-neutral-400"}`} />
             <span>Refresh</span>
           </button>
 
           <button
             onClick={handlePurgeTestData}
             disabled={purging}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl shadow-xs transition-colors cursor-pointer"
             title="Purge all legacy test bots"
           >
-            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+            <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
             <span>{purging ? "Purging..." : "Purge Dummy Bots"}</span>
           </button>
         </div>
       </div>
 
-      <div className="bg-[#0D0D0D] rounded-2xl border border-neutral-800 overflow-hidden shadow-xs">
+      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0A0A0A] text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-neutral-800">
+            <thead className="bg-[#FAF9F6] dark:bg-[#0A0A0A] text-slate-500 dark:text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-[#EFE7DC] dark:border-neutral-800">
               <tr>
                 <th className="p-4">Bot Assistant</th>
                 <th className="p-4">Tenant Org</th>
@@ -161,10 +161,10 @@ export default function AdminBotsPage() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800/60">
+            <tbody className="divide-y divide-[#EFE7DC] dark:divide-neutral-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-neutral-500">
+                  <td colSpan={8} className="p-8 text-center text-slate-500 dark:text-neutral-500">
                     <div className="flex items-center justify-center gap-2">
                       <RefreshCw className="w-4 h-4 animate-spin text-[#B68A55]" />
                       <span>Loading registry...</span>
@@ -173,34 +173,34 @@ export default function AdminBotsPage() {
                 </tr>
               ) : bots.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-neutral-400">
-                    <p className="font-semibold text-sm text-neutral-200">No bots registered yet</p>
-                    <p className="text-xs text-neutral-500 mt-1">
+                  <td colSpan={8} className="p-8 text-center text-slate-500 dark:text-neutral-400">
+                    <p className="font-semibold text-sm text-slate-800 dark:text-neutral-200">No bots registered yet</p>
+                    <p className="text-xs text-slate-500 dark:text-neutral-500 mt-1">
                       Real bots will appear here when created by workspace administrators.
                     </p>
                   </td>
                 </tr>
               ) : (
                 bots.map((b) => (
-                  <tr key={b.id} className="hover:bg-neutral-900/60 transition-colors">
+                  <tr key={b.id} className="hover:bg-[#FAF9F6] dark:hover:bg-neutral-900/60 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{b.avatar || "🤖"}</span>
                         <div>
-                          <p className="font-bold text-white">{b.name}</p>
-                          <p className="text-[10px] font-mono text-neutral-500">{b.id}</p>
+                          <p className="font-bold text-[#252525] dark:text-white">{b.name}</p>
+                          <p className="text-[10px] font-mono text-slate-400 dark:text-neutral-500">{b.id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-neutral-300 font-medium">
+                    <td className="p-4 text-slate-700 dark:text-neutral-300 font-medium">
                       {b.organizationName || b.company || b.organizationId || "Emperor Smart Solutions"}
                     </td>
-                    <td className="p-4 text-neutral-400">{b.personality || "Professional"}</td>
-                    <td className="p-4 font-mono font-bold text-white">
+                    <td className="p-4 text-slate-500 dark:text-neutral-400">{b.personality || "Professional"}</td>
+                    <td className="p-4 font-mono font-bold text-[#252525] dark:text-white">
                       {b.questionsCount || 0}
                     </td>
-                    <td className="p-4 font-mono text-neutral-300">{b.conversationsCount || 0}</td>
-                    <td className="p-4 font-mono text-emerald-400 font-bold">{b.leadsCount || 0}</td>
+                    <td className="p-4 font-mono text-slate-600 dark:text-neutral-300">{b.conversationsCount || 0}</td>
+                    <td className="p-4 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{b.leadsCount || 0}</td>
                     <td className="p-4">
                       <StatusBadge status={b.status || "Active"} size="sm" />
                     </td>
@@ -210,20 +210,20 @@ export default function AdminBotsPage() {
                           onClick={() => handleToggleBlockBot(b.id, b.status)}
                           className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                             String(b.status).toLowerCase() === "blocked"
-                              ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40"
-                              : "text-amber-400 hover:text-rose-400 hover:bg-rose-950/40"
+                              ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                              : "text-amber-600 dark:text-amber-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                           }`}
                           title={String(b.status).toLowerCase() === "blocked" ? "Unblock Bot" : "Block Bot"}
                         >
                           {String(b.status).toLowerCase() === "blocked" ? (
-                            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                            <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                           ) : (
-                            <Ban className="w-4 h-4 text-amber-400" />
+                            <Ban className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                           )}
                         </button>
                         <button
                           onClick={() => setRedesignBot(b)}
-                          className="p-1.5 text-neutral-400 hover:text-[#B68A55] rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-[#B68A55] rounded-lg hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                           title="Redesign & Style Bot"
                         >
                           <Palette className="w-4 h-4 text-[#B68A55]" />
@@ -232,17 +232,17 @@ export default function AdminBotsPage() {
                           href={`/bots/${b.id}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 text-neutral-400 hover:text-[#B68A55] rounded-lg hover:bg-neutral-800 transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-[#B68A55] rounded-lg hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors"
                           title="Inspect Bot"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
                         <button
                           onClick={() => handleDeleteBot(b.id)}
-                          className="p-1.5 text-neutral-400 hover:text-rose-400 rounded-lg hover:bg-neutral-800 transition-colors cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                           title="Delete Bot"
                         >
-                          <Trash2 className="w-4 h-4 text-rose-400" />
+                          <Trash2 className="w-4 h-4 text-rose-500 dark:text-rose-400" />
                         </button>
                       </div>
                     </td>

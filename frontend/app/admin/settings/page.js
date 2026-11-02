@@ -96,17 +96,17 @@ export default function AdminSettingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
             Platform Global Configuration
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
             Live connection endpoints, LLM model defaults, and vector database clustering.
           </p>
         </div>
         <button
           onClick={loadSettings}
           disabled={loading}
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#0D0D0D] border border-neutral-800 text-neutral-200 hover:bg-neutral-900 transition-colors shadow-xs cursor-pointer"
+          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-neutral-200 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 transition-colors shadow-xs cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-neutral-400"}`} />
           <span>Refresh Diagnostics</span>

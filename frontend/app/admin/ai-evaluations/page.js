@@ -75,11 +75,11 @@ export default function AdminAiEvaluationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#252525] dark:text-white flex items-center gap-2.5">
             <Sparkles className="w-7 h-7 text-[#B68A55]" />
             AI Training & Continuous Evaluation
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
             Audit business intent enforcement, prompt-injection defense, grounded RAG citations, and repeatable benchmarks.
           </p>
         </div>

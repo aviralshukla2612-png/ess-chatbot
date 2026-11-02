@@ -30,10 +30,10 @@ export default function AdminUsagePage() {
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
           Platform Compute & Resource Usage
         </h1>
-        <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
           Monitor neural inference activity, vector storage memory, and per-tenant bot allocation.
         </p>
       </div>

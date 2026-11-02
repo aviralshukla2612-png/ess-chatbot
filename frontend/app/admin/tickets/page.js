@@ -143,17 +143,17 @@ export default function AdminTicketsPage() {
             <Sparkles className="w-3.5 h-3.5" />
             Customer Support Central
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
             Helpdesk & Support Tickets
           </h1>
-          <p className="text-xs text-neutral-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
             Manage incoming customer support requests, billing queries, and WhatsApp integration inquiries.
           </p>
         </div>
 
         <button
           onClick={fetchTickets}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-neutral-800 bg-[#0D0D0D] hover:bg-neutral-900 text-neutral-200 text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 text-[#252525] dark:text-neutral-200 text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
         >
           <LifeBuoy className="w-4 h-4 text-[#B68A55]" />
           <span>Refresh Tickets</span>

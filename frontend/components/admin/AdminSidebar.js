@@ -65,29 +65,29 @@ export default function AdminSidebar({ isOpen, onClose }) {
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs lg:hidden"
         />
       )}
 
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#0A0A0A] text-slate-200 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 shrink-0 select-none border-r border-neutral-800",
+          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#FAF9F6] dark:bg-[#0A0A0A] text-[#252525] dark:text-neutral-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 shrink-0 select-none border-r border-[#EFE7DC] dark:border-neutral-800",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* ChatPilot Logo & Super Admin Header */}
         <div className="p-5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-black border border-neutral-800 shadow-md">
+            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-black border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
               <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
             </div>
-            <span className="font-bold text-lg text-white tracking-tight">
+            <span className="font-bold text-lg text-[#252525] dark:text-white tracking-tight">
               NexusAI
             </span>
           </div>
 
           {/* Super Admin Organization Identity */}
-          <div className="mt-3.5 p-2.5 rounded-xl bg-[#0D0D0D] border border-neutral-800 text-xs shadow-xs">
+          <div className="mt-3.5 p-2.5 rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-xs shadow-xs">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5 text-[#B68A55] text-[10px] font-bold uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5" />
@@ -96,12 +96,12 @@ export default function AdminSidebar({ isOpen, onClose }) {
               <Link
                 href="/dashboard"
                 title="Switch to Tenant Workspace"
-                className="text-[10px] text-[#B68A55] hover:text-white font-medium transition-colors"
+                className="text-[10px] text-[#B68A55] hover:text-[#966E3A] dark:hover:text-white font-medium transition-colors"
               >
                 Tenant App →
               </Link>
             </div>
-            <p className="font-bold text-white text-xs truncate">
+            <p className="font-bold text-[#252525] dark:text-white text-xs truncate">
               Emperor Smart Solution
             </p>
           </div>
@@ -121,16 +121,16 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all",
+                  "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group",
                   isActive
-                    ? "bg-[#B68A55] text-white shadow-sm font-semibold"
-                    : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+                    ? "bg-[#252525] text-white shadow-sm font-semibold dark:bg-[#B68A55] dark:text-white"
+                    : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-white dark:hover:bg-neutral-900"
                 )}
               >
                 <Icon
                   className={cn(
-                    "w-4 h-4 shrink-0",
-                    isActive ? "text-white" : "text-neutral-400"
+                    "w-4 h-4 shrink-0 transition-transform group-hover:scale-105",
+                    isActive ? "text-white" : "text-slate-500 dark:text-neutral-400"
                   )}
                 />
                 <span className="truncate">{item.name}</span>
@@ -144,59 +144,59 @@ export default function AdminSidebar({ isOpen, onClose }) {
           <Link
             href="/admin/keys"
             onClick={onClose}
-            className="block p-3 rounded-2xl bg-[#121212] border border-neutral-800 hover:border-[#B68A55]/40 transition-all group"
+            className="block p-3 rounded-2xl bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 hover:border-[#B68A55]/40 transition-all group shadow-xs"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#B68A55]">
                 <Key className="w-3.5 h-3.5 text-[#B68A55] group-hover:rotate-12 transition-transform" />
                 <span>Groq Key Pool</span>
               </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#B68A55]/20 text-[#B68A55] border border-[#B68A55]/30">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#B68A55]/15 text-[#B68A55] border border-[#B68A55]/30">
                 {keyStats ? `${keyStats.activeKeysCount || 0} Active` : "1 Key"}
               </span>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-[10px]">
-                <span className="text-slate-400">Daily Requests</span>
-                <span className="font-semibold text-slate-200">
+                <span className="text-slate-500 dark:text-slate-400">Daily Requests</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {keyStats ? `${keyStats.totalDailyRequests || 0} / ${((keyStats.totalCapacityRequests || 14400)/1000).toFixed(0)}k` : "0 / 14.4k"}
                 </span>
               </div>
-              <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-1.5 overflow-hidden">
                 <div
                   className="bg-[#B68A55] h-1.5 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, keyStats?.overallDailyPercent || 0)}%` }}
                 />
               </div>
-              <div className="flex justify-between items-center text-[10px] text-slate-400 pt-0.5">
+              <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
                 <span>
                   Tokens:{" "}
-                  <b className="text-slate-300">
+                  <b className="text-slate-800 dark:text-slate-300">
                     {(((keyStats?.totalAllTimeTokens || keyStats?.totalTokens || 6600)) / 1000).toFixed(1)}k
                   </b>
                 </span>
-                <span className="text-[#B68A55] group-hover:text-white font-medium">Manage →</span>
+                <span className="text-[#B68A55] group-hover:text-[#966E3A] dark:group-hover:text-white font-medium">Manage →</span>
               </div>
             </div>
           </Link>
         </div>
 
         {/* Profile and Platform Status directly following menu items */}
-        <div className="p-3 border-t border-neutral-800 space-y-2">
+        <div className="p-3 border-t border-[#EFE7DC] dark:border-neutral-800 space-y-2">
           {/* Platform Status indicator */}
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-400 bg-neutral-900">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-neutral-900 border border-[#EFE7DC] dark:border-transparent shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Platform Online</span>
           </div>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#121212] border border-neutral-800 shadow-sm">
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
             <div className="w-8 h-8 rounded-full bg-[#B68A55] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
               ESS
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-slate-100 truncate">
+              <p className="text-xs font-semibold text-[#252525] dark:text-slate-100 truncate">
                 Admin
               </p>
               <p className="text-[11px] text-[#B68A55] font-medium truncate">
@@ -211,7 +211,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 window.location.replace("/login");
               }}
               title="Sign Out"
-              className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

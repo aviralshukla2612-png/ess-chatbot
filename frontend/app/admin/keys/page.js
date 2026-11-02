@@ -198,19 +198,19 @@ export default function AdminKeysPage() {
       {/* Top Banner & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
             Groq API Key Pool & Rate Limits
           </h1>
         </div>
         <div className="flex items-center flex-wrap gap-2 shrink-0">
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-800/50 text-xs font-semibold text-emerald-400 whitespace-nowrap">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 dark:border-emerald-800/50 text-xs font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Dynamic Sync (3s)</span>
           </div>
           <button
             onClick={handleRestartCycle}
             title="Restart rotation sequence from Key #1"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#0D0D0D] hover:bg-[#161616] text-neutral-300 border border-neutral-800 transition-colors shadow-xs cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-[#161616] text-[#252525] dark:text-neutral-300 border border-[#EFE7DC] dark:border-neutral-800 transition-colors shadow-xs cursor-pointer whitespace-nowrap"
           >
             <RotateCcw className="w-3.5 h-3.5 text-[#B68A55]" />
             <span>Restart Cycle (#1)</span>
@@ -219,7 +219,7 @@ export default function AdminKeysPage() {
             href="https://console.groq.com/settings/organization/usage"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#0D0D0D] hover:bg-[#161616] text-[#B68A55] border border-neutral-800 transition-colors shadow-xs whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-[#161616] text-[#B68A55] border border-[#EFE7DC] dark:border-neutral-800 transition-colors shadow-xs whitespace-nowrap"
           >
             <span>Groq Console</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -227,9 +227,9 @@ export default function AdminKeysPage() {
           <button
             onClick={loadStats}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#0D0D0D] border border-neutral-800 text-neutral-300 hover:bg-[#161616] transition-colors shadow-xs cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-neutral-300 hover:bg-[#FAF9F6] dark:hover:bg-[#161616] transition-colors shadow-xs cursor-pointer whitespace-nowrap"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-slate-400"}`} />
             <span>Refresh</span>
           </button>
           <button
