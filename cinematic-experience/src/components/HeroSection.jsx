@@ -132,7 +132,7 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
       <div
         className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none"
         style={{
-          backgroundImage: `url('/bg.png')`,
+          backgroundImage: `url('/bg.png?v=2')`,
         }}
       />
 

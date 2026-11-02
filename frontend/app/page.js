@@ -312,7 +312,7 @@ export default function HomePage() {
         {/* User's Exact Clean Background - Pure bg.png without artificial square box grids */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none"
-          style={{ backgroundImage: `url('/bg.png')` }}
+          style={{ backgroundImage: `url('/bg.png?v=2')` }}
         />
 
         {/* Central Hero Headline & CTA (Centered vertically in hero viewport) */}
