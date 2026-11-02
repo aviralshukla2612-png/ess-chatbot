@@ -276,6 +276,111 @@ body::-webkit-scrollbar {
 }
 
 /* ============================================================
+   EMPEROR NEXUS GLOBAL DESIGN SYSTEM TOKENS & UTILITIES
+   ============================================================ */
+:root {
+  --color-nexus-bg: #050507;
+  --color-nexus-bg-sec: #0B0B10;
+  --color-nexus-surface: #12121A;
+  --color-nexus-silver: #D9D9E2;
+  --color-nexus-silver-light: #F5F5F7;
+  --color-nexus-silver-muted: #9898A6;
+  --color-nexus-purple: #963DFF;
+  --color-nexus-purple-light: #C28AFF;
+  --color-nexus-deep-purple: #5318A8;
+  --color-nexus-blue: #55A9FF;
+  --gradient-nexus-primary: linear-gradient(135deg, #963DFF 0%, #7928CA 45%, #55A9FF 100%);
+  --font-bebas: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+  --font-syne: 'Syne', sans-serif;
+}
+
+.font-headline {
+  font-family: var(--font-bebas);
+  letter-spacing: 0.03em;
+}
+
+.font-display {
+  font-family: var(--font-syne);
+}
+
+.nexus-grid-overlay {
+  background-size: 48px 48px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
+
+.nexus-dotted-grid {
+  background-size: 32px 32px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+}
+
+.glow-hero-ambient {
+  background: 
+    radial-gradient(circle at 10% 85%, rgba(150, 61, 255, 0.35) 0%, transparent 55%),
+    radial-gradient(circle at 92% 30%, rgba(85, 169, 255, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 100%, rgba(83, 24, 168, 0.25) 0%, transparent 60%);
+}
+
+.text-glow-purple {
+  text-shadow: 
+    0 0 20px rgba(194, 138, 255, 0.8),
+    0 0 45px rgba(150, 61, 255, 0.6),
+    0 0 80px rgba(85, 169, 255, 0.35);
+}
+
+.text-gradient-purple-blue {
+  background: linear-gradient(135deg, #FFFFFF 0%, #C28AFF 45%, #55A9FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glass-panel {
+  background: rgba(18, 18, 26, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(24, 24, 36, 0.8);
+  border-color: rgba(194, 138, 255, 0.35);
+  box-shadow: 0 10px 30px -10px rgba(150, 61, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-primary-gradient {
+  background: linear-gradient(135deg, #963DFF 0%, #7928CA 50%, #55A9FF 100%);
+  box-shadow: 0 4px 20px rgba(150, 61, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary-gradient:hover {
+  box-shadow: 0 6px 28px rgba(150, 61, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-secondary-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-secondary-glass:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(194, 138, 255, 0.45);
+  box-shadow: 0 0 25px rgba(150, 61, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
    CHATBOT LAUNCHER BUTTON ANIMATIONS (Font Awesome Parity)
    ============================================================ */
 @keyframes fa-beat {
