@@ -307,7 +307,7 @@ export default function HomePage() {
       {/* 2. HERO SECTION */}
       <section
         id="home"
-        className="relative min-h-screen w-full flex flex-col justify-between items-center pt-32 pb-16 px-4 sm:px-6 md:px-8 overflow-hidden bg-[#050507]"
+        className="relative h-screen min-h-[600px] max-h-screen w-full flex flex-col justify-between items-center pt-20 pb-4 px-4 sm:px-6 md:px-8 overflow-hidden bg-[#050507]"
       >
         {/* User's Exact Clean Background - Pure bg.png without artificial square box grids */}
         <div
@@ -315,53 +315,53 @@ export default function HomePage() {
           style={{ backgroundImage: `url('/bg.png')` }}
         />
 
-        {/* Central Hero Headline & CTA */}
-        <div className="relative z-10 max-w-6xl w-full mx-auto flex flex-col items-center text-center mt-6 sm:mt-12 md:mt-16">
+        {/* Central Hero Headline & CTA (Centered vertically in hero viewport) */}
+        <div className="relative z-10 max-w-6xl w-full mx-auto my-auto flex flex-col items-center text-center">
           <h1
             className="font-headline tracking-normal text-white uppercase text-center flex flex-col items-center justify-center select-none"
             style={{
-              lineHeight: "0.92",
-              fontSize: "clamp(2.75rem, 8vw, 7.5rem)",
+              lineHeight: "0.95",
+              fontSize: "clamp(2rem, 4.6vw, 4.5rem)",
             }}
           >
             <span className="block text-[#F5F5F7] tracking-[0.02em] drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
               WHATEVER YOUR INDUSTRY,
             </span>
-            <span className="block tracking-[0.02em] mt-1 sm:mt-2 text-glow-purple text-gradient-purple-blue">
+            <span className="block tracking-[0.02em] mt-1 sm:mt-1.5 text-glow-purple text-gradient-purple-blue">
               YOUR CUSTOMERS HAVE QUESTIONS.
             </span>
           </h1>
 
-          <p className="mt-6 sm:mt-8 max-w-[820px] text-base sm:text-lg md:text-xl text-[#9898A6] font-normal leading-relaxed text-center">
+          <p className="mt-3 sm:mt-4 max-w-[760px] text-xs sm:text-sm md:text-base text-[#9898A6] font-normal leading-relaxed text-center">
             Give every visitor a better way to connect with your business, get answers
             and discover what you offer — 24/7.
           </p>
 
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">
+          <div className="mt-5 sm:mt-6 flex flex-row items-center justify-center gap-3.5 w-auto">
             <Link
               href={isAuthenticated ? "/dashboard" : "/register"}
-              className="w-full sm:w-auto px-8 py-4 rounded-full font-bold text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2.5 cursor-pointer shadow-[0_0_30px_rgba(150,61,255,0.4)] hover:shadow-[0_0_40px_rgba(150,61,255,0.6)]"
+              className="px-6 sm:px-8 py-3 rounded-full font-bold text-xs sm:text-sm text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_30px_rgba(150,61,255,0.4)] hover:shadow-[0_0_40px_rgba(150,61,255,0.6)]"
             >
               <span>{isAuthenticated ? "Launch Dashboard" : "Start Free Trial"}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
 
             <button
               type="button"
               onClick={() => handleOpenExperience("real-estate")}
-              className="w-full sm:w-auto px-8 py-4 rounded-full font-semibold text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-3 cursor-pointer group"
+              className="px-6 sm:px-8 py-3 rounded-full font-semibold text-xs sm:text-sm btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
             >
-              <div className="w-5 h-5 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#C28AFF] group-hover:bg-[#963DFF]/20 transition-all">
-                <Play className="w-2.5 h-2.5 fill-current text-white group-hover:text-[#C28AFF] transition-colors ml-0.5" />
+              <div className="w-4 h-4 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#C28AFF] group-hover:bg-[#963DFF]/20 transition-all">
+                <Play className="w-2 h-2 fill-current text-white group-hover:text-[#C28AFF] transition-colors ml-0.5" />
               </div>
               <span>Explore the Experience</span>
             </button>
           </div>
         </div>
 
-        {/* 6 Industry Showcase Strip */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto mt-14 sm:mt-20">
-          <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2.5 sm:gap-3 p-2 rounded-2xl md:rounded-full bg-black/40 backdrop-blur-xl border border-white/[0.08] shadow-[0_16px_36px_rgba(0,0,0,0.6)]">
+        {/* 6 Industry Showcase Strip (Sits gracefully above the metallic wave at bottom of viewport) */}
+        <div className="relative z-10 w-full max-w-5xl mx-auto mb-2 sm:mb-4 shrink-0">
+          <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-2xl md:rounded-full bg-black/50 backdrop-blur-xl border border-white/[0.08] shadow-[0_16px_36px_rgba(0,0,0,0.6)]">
             {industriesHero.map((ind, idx) => {
               const Icon = ind.icon;
               return (
@@ -369,23 +369,21 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => handleOpenExperience(ind.id)}
-                    className="group flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-xl md:rounded-full bg-white/[0.025] hover:bg-white/[0.08] border border-white/[0.06] hover:border-[#963DFF]/50 transition-all duration-300 cursor-pointer hover:shadow-[0_0_20px_rgba(150,61,255,0.25)] hover:-translate-y-0.5 active:translate-y-0"
+                    className="group flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl md:rounded-full bg-white/[0.025] hover:bg-white/[0.08] border border-white/[0.06] hover:border-[#963DFF]/50 transition-all duration-300 cursor-pointer hover:shadow-[0_0_20px_rgba(150,61,255,0.25)] hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <Icon className="w-4 h-4 text-[#D9D9E2] group-hover:text-[#C28AFF] transition-colors duration-200 shrink-0" />
+                    <Icon className="w-3.5 h-3.5 text-[#D9D9E2] group-hover:text-[#C28AFF] transition-colors duration-200 shrink-0" />
                     <span className="text-xs sm:text-sm font-semibold text-[#D9D9E2] group-hover:text-white transition-colors duration-200 whitespace-nowrap">
                       {ind.label}
                     </span>
                   </button>
                   {idx < industriesHero.length - 1 && (
-                    <div className="hidden md:block w-px h-5 bg-white/10" />
+                    <div className="hidden md:block w-px h-4 bg-white/10" />
                   )}
                 </React.Fragment>
               );
             })}
           </div>
         </div>
-
-        <div className="relative z-10 w-full h-8 mt-6 pointer-events-none" />
       </section>
 
       {/* 3. SCROLL-PINNED MOSAIC INDUSTRIES SECTION */}
