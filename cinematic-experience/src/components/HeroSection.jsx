@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Play,
   Building2,
+  Plus,
   PlusSquare,
   GraduationCap,
   BedDouble,
@@ -115,7 +116,7 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
 
   const industries = [
     { id: "real-estate", label: "Real Estate", icon: Building2 },
-    { id: "healthcare", label: "Healthcare", icon: PlusSquare },
+    { id: "healthcare", label: "Healthcare", icon: Plus },
     { id: "education", label: "Education", icon: GraduationCap },
     { id: "hospitality", label: "Hospitality", icon: BedDouble },
     { id: "retail", label: "Retail", icon: ShoppingBag },
@@ -179,31 +180,31 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
           <button
             type="button"
             onClick={onOpenTrial}
-            className="px-6 sm:px-8 py-3 rounded-full font-bold text-xs sm:text-sm text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_30px_rgba(150,61,255,0.4)] hover:shadow-[0_0_40px_rgba(150,61,255,0.6)]"
+            className="px-7 sm:px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2.5 cursor-pointer group"
           >
             <span>Start Free Trial</span>
-            <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+            <ArrowRight className="w-4 h-4 stroke-[1.75] transition-transform duration-200 group-hover:translate-x-1" />
           </button>
 
           {/* Secondary CTA: Explore the Experience */}
           <button
             type="button"
             onClick={onOpenExperience}
-            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-xs sm:text-sm btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
+            className="px-6 sm:px-7 py-3.5 rounded-full font-medium text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-4 h-4 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#C28AFF] group-hover:bg-[#963DFF]/20 transition-all">
-              <Play className="w-2 h-2 fill-current text-white group-hover:text-[#C28AFF] transition-colors ml-0.5" />
+            <div className="w-4 h-4 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#A494F4] group-hover:bg-[#9E60F4]/20 transition-all">
+              <Play className="w-2 h-2 fill-current text-white group-hover:text-[#A494F4] transition-colors ml-0.5" />
             </div>
             <span>Explore the Experience</span>
           </button>
         </div>
       </div>
 
-      {/* 6. Industry Showcase Strip (Sits gracefully above the metallic wave at bottom of viewport) */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto mb-2 sm:mb-4 shrink-0">
+      {/* 6. Industry Showcase (Matches reference: standalone icon tiles with labels and vertical dashed dividers) */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto mb-2 sm:mb-4 px-4 shrink-0">
         <div
           ref={industriesRef}
-          className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-2xl md:rounded-full bg-black/50 backdrop-blur-xl border border-white/[0.08] shadow-[0_16px_36px_rgba(0,0,0,0.6)]"
+          className="flex items-start justify-between sm:justify-around gap-2 sm:gap-4 md:gap-6"
         >
           {industries.map((ind, idx) => {
             const Icon = ind.icon;
@@ -212,17 +213,19 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
                 <button
                   type="button"
                   onClick={() => onSelectIndustry?.(ind.id)}
-                  className="group flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl md:rounded-full bg-white/[0.025] hover:bg-white/[0.08] border border-white/[0.06] hover:border-[#963DFF]/50 transition-all duration-300 cursor-pointer hover:shadow-[0_0_20px_rgba(150,61,255,0.25)] hover:-translate-y-0.5 active:translate-y-0"
+                  className="group flex flex-col items-center gap-2 sm:gap-2.5 focus:outline-none cursor-pointer"
                 >
-                  <Icon className="w-3.5 h-3.5 text-[#D9D9E2] group-hover:text-[#C28AFF] transition-colors duration-200 shrink-0" />
-                  <span className="text-xs sm:text-sm font-semibold text-[#D9D9E2] group-hover:text-white transition-colors duration-200 whitespace-nowrap">
+                  <div className="w-12 h-12 sm:w-13 sm:h-13 md:w-14 md:h-14 rounded-2xl bg-[#12121A]/70 hover:bg-[#1A1A26] border border-white/[0.09] hover:border-[#A494F4]/50 flex items-center justify-center transition-all duration-300 shadow-[0_6px_20px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_24px_rgba(158,96,244,0.35)] group-hover:-translate-y-1">
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#D9D9E2] group-hover:text-white transition-colors duration-200 stroke-[1.8]" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-[#D9D9E2] group-hover:text-white transition-colors duration-200 whitespace-nowrap text-center">
                     {ind.label}
                   </span>
                 </button>
 
-                {/* Thin vertical separator between items on desktop */}
+                {/* Thin vertical dashed separator between items on desktop */}
                 {idx < industries.length - 1 && (
-                  <div className="hidden md:block w-px h-4 bg-white/10" />
+                  <div className="hidden sm:block w-px h-6 border-l border-dashed border-white/20 mt-3 sm:mt-4 self-start" />
                 )}
               </React.Fragment>
             );
