@@ -105,7 +105,10 @@ export const INDUSTRIES = [
 export default function IndustriesSection({ onOpenExperience }) {
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
-  const headlineRef = useRef(null);
+  const badgeRef = useRef(null);
+  const buildTextRef = useRef(null);
+  const clarityTextRef = useRef(null);
+  const subtextRef = useRef(null);
   const collageRef = useRef(null);
   const coverVideoRef = useRef(null);
   const tileRefs = useRef([]);
@@ -218,16 +221,24 @@ export default function IndustriesSection({ onOpenExperience }) {
           );
         }
 
-        // 3. Left Headline reveals smoothly with reduced balanced typography (0.12 -> 0.45)
-        if (headlineRef.current) {
+        // 3. Editorial typography reveals smoothly as collage scales into position (0.12 -> 0.45)
+        const textElements = [
+          badgeRef.current,
+          buildTextRef.current,
+          clarityTextRef.current,
+          subtextRef.current,
+        ].filter(Boolean);
+
+        if (textElements.length > 0) {
           tl.fromTo(
-            headlineRef.current,
-            { opacity: 0, x: -35 },
+            textElements,
+            { opacity: 0, y: 20 },
             {
               opacity: 1,
-              x: 0,
+              y: 0,
               ease: "power2.out",
-              duration: 0.36,
+              stagger: 0.06,
+              duration: 0.35,
             },
             0.12
           );
@@ -296,45 +307,34 @@ export default function IndustriesSection({ onOpenExperience }) {
             Balanced Headline on the Left + 6-Video Collage on the Right
             Reduced text size to ensure zero overflow and clean visibility
             ============================================================ */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10 px-2 sm:px-4">
-          {/* Left: Reduced, Balanced Editorial Typography */}
-          <div ref={headlineRef} className="flex-1 w-full lg:max-w-[54%] flex flex-col will-change-transform">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF] mb-2.5 sm:mb-3 w-fit">
-              <span>/ INDUSTRIES WE SERVE</span>
-            </div>
-
-            {/* Reduced Headline Size: 3 Clean Lines That Fit Comfortably On Screen */}
-            <h2 className="font-headline tracking-normal text-white uppercase leading-[0.96] text-3xl sm:text-4xl md:text-5xl lg:text-[2.75rem] xl:text-[3.25rem]">
-              <span className="block text-white">Different Industries.</span>
-              <span className="block text-[#D9D9E2] mt-1 sm:mt-1.5">Different Questions.</span>
-              <span className="block text-glow-purple text-gradient-purple-blue mt-1 sm:mt-1.5">
-                One Better Way to Connect.
-              </span>
-            </h2>
-
-            <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-[#9898A6] max-w-lg leading-relaxed">
-              From finding the right property to choosing a healthcare provider, exploring educational opportunities or discovering a new service — every industry has its own conversations.
-            </p>
-
-            <div className="mt-4 sm:mt-5 flex items-center gap-4">
-              <a
-                href="#benefits"
-                className="px-6 py-2.5 rounded-full font-medium text-xs sm:text-sm text-white btn-primary-gradient inline-flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                <span>Explore the Benefits</span>
-                <ArrowDown className="w-3.5 h-3.5" />
-              </a>
-            </div>
+        <div className="relative z-10 w-full max-w-6xl mx-auto my-auto flex flex-col justify-center px-4 sm:px-6">
+          {/* Eyebrow badge */}
+          <div
+            ref={badgeRef}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF] mb-3 sm:mb-4 w-fit will-change-transform"
+          >
+            <span>/ INDUSTRIES WE SERVE</span>
           </div>
 
-          {/* Right: The 6-Video Collage (Starts fullscreen then scales down to this spot) */}
-          <div
-            ref={collageRef}
-            className="w-full lg:w-[460px] xl:w-[500px] shrink-0 will-change-transform origin-center"
-          >
-            <div className="relative p-2 sm:p-2.5 rounded-2xl bg-[#12121A]/80 backdrop-blur-xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
-              {/* Subtle top light edge */}
-              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[#C28AFF]/50 to-transparent pointer-events-none" />
+          {/* Unified Headline Composition: 'Build' + Collage on Line 1, 'clarity.' on Line 2 */}
+          <div className="w-full flex flex-col">
+            {/* Line 1: 'Build' + 6-Video Collage nested inline right beside it */}
+            <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 flex-wrap sm:flex-nowrap">
+              <h2
+                ref={buildTextRef}
+                className="text-white font-sans font-bold tracking-tight text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[7.5rem] leading-[0.88] select-none shrink-0 will-change-transform"
+              >
+                Build
+              </h2>
+
+              {/* The 6-Video Collage (Starts fullscreen then scales down to sit right here beside 'Build') */}
+              <div
+                ref={collageRef}
+                className="w-full sm:w-[320px] md:w-[380px] lg:w-[440px] xl:w-[480px] shrink-0 will-change-transform origin-center"
+              >
+                <div className="relative p-2 rounded-2xl bg-[#12121A]/90 backdrop-blur-xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+                  {/* Subtle top light edge */}
+                  <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[#C28AFF]/50 to-transparent pointer-events-none" />
 
               {/* Full-Cover Initial First Video Layer (Enlarged to screen initially, then dissolves) */}
               <div
@@ -366,7 +366,7 @@ export default function IndustriesSection({ onOpenExperience }) {
               </div>
 
               {/* 3 Asymmetric Columns forming the 6-video collage beneath */}
-              <div className="w-full h-[250px] sm:h-[280px] xl:h-[300px] flex gap-2">
+              <div className="w-full h-[150px] sm:h-[165px] md:h-[180px] lg:h-[195px] flex gap-1.5 sm:gap-2">
                 {/* Column 1 (37% width): Real Estate (tall top) + Hospitality (compact bottom) */}
                 <div className="w-[37%] h-full flex flex-col gap-2">
                   {/* Tile 0: Real Estate (tall, 57% height) */}
@@ -583,6 +583,37 @@ export default function IndustriesSection({ onOpenExperience }) {
             </div>
           </div>
         </div>
+
+        {/* Line 2: 'clarity.' aligned directly below 'Build' */}
+        <div
+          ref={clarityTextRef}
+          className="flex items-baseline text-white font-sans font-bold tracking-tight text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[7.5rem] leading-[0.88] select-none mt-1 sm:mt-2 will-change-transform"
+        >
+          <span>clarity</span>
+          <span className="text-[#C28AFF] ml-0.5">.</span>
+        </div>
+
+        {/* Supporting Message & CTA below */}
+        <div ref={subtextRef} className="mt-4 sm:mt-6 max-w-xl will-change-transform">
+          <p className="text-xs sm:text-sm md:text-base text-[#D9D9E2] font-medium leading-relaxed">
+            Different industries. Different questions. One better way to connect.
+          </p>
+          <p className="mt-1 text-xs sm:text-sm text-[#9898A6] leading-relaxed">
+            From finding the right property to choosing a healthcare provider, exploring educational opportunities or discovering a new service — every industry has its own conversations.
+          </p>
+
+          <div className="mt-4 flex items-center gap-4">
+            <a
+              href="#benefits"
+              className="px-6 py-2.5 rounded-full font-medium text-xs sm:text-sm text-white btn-primary-gradient inline-flex items-center gap-2 cursor-pointer shadow-md"
+            >
+              <span>Explore the Benefits</span>
+              <ArrowDown className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
 
         {/* Bottom indicator hint */}
         <div className="relative z-20 w-full max-w-7xl mx-auto flex items-center justify-between text-xs text-[#9898A6] pb-1">
