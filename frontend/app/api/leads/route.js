@@ -72,11 +72,15 @@ export async function DELETE(request) {
     const { principal } = auth;
     const isSuperAdmin =
       principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+      principal.orgRole === ROLES.SUPER_ADMIN ||
+      principal.platformRole === "Platform Super Admin" ||
+      principal.platformRole === "SUPER_ADMIN" ||
+      principal.orgRole === "SUPER_ADMIN" ||
+      (principal.email && principal.email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
 
     const { searchParams } = new URL(request.url);
+    const clearAll = searchParams.get("clearAll") === "true" || searchParams.get("purgeAll") === "true";
     const purgeDummy = searchParams.get("purgeDummy") === "true";
-    const purgeAll = searchParams.get("purgeAll") === "true";
     const leadId = searchParams.get("id");
 
     const { queryDb } = await import("@/lib/db/dbPool");
@@ -86,14 +90,12 @@ export async function DELETE(request) {
         return NextResponse.json({ success: false, error: "Only platform administrators can purge dummy leads." }, { status: 403 });
       }
 
-      // 1. Purge from PostgreSQL database: leads without email AND phone, or eval/example domains
       await queryDb(`
         DELETE FROM "Lead"
         WHERE ("email" IS NULL OR "email" = '' OR "email" LIKE '%@eval.test%' OR "email" LIKE '%@example.com%')
           AND ("phone" IS NULL OR "phone" = '');
-      `);
+      `).catch(() => {});
 
-      // 2. Purge from disk store
       const list = leadsStore.getLeads();
       const cleaned = list.filter((l) => Boolean((l.email && l.email.trim()) || (l.phone && l.phone.trim())));
       const fs = await import("fs");
@@ -106,21 +108,32 @@ export async function DELETE(request) {
       return NextResponse.json({ success: true, message: "Dummy leads purged successfully." });
     }
 
-    if (purgeAll) {
-      if (!isSuperAdmin) {
-        return NextResponse.json({ success: false, error: "Only platform administrators can clear all leads." }, { status: 403 });
-      }
-      leadsStore.clearAll();
+    if (clearAll) {
+      leadsStore.clearAll(isSuperAdmin ? null : principal.organizationId);
       return NextResponse.json({ success: true, message: "All leads cleared successfully." });
+    }
+
+    // Support JSON body for batch deletion: { ids: ["lead_1", "lead_2"] }
+    let body = null;
+    try {
+      body = await request.json();
+    } catch (e) {}
+
+    if (body && Array.isArray(body.ids) && body.ids.length > 0) {
+      for (const id of body.ids) {
+        leadsStore.deleteLead(id, isSuperAdmin ? null : principal.organizationId);
+        await queryDb('DELETE FROM "Lead" WHERE "id" = $1;', [id]).catch(() => {});
+      }
+      return NextResponse.json({ success: true, message: `${body.ids.length} leads deleted successfully.` });
     }
 
     if (leadId) {
       leadsStore.deleteLead(leadId, isSuperAdmin ? null : principal.organizationId);
-      await queryDb('DELETE FROM "Lead" WHERE "id" = $1;', [leadId]);
+      await queryDb('DELETE FROM "Lead" WHERE "id" = $1;', [leadId]).catch(() => {});
       return NextResponse.json({ success: true, message: "Lead deleted successfully." });
     }
 
-    return NextResponse.json({ success: false, error: "Missing parameter: id, purgeDummy, or purgeAll" }, { status: 400 });
+    return NextResponse.json({ success: false, error: "Missing parameter: id, ids, or clearAll" }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

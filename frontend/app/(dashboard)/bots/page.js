@@ -31,6 +31,7 @@ import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
 import RedesignBotModal from "@/components/bots/RedesignBotModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function BotsPage() {
   const [bots, setBots] = useState([]);
@@ -42,6 +43,7 @@ export default function BotsPage() {
   const [deployModalBot, setDeployModalBot] = useState(null);
   const [deployWebsiteBot, setDeployWebsiteBot] = useState(null);
   const [redesignModalBot, setRedesignModalBot] = useState(null);
+  const [deleteTargetBot, setDeleteTargetBot] = useState(null);
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedConsole, setCopiedConsole] = useState(false);
   const [modalEmbedTab, setModalEmbedTab] = useState("html"); // "html" | "console"
@@ -75,13 +77,22 @@ export default function BotsPage() {
     pollingInterval: 3500,
   });
 
-  const handleDeleteBot = async (id, e) => {
-    e.stopPropagation();
-    if (confirm("Are you sure you want to permanently delete this bot?")) {
-      setBots((prev) => prev.filter((b) => b.id !== id));
-      await botsApi.deleteBot(id);
-      await loadBots();
-    }
+  const handleDeleteBot = (idOrBot, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const target =
+      typeof idOrBot === "object" && idOrBot !== null
+        ? idOrBot
+        : bots.find((b) => b.id === idOrBot) || { id: idOrBot, name: "this bot" };
+    setDeleteTargetBot(target);
+  };
+
+  const handleConfirmDeleteBot = async () => {
+    if (!deleteTargetBot) return;
+    const botId = deleteTargetBot.id;
+    setBots((prev) => prev.filter((b) => b.id !== botId));
+    await botsApi.deleteBot(botId);
+    setDeleteTargetBot(null);
+    await loadBots();
   };
 
   const filtered = bots.filter((b) => {
@@ -733,6 +744,20 @@ export default function BotsPage() {
           }}
         />
       )}
+
+      {/* Premium Confirm Modal for Deleting Bot */}
+      <ConfirmModal
+        isOpen={Boolean(deleteTargetBot)}
+        onClose={() => setDeleteTargetBot(null)}
+        onConfirm={handleConfirmDeleteBot}
+        title="Delete Chatbot?"
+        description={`Are you sure you want to permanently delete "${deleteTargetBot?.name || "this bot"}"? This will remove all bot configurations, knowledge base training, and embed integrations.`}
+        confirmText="Delete Bot"
+        cancelText="Cancel"
+        loadingText="Deleting Bot..."
+        variant="danger"
+        badgeText="Permanent Action"
+      />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   Layers,
   ArrowUpRight,
 } from "lucide-react";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function BillingPage() {
   const [billingData, setBillingData] = useState(null);
@@ -31,6 +32,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const [extendingPlanId, setExtendingPlanId] = useState(null);
   const [extensionSuccessMsg, setExtensionSuccessMsg] = useState("");
   const [extensionError, setExtensionError] = useState("");
@@ -62,14 +64,11 @@ export default function BillingPage() {
     return () => window.removeEventListener("subscription-updated", handleUpdated);
   }, []);
 
-  const handleCancelAutopay = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to cancel autopay? You will not be charged when the trial ends, but your subscription will lapse."
-      )
-    ) {
-      return;
-    }
+  const handleCancelAutopay = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancelAutopay = async () => {
     setCancelLoading(true);
     setCancelSuccessMsg("");
     try {
@@ -85,6 +84,7 @@ export default function BillingPage() {
       alert("Network error while cancelling autopay");
     } finally {
       setCancelLoading(false);
+      setShowCancelModal(false);
     }
   };
 
@@ -681,6 +681,20 @@ export default function BillingPage() {
           </div>
         </div>
       </div>
+
+      {/* Premium Confirm Modal for Autopay Cancellation */}
+      <ConfirmModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancelAutopay}
+        title="Cancel Autopay?"
+        description="Are you sure you want to cancel autopay? You will not be charged when your trial or current billing cycle ends, but your subscription and bot features will lapse."
+        confirmText="Cancel Autopay"
+        cancelText="Keep My Subscription"
+        loadingText="Cancelling Autopay..."
+        variant="warning"
+        badgeText="Subscription Notice"
+      />
     </div>
   );
 }

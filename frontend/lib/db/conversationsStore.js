@@ -488,6 +488,29 @@ export const conversationsStore = {
     return { success: true };
   },
 
+  demoteLead(conversationId) {
+    const list = loadFromDisk();
+    const conv = list.find((c) => c.id === conversationId);
+    if (conv) {
+      conv.isLead = false;
+      saveToDisk(list);
+      try {
+        queryDb('UPDATE "Conversation" SET "isLead" = false, "updatedAt" = NOW() WHERE "id" = $1;', [conversationId]).catch(() => {});
+      } catch (e) {}
+    }
+  },
+
+  clearAllLeads() {
+    const list = loadFromDisk();
+    list.forEach((c) => {
+      c.isLead = false;
+    });
+    saveToDisk(list);
+    try {
+      queryDb('UPDATE "Conversation" SET "isLead" = false, "updatedAt" = NOW();').catch(() => {});
+    } catch (e) {}
+  },
+
   clearAll() {
     saveToDisk([]);
     sseBroker.broadcast("conversations_cleared", {});

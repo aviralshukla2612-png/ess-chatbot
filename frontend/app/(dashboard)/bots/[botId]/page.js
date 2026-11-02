@@ -34,6 +34,7 @@ import { botsApi } from "@/lib/api/bots";
 import { knowledgeApi } from "@/lib/api/knowledge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
 import RedesignBotModal from "@/components/bots/RedesignBotModal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 function formatDocumentName(doc) {
   if (!doc) return "Company Knowledge Document";
@@ -69,6 +70,7 @@ function BotDetailContent() {
   const [redesignModalOpen, setRedesignModalOpen] = useState(false);
   const [knowledgeSubtab, setKnowledgeSubtab] = useState("websites");
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     if (queryTab) setActiveTab(queryTab);
@@ -100,11 +102,14 @@ function BotDetailContent() {
 
   const router = useRouter();
 
-  const handleDeleteBot = async () => {
-    if (confirm(`Are you sure you want to permanently delete "${bot.name}"?`)) {
-      await botsApi.deleteBot(bot.id);
-      router.push("/bots");
-    }
+  const handleDeleteBot = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDeleteBot = async () => {
+    if (!bot) return;
+    await botsApi.deleteBot(bot.id);
+    router.push("/bots");
   };
 
   if (loading || !bot) {
@@ -598,6 +603,20 @@ function BotDetailContent() {
           }}
         />
       )}
+
+      {/* Premium Confirm Modal for Bot Deletion */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDeleteBot}
+        title="Delete Chatbot?"
+        description={`Are you sure you want to permanently delete "${bot?.name || "this bot"}"? This action cannot be reversed, and all knowledge bases and widget integrations will be deleted.`}
+        confirmText="Delete Bot"
+        cancelText="Cancel"
+        loadingText="Deleting Bot..."
+        variant="danger"
+        badgeText="Permanent Action"
+      />
     </div>
   );
 }

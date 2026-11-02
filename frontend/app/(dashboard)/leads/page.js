@@ -17,11 +17,14 @@ import {
   Sparkles,
   X,
   ChevronDown,
+  Trash2,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { leadsApi } from "@/lib/api/leads";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const ANSWER_LABELS = {
   is_business: "For Business",
@@ -96,6 +99,8 @@ export default function LeadsPage() {
   const [timeFilter, setTimeFilter] = useState("All Time");
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [deleteLeadTarget, setDeleteLeadTarget] = useState(null);
 
   const loadLeads = async () => {
     try {
@@ -158,6 +163,91 @@ export default function LeadsPage() {
     }
   };
 
+  const handleExportLeads = () => {
+    const listToExport = filteredLeads.length > 0 ? filteredLeads : leads;
+    if (!listToExport || listToExport.length === 0) {
+      alert("No leads captured yet to export.");
+      return;
+    }
+
+    const headers = [
+      "Lead ID",
+      "Name",
+      "Email",
+      "Phone",
+      "Company",
+      "Bot",
+      "Score",
+      "Status",
+      "Inquiry / Scope",
+      "Budget",
+      "Created At",
+    ];
+
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '""';
+      const val = String(str).replace(/"/g, '""').replace(/\r\n|\n|\r/g, " ");
+      return `"${val}"`;
+    };
+
+    const rows = listToExport.map((l) => [
+      escapeCsv(l.id),
+      escapeCsv(l.name),
+      escapeCsv(l.email),
+      escapeCsv(l.phone),
+      escapeCsv(l.company),
+      escapeCsv(l.bot || l.botName || "Emperor AI Assistant"),
+      escapeCsv(l.score || "High"),
+      escapeCsv(l.status || "New"),
+      escapeCsv(l.inquiry || ""),
+      escapeCsv(l.budget || "₹50,000+"),
+      escapeCsv(l.created || l.createdAt || ""),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `leads_export_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleClearAllLeads = async () => {
+    await leadsApi.clearAll();
+    setSelectedLead(null);
+    setSelectedIds([]);
+    setShowClearModal(false);
+    await loadLeads();
+  };
+
+  const handleDeleteLeadConfirm = async () => {
+    if (!deleteLeadTarget) return;
+
+    if (deleteLeadTarget.type === "batch") {
+      await leadsApi.deleteMultiple(selectedIds);
+      setSelectedIds([]);
+      if (selectedLead && selectedIds.includes(selectedLead.id)) {
+        setSelectedLead(null);
+      }
+    } else {
+      await leadsApi.deleteLead(deleteLeadTarget.id);
+      setSelectedIds((prev) => prev.filter((id) => id !== deleteLeadTarget.id));
+      if (selectedLead?.id === deleteLeadTarget.id) {
+        setSelectedLead(null);
+      }
+    }
+    setDeleteLeadTarget(null);
+    await loadLeads();
+  };
+
   return (
     <div className="space-y-6 pb-12 animate-fade-in font-sans text-slate-800">
       {/* Top Header */}
@@ -173,27 +263,27 @@ export default function LeadsPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
+
+          {selectedIds.length > 0 && (
+            <button
+              onClick={() => setDeleteLeadTarget({ type: "batch", count: selectedIds.length })}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Selected ({selectedIds.length})</span>
+            </button>
+          )}
+
           {leads.length > 0 && (
             <button
-              onClick={async () => {
-                await leadsApi.clearAll();
-                setSelectedLead(null);
-                setSelectedIds([]);
-                loadLeads();
-              }}
+              onClick={() => setShowClearModal(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
             >
               <span>Clear All</span>
             </button>
           )}
           <button
-            onClick={() => {
-              if (leads.length === 0) {
-                alert("No leads captured yet to export.");
-                return;
-              }
-              alert("Exporting leads to CSV...");
-            }}
+            onClick={handleExportLeads}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-neutral-200 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer w-fit"
           >
             <Download className="w-4 h-4 text-slate-500 dark:text-neutral-400" />
@@ -359,7 +449,7 @@ export default function LeadsPage() {
                   <th className="py-3.5 px-4">Score</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Created</th>
-                  <th className="py-3.5 pr-5 pl-2 text-right"></th>
+                  <th className="py-3.5 pr-5 pl-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EFE7DC] dark:divide-slate-800 text-[#252525] dark:text-slate-300">
@@ -418,12 +508,24 @@ export default function LeadsPage() {
                         className="py-4 pr-5 pl-2 text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <button
-                          onClick={() => setSelectedLead(item)}
-                          className="p-1.5 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-[#252525] dark:hover:text-white transition-colors"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLead(item)}
+                            className="p-1.5 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-[#252525] dark:hover:text-white transition-colors cursor-pointer"
+                            title="View Lead Details"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteLeadTarget(item)}
+                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -573,8 +675,17 @@ export default function LeadsPage() {
 
             <div className="pt-4 border-t border-[#EFE7DC] dark:border-slate-800 flex items-center gap-3">
               <button
+                type="button"
+                onClick={() => setDeleteLeadTarget(selectedLead)}
+                className="flex-1 py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs rounded-xl transition-colors cursor-pointer border border-rose-500/30 flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Lead</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setSelectedLead(null)}
-                className="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#252525] dark:text-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer border border-[#EFE7DC] dark:border-slate-700"
+                className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#252525] dark:text-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer border border-[#EFE7DC] dark:border-slate-700"
               >
                 Close
               </button>
@@ -582,6 +693,39 @@ export default function LeadsPage() {
           </div>
         </div>
       )}
+
+      {/* Premium Confirm Modal for Clearing All Leads */}
+      <ConfirmModal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        onConfirm={handleClearAllLeads}
+        title="Clear All Leads?"
+        description="Are you sure you want to clear all leads? All captured customer contact info, inquiry records, and qualification responses will be permanently removed."
+        confirmText="Clear All Leads"
+        cancelText="Cancel"
+        loadingText="Clearing Leads..."
+        variant="danger"
+        badgeText="Permanent Action"
+        count={leads.length}
+      />
+
+      {/* Premium Confirm Modal for Single / Batch Lead Deletion */}
+      <ConfirmModal
+        isOpen={Boolean(deleteLeadTarget)}
+        onClose={() => setDeleteLeadTarget(null)}
+        onConfirm={handleDeleteLeadConfirm}
+        title={deleteLeadTarget?.type === "batch" ? `Delete ${deleteLeadTarget.count} Leads?` : "Delete Lead?"}
+        description={
+          deleteLeadTarget?.type === "batch"
+            ? `Are you sure you want to permanently delete the ${deleteLeadTarget.count} selected leads? All contact and inquiry history will be removed.`
+            : `Are you sure you want to permanently delete the lead "${deleteLeadTarget?.name || "this client"}" (${deleteLeadTarget?.phone || deleteLeadTarget?.email || "No contact info"})? This action cannot be undone.`
+        }
+        confirmText={deleteLeadTarget?.type === "batch" ? `Delete ${deleteLeadTarget.count} Leads` : "Delete Lead"}
+        cancelText="Cancel"
+        loadingText="Deleting..."
+        variant="danger"
+        badgeText="Irreversible"
+      />
     </div>
   );
 }

@@ -20,10 +20,12 @@ import {
   Sparkles,
   Inbox,
   X,
+  Trash2,
 } from "lucide-react";
 import { conversationsApi } from "@/lib/api/conversations";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { cn } from "@/lib/utils";
 
 // Indian Standard Client & Visitor Formatter
@@ -197,6 +199,8 @@ export default function ConversationsPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [replyInput, setReplyInput] = useState("");
   const [showClientDetails, setShowClientDetails] = useState(false); // Closed by default
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [deleteChatTarget, setDeleteChatTarget] = useState(null);
 
   const loadConversations = async () => {
     try {
@@ -268,6 +272,23 @@ export default function ConversationsPage() {
     loadConversations();
   };
 
+  const handleClearAllConversations = async () => {
+    await conversationsApi.clearAll();
+    setSelectedId(null);
+    setShowClearModal(false);
+    await loadConversations();
+  };
+
+  const handleDeleteSingleConversation = async () => {
+    if (!deleteChatTarget) return;
+    await conversationsApi.deleteConversation(deleteChatTarget.id);
+    if (selectedId === deleteChatTarget.id) {
+      setSelectedId(null);
+    }
+    setDeleteChatTarget(null);
+    await loadConversations();
+  };
+
   return (
     <div className="space-y-5 pb-12 animate-fade-in font-sans text-neutral-200">
       <style>{`
@@ -308,13 +329,7 @@ export default function ConversationsPage() {
               {conversations.length > 0 && (
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (confirm("Are you sure you want to clear all conversations?")) {
-                      await conversationsApi.clearAll();
-                      setSelectedId(null);
-                      loadConversations();
-                    }
-                  }}
+                  onClick={() => setShowClearModal(true)}
                   className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 font-semibold transition-colors cursor-pointer"
                 >
                   Clear All
@@ -509,6 +524,15 @@ export default function ConversationsPage() {
                     className="px-3.5 py-1.5 rounded-xl border border-[#EFE7DC] bg-white hover:bg-[#FAF9F6] text-[#252525] dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-[#1C1C1C] dark:text-neutral-300 text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
                   >
                     {currentChat.status === "Resolved" ? "Resolved" : "Mark Resolved"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeleteChatTarget(currentChat)}
+                    className="p-1.5 rounded-xl border border-[#EFE7DC] bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-neutral-400 dark:border-neutral-800 dark:bg-[#141414] dark:hover:bg-rose-950/40 dark:hover:text-rose-400 dark:hover:border-rose-500/30 dark:text-neutral-500 transition-all cursor-pointer shadow-xs active:scale-95"
+                    title="Delete this conversation"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -726,6 +750,35 @@ export default function ConversationsPage() {
           </div>
         )}
       </div>
+
+      {/* Premium Confirm Modal for Clearing All Conversations */}
+      <ConfirmModal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        onConfirm={handleClearAllConversations}
+        title="Clear All Conversations?"
+        description="Are you sure you want to clear all conversations? All message history, client leads, and visitor transcripts across your chatbot will be permanently erased."
+        confirmText="Clear All Conversations"
+        cancelText="Cancel"
+        loadingText="Clearing Conversations..."
+        variant="danger"
+        badgeText="Permanent Action"
+        count={conversations.length}
+      />
+
+      {/* Premium Confirm Modal for Single Conversation Deletion */}
+      <ConfirmModal
+        isOpen={Boolean(deleteChatTarget)}
+        onClose={() => setDeleteChatTarget(null)}
+        onConfirm={handleDeleteSingleConversation}
+        title="Delete Conversation?"
+        description={`Are you sure you want to permanently delete the conversation with ${deleteChatTarget ? formatVisitorDisplay(deleteChatTarget).name : "this client"}? All chat history in this thread will be permanently removed.`}
+        confirmText="Delete Conversation"
+        cancelText="Cancel"
+        loadingText="Deleting..."
+        variant="danger"
+        badgeText="Irreversible"
+      />
     </div>
   );
 }

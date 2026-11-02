@@ -70,4 +70,28 @@ export const leadsApi = {
       return false;
     }
   },
+
+  async clearAll() {
+    try {
+      const res = await fetch("/api/leads?clearAll=true", {
+        method: "DELETE",
+      });
+      return res.ok;
+    } catch (err) {
+      return false;
+    }
+  },
+
+  async deleteMultiple(ids = []) {
+    try {
+      const res = await fetch("/api/leads", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      return res.ok;
+    } catch (err) {
+      return false;
+    }
+  },
 };

@@ -67,7 +67,7 @@ export const leadsStore = {
 
       allConvs.forEach((conv) => {
         const hasContact = Boolean(conv.visitorPhone || conv.visitorEmail);
-        const isMarkedLead = Boolean(conv.isLead || hasContact);
+        const isMarkedLead = conv.isLead !== false && Boolean(conv.isLead || hasContact);
         if (!isMarkedLead) return;
 
         // Check if lead already tracked in list
@@ -438,6 +438,10 @@ export const leadsStore = {
     saveToDisk(filtered);
     sseBroker.broadcast("lead_deleted", { id, organizationId: targetOrgId });
 
+    if (target?.sessionId) {
+      conversationsStore.demoteLead(target.sessionId);
+    }
+
     try {
       if (organizationId) {
         queryDb('DELETE FROM "Lead" WHERE "id" = $1 AND "organizationId" = $2', [id, organizationId])
@@ -451,12 +455,24 @@ export const leadsStore = {
     return { success: true };
   },
 
-  clearAll() {
-    saveToDisk([]);
-    sseBroker.broadcast("leads_cleared", {});
-    try {
-      queryDb('DELETE FROM "Lead";').catch((err) => console.warn("[DB_CLEAR_LEADS_FAIL]", err.message));
-    } catch (e) {}
+  clearAll(organizationId = null) {
+    if (organizationId) {
+      const list = loadFromDisk();
+      const filtered = list.filter((l) => l.organizationId && l.organizationId !== organizationId);
+      saveToDisk(filtered);
+      sseBroker.broadcast("leads_cleared", { organizationId });
+      try {
+        queryDb('DELETE FROM "Lead" WHERE "organizationId" = $1;', [organizationId])
+          .catch((err) => console.warn("[DB_CLEAR_LEADS_FAIL]", err.message));
+      } catch (e) {}
+    } else {
+      saveToDisk([]);
+      conversationsStore.clearAllLeads();
+      sseBroker.broadcast("leads_cleared", {});
+      try {
+        queryDb('DELETE FROM "Lead";').catch((err) => console.warn("[DB_CLEAR_LEADS_FAIL]", err.message));
+      } catch (e) {}
+    }
     return { success: true };
   },
 };
