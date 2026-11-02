@@ -356,13 +356,13 @@ body::-webkit-scrollbar {
 }
 
 .btn-primary-gradient {
-  background: linear-gradient(90deg, #9E60F4 0%, #A494F4 45%, #86B4F7 100%);
-  box-shadow: 0 4px 22px rgba(158, 96, 244, 0.45), 0 0 35px rgba(134, 180, 247, 0.25);
+  background: linear-gradient(90deg, #9F5BFF 0%, #A48BFF 45%, #76A9FF 100%);
+  box-shadow: 0 4px 25px rgba(159, 91, 255, 0.45), 0 0 35px rgba(118, 169, 255, 0.25);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-primary-gradient:hover {
-  box-shadow: 0 6px 30px rgba(158, 96, 244, 0.65), 0 0 45px rgba(134, 180, 247, 0.4);
+  box-shadow: 0 6px 32px rgba(159, 91, 255, 0.65), 0 0 45px rgba(118, 169, 255, 0.4);
   filter: brightness(1.08);
   transform: translateY(-1px);
 }

@@ -176,21 +176,21 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
           ref={ctaRef}
           className="mt-5 sm:mt-6 flex flex-row items-center justify-center gap-3.5 w-auto"
         >
-          {/* Primary CTA */}
+          {/* Primary CTA: Start Free Trial matching user screenshot */}
           <button
             type="button"
             onClick={onOpenTrial}
-            className="px-7 sm:px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2.5 cursor-pointer group"
+            className="px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer group shadow-[0_8px_25px_rgba(158,96,244,0.45)]"
           >
             <span>Start Free Trial</span>
-            <ArrowRight className="w-4 h-4 stroke-[1.75] transition-transform duration-200 group-hover:translate-x-1" />
+            <span className="text-lg leading-none transition-transform duration-200 group-hover:translate-x-1">→</span>
           </button>
 
           {/* Secondary CTA: Explore the Experience */}
           <button
             type="button"
             onClick={onOpenExperience}
-            className="px-6 sm:px-7 py-3.5 rounded-full font-medium text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
+            className="px-7 py-3.5 rounded-full font-medium text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
           >
             <div className="w-4 h-4 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#A494F4] group-hover:bg-[#9E60F4]/20 transition-all">
               <Play className="w-2 h-2 fill-current text-white group-hover:text-[#A494F4] transition-colors ml-0.5" />
@@ -200,11 +200,11 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
         </div>
       </div>
 
-      {/* 6. Industry Showcase (Matches reference: standalone icon tiles with labels and vertical dashed dividers) */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto mb-2 sm:mb-4 px-4 shrink-0">
+      {/* Floating Glass Pill Bar (Matches user reference: single continuous horizontal pill capsule over wave) */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto mb-3 sm:mb-5 px-4 flex justify-center shrink-0">
         <div
           ref={industriesRef}
-          className="flex items-start justify-between sm:justify-around gap-2 sm:gap-4 md:gap-6"
+          className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full bg-[#12121A]/75 backdrop-blur-xl border border-white/[0.08] shadow-[0_12px_36px_rgba(0,0,0,0.6)]"
         >
           {industries.map((ind, idx) => {
             const Icon = ind.icon;
@@ -213,19 +213,13 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
                 <button
                   type="button"
                   onClick={() => onSelectIndustry?.(ind.id)}
-                  className="group flex flex-col items-center gap-2 sm:gap-2.5 focus:outline-none cursor-pointer"
+                  className="group/pill inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-[#D9D9E2] hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
                 >
-                  <div className="w-12 h-12 sm:w-13 sm:h-13 md:w-14 md:h-14 rounded-2xl bg-[#12121A]/70 hover:bg-[#1A1A26] border border-white/[0.09] hover:border-[#A494F4]/50 flex items-center justify-center transition-all duration-300 shadow-[0_6px_20px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_24px_rgba(158,96,244,0.35)] group-hover:-translate-y-1">
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#D9D9E2] group-hover:text-white transition-colors duration-200 stroke-[1.8]" />
-                  </div>
-                  <span className="text-xs sm:text-sm font-medium text-[#D9D9E2] group-hover:text-white transition-colors duration-200 whitespace-nowrap text-center">
-                    {ind.label}
-                  </span>
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D9D9E2] group-hover/pill:text-white transition-colors stroke-[1.8]" />
+                  <span className="whitespace-nowrap">{ind.label}</span>
                 </button>
-
-                {/* Thin vertical dashed separator between items on desktop */}
                 {idx < industries.length - 1 && (
-                  <div className="hidden sm:block w-px h-6 border-l border-dashed border-white/20 mt-3 sm:mt-4 self-start" />
+                  <div className="w-px h-3.5 bg-white/15 my-auto shrink-0" />
                 )}
               </React.Fragment>
             );
