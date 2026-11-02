@@ -271,14 +271,9 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           0.42
         );
 
-        // Border radius animation: Edge-to-edge sharp 0px at Big, then smooth 16px pill at Mid & Small
+        // Border radius: strictly sharp 0px (simple square video) at all times
         if (collageInnerRef.current) {
-          tl.fromTo(
-            collageInnerRef.current,
-            { borderRadius: "0px" },
-            { borderRadius: "16px", ease: "power1.inOut", duration: 0.42 },
-            0
-          );
+          gsap.set(collageInnerRef.current, { borderRadius: "0px" });
         }
 
         // 2. Subtle Micro-Parallax for center hero tile (keeps mosaic 100% compact and gap-free)
@@ -464,7 +459,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               >
                 <div
                   ref={collageInnerRef}
-                  className="w-full h-full flex gap-1 sm:gap-1.5 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl"
+                  className="w-full h-full flex gap-1 sm:gap-1.5 rounded-none overflow-hidden shadow-2xl"
                 >
                   {/* Column 1 (31% width): Real Estate (57%) + Hospitality (43%) */}
                   <div className="w-[31%] h-full flex flex-col gap-1 sm:gap-1.5">
@@ -474,7 +469,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("real-estate")}
                       onMouseEnter={() => setActiveHover("real-estate")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[57%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform bg-[#1E1233]"
+                      className="relative w-full h-[57%] rounded-none overflow-hidden cursor-pointer group will-change-transform bg-[#1E1233]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[0] = el)}
@@ -509,7 +504,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("hospitality")}
                       onMouseEnter={() => setActiveHover("hospitality")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[43%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform bg-[#2B162E]"
+                      className="relative w-full h-[43%] rounded-none overflow-hidden cursor-pointer group will-change-transform bg-[#2B162E]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[3] = el)}
@@ -547,7 +542,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("healthcare")}
                       onMouseEnter={() => setActiveHover("healthcare")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[29%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform bg-[#122233]"
+                      className="relative w-full h-[29%] rounded-none overflow-hidden cursor-pointer group will-change-transform bg-[#122233]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[1] = el)}
@@ -582,7 +577,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("ai-assistant")}
                       onMouseEnter={() => setActiveHover("ai-assistant")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[42%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-md bg-[#2A123E]"
+                      className="relative w-full h-[42%] rounded-none overflow-hidden cursor-pointer group will-change-transform shadow-md bg-[#2A123E]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[6] = el)}
@@ -618,7 +613,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("retail")}
                       onMouseEnter={() => setActiveHover("retail")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[29%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform bg-[#132438]"
+                      className="relative w-full h-[29%] rounded-none overflow-hidden cursor-pointer group will-change-transform bg-[#132438]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[4] = el)}
@@ -656,7 +651,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("education")}
                       onMouseEnter={() => setActiveHover("education")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[43%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform bg-[#241433]"
+                      className="relative w-full h-[43%] rounded-none overflow-hidden cursor-pointer group will-change-transform bg-[#241433]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[2] = el)}
@@ -691,7 +686,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                       onClick={() => onOpenExperience?.("services")}
                       onMouseEnter={() => setActiveHover("services")}
                       onMouseLeave={() => setActiveHover(null)}
-                      className="relative w-full h-[57%] rounded-md sm:rounded-lg overflow-hidden cursor-pointer group will-change-transform bg-[#221233]"
+                      className="relative w-full h-[57%] rounded-none overflow-hidden cursor-pointer group will-change-transform bg-[#221233]"
                     >
                       <video
                         ref={(el) => (videoRefs.current[5] = el)}
