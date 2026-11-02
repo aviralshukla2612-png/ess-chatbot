@@ -118,6 +118,7 @@ export default function IndustriesSection({ onOpenExperience }) {
   const stageRef = useRef(null);
   const headlineRef = useRef(null);
   const collageRef = useRef(null);
+  const coverVideoRef = useRef(null);
   const tileRefs = useRef([]);
   const beltRef = useRef(null);
   const videoRefs = useRef([]);
@@ -146,24 +147,48 @@ export default function IndustriesSection({ onOpenExperience }) {
     return () => observer.disconnect();
   }, []);
 
-  // Coordinated GSAP ScrollTrigger Animation matching NK Studio reference
+  // Coordinated GSAP ScrollTrigger: First video covers screen then scales down to place beside headline
   useEffect(() => {
     const mm = gsap.matchMedia();
 
     mm.add(
       {
         isDesktop: "(min-width: 1024px)",
-        isTablet: "(min-width: 768px) and (max-width: 1023px)",
-        isMobile: "(max-width: 767px)",
+        isMobile: "(max-width: 1023px)",
       },
       (context) => {
-        const { isDesktop, isTablet } = context.conditions;
+        const { isDesktop } = context.conditions;
+
+        const measure = () => {
+          if (!collageRef.current || !stageRef.current) {
+            return { deltaX: 0, deltaY: 0, scale: 2.4 };
+          }
+          const rect = collageRef.current.getBoundingClientRect();
+          const stageRect = stageRef.current.getBoundingClientRect();
+
+          const centerX = stageRect.left + stageRect.width / 2;
+          const centerY = stageRect.top + stageRect.height / 2;
+
+          const collageCenterX = rect.left + rect.width / 2;
+          const collageCenterY = rect.top + rect.height / 2;
+
+          const deltaX = centerX - collageCenterX;
+          const deltaY = centerY - collageCenterY;
+
+          const scaleX = (stageRect.width * 0.94) / rect.width;
+          const scaleY = (stageRect.height * 0.88) / rect.height;
+          const scale = Math.max(scaleX, scaleY, 2.2);
+
+          return { deltaX, deltaY, scale };
+        };
+
+        const { deltaX, deltaY, scale } = measure();
 
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top top",
-            end: isDesktop ? "+=1500" : "+=1000",
+            end: isDesktop ? "+=1800" : "+=1200",
             pin: stageRef.current,
             pinSpacing: true,
             scrub: 0.6,
@@ -172,57 +197,71 @@ export default function IndustriesSection({ onOpenExperience }) {
           },
         });
 
-        // 1. Headline Entrance: Staggered upward reveal
-        if (headlineRef.current) {
+        // 1. Initial State: First video covers whole screen, then shrinks into position beside headline (0.00 -> 0.48)
+        tl.fromTo(
+          collageRef.current,
+          {
+            x: deltaX,
+            y: deltaY,
+            scale: scale,
+            transformOrigin: "center center",
+          },
+          {
+            x: 0,
+            y: 0,
+            scale: 1,
+            ease: "power2.inOut",
+            duration: 0.48,
+          },
+          0
+        );
+
+        // 2. Cover layer fades smoothly as collage scales down, revealing the 6-video collage beneath
+        if (coverVideoRef.current) {
           tl.fromTo(
-            headlineRef.current.children,
-            { opacity: 0, y: 35 },
+            coverVideoRef.current,
+            { opacity: 1 },
             {
-              opacity: 1,
-              y: 0,
-              stagger: 0.08,
-              ease: "power2.out",
-              duration: 0.35,
+              opacity: 0,
+              ease: "power2.inOut",
+              duration: 0.24,
             },
-            0
+            0.22
           );
         }
 
-        // 2. Video Collage Tiles: Staggered progressive reveal with subtle scaling
+        // 3. Left Headline reveals smoothly with reduced balanced typography (0.12 -> 0.45)
+        if (headlineRef.current) {
+          tl.fromTo(
+            headlineRef.current,
+            { opacity: 0, x: -35 },
+            {
+              opacity: 1,
+              x: 0,
+              ease: "power2.out",
+              duration: 0.36,
+            },
+            0.12
+          );
+        }
+
+        // 4. Staggered reveal of other collage tiles (0.26 -> 0.50)
         tileRefs.current.forEach((tEl, idx) => {
-          if (!tEl) return;
+          if (!tEl || idx === 0) return;
           tl.fromTo(
             tEl,
-            {
-              opacity: 0,
-              scale: 0.88,
-              clipPath: "inset(12% round 8px)",
-            },
+            { opacity: 0, scale: 0.92 },
             {
               opacity: 1,
               scale: 1,
-              clipPath: "inset(0% round 8px)",
               ease: "power2.out",
-              duration: 0.28,
+              duration: 0.2,
             },
-            0.12 + idx * 0.07
+            0.26 + idx * 0.04
           );
         });
 
-        // 3. Subtle Parallax drift on the collage beside the headline
-        if (collageRef.current) {
-          tl.to(
-            collageRef.current,
-            {
-              y: isDesktop ? -30 : -15,
-              ease: "none",
-              duration: 1.0,
-            },
-            0
-          );
-        }
-
-        // 4. Marquee belt drift
+        // 5. Marquee belt drift
         if (beltRef.current) {
           tl.to(
             beltRef.current,
@@ -259,7 +298,7 @@ export default function IndustriesSection({ onOpenExperience }) {
           ============================================================ */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen min-h-[640px] overflow-hidden bg-[#050507] flex flex-col justify-between items-center py-6 sm:py-8 px-4 sm:px-8 select-none"
+        className="relative w-full h-screen min-h-[600px] overflow-hidden bg-[#050507] flex flex-col justify-between items-center py-5 sm:py-6 px-4 sm:px-8 select-none"
       >
         {/* Subtle Technical Grid Background & Ambient Purple Glow */}
         <div
@@ -305,29 +344,30 @@ export default function IndustriesSection({ onOpenExperience }) {
 
         {/* ============================================================
             MAIN HERO COMPOSITION:
-            Oversized Heading on the Left + Compact 6-Video Collage
-            immediately to the right in the upper-right area (NK Studio style)
+            Balanced Headline on the Left + 6-Video Collage on the Right
+            Reduced text size to ensure zero overflow and clean visibility
             ============================================================ */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center lg:items-center justify-between gap-8 lg:gap-12 px-2 sm:px-4">
-          {/* Left: Oversized Editorial Typography */}
-          <div ref={headlineRef} className="flex-1 w-full lg:max-w-[56%] flex flex-col">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF] mb-3 sm:mb-4 w-fit">
+        <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10 px-2 sm:px-4">
+          {/* Left: Reduced, Balanced Editorial Typography */}
+          <div ref={headlineRef} className="flex-1 w-full lg:max-w-[54%] flex flex-col will-change-transform">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF] mb-2.5 sm:mb-3 w-fit">
               <span>/ INDUSTRIES WE SERVE</span>
             </div>
 
-            <h2 className="font-headline tracking-normal text-white uppercase leading-[0.92] text-4xl sm:text-6xl md:text-7xl lg:text-[5.2rem] xl:text-[5.8rem]">
+            {/* Reduced Headline Size: 3 Clean Lines That Fit Comfortably On Screen */}
+            <h2 className="font-headline tracking-normal text-white uppercase leading-[0.96] text-3xl sm:text-4xl md:text-5xl lg:text-[2.75rem] xl:text-[3.25rem]">
               <span className="block text-white">Different Industries.</span>
-              <span className="block text-[#D9D9E2] mt-1 sm:mt-2">Different Questions.</span>
-              <span className="block text-glow-purple text-gradient-purple-blue mt-1 sm:mt-2">
+              <span className="block text-[#D9D9E2] mt-1 sm:mt-1.5">Different Questions.</span>
+              <span className="block text-glow-purple text-gradient-purple-blue mt-1 sm:mt-1.5">
                 One Better Way to Connect.
               </span>
             </h2>
 
-            <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base text-[#9898A6] max-w-xl leading-relaxed">
+            <p className="mt-3 sm:mt-4 text-xs sm:text-sm md:text-base text-[#9898A6] max-w-lg leading-relaxed">
               From finding the right property to choosing a healthcare provider, exploring educational opportunities or discovering a new service — every industry has its own conversations.
             </p>
 
-            <div className="mt-5 sm:mt-6 flex items-center gap-4">
+            <div className="mt-4 sm:mt-5 flex items-center gap-4">
               <a
                 href="#benefits"
                 className="px-6 py-2.5 rounded-full font-medium text-xs sm:text-sm text-white btn-primary-gradient inline-flex items-center gap-2 cursor-pointer shadow-md"
@@ -338,17 +378,46 @@ export default function IndustriesSection({ onOpenExperience }) {
             </div>
           </div>
 
-          {/* Right: The Compact 6-Video Collage (Upper-Right Area beside Heading) */}
+          {/* Right: The 6-Video Collage (Starts fullscreen then scales down to this spot) */}
           <div
             ref={collageRef}
-            className="w-full lg:w-[460px] xl:w-[500px] shrink-0 will-change-transform"
+            className="w-full lg:w-[460px] xl:w-[500px] shrink-0 will-change-transform origin-center"
           >
-            <div className="relative p-2 sm:p-2.5 rounded-2xl bg-[#12121A]/70 backdrop-blur-xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+            <div className="relative p-2 sm:p-2.5 rounded-2xl bg-[#12121A]/80 backdrop-blur-xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
               {/* Subtle top light edge */}
               <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[#C28AFF]/50 to-transparent pointer-events-none" />
 
-              {/* 3 Asymmetric Columns forming the tightly arranged 6-video mosaic */}
-              <div className="w-full h-[260px] sm:h-[290px] xl:h-[310px] flex gap-2">
+              {/* Full-Cover Initial First Video Layer (Enlarged to screen initially, then dissolves) */}
+              <div
+                ref={coverVideoRef}
+                className="absolute inset-2 sm:inset-2.5 rounded-xl overflow-hidden z-30 pointer-events-none will-change-transform"
+                style={{ background: INDUSTRIES[0].fallbackBg }}
+              >
+                <video
+                  src={INDUSTRIES[0].video}
+                  poster={INDUSTRIES[0].poster}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                <img
+                  src={INDUSTRIES[0].poster}
+                  alt="Real Estate"
+                  className="absolute inset-0 w-full h-full object-cover -z-10"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/20 text-[10px] font-bold text-white tracking-wider uppercase">
+                  Real Estate & Commercial Developments
+                </span>
+              </div>
+
+              {/* 3 Asymmetric Columns forming the 6-video collage beneath */}
+              <div className="w-full h-[250px] sm:h-[280px] xl:h-[300px] flex gap-2">
                 {/* Column 1 (37% width): Real Estate (tall top) + Hospitality (compact bottom) */}
                 <div className="w-[37%] h-full flex flex-col gap-2">
                   {/* Tile 0: Real Estate (tall, 57% height) */}
