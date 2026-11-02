@@ -118,23 +118,23 @@ export const INDUSTRIES = [
   },
 ];
 
-// Individual travel offsets for all 7 video tiles:
-// During Big -> Mid -> Small, each tile smoothly travels inward into position
+// Spatial travel vectors for each of the 7 video tiles:
+// Transitions from Big (spread outward) -> Mid (traveling inward) -> Small (locked in mosaic)
 const TILE_TRAVEL = [
   // Tile 0: Real Estate (top-left)
-  { startX: -45, startY: -35, midX: -16, midY: -12, startScale: 1.08, midScale: 1.03 },
+  { startX: -36, startY: -28, midX: -14, midY: -10, startScale: 1.06, midScale: 1.02 },
   // Tile 1: Healthcare (top-center)
-  { startX: 0, startY: -40, midX: 0, midY: -14, startScale: 1.06, midScale: 1.02 },
+  { startX: 0, startY: -32, midX: 0, midY: -12, startScale: 1.05, midScale: 1.02 },
   // Tile 2: Education (top-right)
-  { startX: 45, startY: -35, midX: 16, midY: -12, startScale: 1.08, midScale: 1.03 },
+  { startX: 36, startY: -28, midX: 14, midY: -10, startScale: 1.06, midScale: 1.02 },
   // Tile 3: Hospitality (bottom-left)
-  { startX: -40, startY: 35, midX: -14, midY: 12, startScale: 1.06, midScale: 1.02 },
+  { startX: -32, startY: 28, midX: -12, midY: 10, startScale: 1.05, midScale: 1.02 },
   // Tile 4: Retail (bottom-center)
-  { startX: 0, startY: 40, midX: 0, midY: 14, startScale: 1.06, midScale: 1.02 },
+  { startX: 0, startY: 32, midX: 0, midY: 12, startScale: 1.05, midScale: 1.02 },
   // Tile 5: Professional Services (bottom-right)
-  { startX: 40, startY: 35, midX: 14, midY: 12, startScale: 1.07, midScale: 1.02 },
+  { startX: 32, startY: 28, midX: 12, midY: 10, startScale: 1.05, midScale: 1.02 },
   // Tile 6: AI Sales Assistant (center hero)
-  { startX: 0, startY: 0, midX: 0, midY: 0, startScale: 1.15, midScale: 1.06 },
+  { startX: 0, startY: 0, midX: 0, midY: 0, startScale: 1.12, midScale: 1.05 },
 ];
 
 export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
@@ -148,7 +148,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
 
   const [activeHover, setActiveHover] = useState(null);
 
-  // Guarantee all videos are strictly muted
+  // Strictly mute all videos on mount and ensure volume is 0
   useEffect(() => {
     videoRefs.current.forEach((vid) => {
       if (!vid) return;
@@ -158,7 +158,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
     });
   }, []);
 
-  // Video IntersectionObserver to preserve resources when offscreen
+  // Video IntersectionObserver to preserve resources and keep muted
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -183,10 +183,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
     return () => observer.disconnect();
   }, []);
 
-  // Coordinated 3-stage scroll animation:
-  // Stage 1: BIG (whole screen)
-  // Stage 2: MID (medium size with travel of all 7 tiles)
-  // Stage 3: SMALL (settled into final position beside the headline)
+  // NK Studio-inspired scroll animation:
+  // Stage 1: BIG (centered, fills screen view)
+  // Stage 2: MID (medium size with smooth inward travel of all 7 tiles)
+  // Stage 3: SMALL (settles into final position beside the headline)
   useEffect(() => {
     const mm = gsap.matchMedia();
 
@@ -200,7 +200,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
 
         const measure = () => {
           if (!collageRef.current || !stageRef.current) {
-            return { deltaX: 0, deltaY: 0, bigScale: 2.2, midScale: 1.45 };
+            return { deltaX: 0, deltaY: 0, bigScale: 2.3, midScale: 1.45 };
           }
           const rect = collageRef.current.getBoundingClientRect();
           const stageRect = stageRef.current.getBoundingClientRect();
@@ -217,10 +217,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           const vw = typeof window !== "undefined" ? window.innerWidth : stageRect.width;
           const vh = typeof window !== "undefined" ? window.innerHeight : stageRect.height;
 
-          // Whole-screen calculation for initial BIG state
-          const bigScale = Math.max((vw + 40) / rect.width, (vh + 40) / rect.height, 2.1) * 1.03;
-          // Mid-scale calculation for intermediate transition
-          const midScale = Math.max(bigScale * 0.52, 1.35);
+          // Whole-screen calculation matching NK Studio Stage 1
+          const bigScale = Math.min((vw * 0.90) / rect.width, (vh * 0.84) / rect.height);
+          // Medium scale matching NK Studio Stage 2
+          const midScale = Math.max(bigScale * 0.54, 1.35);
 
           return { deltaX, deltaY, bigScale, midScale };
         };
@@ -231,7 +231,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top top",
-            end: isDesktop ? "+=2200" : "+=1400",
+            end: isDesktop ? "+=2400" : "+=1600",
             pin: stageRef.current,
             pinSpacing: true,
             scrub: 0.8,
@@ -240,8 +240,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           },
         });
 
-        // 1. Collage Container: Big (Whole Screen) -> Mid -> Small
-        // Step 1A: Big -> Mid (0.00 -> 0.45)
+        // 1. Collage Container Travel: Big (Whole Screen) -> Mid -> Small
+        // Step 1: Big (0.00) -> Mid (0.42)
         tl.fromTo(
           collageRef.current,
           {
@@ -251,16 +251,16 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             transformOrigin: "center center",
           },
           {
-            x: deltaX * 0.38,
-            y: deltaY * 0.28,
+            x: deltaX * 0.42,
+            y: deltaY * 0.22,
             scale: midScale,
             ease: "power1.inOut",
-            duration: 0.45,
+            duration: 0.42,
           },
           0
         );
 
-        // Step 1B: Mid -> Small (0.45 -> 0.90)
+        // Step 2: Mid (0.42) -> Small (0.84)
         tl.to(
           collageRef.current,
           {
@@ -268,17 +268,17 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             y: 0,
             scale: 1,
             ease: "power2.out",
-            duration: 0.45,
+            duration: 0.42,
           },
-          0.45
+          0.42
         );
 
-        // 2. Individual Travel for all 7 video tiles:
+        // 2. Individual Travel for each of the 7 video tiles:
         tileRefs.current.forEach((tEl, idx) => {
           if (!tEl || !TILE_TRAVEL[idx]) return;
           const travel = TILE_TRAVEL[idx];
 
-          // Travel from Big spread -> Mid
+          // Big -> Mid travel
           tl.fromTo(
             tEl,
             {
@@ -291,12 +291,12 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               y: travel.midY,
               scale: travel.midScale,
               ease: "power1.inOut",
-              duration: 0.45,
+              duration: 0.42,
             },
             0
           );
 
-          // Travel from Mid -> Small (locking into exact position)
+          // Mid -> Small travel (locks cleanly in place)
           tl.to(
             tEl,
             {
@@ -304,24 +304,24 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               y: 0,
               scale: 1,
               ease: "power2.out",
-              duration: 0.45,
+              duration: 0.42,
             },
-            0.45
+            0.42
           );
         });
 
-        // 3. Editorial Typography Reveal (starts as collage reaches Mid and finishes at Small)
+        // 3. Editorial Typography Reveal (rises from below as collage reaches Mid)
         if (headlineRef.current) {
           tl.fromTo(
             headlineRef.current,
-            { opacity: 0, x: -35 },
+            { opacity: 0, y: 70 },
             {
               opacity: 1,
-              x: 0,
+              y: 0,
               ease: "power2.out",
-              duration: 0.42,
+              duration: 0.44,
             },
-            0.35
+            0.32
           );
         }
 
@@ -329,14 +329,14 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
         if (bottomNavRef.current) {
           tl.fromTo(
             bottomNavRef.current,
-            { opacity: 0, y: 25 },
+            { opacity: 0, y: 30 },
             {
               opacity: 1,
               y: 0,
               ease: "power2.out",
-              duration: 0.35,
+              duration: 0.36,
             },
-            0.55
+            0.58
           );
         }
       },
@@ -393,35 +393,41 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
 
         {/* ============================================================
             MAIN HERO COMPOSITION:
-            Left: Content matching prompt
+            Left: Content matching user image (Your Business Is Unique...)
             Right: The 7-Video Mosaic Collage (Big -> Mid -> Small + Tile Travel)
             ============================================================ */}
         <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10 px-2 sm:px-4">
-          {/* Left Column: Headline & Content requested by user */}
+          {/* Left Column: Exact Typography from User Screenshot */}
           <div
             ref={headlineRef}
             className="flex-1 w-full lg:max-w-[48%] xl:max-w-[50%] flex flex-col justify-center will-change-transform"
           >
-            {/* Main Headline */}
-            <h2 className="text-white font-sans font-extrabold tracking-tight text-3xl sm:text-4xl md:text-5xl lg:text-[2.65rem] xl:text-[3.15rem] leading-[1.06]">
-              <span>Your Business Is Unique.</span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_24px_rgba(194,138,255,0.45)]">
-                Your Customer Experience Should Be Too.
+            {/* 5-Line Headline matching Image 1 exactly */}
+            <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-4xl md:text-5xl lg:text-[2.65rem] xl:text-[3.15rem] leading-[1.08] select-none">
+              <span className="block text-white">Your Business Is</span>
+              <span className="block text-white">Unique.</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_28px_rgba(194,138,255,0.45)]">
+                Your Customer
+              </span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_28px_rgba(194,138,255,0.45)]">
+                Experience Should Be
+              </span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_28px_rgba(194,138,255,0.45)]">
+                Too.
               </span>
             </h2>
 
-            {/* Supporting Content */}
-            <div className="mt-3.5 sm:mt-4 space-y-2 max-w-xl text-xs sm:text-sm md:text-[14px] text-[#9898A6] leading-relaxed">
-              <p className="text-[#E2E2EA] font-medium">
+            {/* Supporting Content matching Image 1 */}
+            <div className="mt-4 sm:mt-5 space-y-2 max-w-lg text-xs sm:text-sm md:text-[14px] text-[#9898A6] leading-relaxed">
+              <p className="text-[#E2E2EA] font-medium leading-relaxed">
                 Every business has its own services, offerings, customers and way of working.
               </p>
-              <p>
+              <p className="leading-relaxed">
                 Create a customized assistant around your business information, so visitors can explore what you offer and get relevant answers to their questions.
               </p>
             </div>
 
-            {/* CTA Button */}
+            {/* CTA Button matching Image 1 */}
             <div className="mt-5 sm:mt-6 flex items-center gap-4">
               <button
                 onClick={() => (onOpenTrial ? onOpenTrial() : (window.location.href = "/register"))}
@@ -433,7 +439,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             </div>
           </div>
 
-          {/* Right Column: The 7-Video Mosaic Collage (Transitions from Whole Screen -> Mid -> Small with Travel) */}
+          {/* Right Column: The 7-Video Mosaic Collage (Big -> Mid -> Small + Tile Travel) */}
           <div
             ref={collageRef}
             className="w-full lg:w-[500px] xl:w-[560px] 2xl:w-[600px] shrink-0 flex items-center justify-center will-change-transform origin-center"
