@@ -114,13 +114,11 @@ const CAPABILITIES = [
 ];
 
 export default function IndustriesSection({ onOpenExperience }) {
-  const containerRef = useRef(null);
+  const sectionRef = useRef(null);
   const stageRef = useRef(null);
-  const heroTextRef = useRef(null);
-  const stickyHeaderRef = useRef(null);
-  const canvasRef = useRef(null);
+  const headlineRef = useRef(null);
+  const collageRef = useRef(null);
   const tileRefs = useRef([]);
-  const outroRef = useRef(null);
   const beltRef = useRef(null);
   const videoRefs = useRef([]);
 
@@ -144,255 +142,100 @@ export default function IndustriesSection({ onOpenExperience }) {
       { threshold: 0.1 }
     );
 
-    if (containerRef.current) observer.observe(containerRef.current);
+    if (sectionRef.current) observer.observe(sectionRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Coordinated GSAP ScrollTrigger Master Timeline
+  // Coordinated GSAP ScrollTrigger Animation matching NK Studio reference
   useEffect(() => {
     const mm = gsap.matchMedia();
 
     mm.add(
       {
         isDesktop: "(min-width: 1024px)",
-        isMobile: "(max-width: 1023px)",
+        isTablet: "(min-width: 768px) and (max-width: 1023px)",
+        isMobile: "(max-width: 767px)",
       },
       (context) => {
-        const { isDesktop } = context.conditions;
+        const { isDesktop, isTablet } = context.conditions;
 
-        if (isDesktop) {
-          // ==========================================================
-          // DESKTOP: Full ScrollTrigger Pinned Editorial Mosaic Timeline
-          // ==========================================================
-          const tl = gsap.timeline({
-            scrollTrigger: {
-              trigger: containerRef.current,
-              start: "top top",
-              end: "+=2600",
-              pin: stageRef.current,
-              pinSpacing: true,
-              scrub: 0.6,
-              anticipatePin: 1,
-              invalidateOnRefresh: true,
-            },
-          });
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top top",
+            end: isDesktop ? "+=1500" : "+=1000",
+            pin: stageRef.current,
+            pinSpacing: true,
+            scrub: 0.6,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
 
-          // PHASE 1 -> PHASE 2: Headline glides away as canvas expands (0.00 -> 0.25)
-          tl.to(
-            heroTextRef.current,
+        // 1. Headline Entrance: Staggered upward reveal
+        if (headlineRef.current) {
+          tl.fromTo(
+            headlineRef.current.children,
+            { opacity: 0, y: 35 },
             {
-              y: -50,
-              opacity: 0,
-              ease: "power2.inOut",
-              duration: 0.22,
+              opacity: 1,
+              y: 0,
+              stagger: 0.08,
+              ease: "power2.out",
+              duration: 0.35,
             },
             0
           );
+        }
 
+        // 2. Video Collage Tiles: Staggered progressive reveal with subtle scaling
+        tileRefs.current.forEach((tEl, idx) => {
+          if (!tEl) return;
           tl.fromTo(
-            stickyHeaderRef.current,
-            { y: -20, opacity: 0 },
-            {
-              y: 0,
-              opacity: 1,
-              ease: "power2.out",
-              duration: 0.18,
-            },
-            0.15
-          );
-
-          tl.to(
-            canvasRef.current,
-            {
-              width: "94vw",
-              height: "72vh",
-              ease: "power2.inOut",
-              duration: 0.26,
-            },
-            0.05
-          );
-
-          // PHASE 2: Main visual divides into 6-tile mosaic (0.18 -> 0.65)
-          // Tile 0 (Real Estate): Stays 100% visible, smoothly contracts to 35% on left
-          if (tileRefs.current[0]) {
-            tl.to(
-              tileRefs.current[0],
-              {
-                width: "35%",
-                ease: "power2.inOut",
-                duration: 0.32,
-              },
-              0.18
-            );
-          }
-
-          // Tile 1 (Healthcare - center top: left: 36.5%, top: 0%, width: 31%, height: 48.5%)
-          if (tileRefs.current[1]) {
-            tl.fromTo(
-              tileRefs.current[1],
-              { opacity: 0, scale: 0.9, clipPath: "inset(12% round 14px)" },
-              {
-                opacity: 1,
-                scale: 1,
-                clipPath: "inset(0% round 14px)",
-                ease: "power2.out",
-                duration: 0.22,
-              },
-              0.24
-            );
-          }
-
-          // Tile 2 (Hospitality - center bottom: left: 36.5%, top: 51.5%, width: 31%, height: 48.5%)
-          if (tileRefs.current[2]) {
-            tl.fromTo(
-              tileRefs.current[2],
-              { opacity: 0, scale: 0.9, clipPath: "inset(12% round 14px)" },
-              {
-                opacity: 1,
-                scale: 1,
-                clipPath: "inset(0% round 14px)",
-                ease: "power2.out",
-                duration: 0.22,
-              },
-              0.30
-            );
-          }
-
-          // Tile 3 (Education - right top: left: 69%, top: 0%, width: 31%, height: 31.5%)
-          if (tileRefs.current[3]) {
-            tl.fromTo(
-              tileRefs.current[3],
-              { opacity: 0, scale: 0.9, clipPath: "inset(12% round 14px)" },
-              {
-                opacity: 1,
-                scale: 1,
-                clipPath: "inset(0% round 14px)",
-                ease: "power2.out",
-                duration: 0.2,
-              },
-              0.34
-            );
-          }
-
-          // Tile 4 (Retail - right middle: left: 69%, top: 34.25%, width: 31%, height: 31.5%)
-          if (tileRefs.current[4]) {
-            tl.fromTo(
-              tileRefs.current[4],
-              { opacity: 0, scale: 0.9, clipPath: "inset(12% round 14px)" },
-              {
-                opacity: 1,
-                scale: 1,
-                clipPath: "inset(0% round 14px)",
-                ease: "power2.out",
-                duration: 0.2,
-              },
-              0.40
-            );
-          }
-
-          // Tile 5 (Professional Services - right bottom: left: 69%, top: 68.5%, width: 31%, height: 31.5%)
-          if (tileRefs.current[5]) {
-            tl.fromTo(
-              tileRefs.current[5],
-              { opacity: 0, scale: 0.9, clipPath: "inset(12% round 14px)" },
-              {
-                opacity: 1,
-                scale: 1,
-                clipPath: "inset(0% round 14px)",
-                ease: "power2.out",
-                duration: 0.2,
-              },
-              0.46
-            );
-          }
-
-          // PHASE 4: Closing Transition (0.72 -> 1.00)
-          tl.to(
-            canvasRef.current,
-            {
-              scale: 0.96,
-              opacity: 0.35,
-              ease: "power2.inOut",
-              duration: 0.24,
-            },
-            0.72
-          );
-
-          tl.to(
-            stickyHeaderRef.current,
+            tEl,
             {
               opacity: 0,
-              y: -15,
-              ease: "power2.inOut",
-              duration: 0.15,
+              scale: 0.88,
+              clipPath: "inset(12% round 8px)",
             },
-            0.72
-          );
-
-          tl.fromTo(
-            outroRef.current,
-            { y: 60, opacity: 0, pointerEvents: "none" },
             {
-              y: 0,
               opacity: 1,
-              pointerEvents: "auto",
+              scale: 1,
+              clipPath: "inset(0% round 8px)",
               ease: "power2.out",
-              duration: 0.25,
+              duration: 0.28,
             },
-            0.74
+            0.12 + idx * 0.07
           );
+        });
 
-          // Drift marquee belt smoothly with scroll
-          if (beltRef.current) {
-            tl.to(
-              beltRef.current,
-              {
-                x: -700,
-                ease: "none",
-                duration: 1.0,
-              },
-              0
-            );
-          }
-        } else {
-          // ==========================================================
-          // MOBILE: Clean Pinned Sequence with Card Stacking
-          // ==========================================================
-          const tlMobile = gsap.timeline({
-            scrollTrigger: {
-              trigger: containerRef.current,
-              start: "top top",
-              end: "+=1800",
-              pin: stageRef.current,
-              pinSpacing: true,
-              scrub: 0.6,
-              anticipatePin: 1,
+        // 3. Subtle Parallax drift on the collage beside the headline
+        if (collageRef.current) {
+          tl.to(
+            collageRef.current,
+            {
+              y: isDesktop ? -30 : -15,
+              ease: "none",
+              duration: 1.0,
             },
-          });
+            0
+          );
+        }
 
-          tlMobile.to(heroTextRef.current, { opacity: 0, y: -30, duration: 0.2 }, 0);
-          tlMobile.fromTo(stickyHeaderRef.current, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.15);
-
-          // Mobile card reveal sequence
-          tileRefs.current.forEach((tEl, idx) => {
-            if (!tEl || idx === 0) return;
-            tlMobile.fromTo(
-              tEl,
-              { opacity: 0, y: 30 },
-              { opacity: 1, y: 0, duration: 0.2 },
-              0.2 + idx * 0.1
-            );
-          });
-
-          tlMobile.fromTo(
-            outroRef.current,
-            { opacity: 0, y: 40, pointerEvents: "none" },
-            { opacity: 1, y: 0, pointerEvents: "auto", duration: 0.25 },
-            0.75
+        // 4. Marquee belt drift
+        if (beltRef.current) {
+          tl.to(
+            beltRef.current,
+            {
+              x: -600,
+              ease: "none",
+              duration: 1.0,
+            },
+            0
           );
         }
       },
-      containerRef
+      sectionRef
     );
 
     const refreshTimer = setTimeout(() => {
@@ -408,17 +251,17 @@ export default function IndustriesSection({ onOpenExperience }) {
   return (
     <section
       id="industries"
-      ref={containerRef}
+      ref={sectionRef}
       className="relative w-full bg-[#050507] text-[#F5F5F7] overflow-hidden"
     >
       {/* ============================================================
-          PINNED STAGE VIEWPORT (Fixed by ScrollTrigger during scrub)
+          PINNED STAGE (Fixed by ScrollTrigger during scrub)
           ============================================================ */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen overflow-hidden bg-[#050507] flex flex-col justify-between items-center py-5 sm:py-7 px-4 sm:px-8 select-none"
+        className="relative w-full h-screen min-h-[640px] overflow-hidden bg-[#050507] flex flex-col justify-between items-center py-6 sm:py-8 px-4 sm:px-8 select-none"
       >
-        {/* Subtle Technical Grid Overlay & Ambient Glow */}
+        {/* Subtle Technical Grid Background & Ambient Purple Glow */}
         <div
           className="absolute inset-0 pointer-events-none opacity-40"
           style={{
@@ -460,196 +303,277 @@ export default function IndustriesSection({ onOpenExperience }) {
           </div>
         </div>
 
-        {/* Phase 1 Introduction: Main Headline (0.00 -> 0.22) */}
-        <div
-          ref={heroTextRef}
-          className="relative z-20 w-full max-w-4xl mx-auto text-center flex flex-col items-center mt-2 sm:mt-4 mb-2 shrink-0 will-change-transform"
-        >
-          <h2 className="text-3xl sm:text-5xl md:text-6xl font-headline tracking-normal text-white uppercase leading-[0.98]">
-            <span>Different Industries. </span>
-            <span className="text-[#D9D9E2]">Different Questions. </span>
-            <br />
-            <span className="text-glow-purple text-gradient-purple-blue">
-              One Better Way to Connect.
-            </span>
-          </h2>
-          <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm md:text-base text-[#9898A6] max-w-2xl leading-relaxed">
-            Every industry has its own customers, expectations and conversations.
-            Give them a better way to discover your business and get the information they need.
-          </p>
-        </div>
-
-        {/* Sticky Title (Crossfades in during mosaic transformation) */}
-        <div
-          ref={stickyHeaderRef}
-          className="absolute top-16 sm:top-20 left-0 right-0 z-20 w-full max-w-5xl mx-auto px-4 text-center pointer-events-none opacity-0 will-change-transform"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF] mb-1">
-            <span>/ Industries We Serve</span>
-          </div>
-          <h3 className="text-base sm:text-xl md:text-2xl font-headline tracking-normal text-white uppercase">
-            Different Questions. One Connected Platform.
-          </h3>
-        </div>
-
         {/* ============================================================
-            CENTRAL CINEMATIC CANVAS (Houses the 6-Tile Mosaic)
+            MAIN HERO COMPOSITION:
+            Oversized Heading on the Left + Compact 6-Video Collage
+            immediately to the right in the upper-right area (NK Studio style)
             ============================================================ */}
-        <div className="relative z-10 w-full flex-1 max-w-[1440px] flex items-center justify-center my-auto min-h-[380px] sm:min-h-[460px]">
+        <div className="relative z-10 w-full max-w-7xl mx-auto my-auto flex flex-col lg:flex-row items-center lg:items-center justify-between gap-8 lg:gap-12 px-2 sm:px-4">
+          {/* Left: Oversized Editorial Typography */}
+          <div ref={headlineRef} className="flex-1 w-full lg:max-w-[56%] flex flex-col">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF] mb-3 sm:mb-4 w-fit">
+              <span>/ INDUSTRIES WE SERVE</span>
+            </div>
+
+            <h2 className="font-headline tracking-normal text-white uppercase leading-[0.92] text-4xl sm:text-6xl md:text-7xl lg:text-[5.2rem] xl:text-[5.8rem]">
+              <span className="block text-white">Different Industries.</span>
+              <span className="block text-[#D9D9E2] mt-1 sm:mt-2">Different Questions.</span>
+              <span className="block text-glow-purple text-gradient-purple-blue mt-1 sm:mt-2">
+                One Better Way to Connect.
+              </span>
+            </h2>
+
+            <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base text-[#9898A6] max-w-xl leading-relaxed">
+              From finding the right property to choosing a healthcare provider, exploring educational opportunities or discovering a new service — every industry has its own conversations.
+            </p>
+
+            <div className="mt-5 sm:mt-6 flex items-center gap-4">
+              <a
+                href="#benefits"
+                className="px-6 py-2.5 rounded-full font-medium text-xs sm:text-sm text-white btn-primary-gradient inline-flex items-center gap-2 cursor-pointer shadow-md"
+              >
+                <span>Explore the Benefits</span>
+                <ArrowDown className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Right: The Compact 6-Video Collage (Upper-Right Area beside Heading) */}
           <div
-            ref={canvasRef}
-            className="relative w-[88vw] h-[58vh] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/[0.12] bg-[#0B0B10] shadow-[0_24px_70px_rgba(0,0,0,0.85)] will-change-transform"
+            ref={collageRef}
+            className="w-full lg:w-[460px] xl:w-[500px] shrink-0 will-change-transform"
           >
-            {INDUSTRIES.map((ind, idx) => {
-              const Icon = ind.icon;
-              const isHovered = activeHover === ind.id;
+            <div className="relative p-2 sm:p-2.5 rounded-2xl bg-[#12121A]/70 backdrop-blur-xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
+              {/* Subtle top light edge */}
+              <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[#C28AFF]/50 to-transparent pointer-events-none" />
 
-              // Grid positioning for the 6 tiles
-              let defaultStyle = {
-                left: "0%",
-                top: "0%",
-                width: "100%",
-                height: "100%",
-                zIndex: 1,
-              };
-
-              if (idx === 1) {
-                defaultStyle = { left: "36.5%", top: "0%", width: "31%", height: "48.5%", zIndex: 2 };
-              } else if (idx === 2) {
-                defaultStyle = { left: "36.5%", top: "51.5%", width: "31%", height: "48.5%", zIndex: 2 };
-              } else if (idx === 3) {
-                defaultStyle = { left: "69%", top: "0%", width: "31%", height: "31.5%", zIndex: 2 };
-              } else if (idx === 4) {
-                defaultStyle = { left: "69%", top: "34.25%", width: "31%", height: "31.5%", zIndex: 2 };
-              } else if (idx === 5) {
-                defaultStyle = { left: "69%", top: "68.5%", width: "31%", height: "31.5%", zIndex: 2 };
-              }
-
-              return (
-                <div
-                  key={ind.id}
-                  ref={(el) => {
-                    tileRefs.current[idx] = el;
-                  }}
-                  onMouseEnter={() => setActiveHover(ind.id)}
-                  onMouseLeave={() => setActiveHover(null)}
-                  onClick={() => onOpenExperience?.(ind.id)}
-                  className="absolute overflow-hidden rounded-xl sm:rounded-2xl border border-white/[0.08] transition-all duration-300 cursor-pointer group will-change-transform"
-                  style={{
-                    ...defaultStyle,
-                    background: ind.fallbackBg,
-                  }}
-                >
-                  {/* Real MP4 Video with Image Poster Fallback */}
-                  <div className="absolute inset-0 z-0 overflow-hidden">
+              {/* 3 Asymmetric Columns forming the tightly arranged 6-video mosaic */}
+              <div className="w-full h-[260px] sm:h-[290px] xl:h-[310px] flex gap-2">
+                {/* Column 1 (37% width): Real Estate (tall top) + Hospitality (compact bottom) */}
+                <div className="w-[37%] h-full flex flex-col gap-2">
+                  {/* Tile 0: Real Estate (tall, 57% height) */}
+                  <div
+                    ref={(el) => (tileRefs.current[0] = el)}
+                    onClick={() => onOpenExperience?.("real-estate")}
+                    onMouseEnter={() => setActiveHover("real-estate")}
+                    onMouseLeave={() => setActiveHover(null)}
+                    className="relative w-full h-[57%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    style={{ background: INDUSTRIES[0].fallbackBg }}
+                  >
                     <video
-                      ref={(el) => {
-                        videoRefs.current[idx] = el;
-                      }}
-                      src={ind.video}
-                      poster={ind.poster}
+                      ref={(el) => (videoRefs.current[0] = el)}
+                      src={INDUSTRIES[0].video}
+                      poster={INDUSTRIES[0].poster}
                       autoPlay
                       loop
                       muted
                       playsInline
-                      preload="auto"
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
                     />
                     <img
-                      src={ind.poster}
-                      alt={ind.name}
-                      loading="lazy"
+                      src={INDUSTRIES[0].poster}
+                      alt="Real Estate"
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 border-2 rounded-xl border-[#C28AFF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                      Real Estate
+                    </span>
                   </div>
 
-                  {/* Dark Gradient Overlay for Maximum Text Contrast */}
-                  <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#050507]/95 via-[#050507]/45 to-transparent pointer-events-none" />
-                  <div className="absolute inset-0 z-10 bg-black/20 group-hover:bg-black/5 transition-colors pointer-events-none" />
-
-                  {/* Border Highlight on Hover */}
+                  {/* Tile 3: Hospitality (compact, 43% height) */}
                   <div
-                    className="absolute inset-0 z-20 rounded-xl sm:rounded-2xl border-2 pointer-events-none transition-opacity duration-300"
-                    style={{
-                      borderColor: ind.accentColor,
-                      opacity: isHovered ? 0.75 : 0,
-                      boxShadow: isHovered ? `inset 0 0 30px ${ind.accentColor}33` : "none",
-                    }}
-                  />
-
-                  {/* Overlay Content */}
-                  <div className="absolute inset-0 z-20 flex flex-col justify-between p-3.5 sm:p-5">
-                    {/* Top Row: Category Badge & Icon */}
-                    <div className="flex items-center justify-between">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#050507]/80 backdrop-blur-md border border-white/[0.12] text-[10px] sm:text-xs font-bold text-white shadow-md">
-                        <Icon className="w-3.5 h-3.5" style={{ color: ind.accentColor }} />
-                        <span>{ind.category}</span>
-                      </div>
-
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/[0.08] backdrop-blur-md border border-white/[0.12] flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-110">
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-
-                    {/* Bottom Row: Name, Capability, & Sample Question */}
-                    <div className="flex flex-col gap-1">
-                      <h4 className="text-sm sm:text-base md:text-lg font-bold text-white leading-tight drop-shadow-md">
-                        {ind.name}
-                      </h4>
-
-                      <p className="text-[11px] sm:text-xs text-[#9898A6] font-medium line-clamp-1 group-hover:text-[#D9D9E2] transition-colors">
-                        {ind.capability}
-                      </p>
-
-                      <div className="mt-1 pt-1.5 border-t border-white/[0.08] flex items-start gap-1.5">
-                        <span className="text-[10px] font-bold text-[#C28AFF] uppercase tracking-wider shrink-0 mt-0.5">
-                          Q:
-                        </span>
-                        <span className="text-[10px] sm:text-[11px] text-[#D9D9E2] italic leading-tight line-clamp-2">
-                          "{ind.sampleQuestion}"
-                        </span>
-                      </div>
-                    </div>
+                    ref={(el) => (tileRefs.current[3] = el)}
+                    onClick={() => onOpenExperience?.("hospitality")}
+                    onMouseEnter={() => setActiveHover("hospitality")}
+                    onMouseLeave={() => setActiveHover(null)}
+                    className="relative w-full h-[43%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    style={{ background: INDUSTRIES[3].fallbackBg }}
+                  >
+                    <video
+                      ref={(el) => (videoRefs.current[3] = el)}
+                      src={INDUSTRIES[3].video}
+                      poster={INDUSTRIES[3].poster}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <img
+                      src={INDUSTRIES[3].poster}
+                      alt="Hospitality"
+                      className="absolute inset-0 w-full h-full object-cover -z-10"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 border-2 rounded-xl border-[#55A9FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                      Hospitality
+                    </span>
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Column 2 (38% width): Healthcare (compact top) + Retail & E-commerce (tall bottom) */}
+                <div className="w-[38%] h-full flex flex-col gap-2">
+                  {/* Tile 1: Healthcare (compact, 43% height) */}
+                  <div
+                    ref={(el) => (tileRefs.current[1] = el)}
+                    onClick={() => onOpenExperience?.("healthcare")}
+                    onMouseEnter={() => setActiveHover("healthcare")}
+                    onMouseLeave={() => setActiveHover(null)}
+                    className="relative w-full h-[43%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    style={{ background: INDUSTRIES[1].fallbackBg }}
+                  >
+                    <video
+                      ref={(el) => (videoRefs.current[1] = el)}
+                      src={INDUSTRIES[1].video}
+                      poster={INDUSTRIES[1].poster}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <img
+                      src={INDUSTRIES[1].poster}
+                      alt="Healthcare"
+                      className="absolute inset-0 w-full h-full object-cover -z-10"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 border-2 rounded-xl border-[#55A9FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                      Healthcare
+                    </span>
+                  </div>
+
+                  {/* Tile 4: Retail & E-commerce (tall, 57% height) */}
+                  <div
+                    ref={(el) => (tileRefs.current[4] = el)}
+                    onClick={() => onOpenExperience?.("retail")}
+                    onMouseEnter={() => setActiveHover("retail")}
+                    onMouseLeave={() => setActiveHover(null)}
+                    className="relative w-full h-[57%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    style={{ background: INDUSTRIES[4].fallbackBg }}
+                  >
+                    <video
+                      ref={(el) => (videoRefs.current[4] = el)}
+                      src={INDUSTRIES[4].video}
+                      poster={INDUSTRIES[4].poster}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <img
+                      src={INDUSTRIES[4].poster}
+                      alt="Retail"
+                      className="absolute inset-0 w-full h-full object-cover -z-10"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 border-2 rounded-xl border-[#C28AFF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                      Retail
+                    </span>
+                  </div>
+                </div>
+
+                {/* Column 3 (25% width): Education (top) + Professional Services (bottom) */}
+                <div className="w-[25%] h-full flex flex-col gap-2">
+                  {/* Tile 2: Education (50% height) */}
+                  <div
+                    ref={(el) => (tileRefs.current[2] = el)}
+                    onClick={() => onOpenExperience?.("education")}
+                    onMouseEnter={() => setActiveHover("education")}
+                    onMouseLeave={() => setActiveHover(null)}
+                    className="relative w-full h-[50%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    style={{ background: INDUSTRIES[2].fallbackBg }}
+                  >
+                    <video
+                      ref={(el) => (videoRefs.current[2] = el)}
+                      src={INDUSTRIES[2].video}
+                      poster={INDUSTRIES[2].poster}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <img
+                      src={INDUSTRIES[2].poster}
+                      alt="Education"
+                      className="absolute inset-0 w-full h-full object-cover -z-10"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 border-2 rounded-xl border-[#C28AFF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="absolute bottom-2 left-1.5 px-1 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[8px] font-bold text-white tracking-wide uppercase">
+                      Education
+                    </span>
+                  </div>
+
+                  {/* Tile 5: Professional Services (50% height) */}
+                  <div
+                    ref={(el) => (tileRefs.current[5] = el)}
+                    onClick={() => onOpenExperience?.("professional-services")}
+                    onMouseEnter={() => setActiveHover("professional-services")}
+                    onMouseLeave={() => setActiveHover(null)}
+                    className="relative w-full h-[50%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    style={{ background: INDUSTRIES[5].fallbackBg }}
+                  >
+                    <video
+                      ref={(el) => (videoRefs.current[5] = el)}
+                      src={INDUSTRIES[5].video}
+                      poster={INDUSTRIES[5].poster}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    <img
+                      src={INDUSTRIES[5].poster}
+                      alt="Services"
+                      className="absolute inset-0 w-full h-full object-cover -z-10"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 border-2 rounded-xl border-[#55A9FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <span className="absolute bottom-2 left-1.5 px-1 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[8px] font-bold text-white tracking-wide uppercase">
+                      Services
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Phase 4 Closing Transition Outro (0.74 -> 1.00) */}
-        <div
-          ref={outroRef}
-          className="absolute bottom-6 sm:bottom-10 left-4 right-4 z-30 max-w-2xl mx-auto bg-[#12121A]/90 backdrop-blur-xl border border-white/[0.14] rounded-2xl p-5 sm:p-7 text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] opacity-0 will-change-transform"
-        >
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#963DFF]/20 border border-[#963DFF]/40 text-[#C28AFF] text-[11px] font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Tailored Customer Intelligence</span>
-          </div>
-
-          <h3 className="text-lg sm:text-2xl font-headline tracking-normal text-white uppercase leading-snug">
-            Your Industry Is Different. <br />
-            <span className="text-glow-purple text-gradient-purple-blue">
-              Your Customers' Questions Matter Just as Much.
-            </span>
-          </h3>
-
-          <p className="mt-2 text-xs sm:text-sm text-[#9898A6] leading-relaxed max-w-xl mx-auto">
-            Wherever your business operates, Emperor Nexus bridges the gap between complex customer questions and meaningful business connections.
-          </p>
-
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <a
-              href="#benefits"
-              className="px-6 py-2.5 rounded-full font-medium text-xs sm:text-sm text-white btn-primary-gradient inline-flex items-center gap-2 cursor-pointer shadow-md"
-            >
-              <span>Explore the Benefits</span>
-              <ArrowDown className="w-3.5 h-3.5" />
-            </a>
-          </div>
+        {/* Bottom indicator hint */}
+        <div className="relative z-20 w-full max-w-7xl mx-auto flex items-center justify-between text-xs text-[#9898A6] pb-1">
+          <span className="text-[10px] tracking-wider uppercase font-semibold text-[#9898A6]/70">
+            Autonomous Omnichannel Intelligence
+          </span>
+          <span className="text-[10px] tracking-wider uppercase font-semibold text-[#C28AFF]">
+            Click Any Environment to Test Live →
+          </span>
         </div>
       </div>
     </section>
