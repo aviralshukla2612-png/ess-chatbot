@@ -119,6 +119,7 @@ export const INDUSTRIES = [
 export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
+  const eyebrowRef = useRef(null);
   const headlineRef = useRef(null);
   const line1TextRef = useRef(null);
   const line2TextRef = useRef(null);
@@ -213,11 +214,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           const vw = typeof window !== "undefined" ? window.innerWidth : stageRect.width;
           const vh = typeof window !== "undefined" ? window.innerHeight : stageRect.height;
 
-          // Comfortable whole-screen calculation for Stage 1 (Big)
-          // Avoids clipping by staying within 82% width and 68% height
-          const bigScale = Math.min((vw * 0.82) / rect.width, (vh * 0.68) / rect.height);
+          // Whole-screen calculation for Stage 1 (Big) - covers entire viewport
+          const bigScale = Math.max(vw / rect.width, vh / rect.height) * 1.05;
           // Medium scale for Stage 2 (Mid)
-          const midScale = Math.max(bigScale * 0.50, 1.35);
+          const midScale = Math.max(bigScale * 0.38, 1.4);
 
           return { deltaX, deltaY, bigScale, midScale };
         };
@@ -280,7 +280,20 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           );
         }
 
-        // 3. Line 1 & Line 2 Headline Reveal (Emerges smoothly as collage reaches Mid)
+        // 3. Eyebrow Badge & Headline Reveal (Emerges smoothly as collage reaches Mid)
+        if (eyebrowRef.current) {
+          tl.fromTo(
+            eyebrowRef.current,
+            { opacity: 0 },
+            {
+              opacity: 1,
+              ease: "power2.out",
+              duration: 0.30,
+            },
+            0.26
+          );
+        }
+
         if (line1TextRef.current) {
           tl.fromTo(
             line1TextRef.current,
@@ -398,7 +411,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
         <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/15 rounded-full blur-[140px] pointer-events-none" />
 
         {/* Top Eyebrow Badge */}
-        <div className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between">
+        <div
+          ref={eyebrowRef}
+          className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between will-change-transform"
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF]">
             <span>/ 02. CUSTOMIZED BUSINESS EXPERIENCE — EVERY BUSINESS IS DIFFERENT</span>
           </div>
@@ -433,9 +449,9 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               {/* The 7-Video Mosaic Collage (Travels: Big -> Mid -> Small) */}
               <div
                 ref={collageRef}
-                className="inline-flex shrink-0 w-[200px] sm:w-[240px] md:w-[280px] lg:w-[310px] xl:w-[330px] h-[82px] sm:h-[95px] md:h-[110px] lg:h-[120px] xl:h-[128px] will-change-transform origin-center"
+                className="inline-flex shrink-0 w-[200px] sm:w-[240px] md:w-[280px] lg:w-[310px] xl:w-[330px] h-[82px] sm:h-[95px] md:h-[110px] lg:h-[120px] xl:h-[128px] will-change-transform origin-center relative z-20"
               >
-                <div className="w-full h-full flex gap-1 sm:gap-1.5 rounded-xl sm:rounded-2xl overflow-hidden p-0.5 sm:p-1 bg-white/[0.04] border border-white/[0.1] shadow-2xl backdrop-blur-md">
+                <div className="w-full h-full flex gap-1 sm:gap-1.5 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
                   {/* Column 1 (31% width): Real Estate (57%) + Hospitality (43%) */}
                   <div className="w-[31%] h-full flex flex-col gap-1 sm:gap-1.5">
                     {/* Tile 0: Real Estate */}
