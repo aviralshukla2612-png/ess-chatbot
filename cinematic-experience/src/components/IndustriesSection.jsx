@@ -124,6 +124,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
   const line1TextRef = useRef(null);
   const line2TextRef = useRef(null);
   const collageRef = useRef(null);
+  const collageInnerRef = useRef(null);
   const paraRef = useRef(null);
   const btnRef = useRef(null);
   const bottomNavRef = useRef(null);
@@ -214,10 +215,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           const vw = typeof window !== "undefined" ? window.innerWidth : stageRect.width;
           const vh = typeof window !== "undefined" ? window.innerHeight : stageRect.height;
 
-          // Whole-screen calculation for Stage 1 (Big) - covers entire viewport
-          const bigScale = Math.max(vw / rect.width, vh / rect.height) * 1.05;
+          // Whole-screen calculation for Stage 1 (Big) - covers entire viewport with generous bleed
+          const bigScale = Math.max(vw / rect.width, vh / rect.height) * 1.14;
           // Medium scale for Stage 2 (Mid)
-          const midScale = Math.max(bigScale * 0.38, 1.4);
+          const midScale = Math.max(bigScale * 0.36, 1.35);
 
           return { deltaX, deltaY, bigScale, midScale };
         };
@@ -237,7 +238,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           },
         });
 
-        // 1. Collage Container Travel: Big (Centered) -> Mid -> Small (Locks into Line 1)
+        // 1. Collage Container Travel: Big (Centered, 100% full screen) -> Mid -> Small (Locks into Line 1)
         // Stage 1 -> Stage 2: Big (0.00) -> Mid (0.42)
         tl.fromTo(
           collageRef.current,
@@ -248,8 +249,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             transformOrigin: "center center",
           },
           {
-            x: deltaX * 0.38,
-            y: deltaY * 0.25,
+            x: deltaX * 0.36,
+            y: deltaY * 0.22,
             scale: midScale,
             ease: "power1.inOut",
             duration: 0.42,
@@ -269,6 +270,16 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           },
           0.42
         );
+
+        // Border radius animation: Edge-to-edge sharp 0px at Big, then smooth 16px pill at Mid & Small
+        if (collageInnerRef.current) {
+          tl.fromTo(
+            collageInnerRef.current,
+            { borderRadius: "0px" },
+            { borderRadius: "16px", ease: "power1.inOut", duration: 0.42 },
+            0
+          );
+        }
 
         // 2. Subtle Micro-Parallax for center hero tile (keeps mosaic 100% compact and gap-free)
         if (tileRefs.current[6]) {
@@ -392,7 +403,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
       {/* PINNED STAGE (Controlled by GSAP ScrollTrigger scrub) */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen min-h-[640px] max-h-[1080px] bg-[#050507] overflow-hidden flex flex-col justify-between py-4 sm:py-5 lg:py-6 px-4 sm:px-8 select-none"
+        className="relative w-full h-screen min-h-[640px] bg-[#050507] overflow-hidden flex flex-col justify-between py-4 sm:py-5 lg:py-6 px-4 sm:px-8 select-none"
       >
         {/* Subtle Technical Grid Background & Ambient Lighting */}
         <div
@@ -451,7 +462,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                 ref={collageRef}
                 className="inline-flex shrink-0 w-[200px] sm:w-[240px] md:w-[280px] lg:w-[310px] xl:w-[330px] h-[82px] sm:h-[95px] md:h-[110px] lg:h-[120px] xl:h-[128px] will-change-transform origin-center relative z-20"
               >
-                <div className="w-full h-full flex gap-1 sm:gap-1.5 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
+                <div
+                  ref={collageInnerRef}
+                  className="w-full h-full flex gap-1 sm:gap-1.5 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl"
+                >
                   {/* Column 1 (31% width): Real Estate (57%) + Hospitality (43%) */}
                   <div className="w-[31%] h-full flex flex-col gap-1 sm:gap-1.5">
                     {/* Tile 0: Real Estate */}
