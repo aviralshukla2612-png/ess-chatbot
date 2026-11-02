@@ -114,7 +114,6 @@ export default function IndustriesSection({ onOpenExperience }) {
   const clarityTextRef = useRef(null);
   const subtextRef = useRef(null);
   const collageRef = useRef(null);
-  const coverVideoRef = useRef(null);
   const tileRefs = useRef([]);
   const videoRefs = useRef([]);
 
@@ -156,7 +155,7 @@ export default function IndustriesSection({ onOpenExperience }) {
 
         const measure = () => {
           if (!collageRef.current || !stageRef.current) {
-            return { deltaX: 0, deltaY: 0, scale: 2.4 };
+            return { deltaX: 0, deltaY: 0, scale: 2.6 };
           }
           const rect = collageRef.current.getBoundingClientRect();
           const stageRect = stageRef.current.getBoundingClientRect();
@@ -170,9 +169,12 @@ export default function IndustriesSection({ onOpenExperience }) {
           const deltaX = centerX - collageCenterX;
           const deltaY = centerY - collageCenterY;
 
-          const scaleX = (stageRect.width * 0.94) / rect.width;
-          const scaleY = (stageRect.height * 0.88) / rect.height;
-          const scale = Math.max(scaleX, scaleY, 2.2);
+          // Full bleed calculation with safety margin to eliminate any black bars or borders on screen edges
+          const vw = typeof window !== "undefined" ? window.innerWidth : stageRect.width;
+          const vh = typeof window !== "undefined" ? window.innerHeight : stageRect.height;
+          const scaleX = (vw + 20) / rect.width;
+          const scaleY = (vh + 20) / rect.height;
+          const scale = Math.max(scaleX, scaleY, 2.5) * 1.04;
 
           return { deltaX, deltaY, scale };
         };
@@ -192,7 +194,7 @@ export default function IndustriesSection({ onOpenExperience }) {
           },
         });
 
-        // 1. Initial State: First video covers whole screen, then shrinks into position beside headline (0.00 -> 0.48)
+        // 1. Initial State: All 6 videos in collage scale smoothly from full-screen into position beside 'Build' (0.00 -> 0.48)
         tl.fromTo(
           collageRef.current,
           {
@@ -211,21 +213,7 @@ export default function IndustriesSection({ onOpenExperience }) {
           0
         );
 
-        // 2. Cover layer fades smoothly as collage scales down, revealing the 6-video collage beneath
-        if (coverVideoRef.current) {
-          tl.fromTo(
-            coverVideoRef.current,
-            { opacity: 1 },
-            {
-              opacity: 0,
-              ease: "power2.inOut",
-              duration: 0.24,
-            },
-            0.22
-          );
-        }
-
-        // 3. Editorial typography reveals smoothly as collage scales into position (0.12 -> 0.45)
+        // 2. Editorial typography reveals smoothly as collage scales into position (0.12 -> 0.45)
         const textElements = [
           badgeRef.current,
           buildTextRef.current,
@@ -247,22 +235,6 @@ export default function IndustriesSection({ onOpenExperience }) {
             0.12
           );
         }
-
-        // 4. Staggered reveal of other collage tiles (0.26 -> 0.50)
-        tileRefs.current.forEach((tEl, idx) => {
-          if (!tEl || idx === 0) return;
-          tl.fromTo(
-            tEl,
-            { opacity: 0, scale: 0.92 },
-            {
-              opacity: 1,
-              scale: 1,
-              ease: "power2.out",
-              duration: 0.2,
-            },
-            0.26 + idx * 0.04
-          );
-        });
       },
       sectionRef
     );
@@ -288,7 +260,7 @@ export default function IndustriesSection({ onOpenExperience }) {
           ============================================================ */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen min-h-[600px] overflow-hidden bg-[#050507] flex flex-col justify-between items-center py-5 sm:py-6 px-4 sm:px-8 select-none"
+        className="relative w-full h-screen min-h-[600px] overflow-hidden bg-[#050507] flex flex-col justify-between items-center py-5 sm:py-6 px-0 select-none"
       >
         {/* Subtle Technical Grid Background & Ambient Purple Glow */}
         <div
@@ -333,55 +305,23 @@ export default function IndustriesSection({ onOpenExperience }) {
                 Build
               </h2>
 
-              {/* The 6-Video Collage (Starts fullscreen then scales down to sit right here beside 'Build') */}
+              {/* The 6-Video Collage (Borderless, All 6 videos visible) */}
               <div
                 ref={collageRef}
                 className="w-full sm:w-[320px] md:w-[380px] lg:w-[440px] xl:w-[480px] shrink-0 will-change-transform origin-center"
               >
-                <div className="relative p-2 rounded-2xl bg-[#12121A]/90 backdrop-blur-xl border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.85)]">
-                  {/* Subtle top light edge */}
-                  <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-[#C28AFF]/50 to-transparent pointer-events-none" />
 
-              {/* Full-Cover Initial First Video Layer (Enlarged to screen initially, then dissolves) */}
-              <div
-                ref={coverVideoRef}
-                className="absolute inset-2 sm:inset-2.5 rounded-xl overflow-hidden z-30 pointer-events-none will-change-transform"
-                style={{ background: INDUSTRIES[0].fallbackBg }}
-              >
-                <video
-                  src={INDUSTRIES[0].video}
-                  poster={INDUSTRIES[0].poster}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-                <img
-                  src={INDUSTRIES[0].poster}
-                  alt="Real Estate"
-                  className="absolute inset-0 w-full h-full object-cover -z-10"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm border border-white/20 text-[10px] font-bold text-white tracking-wider uppercase">
-                  Real Estate & Commercial Developments
-                </span>
-              </div>
-
-              {/* 3 Asymmetric Columns forming the 6-video collage beneath */}
-              <div className="w-full h-[150px] sm:h-[165px] md:h-[180px] lg:h-[195px] flex gap-1.5 sm:gap-2">
+              {/* 3 Asymmetric Columns forming the 6-video collage (Border-free, All 6 visible) */}
+              <div className="w-full h-[150px] sm:h-[165px] md:h-[180px] lg:h-[195px] flex gap-1.5 sm:gap-2 rounded-xl overflow-hidden shadow-2xl">
                 {/* Column 1 (37% width): Real Estate (tall top) + Hospitality (compact bottom) */}
-                <div className="w-[37%] h-full flex flex-col gap-2">
-                  {/* Tile 0: Real Estate (tall, 57% height) */}
+                <div className="w-[37%] h-full flex flex-col gap-1.5 sm:gap-2">
+                  {/* Tile 0: Real Estate (tall, 58% height) */}
                   <div
                     ref={(el) => (tileRefs.current[0] = el)}
                     onClick={() => onOpenExperience?.("real-estate")}
                     onMouseEnter={() => setActiveHover("real-estate")}
                     onMouseLeave={() => setActiveHover(null)}
-                    className="relative w-full h-[57%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    className="relative w-full h-[58%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                     style={{ background: INDUSTRIES[0].fallbackBg }}
                   >
                     <video
@@ -403,19 +343,18 @@ export default function IndustriesSection({ onOpenExperience }) {
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 border-2 rounded-xl border-[#C28AFF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase">
                       Real Estate
                     </span>
                   </div>
 
-                  {/* Tile 3: Hospitality (compact, 43% height) */}
+                  {/* Tile 3: Hospitality (compact, 42% height) */}
                   <div
                     ref={(el) => (tileRefs.current[3] = el)}
                     onClick={() => onOpenExperience?.("hospitality")}
                     onMouseEnter={() => setActiveHover("hospitality")}
                     onMouseLeave={() => setActiveHover(null)}
-                    className="relative w-full h-[43%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    className="relative w-full h-[42%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                     style={{ background: INDUSTRIES[3].fallbackBg }}
                   >
                     <video
@@ -437,22 +376,21 @@ export default function IndustriesSection({ onOpenExperience }) {
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 border-2 rounded-xl border-[#55A9FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase">
                       Hospitality
                     </span>
                   </div>
                 </div>
 
                 {/* Column 2 (38% width): Healthcare (compact top) + Retail & E-commerce (tall bottom) */}
-                <div className="w-[38%] h-full flex flex-col gap-2">
-                  {/* Tile 1: Healthcare (compact, 43% height) */}
+                <div className="w-[38%] h-full flex flex-col gap-1.5 sm:gap-2">
+                  {/* Tile 1: Healthcare (compact, 46% height) */}
                   <div
                     ref={(el) => (tileRefs.current[1] = el)}
                     onClick={() => onOpenExperience?.("healthcare")}
                     onMouseEnter={() => setActiveHover("healthcare")}
                     onMouseLeave={() => setActiveHover(null)}
-                    className="relative w-full h-[43%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    className="relative w-full h-[46%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                     style={{ background: INDUSTRIES[1].fallbackBg }}
                   >
                     <video
@@ -474,19 +412,18 @@ export default function IndustriesSection({ onOpenExperience }) {
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 border-2 rounded-xl border-[#55A9FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase">
                       Healthcare
                     </span>
                   </div>
 
-                  {/* Tile 4: Retail & E-commerce (tall, 57% height) */}
+                  {/* Tile 4: Retail & E-commerce (tall, 54% height) */}
                   <div
                     ref={(el) => (tileRefs.current[4] = el)}
                     onClick={() => onOpenExperience?.("retail")}
                     onMouseEnter={() => setActiveHover("retail")}
                     onMouseLeave={() => setActiveHover(null)}
-                    className="relative w-full h-[57%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    className="relative w-full h-[54%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                     style={{ background: INDUSTRIES[4].fallbackBg }}
                   >
                     <video
@@ -508,22 +445,21 @@ export default function IndustriesSection({ onOpenExperience }) {
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 border-2 rounded-xl border-[#C28AFF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[9px] font-bold text-white tracking-wide uppercase">
+                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase">
                       Retail
                     </span>
                   </div>
                 </div>
 
                 {/* Column 3 (25% width): Education (top) + Professional Services (bottom) */}
-                <div className="w-[25%] h-full flex flex-col gap-2">
+                <div className="w-[25%] h-full flex flex-col gap-1.5 sm:gap-2">
                   {/* Tile 2: Education (50% height) */}
                   <div
                     ref={(el) => (tileRefs.current[2] = el)}
                     onClick={() => onOpenExperience?.("education")}
                     onMouseEnter={() => setActiveHover("education")}
                     onMouseLeave={() => setActiveHover(null)}
-                    className="relative w-full h-[50%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    className="relative w-full h-[50%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                     style={{ background: INDUSTRIES[2].fallbackBg }}
                   >
                     <video
@@ -545,8 +481,7 @@ export default function IndustriesSection({ onOpenExperience }) {
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 border-2 rounded-xl border-[#C28AFF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <span className="absolute bottom-2 left-1.5 px-1 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[8px] font-bold text-white tracking-wide uppercase">
+                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase">
                       Education
                     </span>
                   </div>
@@ -554,10 +489,10 @@ export default function IndustriesSection({ onOpenExperience }) {
                   {/* Tile 5: Professional Services (50% height) */}
                   <div
                     ref={(el) => (tileRefs.current[5] = el)}
-                    onClick={() => onOpenExperience?.("professional-services")}
-                    onMouseEnter={() => setActiveHover("professional-services")}
+                    onClick={() => onOpenExperience?.("services")}
+                    onMouseEnter={() => setActiveHover("services")}
                     onMouseLeave={() => setActiveHover(null)}
-                    className="relative w-full h-[50%] rounded-xl overflow-hidden border border-white/[0.08] cursor-pointer group will-change-transform shadow-sm"
+                    className="relative w-full h-[50%] rounded-lg overflow-hidden cursor-pointer group will-change-transform shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                     style={{ background: INDUSTRIES[5].fallbackBg }}
                   >
                     <video
@@ -579,8 +514,7 @@ export default function IndustriesSection({ onOpenExperience }) {
                       className="absolute inset-0 w-full h-full object-cover -z-10"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 border-2 rounded-xl border-[#55A9FF] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <span className="absolute bottom-2 left-1.5 px-1 py-0.5 rounded bg-black/60 backdrop-blur-sm border border-white/15 text-[8px] font-bold text-white tracking-wide uppercase">
+                    <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[8px] sm:text-[9px] font-bold text-white tracking-wide uppercase">
                       Services
                     </span>
                   </div>
@@ -588,7 +522,6 @@ export default function IndustriesSection({ onOpenExperience }) {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Line 2: 'clarity.' aligned directly below 'Build' */}
         <div
