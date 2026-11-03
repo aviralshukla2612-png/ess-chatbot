@@ -51,6 +51,31 @@ export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeNav, setActiveNav] = useState("home");
+  const [hoveredNav, setHoveredNav] = useState(null);
+  const [navIndicatorStyle, setNavIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const navLinkRefs = useRef({});
+
+  useEffect(() => {
+    const updateIndicator = () => {
+      const current = hoveredNav || activeNav;
+      const el = navLinkRefs.current[current];
+      if (el) {
+        setNavIndicatorStyle({
+          left: el.offsetLeft,
+          width: el.offsetWidth,
+          opacity: 1,
+        });
+      }
+    };
+
+    updateIndicator();
+    const t = setTimeout(updateIndicator, 50);
+    window.addEventListener("resize", updateIndicator);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeNav, hoveredNav]);
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store", headers: { Pragma: "no-cache" } })
@@ -233,8 +258,11 @@ export default function HomePage() {
             />
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* Desktop Navigation Links with Moving Sliding Indicator */}
+          <nav
+            onMouseLeave={() => setHoveredNav(null)}
+            className="relative hidden md:flex items-center gap-8 py-2"
+          >
             {[
               { id: "home", label: "Home" },
               { id: "industries", label: "Industries" },
@@ -243,10 +271,13 @@ export default function HomePage() {
               { id: "pricing", label: "Pricing" },
             ].map((nav) => {
               const isActive = activeNav === nav.id;
+              const isHovered = hoveredNav === nav.id;
               return (
                 <a
                   key={nav.id}
+                  ref={(el) => (navLinkRefs.current[nav.id] = el)}
                   href={`#${nav.id}`}
+                  onMouseEnter={() => setHoveredNav(nav.id)}
                   onClick={(e) => {
                     e.preventDefault();
                     setActiveNav(nav.id);
@@ -256,17 +287,33 @@ export default function HomePage() {
                       window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
                     }
                   }}
-                  className={`relative py-2 text-sm font-medium transition-colors cursor-pointer ${
-                    isActive ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
+                  className={`relative py-1 text-sm font-medium transition-colors cursor-pointer select-none ${
+                    isActive || isHovered ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
                   }`}
                 >
                   <span>{nav.label}</span>
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-gradient-to-r from-[#963DFF] to-[#C28AFF] shadow-[0_0_12px_rgba(150,61,255,0.8)]" />
-                  )}
                 </a>
               );
             })}
+
+            {/* Smooth Sliding Underline Indicator with Glowing Purple Aura */}
+            <span
+              className="absolute bottom-0 h-[2.5px] rounded-full bg-gradient-to-r from-[#963DFF] via-[#B86BFF] to-[#C28AFF] shadow-[0_0_12px_rgba(150,61,255,0.95)] transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+              style={{
+                left: `${navIndicatorStyle.left}px`,
+                width: `${navIndicatorStyle.width}px`,
+                opacity: navIndicatorStyle.opacity,
+              }}
+            />
+            {/* Ambient Purple Glow */}
+            <span
+              className="absolute bottom-[-1px] h-[6px] rounded-full bg-[#963DFF]/35 blur-[3px] transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+              style={{
+                left: `${navIndicatorStyle.left}px`,
+                width: `${navIndicatorStyle.width}px`,
+                opacity: navIndicatorStyle.opacity,
+              }}
+            />
           </nav>
 
           {/* Right Action */}

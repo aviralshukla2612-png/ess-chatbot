@@ -5,6 +5,32 @@ export default function Navbar({ onOpenTrial }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("Home");
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const navRef = useRef(null);
+  const linkRefs = useRef({});
+
+  useEffect(() => {
+    const updateIndicator = () => {
+      const current = hoveredItem || activeItem;
+      const el = linkRefs.current[current];
+      if (el) {
+        setIndicatorStyle({
+          left: el.offsetLeft,
+          width: el.offsetWidth,
+          opacity: 1,
+        });
+      }
+    };
+
+    updateIndicator();
+    const t = setTimeout(updateIndicator, 50);
+    window.addEventListener("resize", updateIndicator);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeItem, hoveredItem]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,26 +101,49 @@ export default function Navbar({ onOpenTrial }) {
           />
         </a>
 
-        {/* Center: Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8">
+        {/* Center: Desktop Navigation Links with Moving Sliding Indicator */}
+        <nav
+          ref={navRef}
+          onMouseLeave={() => setHoveredItem(null)}
+          className="relative hidden md:flex items-center gap-8 py-2"
+        >
           {navLinks.map((item) => {
             const isActive = activeItem === item.label;
+            const isHovered = hoveredItem === item.label;
             return (
               <a
                 key={item.label}
+                ref={(el) => (linkRefs.current[item.label] = el)}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item)}
-                className={`relative py-2 text-sm font-medium transition-colors cursor-pointer ${
-                  isActive ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
+                onMouseEnter={() => setHoveredItem(item.label)}
+                className={`relative py-1 text-sm font-medium transition-colors cursor-pointer select-none ${
+                  isActive || isHovered ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
                 }`}
               >
                 <span>{item.label}</span>
-                {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-gradient-to-r from-[#963DFF] to-[#C28AFF] shadow-[0_0_12px_rgba(150,61,255,0.8)]" />
-                )}
               </a>
             );
           })}
+
+          {/* Smooth Sliding Underline Indicator with Glowing Purple Aura */}
+          <span
+            className="absolute bottom-0 h-[2.5px] rounded-full bg-gradient-to-r from-[#963DFF] via-[#B86BFF] to-[#C28AFF] shadow-[0_0_12px_rgba(150,61,255,0.95)] transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+            style={{
+              left: `${indicatorStyle.left}px`,
+              width: `${indicatorStyle.width}px`,
+              opacity: indicatorStyle.opacity,
+            }}
+          />
+          {/* Subtle ambient light glow underneath */}
+          <span
+            className="absolute bottom-[-1px] h-[6px] rounded-full bg-[#963DFF]/35 blur-[3px] transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+            style={{
+              left: `${indicatorStyle.left}px`,
+              width: `${indicatorStyle.width}px`,
+              opacity: indicatorStyle.opacity,
+            }}
+          />
         </nav>
 
         {/* Right: Primary CTA Button */}
