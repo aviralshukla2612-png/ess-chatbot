@@ -36,28 +36,28 @@ export default function BenefitsSection({ onOpenTrial }) {
         return;
       }
 
-      // 1. Initial State: Stripes start at scaleY(0) with transformOrigin: bottom
+      // 1. Initial State: Stripes ready to cover stage cleanly
       stripeRefs.current.forEach((stripe) => {
         if (stripe) {
           gsap.set(stripe, {
-            scaleY: 0,
+            scaleY: 1,
             transformOrigin: "bottom",
             willChange: "transform",
           });
         }
       });
 
-      // 2. Initial State: Title and Cards ready to drop down smoothly
+      // 2. Initial State: Title and Cards already visible and dynamic
       if (titleRef.current) {
-        gsap.set(titleRef.current, { opacity: 0, y: -25 });
+        gsap.set(titleRef.current, { opacity: 1, y: 0 });
       }
 
       cardRefs.current.forEach((card) => {
         if (card) {
           gsap.set(card, {
-            opacity: 0,
-            rotateX: isDesktop ? -32 : 0,
-            y: isDesktop ? -60 : 35,
+            opacity: 1,
+            rotateX: 0,
+            y: 0,
             transformOrigin: "center top",
             force3D: true,
           });
@@ -65,17 +65,13 @@ export default function BenefitsSection({ onOpenTrial }) {
       });
 
       // ============================================================
-      // DIRECT STRIPES + CARD DROP TIMELINE
-      // 0.00 -> 0.40: 5 horizontal stripes expand vertically (bottom -> up)
-      // 0.10 -> 0.35: Title smoothly appears
-      // 0.18 -> 0.52: 3 Colorful Cards swing DOWN into view!
-      // 0.52 -> 1.00: Cards remain rock-solid, fully interactive & stable
+      // DIRECT CARD DROP & INTERACTIVE HOLD (Zero empty space)
       // ============================================================
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: "+=1400",
+          end: "+=900",
           pin: stage,
           pinSpacing: true,
           scrub: 0.8,
@@ -84,69 +80,22 @@ export default function BenefitsSection({ onOpenTrial }) {
         },
       });
 
-      // Trionn's stripe animation formula:
-      for (let i = 0; i < STRIPES_COUNT; i++) {
-        const s = (0.20 * (STRIPES_COUNT - 1 - i)) / (STRIPES_COUNT - 1);
-        const a = s + 0.22;
-        const el = stripeRefs.current[i];
-        if (el) {
-          tl.to(
-            el,
-            {
-              scaleY: 1,
-              duration: a - s,
-              ease: "none",
-            },
-            s
-          );
-        }
-      }
-
-      // Title Drops in
-      if (titleRef.current) {
-        tl.to(
-          titleRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.25,
-            ease: "power2.out",
-          },
-          0.10
-        );
-      }
-
-      // 3 Cards drop DOWN into view
+      // Smooth subtle micro-drop when scrolling into section
       if (isDesktop) {
-        tl.to(
+        tl.from(
           cardRefs.current,
           {
-            rotateX: 0,
-            y: 0,
-            opacity: 1,
-            stagger: 0.08,
-            ease: "power3.out",
-            force3D: true,
-            duration: 0.34,
-          },
-          0.18
-        );
-      } else {
-        tl.to(
-          cardRefs.current,
-          {
-            y: 0,
-            opacity: 1,
-            stagger: 0.06,
+            y: -35,
+            rotateX: -15,
+            stagger: 0.05,
             ease: "power2.out",
-            duration: 0.30,
+            duration: 0.35,
           },
-          0.18
+          0
         );
       }
 
-      // Settle and hold steady through end of scroll
-      tl.to({}, { duration: 0.48 }, 0.52);
+      tl.to({}, { duration: 0.65 }, 0.35);
     }, containerRef);
 
     return () => {

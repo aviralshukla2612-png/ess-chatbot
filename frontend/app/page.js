@@ -49,6 +49,7 @@ export default function HomePage() {
   const [selectedIndustry, setSelectedIndustry] = useState("real-estate");
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeNav, setActiveNav] = useState("home");
 
   useEffect(() => {
     fetch("/api/auth/me", { cache: "no-store", headers: { Pragma: "no-cache" } })
@@ -60,8 +61,25 @@ export default function HomePage() {
 
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
+
+      const navSections = [
+        { id: "home", label: "Home" },
+        { id: "industries", label: "Industries" },
+        { id: "benefits", label: "Benefits" },
+        { id: "how-it-works", label: "How It Works" },
+        { id: "pricing", label: "Pricing" },
+      ];
+
+      const scrollPos = window.scrollY + 200;
+      for (let i = navSections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(navSections[i].id);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveNav(navSections[i].id);
+          break;
+        }
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     // Initialize Lenis with GSAP ScrollTrigger coordination
     const lenis = new Lenis({
@@ -216,22 +234,38 @@ export default function HomePage() {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#home" className="relative py-2 text-sm font-semibold text-white">
-              <span>Home</span>
-              <span className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-gradient-to-r from-[#963DFF] to-[#C28AFF] shadow-[0_0_12px_rgba(150,61,255,0.8)]" />
-            </a>
-            <a href="#industries" className="text-sm font-medium text-[#D9D9E2] hover:text-white transition-colors">
-              Industries
-            </a>
-            <a href="#benefits" className="text-sm font-medium text-[#D9D9E2] hover:text-white transition-colors">
-              Benefits
-            </a>
-            <a href="#how-it-works" className="text-sm font-medium text-[#D9D9E2] hover:text-white transition-colors">
-              How It Works
-            </a>
-            <a href="#pricing" className="text-sm font-medium text-[#D9D9E2] hover:text-white transition-colors">
-              Pricing
-            </a>
+            {[
+              { id: "home", label: "Home" },
+              { id: "industries", label: "Industries" },
+              { id: "benefits", label: "Benefits" },
+              { id: "how-it-works", label: "How It Works" },
+              { id: "pricing", label: "Pricing" },
+            ].map((nav) => {
+              const isActive = activeNav === nav.id;
+              return (
+                <a
+                  key={nav.id}
+                  href={`#${nav.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveNav(nav.id);
+                    const el = document.getElementById(nav.id);
+                    if (el) {
+                      const topOffset = el.getBoundingClientRect().top + window.scrollY - 70;
+                      window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
+                    }
+                  }}
+                  className={`relative py-2 text-sm font-medium transition-colors cursor-pointer ${
+                    isActive ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
+                  }`}
+                >
+                  <span>{nav.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-gradient-to-r from-[#963DFF] to-[#C28AFF] shadow-[0_0_12px_rgba(150,61,255,0.8)]" />
+                  )}
+                </a>
+              );
+            })}
           </nav>
 
           {/* Right Action */}

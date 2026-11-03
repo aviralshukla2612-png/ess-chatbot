@@ -9,8 +9,27 @@ export default function Navbar({ onOpenTrial }) {
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
+
+      // Dynamically detect which of the 5 sections is currently active
+      const sections = [
+        { label: "Home", id: "home" },
+        { label: "Industries", id: "industries" },
+        { label: "Benefits", id: "benefits" },
+        { label: "How It Works", id: "how-it-works" },
+        { label: "Pricing", id: "pricing" },
+      ];
+
+      const scrollPos = window.scrollY + 200;
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const el = document.getElementById(sections[i].id);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveItem(sections[i].label);
+          break;
+        }
+      }
     };
-    window.addEventListener("scroll", handleScroll);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -28,7 +47,8 @@ export default function Navbar({ onOpenTrial }) {
     setMobileMenuOpen(false);
     const target = document.querySelector(item.href);
     if (target) {
-      target.scrollIntoView({ behavior: "smooth" });
+      const topOffset = target.getBoundingClientRect().top + window.scrollY - 70;
+      window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
     }
   };
 

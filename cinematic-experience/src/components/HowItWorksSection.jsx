@@ -22,28 +22,25 @@ if (typeof window !== "undefined") {
 
 // "HOW IT WORKS" letters split for character-by-character shatter
 const HEADLINE_LETTERS = [
-  { char: "H", x: -280, y: -220, z: 320, rx: 45, ry: -60, rz: -35, s: 2.2 },
-  { char: "O", x: -160, y: -300, z: 180, rx: -50, ry: 40, rz: 55, s: 1.8 },
-  { char: "W", x: -60, y: 260, z: 420, rx: 65, ry: -30, rz: -40, s: 2.4 },
+  { char: "H", x: -280, y: -200, z: 280, rx: 45, ry: -60, rz: -35, s: 2.0 },
+  { char: "O", x: -160, y: -260, z: 180, rx: -50, ry: 40, rz: 55, s: 1.8 },
+  { char: "W", x: -60, y: 220, z: 350, rx: 65, ry: -30, rz: -40, s: 2.2 },
   { char: " ", isSpace: true },
-  { char: "I", x: 40, y: -240, z: 260, rx: -40, ry: 50, rz: 30, s: 1.9 },
-  { char: "T", x: 120, y: 240, z: 340, rx: 55, ry: -45, rz: -30, s: 2.0 },
+  { char: "I", x: 40, y: -220, z: 240, rx: -40, ry: 50, rz: 30, s: 1.8 },
+  { char: "T", x: 120, y: 220, z: 300, rx: 55, ry: -45, rz: -30, s: 1.9 },
   { char: " ", isSpace: true },
-  { char: "W", x: -220, y: 220, z: 300, rx: -35, ry: 65, rz: 45, s: 2.3 },
-  { char: "O", x: 160, y: -220, z: 200, rx: 50, ry: -50, rz: -20, s: 1.7 },
-  { char: "R", x: 260, y: 180, z: 400, rx: -60, ry: 35, rz: 50, s: 2.1 },
-  { char: "K", x: 340, y: -160, z: 190, rx: 40, ry: -60, rz: -50, s: 2.4 },
-  { char: "S", x: 420, y: 250, z: 320, rx: -70, ry: 55, rz: 40, s: 2.0 },
+  { char: "W", x: -220, y: 200, z: 260, rx: -35, ry: 65, rz: 45, s: 2.1 },
+  { char: "O", x: 160, y: -200, z: 180, rx: 50, ry: -50, rz: -20, s: 1.7 },
+  { char: "R", x: 260, y: 160, z: 340, rx: -60, ry: 35, rz: 50, s: 2.0 },
+  { char: "K", x: 340, y: -150, z: 190, rx: 40, ry: -60, rz: -50, s: 2.2 },
+  { char: "S", x: 400, y: 220, z: 280, rx: -70, ry: 55, rz: 40, s: 1.9 },
 ];
-
-const SHUTTER_STRIPES = 5;
 
 export default function HowItWorksSection({ onOpenTrial }) {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
   const typographyRef = useRef(null);
   const letterRefs = useRef([]);
-  const shutterRefs = useRef([]);
   const cardRefs = useRef([]);
   const cardInnerRefs = useRef([]);
   const glowOrbRef = useRef(null);
@@ -61,7 +58,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
       // Handle Reduced Motion preferences
       if (prefersReducedMotion) {
         if (typographyRef.current) gsap.set(typographyRef.current, { display: "none" });
-        shutterRefs.current.forEach((el) => el && gsap.set(el, { display: "none" }));
         cardRefs.current.forEach((el) => {
           if (el) gsap.set(el, { opacity: 1, x: 0, y: 0, scale: 1, rotateY: 0, rotateZ: 0 });
         });
@@ -71,8 +67,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
       // =======================================================================
       // INITIAL 3D SCENE CONFIGURATION
+      // Zero blank frames: Typography starts centered, Cards emerge seamlessly
       // =======================================================================
-      // Letters start prominent in the center
       letterRefs.current.forEach((el) => {
         if (el) {
           gsap.set(el, {
@@ -91,156 +87,113 @@ export default function HowItWorksSection({ onOpenTrial }) {
         }
       });
 
-      // Shutter strips cover the card stage initially
-      shutterRefs.current.forEach((el) => {
-        if (el) {
-          gsap.set(el, {
-            scaleX: 1,
-            transformOrigin: "center center",
-            willChange: "transform",
-          });
-        }
-      });
-
-      // Cards start in 3D entrance offsets
+      // Cards start prepared in background depth, ready to fly in
       if (isDesktop) {
-        // Card 01: Off-screen Left with 3D Perspective Rotation
         if (cardRefs.current[0]) {
           gsap.set(cardRefs.current[0], {
-            xPercent: -130,
+            xPercent: -80,
             yPercent: 0,
-            z: -250,
-            rotateY: 45,
-            rotateZ: -10,
-            scale: 0.75,
+            z: -180,
+            rotateY: 35,
+            rotateZ: -8,
+            scale: 0.82,
             opacity: 0,
             transformOrigin: "center center",
             force3D: true,
           });
         }
 
-        // Card 02: Deep in Z-Space with subtle scale down & purple glow
         if (cardRefs.current[1]) {
           gsap.set(cardRefs.current[1], {
             xPercent: 0,
-            yPercent: 15,
-            z: -500,
-            rotateX: 25,
-            scale: 0.55,
+            yPercent: 10,
+            z: -300,
+            rotateX: 18,
+            scale: 0.70,
             opacity: 0,
             transformOrigin: "center center",
             force3D: true,
           });
         }
 
-        // Card 03: Off-screen Right with 3D Perspective Rotation
         if (cardRefs.current[2]) {
           gsap.set(cardRefs.current[2], {
-            xPercent: 130,
+            xPercent: 80,
             yPercent: 0,
-            z: -250,
-            rotateY: -45,
-            rotateZ: 10,
-            scale: 0.75,
+            z: -180,
+            rotateY: -35,
+            rotateZ: 8,
+            scale: 0.82,
             opacity: 0,
             transformOrigin: "center center",
             force3D: true,
           });
         }
       } else {
-        // Mobile / Tablet stacked initial state
         cardRefs.current.forEach((card, idx) => {
           if (card) {
             gsap.set(card, {
               opacity: 0,
-              y: 40 + idx * 20,
-              scale: 0.9,
+              y: 30 + idx * 15,
+              scale: 0.95,
             });
           }
         });
       }
 
-      // Card internal content staggers in
-      cardInnerRefs.current.forEach((inner) => {
-        if (inner) {
-          gsap.set(inner, { opacity: 0.2, y: 15 });
-        }
-      });
-
-      // Top persistent section header
       if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
       }
 
-      // Ambient Central Purple Orb
       if (glowOrbRef.current) {
-        gsap.set(glowOrbRef.current, { scale: 0.6, opacity: 0 });
+        gsap.set(glowOrbRef.current, { scale: 0.8, opacity: 0.4 });
       }
 
       // =======================================================================
-      // MASTER COORDINATED GSAP TIMELINE (0.00 -> 1.00 scrub)
-      // 0.00 - 0.18: Big Typography "HOW IT WORKS" revealed & held
-      // 0.18 - 0.42: Letters Shatter in 3D + Horizontal Shutter strips retract
-      // 0.38 - 0.62: Three cards enter with 3D depth, forming layered center deck
-      // 0.60 - 0.85: Cards fan out into balanced 3-column layout + content reveals
-      // 0.85 - 1.00: Final hold, card interaction, smooth reverse-scroll ready
+      // MASTER COORDINATED GSAP TIMELINE (Crisp, zero-empty-space scrub)
+      // 0.00 - 0.12: Big Typography "HOW IT WORKS" displayed
+      // 0.10 - 0.40: Letters shatter in 3D WHILE cards immediately fly into view
+      // 0.35 - 0.70: Cards fan out into final balanced 3-column layout
+      // 0.70 - 1.00: Cards remain rock-solid in place and interactive
       // =======================================================================
       const masterTL = gsap.timeline({
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: "+=2600",
+          end: "+=1300",
           pin: stage,
           pinSpacing: true,
-          scrub: 0.9,
+          scrub: 0.8,
           anticipatePin: 1,
           invalidateOnRefresh: true,
         },
       });
 
-      // -----------------------------------------------------------------------
-      // PHASE 1 & 2: TYPOGRAPHY SHATTER + HORIZONTAL SHUTTER (0.12 -> 0.42)
-      // -----------------------------------------------------------------------
+      // 1. Letters shatter outwards in 3D
       letterRefs.current.forEach((el, idx) => {
         if (el) {
           const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
           masterTL.to(
             el,
             {
-              x: config.x * (isDesktop ? 1.4 : 0.8),
-              y: config.y * (isDesktop ? 1.4 : 0.8),
+              x: config.x * (isDesktop ? 1.2 : 0.7),
+              y: config.y * (isDesktop ? 1.2 : 0.7),
               z: config.z,
               rotateX: config.rx,
               rotateY: config.ry,
               rotateZ: config.rz,
               scale: config.s,
               opacity: 0,
-              filter: "blur(14px)",
+              filter: "blur(12px)",
               duration: 0.28,
               ease: "power2.inOut",
             },
-            0.14 + (idx % 4) * 0.02
+            0.08 + (idx % 4) * 0.015
           );
         }
       });
 
-      // Horizontal shutter stripes retract in alternating directions
-      shutterRefs.current.forEach((stripe, idx) => {
-        if (stripe) {
-          masterTL.to(
-            stripe,
-            {
-              scaleX: 0,
-              opacity: 0,
-              duration: 0.26,
-              ease: "power2.inOut",
-            },
-            0.18 + idx * 0.03
-          );
-        }
-      });
-
-      // Reveal persistent section header and purple ambient glow
+      // 2. Persistent Section Header fades in as letters disperse
       if (sectionHeaderRef.current) {
         masterTL.to(
           sectionHeaderRef.current,
@@ -250,7 +203,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             duration: 0.22,
             ease: "power2.out",
           },
-          0.32
+          0.14
         );
       }
 
@@ -258,93 +211,87 @@ export default function HowItWorksSection({ onOpenTrial }) {
         masterTL.to(
           glowOrbRef.current,
           {
-            scale: 1.2,
-            opacity: 0.85,
-            duration: 0.35,
+            scale: 1.25,
+            opacity: 0.9,
+            duration: 0.30,
             ease: "power1.out",
           },
-          0.30
+          0.12
         );
       }
 
-      // -----------------------------------------------------------------------
-      // PHASE 3: THREE CARD ENTRANCE & LAYERED CLUSTER (0.35 -> 0.60)
-      // -----------------------------------------------------------------------
+      // 3. Three Cards EMERGE IMMEDIATELY through moving letters (No empty space!)
       if (isDesktop) {
-        // Card 02 (Center) emerges from depth first with luminous purple lighting
+        // Card 02 (Center Hero) emerges from depth
         if (cardRefs.current[1]) {
           masterTL.to(
             cardRefs.current[1],
             {
-              z: 40,
+              z: 20,
               yPercent: 0,
               rotateX: 0,
               scale: 0.96,
               opacity: 1,
-              duration: 0.25,
+              duration: 0.24,
               ease: "power2.out",
             },
-            0.34
+            0.12
           );
         }
 
-        // Card 01 (Left) flies in with perspective rotation, overlapping Card 02
+        // Card 01 (Left) flies in with 3D perspective
         if (cardRefs.current[0]) {
           masterTL.to(
             cardRefs.current[0],
             {
-              xPercent: -35,
+              xPercent: -25,
               z: 0,
-              rotateY: 22,
-              rotateZ: -6,
-              scale: 0.88,
-              opacity: 0.95,
+              rotateY: 16,
+              rotateZ: -4,
+              scale: 0.92,
+              opacity: 1,
               duration: 0.26,
               ease: "power2.out",
             },
-            0.38
+            0.15
           );
         }
 
-        // Card 03 (Right) flies in with perspective rotation, overlapping Card 02
+        // Card 03 (Right) flies in with 3D perspective
         if (cardRefs.current[2]) {
           masterTL.to(
             cardRefs.current[2],
             {
-              xPercent: 35,
+              xPercent: 25,
               z: 0,
-              rotateY: -22,
-              rotateZ: 6,
-              scale: 0.88,
-              opacity: 0.95,
+              rotateY: -16,
+              rotateZ: 4,
+              scale: 0.92,
+              opacity: 1,
               duration: 0.26,
               ease: "power2.out",
+            },
+            0.17
+          );
+        }
+
+        // 4. Cards fan out smoothly into balanced 3-column composition
+        if (cardRefs.current[0]) {
+          masterTL.to(
+            cardRefs.current[0],
+            {
+              xPercent: 0,
+              rotateY: 0,
+              rotateZ: 0,
+              scale: 1,
+              opacity: 1,
+              duration: 0.28,
+              ease: "power3.out",
             },
             0.40
           );
         }
 
-        // -----------------------------------------------------------------------
-        // PHASE 4: CARD EXPANSION INTO BALANCED 3-COLUMN COMPOSITION (0.58 -> 0.84)
-        // -----------------------------------------------------------------------
-        // Card 01 expands to its final left position
-        if (cardRefs.current[0]) {
-          masterTL.to(
-            cardRefs.current[0],
-            {
-              xPercent: 0,
-              rotateY: 0,
-              rotateZ: 0,
-              scale: 1,
-              opacity: 1,
-              duration: 0.26,
-              ease: "power3.out",
-            },
-            0.58
-          );
-        }
-
-        // Card 02 settles into middle
         if (cardRefs.current[1]) {
           masterTL.to(
             cardRefs.current[1],
@@ -352,14 +299,13 @@ export default function HowItWorksSection({ onOpenTrial }) {
               z: 0,
               scale: 1,
               opacity: 1,
-              duration: 0.26,
+              duration: 0.28,
               ease: "power3.out",
             },
-            0.58
+            0.40
           );
         }
 
-        // Card 03 expands to its final right position
         if (cardRefs.current[2]) {
           masterTL.to(
             cardRefs.current[2],
@@ -369,48 +315,29 @@ export default function HowItWorksSection({ onOpenTrial }) {
               rotateZ: 0,
               scale: 1,
               opacity: 1,
-              duration: 0.26,
+              duration: 0.28,
               ease: "power3.out",
             },
-            0.60
+            0.42
           );
         }
       } else {
-        // Mobile staggered reveal
         masterTL.to(
           cardRefs.current,
           {
             opacity: 1,
             y: 0,
             scale: 1,
-            stagger: 0.1,
-            duration: 0.35,
+            stagger: 0.08,
+            duration: 0.30,
             ease: "power2.out",
           },
-          0.38
+          0.14
         );
       }
 
-      // Card internals reveal in sequence
-      cardInnerRefs.current.forEach((inner, idx) => {
-        if (inner) {
-          masterTL.to(
-            inner,
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.20,
-              ease: "power2.out",
-            },
-            0.66 + idx * 0.05
-          );
-        }
-      });
-
-      // -----------------------------------------------------------------------
-      // PHASE 5: FINAL HOLD & SETTLE (0.84 -> 1.00)
-      // -----------------------------------------------------------------------
-      masterTL.to({}, { duration: 0.16 }, 0.84);
+      // Settle and hold steady for interactive browsing
+      masterTL.to({}, { duration: 0.32 }, 0.68);
     }, containerRef);
 
     return () => {
@@ -437,7 +364,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         />
 
         {/* ===================================================================== */}
-        {/* PHASE 1 & 2: FULLSCREEN TYPOGRAPHY & CHARACTER SHATTER               */}
+        {/* FULLSCREEN TYPOGRAPHY & CHARACTER SHATTER                             */}
         {/* ===================================================================== */}
         <div
           ref={typographyRef}
@@ -500,24 +427,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* HORIZONTAL SHUTTER STRIPES (Slide open to reveal cards)               */}
-        {/* ===================================================================== */}
-        <div className="absolute inset-0 pointer-events-none flex flex-col w-full h-full z-20 overflow-hidden">
-          {Array.from({ length: SHUTTER_STRIPES }).map((_, idx) => (
-            <div
-              key={idx}
-              ref={(el) => (shutterRefs.current[idx] = el)}
-              className="flex-1 w-full bg-[#050507] border-y border-white/[0.03]"
-              style={{
-                willChange: "transform, opacity",
-                transformOrigin: idx % 2 === 0 ? "left center" : "right center",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* ===================================================================== */}
-        {/* PERSISTENT HEADER (Smoothly appears once shatter starts)              */}
+        {/* PERSISTENT HEADER (Appears smoothly as letters scatter)               */}
         {/* ===================================================================== */}
         <div
           ref={sectionHeaderRef}
@@ -539,10 +449,10 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* PHASE 3 & 4: THREE-CARD REVEAL & BALANCED 3-COLUMN COMPOSITION        */}
+        {/* THREE-CARD REVEAL & BALANCED 3-COLUMN COMPOSITION (LAYER 20)          */}
         {/* ===================================================================== */}
         <div
-          className="relative z-10 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch"
+          className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch"
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* =================================================================== */}
@@ -556,10 +466,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             {/* Ambient Cyan Flare */}
             <div className="absolute -top-16 -left-16 w-44 h-44 bg-[#38BDF8]/15 rounded-full blur-3xl pointer-events-none" />
 
-            <div
-              ref={(el) => (cardInnerRefs.current[0] = el)}
-              className="relative z-10 flex flex-col h-full justify-between"
-            >
+            <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
@@ -620,10 +527,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             {/* Ambient Purple Flare */}
             <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#963DFF]/25 rounded-full blur-3xl pointer-events-none" />
 
-            <div
-              ref={(el) => (cardInnerRefs.current[1] = el)}
-              className="relative z-10 flex flex-col h-full justify-between"
-            >
+            <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
@@ -687,10 +591,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             {/* Ambient Blue Flare */}
             <div className="absolute -bottom-16 -right-16 w-44 h-44 bg-[#55A9FF]/15 rounded-full blur-3xl pointer-events-none" />
 
-            <div
-              ref={(el) => (cardInnerRefs.current[2] = el)}
-              className="relative z-10 flex flex-col h-full justify-between"
-            >
+            <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
