@@ -612,10 +612,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                   >
                     <div
                       className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group shadow-2xl h-[415px] xl:h-[425px] ${isAnnual
-                          ? "bg-gradient-to-br from-[#2D0F55] via-[#140D2E] to-[#0A1A44] border-2 border-[#A855F7] shadow-[0_0_50px_rgba(150,61,255,0.45),inset_0_1px_20px_rgba(194,138,255,0.2)]"
+                          ? "bg-gradient-to-br from-[#380E68] via-[#140D2E] to-[#0A2255] border-2 border-[#A855F7] shadow-[0_0_55px_rgba(168,85,247,0.5),inset_0_1px_20px_rgba(194,138,255,0.25)]"
                           : isSixMonths
-                            ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_40px_rgba(0,0,0,0.7)]"
-                            : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
+                            ? "bg-gradient-to-br from-[#290B4A] via-[#160B2C] to-[#200A3D] border-2 border-[#C084FC]/60 shadow-[0_0_40px_rgba(192,132,252,0.25),inset_0_1px_15px_rgba(192,132,252,0.12)]"
+                            : "bg-gradient-to-br from-[#091E3A] via-[#0A1628] to-[#0D2447] border-2 border-[#38BDF8]/60 shadow-[0_0_40px_rgba(56,189,248,0.25),inset_0_1px_15px_rgba(56,189,248,0.12)]"
                         }`}
                     >
                       {/* Oversized Signature Watermark Number */}
@@ -623,12 +623,16 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                         {plan.number}
                       </span>
 
-                      {/* Ambient colorful glow for Annual card */}
-                      {isAnnual && (
+                      {/* Ambient colorful glow for all cards */}
+                      {isAnnual ? (
                         <>
                           <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#963DFF]/40 rounded-full blur-3xl pointer-events-none" />
                           <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-[#55A9FF]/30 rounded-full blur-3xl pointer-events-none" />
                         </>
+                      ) : isSixMonths ? (
+                        <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#C084FC]/25 rounded-full blur-3xl pointer-events-none" />
+                      ) : (
+                        <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#38BDF8]/20 rounded-full blur-3xl pointer-events-none" />
                       )}
 
                       <div className="relative z-10">
@@ -671,7 +675,13 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                         <div className="space-y-2.5 mb-6">
                           {plan.features.map((feat, fIdx) => (
                             <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
-                              <Check className="w-3.5 h-3.5 text-[#C28AFF] mt-0.5 shrink-0" />
+                              <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
+                                isAnnual
+                                  ? "text-[#C28AFF]"
+                                  : isSixMonths
+                                  ? "text-[#C084FC]"
+                                  : "text-[#38BDF8]"
+                              }`} />
                               <span className="leading-tight">{feat}</span>
                             </div>
                           ))}
@@ -684,7 +694,9 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                           href={getCheckoutUrl(plan.id)}
                           className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] ${isAnnual
                               ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white hover:shadow-[0_0_24px_rgba(150,61,255,0.45)]"
-                              : "bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.1]"
+                              : isSixMonths
+                              ? "bg-gradient-to-r from-[#9333EA] to-[#C084FC] text-white hover:shadow-[0_0_24px_rgba(192,132,252,0.45)]"
+                              : "bg-gradient-to-r from-[#0284C7] to-[#38BDF8] text-white hover:shadow-[0_0_24px_rgba(56,189,248,0.45)]"
                             }`}
                         >
                           <span>{plan.ctaText}</span>
@@ -714,10 +726,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 key={plan.id}
                 className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden ${isHidden ? "hidden" : "flex"
                   } ${isAnnual
-                    ? "bg-gradient-to-br from-[#2D0F55] via-[#140D2E] to-[#0A1A44] border-2 border-[#A855F7] shadow-[0_0_35px_rgba(150,61,255,0.4)]"
+                    ? "bg-gradient-to-br from-[#380E68] via-[#140D2E] to-[#0A2255] border-2 border-[#A855F7] shadow-[0_0_35px_rgba(150,61,255,0.4)]"
                     : isSixMonths
-                      ? "bg-[#12121A]/90 border border-[#963DFF]/40"
-                      : "bg-[#12121A]/85 border border-white/[0.08]"
+                      ? "bg-gradient-to-br from-[#290B4A] via-[#160B2C] to-[#200A3D] border-2 border-[#C084FC]/60 shadow-[0_0_30px_rgba(192,132,252,0.25)]"
+                      : "bg-gradient-to-br from-[#091E3A] via-[#0A1628] to-[#0D2447] border-2 border-[#38BDF8]/60 shadow-[0_0_30px_rgba(56,189,248,0.25)]"
                   }`}
               >
                 <div className="relative z-10">
@@ -757,7 +769,13 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                   <div className="space-y-2.5 mb-6">
                     {plan.features.map((feat, fIdx) => (
                       <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
-                        <Check className="w-3.5 h-3.5 text-[#C28AFF] mt-0.5 shrink-0" />
+                        <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
+                          isAnnual
+                            ? "text-[#C28AFF]"
+                            : isSixMonths
+                            ? "text-[#C084FC]"
+                            : "text-[#38BDF8]"
+                        }`} />
                         <span className="leading-tight">{feat}</span>
                       </div>
                     ))}
@@ -769,7 +787,9 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                     href={getCheckoutUrl(plan.id)}
                     className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md ${isAnnual
                         ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white"
-                        : "bg-white/[0.06] text-white border border-white/[0.1]"
+                        : isSixMonths
+                        ? "bg-gradient-to-r from-[#9333EA] to-[#C084FC] text-white"
+                        : "bg-gradient-to-r from-[#0284C7] to-[#38BDF8] text-white"
                       }`}
                   >
                     <span>{plan.ctaText}</span>
