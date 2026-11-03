@@ -129,13 +129,32 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
       ref={heroRef}
       className="relative h-screen min-h-[600px] max-h-screen w-full flex flex-col justify-between items-center pt-20 pb-4 px-4 sm:px-6 md:px-8 overflow-hidden bg-[#050507]"
     >
-      {/* 1. Underlying Metallic Wave Background (User provided bg.png) - Clean without square box grid */}
+      {/* 1. Underlying Metallic Wave Background (User provided bg.png) - Clean with seamless black blend */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-bottom bg-no-repeat pointer-events-none"
         style={{
           backgroundImage: `url('/bg.png?v=2')`,
         }}
       />
+      {/* Dark gradient overlay over bg.png so it blends into pure #050507 */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#050507] via-transparent to-[#050507] pointer-events-none" />
+
+      {/* Subtle Technical Grid Background & Ambient Lighting matching Industries */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-35 z-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px)
+          `,
+          backgroundSize: "64px 64px",
+          maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
+        }}
+      />
+      <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/18 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/18 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none z-0" />
 
       {/* 2. Central Hero Content Block (Vertically centered) */}
       <div className="relative z-10 max-w-6xl w-full mx-auto my-auto flex flex-col items-center text-center">

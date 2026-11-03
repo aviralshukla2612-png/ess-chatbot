@@ -277,21 +277,36 @@ export default function BenefitsSection() {
     <section
       id="benefits"
       ref={containerRef}
-      className="relative w-full bg-[#08090D] select-none"
+      className="relative w-full bg-[#050507] select-none text-[#F5F5F7]"
     >
       {/* PINNED STAGE VIEWPORT */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen overflow-hidden bg-[#08090D]"
+        className="relative w-full h-screen overflow-hidden bg-[#050507]"
         style={{ perspective: "1500px", transformStyle: "preserve-3d" }}
       >
+        {/* Subtle Technical Grid Background & Ambient Lighting matching Industries */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-35 z-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px)
+            `,
+            backgroundSize: "64px 64px",
+            maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
+          }}
+        />
+        <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none z-0" />
+        <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/15 rounded-full blur-[140px] pointer-events-none z-0" />
+
         {/* ========================================================================= */}
         {/* PHASE 1: TRIONN VISION & HORIZONTAL SHUTTER TRANSITION                   */}
         {/* ========================================================================= */}
         <div
           ref={visionContentRef}
           className="absolute inset-0 z-20 flex flex-col justify-between py-12 sm:py-16 px-6 sm:px-14 pointer-events-none text-white"
-          style={{ mixBlendMode: "difference" }}
         >
           {/* Top Vision Title */}
           <div className="w-full flex items-center justify-between">
@@ -315,7 +330,7 @@ export default function BenefitsSection() {
               ref={marqueeRef}
               className="flex whitespace-nowrap will-change-transform"
             >
-              <div className="shrink-0 flex items-center uppercase font-headline font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7.5rem] tracking-tight leading-none text-white">
+              <div className="shrink-0 flex items-center uppercase font-headline font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7.5rem] tracking-tight leading-none text-white drop-shadow-[0_4px_30px_rgba(255,255,255,0.25)]">
                 <span>Capture</span>
                 <Crosshair />
                 <span>Qualify</span>
@@ -347,7 +362,7 @@ export default function BenefitsSection() {
         </div>
 
         {/* ========================================================================= */}
-        {/* THE 5 HORIZONTAL SHUTTER STRIPES (Slices across viewport like blinds)     */}
+        {/* THE 5 HORIZONTAL SHUTTER STRIPES (Sleek dark obsidian slats)              */}
         {/* ========================================================================= */}
         <div
           ref={stripesWrapperRef}
@@ -357,7 +372,7 @@ export default function BenefitsSection() {
             <div
               key={i}
               ref={(el) => (stripeRefs.current[i] = el)}
-              className="stripe-item flex-1 w-full bg-[#DCDCE2] border-b border-[#C8C8D0]/50"
+              className="stripe-item flex-1 w-full bg-[#0C0D14] border-b border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
               style={{
                 transform: "scaleY(0)",
                 transformOrigin: "bottom",
@@ -372,8 +387,23 @@ export default function BenefitsSection() {
         {/* ========================================================================= */}
         <div
           ref={keyfactsSectionRef}
-          className="absolute inset-0 z-40 flex flex-col justify-between pt-14 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8 bg-[linear-gradient(180deg,#090A0F_0%,#10121A_50%,#090A0F_100%)]"
+          className="absolute inset-0 z-40 flex flex-col justify-between pt-14 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8 bg-[#050507]"
         >
+          {/* Subtle Technical Grid Background in Key Facts matching Industries */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-35 z-0"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px)
+              `,
+              backgroundSize: "64px 64px",
+              maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
+              WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
+            }}
+          />
+          <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none z-0" />
+          <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/15 rounded-full blur-[140px] pointer-events-none z-0" />
           {/* Section Header */}
           <div
             ref={keyfactsHeaderRef}

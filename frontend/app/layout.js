@@ -15,7 +15,8 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className="h-full antialiased"
+      className="dark h-full antialiased"
+      style={{ colorScheme: "dark", backgroundColor: "#050507" }}
       suppressHydrationWarning
     >
       <head>
@@ -30,20 +31,16 @@ export default function RootLayout({ children }) {
             __html: `
               (function() {
                 try {
-                  var stored = localStorage.getItem('theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (stored === 'dark' || (!stored && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.style.colorScheme = 'dark';
+                  document.documentElement.style.backgroundColor = '#050507';
                 } catch(e) {}
               })();
             `,
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-[#050507] text-[#F5F5F7]">
         {children}
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
