@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Bot, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { Bot, ShieldCheck, Sparkles, TrendingUp, CheckCircle2 } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -62,9 +62,9 @@ export default function BenefitsSection({ onOpenTrial }) {
       });
 
       // ============================================================
-      // DIRECT STRIPES + CARD DROP TIMELINE (Zero Blank Page Waiting)
+      // DIRECT STRIPES + CARD DROP TIMELINE
       // 0.00 -> 0.35: 5 horizontal stripes expand vertically (bottom -> up)
-      // 0.35 -> 0.75: 3 Cards swing DOWN from ceiling (center top) into view!
+      // 0.35 -> 0.75: 3 Colorful Cards swing DOWN from ceiling into view!
       // 0.75 -> 1.00: Cards remain stable and interactive
       // ============================================================
       const tl = gsap.timeline({
@@ -98,7 +98,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         }
       }
 
-      // 3 Cards drop DOWN from ceiling right into comfortable view
+      // 3 Cards drop DOWN from ceiling right into view
       if (isDesktop) {
         tl.to(
           cardRefs.current,
@@ -164,7 +164,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* REVEALED LIGHT SCENE (With User Requested Title & Reduced Card Size)       */}
+        {/* REVEALED LIGHT SCENE (Exact User Requested Data & Colorful Cards)         */}
         {/* ========================================================================= */}
         <div
           ref={lightSceneRef}
@@ -172,8 +172,8 @@ export default function BenefitsSection({ onOpenTrial }) {
         >
           <div className="max-w-7xl mx-auto w-full my-auto flex flex-col justify-center">
             {/* Title Block with Exact User Requested Title */}
-            <div className="title-block flex flex-col items-center mb-5 sm:mb-7 text-center shrink-0 px-4">
-              <h2 className="font-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.6rem] font-bold tracking-tight text-[#0B0B10] uppercase max-w-4xl mx-auto leading-tight">
+            <div className="title-block flex flex-col items-center mb-5 sm:mb-6 text-center shrink-0 px-4">
+              <h2 className="font-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] font-bold tracking-tight text-[#0B0B10] uppercase max-w-4xl mx-auto leading-tight">
                 Don&apos;t Let Valuable Conversations Slip Away.
               </h2>
               <p className="mt-2 text-xs sm:text-sm text-[#0B0B10]/75 max-w-xl mx-auto leading-relaxed">
@@ -181,149 +181,167 @@ export default function BenefitsSection({ onOpenTrial }) {
               </p>
             </div>
 
-            {/* Reduced Size 3-Card Grid (Comfortably fits screen without touching taskbar) */}
+            {/* COLORFUL 3-CARD COMPOSITION (Exact User Data & Proportions) */}
             <div
               className="key-card-list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 items-stretch w-full max-w-6xl mx-auto"
               style={{ perspective: "1400px" }}
             >
               {/* ======================================================= */}
-              {/* CARD 1 (LEFT — FEATURED & AWARDS / 24/7 AVAILABILITY)   */}
+              {/* CARD 01 · DARK (EMERALD CYBERNETIC NEON GLOW)           */}
               {/* ======================================================= */}
               <div
                 ref={(el) => (cardRefs.current[0] = el)}
-                className="featured-card group relative rounded-2xl bg-black text-white p-5 sm:p-6 flex flex-col justify-between shadow-2xl overflow-hidden h-[330px] sm:h-[350px] lg:h-[365px] xl:h-[380px] will-change-transform border border-white/[0.08]"
+                className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#071F17] via-[#091512] to-[#050B08] text-white p-5 sm:p-6 flex flex-col justify-between shadow-[0_15px_40px_rgba(16,185,129,0.22)] border-2 border-emerald-500/40 hover:border-emerald-400 overflow-hidden h-[335px] sm:h-[350px] lg:h-[365px] xl:h-[380px] will-change-transform transition-all duration-300"
               >
-                <div className="relative z-10 flex items-center justify-between">
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white/60 font-mono">
-                    Featured & Awards
-                  </span>
-                  <span className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Live 24/7
-                  </span>
+                {/* Ambient Emerald Orb */}
+                <div className="absolute -top-16 -left-16 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10">
+                  {/* Top Pill Tag */}
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      Card 01 · Dark
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live 24/7
+                    </span>
+                  </div>
+
+                  {/* Heading & Subtitle */}
+                  <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-2.5 uppercase">
+                    24/7 AI ASSISTANCE
+                  </h3>
+                  <p className="text-xs text-[#D1D5DB] mt-1.5 leading-relaxed">
+                    Let customers get answers to their questions anytime, even outside business hours.
+                  </p>
                 </div>
 
-                {/* Compact Chat / Assistant UI Mockup */}
-                <div className="relative z-10 my-auto py-2 bg-[#141418] rounded-xl p-3 border border-white/[0.06] space-y-1.5 shadow-inner">
-                  <div className="flex items-center justify-between text-[9px] text-white/50 border-b border-white/[0.05] pb-1">
-                    <span className="flex items-center gap-1">
-                      <Bot className="w-3 h-3 text-[#55A9FF]" />
-                      Nexus Intelligence
-                    </span>
-                    <span className="font-mono">11:42 PM</span>
-                  </div>
-                  <div className="bg-white/[0.08] text-white/90 rounded-lg p-2 text-[10px] sm:text-[11px] leading-snug max-w-[92%] ml-auto">
+                {/* Compact Interactive Chat Preview */}
+                <div className="relative z-10 my-auto py-1.5 bg-[#03110C]/80 rounded-xl p-2.5 border border-emerald-500/20 space-y-1 shadow-inner">
+                  <div className="bg-white/[0.08] text-white/90 rounded-lg p-1.5 text-[10px] leading-snug max-w-[92%] ml-auto">
                     Can I schedule an executive consultation for tomorrow?
                   </div>
-                  <div className="bg-[#963DFF]/20 border border-[#963DFF]/40 text-white rounded-lg p-2 text-[10px] sm:text-[11px] leading-snug max-w-[95%]">
-                    Absolutely! I&apos;ve reserved 3:00 PM tomorrow with our senior specialist.
+                  <div className="bg-emerald-500/20 border border-emerald-500/30 text-white rounded-lg p-1.5 text-[10px] leading-snug max-w-[95%]">
+                    Absolutely! Reserved 3:00 PM tomorrow with our senior specialist.
                   </div>
                 </div>
 
-                {/* Bottom Row */}
-                <div className="relative z-10 pt-2.5 border-t border-white/10 flex items-end justify-between gap-3">
-                  <div className="max-w-[70%]">
-                    <div className="font-headline font-black text-sm sm:text-base text-white tracking-wide">
-                      GSAP Verified
-                    </div>
-                    <p className="text-[10px] sm:text-[11px] text-white/70 mt-0.5 leading-snug">
-                      Featured on top design platforms worldwide. 24/7 edge retrieval.
-                    </p>
-                  </div>
-                  <span className="font-headline font-black text-2xl sm:text-3xl text-white tracking-tight shrink-0">
-                    50<span className="text-lg text-[#C28AFF]">+</span>
+                {/* Bottom Label (Exact User Requested Label) */}
+                <div className="relative z-10 pt-2 border-t border-emerald-500/20 flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
+                    ALWAYS AVAILABLE
                   </span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 </div>
               </div>
 
               {/* ======================================================= */}
-              {/* CARD 2 (CENTER — PROJECTS COMPLETED / LESS MANUAL WORK) */}
+              {/* CARD 02 · LIGHT (LUMINOUS ROYAL PURPLE / LILAC NEON)     */}
               {/* ======================================================= */}
               <div
                 ref={(el) => (cardRefs.current[1] = el)}
-                className="project-card group relative rounded-2xl bg-[#ECECEC] text-[#0B0B10] p-5 sm:p-6 flex flex-col justify-between shadow-xl overflow-hidden h-[330px] sm:h-[350px] lg:h-[365px] xl:h-[380px] border border-black/5 will-change-transform"
+                className="project-card group relative rounded-2xl bg-gradient-to-br from-[#FAF5FF] via-[#F3E8FF] to-[#EDE9FE] text-[#0B0B10] p-5 sm:p-6 flex flex-col justify-between shadow-[0_15px_45px_rgba(150,61,255,0.22)] border-2 border-[#963DFF]/50 hover:border-[#963DFF] overflow-hidden h-[335px] sm:h-[350px] lg:h-[365px] xl:h-[380px] will-change-transform transition-all duration-300"
               >
-                <div className="relative z-10 text-center">
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#0B0B10]/60 font-mono">
-                    Projects Completed
-                  </span>
-                </div>
+                {/* Ambient Lilac Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#963DFF]/15 rounded-full blur-3xl pointer-events-none" />
 
-                {/* Compact White Circular Disc with 1.5K+ */}
-                <div className="relative z-10 my-auto py-1 flex flex-col items-center justify-center">
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-[0_10px_25px_rgba(0,0,0,0.06)] flex items-center justify-center border border-black/[0.04]">
-                    <span className="font-headline font-black text-3xl sm:text-4xl text-[#0B0B10] tracking-tight">
-                      1.5K<span className="text-xl text-[#963DFF]">+</span>
+                <div className="relative z-10 text-center">
+                  {/* Top Pill Tag */}
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/15 text-[#7C3AED] border border-[#963DFF]/30">
+                      Card 02 · Light
+                    </span>
+                    <span className="text-[11px] font-bold text-[#963DFF]">
+                      AI Assistant
                     </span>
                   </div>
-                  <div className="mt-2 px-2.5 py-0.5 rounded-full bg-black/5 text-[9px] sm:text-[10px] font-bold text-[#0B0B10]/80">
-                    Less Manual Work
+
+                  {/* Heading & Subtitle */}
+                  <h3 className="font-headline font-black text-xl sm:text-2xl text-[#0B0B10] tracking-tight mt-2.5 uppercase">
+                    LESS MANUAL WORK
+                  </h3>
+                  <p className="text-xs text-[#4B5563] mt-1.5 leading-relaxed max-w-xs mx-auto">
+                    Reduce repetitive customer interactions and give your team more time for important work.
+                  </p>
+                </div>
+
+                {/* Central Luminous Circular Disc */}
+                <div className="relative z-10 my-auto py-1 flex flex-col items-center justify-center">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white shadow-[0_10px_25px_rgba(150,61,255,0.18)] flex items-center justify-center border-2 border-[#963DFF]/30">
+                    <span className="font-headline font-black text-3xl sm:text-4xl text-[#7C3AED] tracking-tight">
+                      1.5K<span className="text-xl text-[#55A9FF]">+</span>
+                    </span>
                   </div>
                 </div>
 
-                {/* Bottom Copy */}
-                <div className="relative z-10 pt-2.5 border-t border-black/10 text-center">
-                  <p className="text-[10px] sm:text-[11px] text-[#0B0B10]/80 font-medium leading-snug max-w-xs mx-auto">
-                    90% of our clients seek our services for a second project. Automated query resolution.
-                  </p>
+                {/* Bottom Label (Exact User Requested Label) */}
+                <div className="relative z-10 pt-2 border-t border-[#963DFF]/20 flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold tracking-widest text-[#7C3AED] uppercase">
+                    AUTOMATED QUERY RESOLUTION
+                  </span>
+                  <Sparkles className="w-3.5 h-3.5 text-[#7C3AED] shrink-0" />
                 </div>
               </div>
 
               {/* ======================================================= */}
-              {/* CARD 3 (RIGHT — OUR TEAM MEMBERS / ENQUIRY VISIBILITY)  */}
+              {/* CARD 03 · DARK (ELECTRIC SAPPHIRE / ROYAL BLUE GLOW)    */}
               {/* ======================================================= */}
               <div
                 ref={(el) => (cardRefs.current[2] = el)}
-                className="team-card group relative rounded-2xl bg-[#222429] text-white p-5 sm:p-6 flex flex-col justify-between shadow-2xl overflow-hidden h-[330px] sm:h-[350px] lg:h-[365px] xl:h-[380px] will-change-transform border border-white/[0.08]"
+                className="team-card group relative rounded-2xl bg-gradient-to-br from-[#08152B] via-[#0A111F] to-[#060B14] text-white p-5 sm:p-6 flex flex-col justify-between shadow-[0_15px_40px_rgba(56,189,248,0.22)] border-2 border-[#38BDF8]/50 hover:border-[#38BDF8] overflow-hidden h-[335px] sm:h-[350px] lg:h-[365px] xl:h-[380px] will-change-transform transition-all duration-300"
               >
-                <div className="relative z-10 flex items-center justify-between">
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white/60 font-mono">
-                    Our Team Members
-                  </span>
-                  <span className="text-[10px] font-mono text-[#55A9FF]">
-                    CRM Pipeline
-                  </span>
+                {/* Ambient Blue Orb */}
+                <div className="absolute -bottom-16 -right-16 w-40 h-40 bg-[#38BDF8]/20 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10">
+                  {/* Top Pill Tag */}
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                      Card 03 · Dark
+                    </span>
+                    <span className="text-[11px] font-bold text-[#38BDF8]">
+                      Enquiries
+                    </span>
+                  </div>
+
+                  {/* Heading & Subtitle */}
+                  <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-2.5 uppercase">
+                    LEAD VISIBILITY
+                  </h3>
+                  <p className="text-xs text-[#D1D5DB] mt-1.5 leading-relaxed">
+                    See customer conversations and enquiries generated through your website assistant.
+                  </p>
                 </div>
 
-                {/* Compact Business Dashboard Visual */}
-                <div className="relative z-10 my-auto py-2 bg-[#18191E] rounded-xl p-3 border border-white/[0.06] space-y-1.5 shadow-inner">
-                  <div className="flex items-center justify-between text-[9px] text-white/50 border-b border-white/[0.05] pb-1">
-                    <span className="font-semibold text-white/90">Lead Visibility Overview</span>
-                    <span className="text-emerald-400">98% Intent</span>
-                  </div>
+                {/* Compact Business Lead Overview */}
+                <div className="relative z-10 my-auto py-1.5 bg-[#040C1A]/80 rounded-xl p-2.5 border border-[#38BDF8]/20 space-y-1 shadow-inner">
                   <div className="bg-white/[0.04] rounded-lg p-1.5 flex items-center justify-between border border-white/[0.04]">
                     <div>
-                      <div className="text-[10px] sm:text-[11px] font-bold text-white">Commercial Rollout</div>
-                      <div className="text-[8px] sm:text-[9px] text-white/60">Enterprise Tier</div>
+                      <div className="text-[10px] font-bold text-white">Commercial Rollout</div>
+                      <div className="text-[8px] text-white/60">Enterprise Tier</div>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[8px] sm:text-[9px] font-bold uppercase">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[8px] font-bold uppercase">
                       Hot Lead
                     </span>
                   </div>
                   <div className="bg-white/[0.04] rounded-lg p-1.5 flex items-center justify-between border border-white/[0.04]">
                     <div>
-                      <div className="text-[10px] sm:text-[11px] font-bold text-white">Elena Rostova</div>
-                      <div className="text-[8px] sm:text-[9px] text-white/60">Consultation Scheduled</div>
+                      <div className="text-[10px] font-bold text-white">Elena Rostova</div>
+                      <div className="text-[8px] text-white/60">Consultation Scheduled</div>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded bg-[#963DFF]/25 text-[#C28AFF] text-[8px] sm:text-[9px] font-bold uppercase">
+                    <span className="px-1.5 py-0.5 rounded bg-[#963DFF]/25 text-[#C28AFF] text-[8px] font-bold uppercase">
                       Qualified
                     </span>
                   </div>
                 </div>
 
-                {/* Bottom Row */}
-                <div className="relative z-10 pt-2.5 border-t border-white/10 flex items-end justify-between gap-3">
-                  <div className="max-w-[70%]">
-                    <div className="font-headline font-bold text-xs sm:text-sm text-white/90">
-                      Different skills. One standard.
-                    </div>
-                    <p className="text-[10px] sm:text-[11px] text-white/60 mt-0.5 leading-snug">
-                      See customer conversations and generated enquiries.
-                    </p>
-                  </div>
-                  <span className="font-headline font-black text-2xl sm:text-3xl text-white tracking-tight shrink-0">
-                    20<span className="text-lg text-[#55A9FF]">+</span>
+                {/* Bottom Label (Exact User Requested Label) */}
+                <div className="relative z-10 pt-2 border-t border-[#38BDF8]/20 flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold tracking-widest text-[#38BDF8] uppercase">
+                    CONVERSATIONS & ENQUIRIES
                   </span>
+                  <TrendingUp className="w-3.5 h-3.5 text-[#38BDF8] shrink-0" />
                 </div>
               </div>
             </div>

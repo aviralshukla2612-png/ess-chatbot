@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import IndustriesSection from "@/components/IndustriesSection";
 import BenefitsSection from "@/components/BenefitsSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import PricingSection from "@/components/PricingSection";
 import TrionnLoader from "@/components/TrionnLoader";
 
@@ -355,70 +356,10 @@ export default function HomePage() {
         onOpenTrial={() => (window.location.href = "/register")}
       />
 
-      {/* 5. HOW IT WORKS SECTION */}
-      <section id="how-it-works" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#0B0B10] overflow-hidden">
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-xs font-bold uppercase tracking-wider mb-4">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Fast Three-Step Setup</span>
-            </div>
-
-            <h2 className="font-headline tracking-normal text-white uppercase text-4xl sm:text-6xl md:text-7xl leading-tight">
-              From Raw Documents To <br />
-              <span className="text-glow-purple text-gradient-purple-blue">
-                Autonomous Sales In 5 Minutes
-              </span>
-            </h2>
-
-            <p className="mt-4 text-base sm:text-lg text-[#9898A6] leading-relaxed">
-              No machine learning engineers, vector database setups, or prompt writing required.
-              Your AI sales assistant trains itself on your materials automatically.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {steps.map((st, idx) => {
-              const Icon = st.icon;
-              return (
-                <div
-                  key={idx}
-                  className="group relative p-8 rounded-3xl glass-panel glass-panel-hover flex flex-col justify-between overflow-hidden"
-                >
-                  <span className="absolute top-4 right-6 font-headline text-7xl font-bold text-white/[0.04] group-hover:text-[#963DFF]/15 transition-colors select-none">
-                    {st.number}
-                  </span>
-
-                  <div className="relative z-10">
-                    <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] group-hover:border-[#963DFF]/40 group-hover:bg-[#963DFF]/20 flex items-center justify-center transition-all duration-300 shadow-sm mb-6">
-                      <Icon className="w-7 h-7 text-[#D9D9E2] group-hover:text-[#C28AFF] transition-colors" />
-                    </div>
-
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#C28AFF] block mb-2">
-                      {st.tagline}
-                    </span>
-
-                    <h3 className="font-bold text-2xl text-white group-hover:text-[#F5F5F7] transition-colors">
-                      {st.title}
-                    </h3>
-
-                    <p className="mt-4 text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-                      {st.description}
-                    </p>
-                  </div>
-
-                  <div className="relative z-10 mt-8 pt-5 border-t border-white/[0.06]">
-                    <div className="flex items-start gap-2 text-xs text-emerald-400 font-medium">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>{st.highlight}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* 5. AWWWARDS-LEVEL SHATTER TRANSITION + THREE-CARD REVEAL HOW IT WORKS */}
+      <HowItWorksSection
+        onOpenTrial={() => (window.location.href = "/register")}
+      />
 
       {/* 6. PRICING SECTION (Cinematic Scroll-Driven Transformation) */}
       <PricingSection
