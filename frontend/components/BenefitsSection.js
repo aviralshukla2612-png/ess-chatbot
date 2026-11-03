@@ -14,7 +14,7 @@ const STRIPES_COUNT = 5;
 export default function BenefitsSection({ onOpenTrial }) {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
-  const lightSceneRef = useRef(null);
+  const titleRef = useRef(null);
   const stripeRefs = useRef([]);
   const cardRefs = useRef([]);
 
@@ -31,9 +31,9 @@ export default function BenefitsSection({ onOpenTrial }) {
         stripeRefs.current.forEach((el) => {
           if (el) gsap.set(el, { scaleY: 1 });
         });
-        if (lightSceneRef.current) gsap.set(lightSceneRef.current, { opacity: 1 });
+        if (titleRef.current) gsap.set(titleRef.current, { opacity: 1, y: 0 });
         cardRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { rotateX: 0, autoAlpha: 1 });
+          if (el) gsap.set(el, { rotateX: 0, y: 0, opacity: 1 });
         });
         return;
       }
@@ -49,14 +49,17 @@ export default function BenefitsSection({ onOpenTrial }) {
         }
       });
 
-      // 2. Initial State: Light scene ready, cards folded up at ceiling
-      gsap.set(lightSceneRef.current, { opacity: 1 });
+      // 2. Initial State: Title and Cards ready to drop down smoothly
+      if (titleRef.current) {
+        gsap.set(titleRef.current, { opacity: 0, y: -25 });
+      }
+
       cardRefs.current.forEach((card) => {
         if (card) {
           gsap.set(card, {
-            autoAlpha: 0,
-            rotateX: isDesktop ? -92 : 0,
-            y: isDesktop ? 0 : 35,
+            opacity: 0,
+            rotateX: isDesktop ? -32 : 0,
+            y: isDesktop ? -60 : 35,
             transformOrigin: "center top",
             force3D: true,
           });
@@ -65,15 +68,16 @@ export default function BenefitsSection({ onOpenTrial }) {
 
       // ============================================================
       // DIRECT STRIPES + CARD DROP TIMELINE
-      // 0.00 -> 0.35: 5 horizontal stripes expand vertically (bottom -> up)
-      // 0.35 -> 0.75: 3 Colorful Cards swing DOWN from ceiling into view!
-      // 0.75 -> 1.00: Cards remain stable and interactive
+      // 0.00 -> 0.40: 5 horizontal stripes expand vertically (bottom -> up)
+      // 0.10 -> 0.35: Title smoothly appears
+      // 0.18 -> 0.52: 3 Colorful Cards swing DOWN into view!
+      // 0.52 -> 1.00: Cards remain rock-solid, fully interactive & stable
       // ============================================================
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: "+=1300",
+          end: "+=1400",
           pin: stage,
           pinSpacing: true,
           scrub: 0.8,
@@ -84,8 +88,8 @@ export default function BenefitsSection({ onOpenTrial }) {
 
       // Trionn's stripe animation formula:
       for (let i = 0; i < STRIPES_COUNT; i++) {
-        const s = (0.22 * (STRIPES_COUNT - 1 - i)) / (STRIPES_COUNT - 1);
-        const a = s + 0.24;
+        const s = (0.20 * (STRIPES_COUNT - 1 - i)) / (STRIPES_COUNT - 1);
+        const a = s + 0.22;
         const el = stripeRefs.current[i];
         if (el) {
           tl.to(
@@ -100,36 +104,51 @@ export default function BenefitsSection({ onOpenTrial }) {
         }
       }
 
-      // 3 Cards drop DOWN from ceiling right into view
+      // Title Drops in
+      if (titleRef.current) {
+        tl.to(
+          titleRef.current,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.25,
+            ease: "power2.out",
+          },
+          0.10
+        );
+      }
+
+      // 3 Cards drop DOWN into view
       if (isDesktop) {
         tl.to(
           cardRefs.current,
           {
             rotateX: 0,
-            autoAlpha: 1,
+            y: 0,
+            opacity: 1,
             stagger: 0.08,
-            ease: "power2.out",
+            ease: "power3.out",
             force3D: true,
-            duration: 0.35,
+            duration: 0.34,
           },
-          0.32
+          0.18
         );
       } else {
         tl.to(
           cardRefs.current,
           {
             y: 0,
-            autoAlpha: 1,
+            opacity: 1,
             stagger: 0.06,
             ease: "power2.out",
             duration: 0.30,
           },
-          0.32
+          0.18
         );
       }
 
       // Settle and hold steady through end of scroll
-      tl.to({}, { duration: 0.15 }, 0.80);
+      tl.to({}, { duration: 0.48 }, 0.52);
     }, containerRef);
 
     return () => {
@@ -145,9 +164,9 @@ export default function BenefitsSection({ onOpenTrial }) {
         className="relative w-full h-screen overflow-hidden flex items-center justify-center bg-[#050507]"
       >
         {/* ========================================================================= */}
-        {/* 5 HORIZONTAL STRIPES (Exact Trionn Math, expands vertically)              */}
+        {/* 5 HORIZONTAL STRIPES (LAYER 10 - Expands vertically to cover dark page)   */}
         {/* ========================================================================= */}
-        <div className="stripes-container absolute inset-0 pointer-events-none flex flex-col w-full h-full z-20">
+        <div className="stripes-container absolute inset-0 pointer-events-none flex flex-col w-full h-full z-10">
           {Array.from({ length: STRIPES_COUNT }).map((_, idx) => (
             <div
               key={idx}
@@ -166,15 +185,14 @@ export default function BenefitsSection({ onOpenTrial }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* REVEALED LIGHT SCENE (Exact User Requested Data & Colorful Cards)         */}
+        {/* FOREGROUND CONTENT (LAYER 20 - ON TOP OF STRIPES, ALWAYS VISIBLE)         */}
         {/* ========================================================================= */}
         <div
-          ref={lightSceneRef}
-          className="absolute inset-0 w-full h-full bg-[linear-gradient(180deg,#D2D2D2_0%,#DFDFE4_35%,#ECECEF_100%)] text-[#0B0B10] flex flex-col justify-between pt-24 pb-8 sm:pt-28 sm:pb-10 px-4 sm:px-8 z-10 select-none overflow-hidden"
+          className="relative w-full h-full text-[#0B0B10] flex flex-col justify-between pt-20 pb-6 sm:pt-24 sm:pb-8 px-4 sm:px-8 z-20 select-none overflow-hidden"
         >
           <div className="max-w-7xl mx-auto w-full my-auto flex flex-col justify-center">
             {/* Title Block with Exact User Requested Title */}
-            <div className="title-block flex flex-col items-center mb-5 sm:mb-6 text-center shrink-0 px-4">
+            <div ref={titleRef} className="title-block flex flex-col items-center mb-5 sm:mb-6 text-center shrink-0 px-4">
               <h2 className="font-headline text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] font-bold tracking-tight text-[#0B0B10] uppercase max-w-4xl mx-auto leading-tight">
                 Don&apos;t Let Valuable Conversations Slip Away.
               </h2>
