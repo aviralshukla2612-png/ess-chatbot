@@ -131,7 +131,6 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
   const collageInnerRef = useRef(null);
   const paraRef = useRef(null);
   const btnRef = useRef(null);
-  const bottomNavRef = useRef(null);
   const tileRefs = useRef([]);
   const videoRefs = useRef([]);
 
@@ -194,7 +193,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
         if (reduceMotion) {
           // Static layout for reduced motion preference
           gsap.set(collageRef.current, { x: 0, y: 0, scale: 1 });
-          gsap.set([line1TextRef.current, line2TextRef.current, paraRef.current, btnRef.current, bottomNavRef.current], { opacity: 1, y: 0 });
+          gsap.set([line1TextRef.current, line2TextRef.current, paraRef.current, btnRef.current], { opacity: 1, y: 0 });
           return;
         }
 
@@ -364,23 +363,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           );
         }
 
-        // 6. Bottom Navigation Bar Reveal
-        if (bottomNavRef.current) {
-          tl.fromTo(
-            bottomNavRef.current,
-            { opacity: 0, y: 15 },
-            {
-              opacity: 1,
-              y: 0,
-              ease: "power2.out",
-              duration: 0.25,
-            },
-            0.68
-          );
-        }
-
-        // Buffer hold: (0.82 -> 1.00) Complete stability for reading and interacting
-        tl.to({}, { duration: 0.18 }, 0.82);
+        // Buffer hold: (0.75 -> 1.00) Complete stability for reading and interacting
+        tl.to({}, { duration: 0.25 }, 0.75);
       },
       sectionRef
     );
@@ -760,28 +744,6 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               <span>Start Free Trial</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-
-        {/* Bottom Wave / Quick Industry Selector Bar */}
-        <div
-          ref={bottomNavRef}
-          className="relative z-10 w-full max-w-5xl mx-auto hidden md:flex items-center justify-between text-[11px] text-[#9898A6]/80 uppercase tracking-wider font-semibold border-t border-white/[0.06] pt-2 px-4 will-change-transform"
-        >
-          <div className="flex items-center gap-6">
-            {INDUSTRIES.map((ind) => (
-              <button
-                key={ind.id}
-                type="button"
-                onClick={() => onOpenExperience?.(ind.id)}
-                className="hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>{ind.category}</span>
-              </button>
-            ))}
-          </div>
-          <div className="text-[10px] text-[#C28AFF] font-bold">
-            24/7 Grounded Retrieval • Sub-Second Edge
           </div>
         </div>
       </div>
