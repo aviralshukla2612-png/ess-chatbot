@@ -55,6 +55,61 @@ const MarqueeTrack = () => (
   </div>
 );
 
+// Bespoke Illustrated SVG Icons matching Dribbble reference style
+const EngagementIcon = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="32" cy="32" r="24" fill="#00D98B" fillOpacity="0.12" />
+    <path d="M16 32 C16 21 23 14 32 14 C41 14 48 21 48 32" stroke="#00D98B" strokeWidth="3" strokeLinecap="round" />
+    <rect x="13" y="28" width="6" height="12" rx="3" fill="#FFFFFF" stroke="#00D98B" strokeWidth="2.5" />
+    <rect x="45" y="28" width="6" height="12" rx="3" fill="#FFFFFF" stroke="#00D98B" strokeWidth="2.5" />
+    <path d="M47 38 C47 45 42 48 35 48" stroke="#00D98B" strokeWidth="2.5" strokeLinecap="round" />
+    <circle cx="33" cy="48" r="3" fill="#00D98B" />
+    <g filter="drop-shadow(0px 3px 6px rgba(0, 217, 139, 0.4))">
+      <path d="M24 24 H40 C43 24 45 26 45 29 V37 C45 40 43 42 40 42 H32 L27 46 V42 H24 C21 42 19 40 19 37 V29 C19 26 21 24 24 24 Z" fill="#00D98B" />
+      <circle cx="27" cy="33" r="2" fill="#FFFFFF" />
+      <circle cx="32" cy="33" r="2" fill="#FFFFFF" />
+      <circle cx="37" cy="33" r="2" fill="#FFFFFF" />
+    </g>
+    <circle cx="49" cy="18" r="3" fill="#00D98B" />
+    <circle cx="49" cy="18" r="5" stroke="#00D98B" strokeWidth="1" strokeOpacity="0.5" />
+  </svg>
+);
+
+const AutomationIcon = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="32" cy="32" r="24" fill="#C653FF" fillOpacity="0.12" />
+    <path d="M16 24 H26 M38 24 H48 M16 40 H24 M40 40 H48 M32 14 V22 M32 42 V50" stroke="#C653FF" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 2" />
+    <rect x="22" y="20" width="20" height="24" rx="5" fill="#FFFFFF" stroke="#C653FF" strokeWidth="2.5" />
+    <rect x="26" y="25" width="12" height="14" rx="3" fill="#F3E8FF" stroke="#C653FF" strokeWidth="1.5" />
+    <path d="M29 32 C29 30 31 29 32 32 C33 35 35 34 35 32" stroke="#C653FF" strokeWidth="1.8" strokeLinecap="round" />
+    <g filter="drop-shadow(0px 3px 6px rgba(198, 83, 255, 0.45))">
+      <circle cx="44" cy="44" r="12" fill="#C653FF" />
+      <path d="M45 38 L41 44 H45 L43 50 L48 43 H44 L46 38 Z" fill="#FFFFFF" />
+    </g>
+    <circle cx="15" cy="24" r="2.5" fill="#C653FF" />
+    <circle cx="49" cy="24" r="2.5" fill="#C653FF" />
+  </svg>
+);
+
+const EnquiryIcon = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="32" cy="32" r="24" fill="#009DFF" fillOpacity="0.12" />
+    <rect x="14" y="16" width="36" height="32" rx="6" fill="#FFFFFF" stroke="#009DFF" strokeWidth="2.5" />
+    <rect x="20" y="34" width="4" height="8" rx="1.5" fill="#BAE6FD" />
+    <rect x="27" y="28" width="4" height="14" rx="1.5" fill="#38BDF8" />
+    <rect x="34" y="22" width="4" height="20" rx="1.5" fill="#009DFF" />
+    <path d="M19 32 L28 25 L36 21 L43 17" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M39 17 H43 V21" stroke="#0284C7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <g filter="drop-shadow(0px 3px 6px rgba(0, 157, 255, 0.45))">
+      <circle cx="44" cy="44" r="12" fill="#009DFF" />
+      <circle cx="44" cy="44" r="6" stroke="#FFFFFF" strokeWidth="1.8" />
+      <circle cx="44" cy="44" r="2" fill="#FFFFFF" />
+    </g>
+    <circle cx="12" cy="18" r="1.5" fill="#009DFF" />
+    <circle cx="53" cy="28" r="1.5" fill="#38BDF8" />
+  </svg>
+);
+
 // 3 Benefit Cards matching Dribbble Wave Card Design Reference
 const BENEFIT_CARDS = [
   {
@@ -63,8 +118,7 @@ const BENEFIT_CARDS = [
     title: "Customer Engagement",
     subTitle: "Always-On Conversations",
     kicker: "NEVER MISS AN ENQUIRY",
-    icon: Headphones,
-    iconBg: "bg-emerald-100/70 text-[#00D98B]",
+    icon: EngagementIcon,
     tags: ["ALWAYS-ON", "24/7 LIVE"],
     description: "Answer customer questions instantly using your approved business information, even outside working hours.",
     feature: "Visitor is guided towards making an enquiry with instant lead capture.",
@@ -80,8 +134,7 @@ const BENEFIT_CARDS = [
     title: "Intelligent Automation",
     subTitle: "Less Manual Work",
     kicker: "LET AI HANDLE REPETITIVE QUESTIONS",
-    icon: Rocket,
-    iconBg: "bg-purple-100/70 text-[#C653FF]",
+    icon: AutomationIcon,
     tags: ["ZERO REPETITION", "AI GROUNDED"],
     description: "Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business information.",
     feature: "Business knowledge interface grounded in approved information only.",
@@ -97,8 +150,7 @@ const BENEFIT_CARDS = [
     title: "Enquiry Visibility",
     subTitle: "Turn Chats Into Opportunities",
     kicker: "STAY CONNECTED TO CUSTOMER INTEREST",
-    icon: Lightbulb,
-    iconBg: "bg-blue-100/70 text-[#009DFF]",
+    icon: EnquiryIcon,
     tags: ["HOT LEADS", "INSTANT SYNC"],
     description: "View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for.",
     feature: "Customer interest and conversation details logged directly into CRM.",
@@ -372,12 +424,18 @@ export default function BenefitsSection({ onOpenTrial }) {
                 <div className="card-wave-top relative z-10 px-6 pt-5 pb-1 flex flex-col items-center text-center transition-all duration-300">
                   {/* Icon Container with subtle halo and decorative sparkle dots */}
                   <div className="relative flex items-center justify-center">
-                    <div className={`w-13 h-13 rounded-2xl ${card.iconBg} flex items-center justify-center shadow-sm border border-black/10 transition-transform duration-300 group-hover:scale-105`}>
-                      <Icon className="w-6 h-6 stroke-[2.2]" />
+                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04)] border border-slate-200/90 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                      <Icon className="w-10 h-10 sm:w-11 sm:h-11" />
                     </div>
-                    {/* Decorative sparkle dots around icon like the reference image */}
-                    <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
-                    <span className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    {/* Decorative sparkle dots around icon matched to card accent */}
+                    <span
+                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm"
+                      style={{ backgroundColor: card.waveColor }}
+                    />
+                    <span
+                      className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full opacity-70"
+                      style={{ backgroundColor: card.waveColor }}
+                    />
                   </div>
 
                   {/* Title & Tagline */}
@@ -500,7 +558,7 @@ export default function BenefitsSection({ onOpenTrial }) {
 
         {/* Bottom hint banner */}
         <div className="relative z-10 text-center shrink-0 pt-1 text-xs font-mono text-zinc-400">
-          <span>✦ 24/7 Autonomous Sales AI · Instant Inquiry Capture</span>
+          <span> 24/7 Autonomous Sales AI · Instant Inquiry Capture</span>
         </div>
       </div>
     </div>

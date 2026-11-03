@@ -41,6 +41,70 @@ const HEADLINE_LETTERS = [
   { char: "S", x: 400, y: 220, z: 280, rx: -70, ry: 55, rz: 40, s: 1.9 },
 ];
 
+// Bespoke Illustrated SVG Icons matching Dribbble reference style
+const KnowledgeBaseIcon = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="32" cy="32" r="24" fill="#8B5CF6" fillOpacity="0.12" />
+    <rect x="22" y="10" width="26" height="34" rx="4" fill="#DDD6FE" stroke="#8B5CF6" strokeWidth="2" strokeDasharray="3 3" />
+    <rect x="14" y="16" width="28" height="36" rx="4" fill="#FFFFFF" stroke="#8B5CF6" strokeWidth="2.5" />
+    <line x1="20" y1="24" x2="36" y2="24" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" />
+    <line x1="20" y1="30" x2="32" y2="30" stroke="#C4B5FD" strokeWidth="2" strokeLinecap="round" />
+    <line x1="20" y1="36" x2="28" y2="36" stroke="#C4B5FD" strokeWidth="2" strokeLinecap="round" />
+    <g filter="drop-shadow(0px 3px 6px rgba(139, 92, 246, 0.45))">
+      <circle cx="42" cy="42" r="13" fill="#8B5CF6" />
+      <path d="M42 35 L42 48" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M37 40 L42 35 L47 40" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+    <circle cx="12" cy="14" r="1.5" fill="#8B5CF6" />
+    <circle cx="52" cy="18" r="1.5" fill="#A78BFA" />
+  </svg>
+);
+
+const PersonaEngineIcon = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="32" cy="32" r="24" fill="#FF5E3A" fillOpacity="0.12" />
+    <line x1="32" y1="11" x2="32" y2="17" stroke="#FF5E3A" strokeWidth="2.5" strokeLinecap="round" />
+    <circle cx="32" cy="9" r="3" fill="#FF5E3A" />
+    <rect x="15" y="17" width="34" height="28" rx="8" fill="#FFFFFF" stroke="#FF5E3A" strokeWidth="2.5" />
+    <rect x="20" y="23" width="24" height="15" rx="5" fill="#FFF7ED" stroke="#F97316" strokeWidth="1.5" />
+    <circle cx="26" cy="30" r="2.5" fill="#FF5E3A" />
+    <circle cx="38" cy="30" r="2.5" fill="#FF5E3A" />
+    <path d="M29 34 Q32 36 35 34" stroke="#FF5E3A" strokeWidth="1.5" strokeLinecap="round" />
+    <g filter="drop-shadow(0px 3px 6px rgba(255, 94, 58, 0.45))">
+      <circle cx="44" cy="44" r="12" fill="#FF5E3A" />
+      <line x1="39" y1="41" x2="49" y2="41" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="42" cy="41" r="2" fill="#FFFFFF" />
+      <line x1="39" y1="47" x2="49" y2="47" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="46" cy="47" r="2" fill="#FFFFFF" />
+    </g>
+    <circle cx="10" cy="28" r="1.5" fill="#FF5E3A" />
+    <circle cx="53" cy="16" r="1.5" fill="#F97316" />
+  </svg>
+);
+
+const CodeDeployIcon = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <circle cx="32" cy="32" r="24" fill="#06B6D4" fillOpacity="0.12" />
+    <path d="M23 41 L14 50 L20 44 L16 54 L27 45 Z" fill="#F59E0B" />
+    <path d="M21 43 L17 49 L24 45 Z" fill="#EF4444" />
+    <line x1="12" y1="36" x2="8" y2="40" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
+    <line x1="32" y1="56" x2="28" y2="60" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
+    <g transform="rotate(45 34 30)">
+      <path d="M24 38 L18 44 L25 46 Z" fill="#0284C7" />
+      <path d="M44 38 L50 44 L43 46 Z" fill="#0284C7" />
+      <path d="M34 10 C26 22 26 38 26 44 L42 44 C42 38 42 22 34 10 Z" fill="#FFFFFF" stroke="#06B6D4" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M34 10 C30 16 28 20 28 22 L40 22 C40 20 38 16 34 10 Z" fill="#06B6D4" />
+      <circle cx="34" cy="30" r="5" fill="#E0F2FE" stroke="#06B6D4" strokeWidth="1.5" />
+      <path d="M32 28.5 L30.5 30 L32 31.5" stroke="#0284C7" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M36 28.5 L37.5 30 L36 31.5" stroke="#0284C7" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+    <g filter="drop-shadow(0px 3px 6px rgba(6, 182, 212, 0.45))">
+      <circle cx="46" cy="46" r="11" fill="#06B6D4" />
+      <path d="M42 46 L40 46 M44 43 L42 49 M48 46 L50 46" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
+    </g>
+  </svg>
+);
+
 // 3 Process Cards matching Dribbble Wave Card Design Reference
 const PROCESS_CARDS = [
   {
@@ -48,8 +112,7 @@ const PROCESS_CARDS = [
     tagline: "Step 01 · Ingestion",
     title: "Connect Knowledge Base",
     subTitle: "Instant Ingestion",
-    icon: Headphones,
-    iconBg: "bg-purple-100/70 text-[#8B5CF6]",
+    icon: KnowledgeBaseIcon,
     tags: ["PDF · DOCX", "URL SYNC"],
     description: "Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.",
     feature: "Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.",
@@ -64,8 +127,7 @@ const PROCESS_CARDS = [
     tagline: "Step 02 · Persona Engine",
     title: "Calibrate Persona Styling",
     subTitle: "Persona Engine",
-    icon: Rocket,
-    iconBg: "bg-orange-100/70 text-[#FF5E3A]",
+    icon: PersonaEngineIcon,
     tags: ["BRAND VOICE", "19 MOTIONS"],
     description: "Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.",
     feature: "Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.",
@@ -80,8 +142,7 @@ const PROCESS_CARDS = [
     tagline: "Step 03 · Live Embed",
     title: "Deploy Single Line Code",
     subTitle: "Universal Live Embed",
-    icon: Lightbulb,
-    iconBg: "bg-cyan-100/70 text-[#06B6D4]",
+    icon: CodeDeployIcon,
     tags: ["ONE-LINE", "ZERO CONFIG"],
     description: "Integrate the assistant into your website using the provided script with instant anti-cache live updates.",
     feature: "Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.",
@@ -405,12 +466,18 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 <div className="card-wave-top relative z-10 px-6 pt-5 pb-1 flex flex-col items-center text-center transition-all duration-300">
                   {/* Icon Container with subtle halo and decorative sparkle dots */}
                   <div className="relative flex items-center justify-center">
-                    <div className={`w-13 h-13 rounded-2xl ${card.iconBg} flex items-center justify-center shadow-sm border border-black/10 transition-transform duration-300 group-hover:scale-105`}>
-                      <Icon className="w-6 h-6 stroke-[2.2]" />
+                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04)] border border-slate-200/90 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                      <Icon className="w-10 h-10 sm:w-11 sm:h-11" />
                     </div>
-                    {/* Decorative sparkle dots around icon like the reference image */}
-                    <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
-                    <span className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    {/* Decorative sparkle dots around icon matched to card accent */}
+                    <span
+                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm"
+                      style={{ backgroundColor: card.waveColor }}
+                    />
+                    <span
+                      className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full opacity-70"
+                      style={{ backgroundColor: card.waveColor }}
+                    />
                   </div>
 
                   {/* Title & Step Tag */}
