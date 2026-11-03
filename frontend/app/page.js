@@ -226,9 +226,9 @@ export default function HomePage() {
           {/* Brand Logo */}
           <Link href="/" className="group flex items-center cursor-pointer" aria-label="Emperor Nexus Home">
             <img
-              src="/emperor_nexus_sales_ai_assistant.png"
+              src="/emperor_nexus_sales_ai_assistant_v2.png"
               alt="Emperor Nexus — Sales AI Assistant"
-              className="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105 cursor-pointer"
             />
           </Link>
 
@@ -412,7 +412,7 @@ export default function HomePage() {
             <div className="lg:col-span-2 space-y-5">
               <div className="flex items-center">
                 <img
-                  src="/emperor_nexus_sales_ai_assistant.png"
+                  src="/emperor_nexus_sales_ai_assistant_v2.png"
                   alt="Emperor Nexus — Sales AI Assistant"
                   className="h-10 sm:h-11 w-auto object-contain hover:scale-105 transition-all duration-300 cursor-pointer drop-shadow-[0_0_20px_rgba(150,61,255,0.35)]"
                 />

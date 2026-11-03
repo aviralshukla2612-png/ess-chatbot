@@ -69,7 +69,7 @@ export default function Navbar({ onOpenTrial }) {
           aria-label="Emperor Nexus Home"
         >
           <img
-            src="/emperor_nexus_sales_ai_assistant.png"
+            src="/emperor_nexus_sales_ai_assistant_v2.png"
             alt="Emperor Nexus — Sales AI Assistant"
             className="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
