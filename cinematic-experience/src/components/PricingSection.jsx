@@ -63,6 +63,7 @@ export const PRICING_PLANS = [
 const WORDS_LINE1 = ["SIMPLE", "PRICING."];
 const WORDS_LINE2 = ["POWERFUL", "CONVERSATIONS."];
 
+// Compute powerful radial firework blast vectors for each character
 function computeExplosionVectors(words, isTopLine) {
   let charIdx = 0;
   const list = [];
@@ -76,23 +77,25 @@ function computeExplosionVectors(words, isTopLine) {
   const mid = (total - 1) / 2;
 
   return list.map(({ char, wIdx, overallIdx }, i) => {
-    const relX = (i - mid) / (mid || 1);
+    const relX = (i - mid) / (mid || 1); // -1.0 to +1.0
     const seed = ((i * 17 + (isTopLine ? 23 : 41)) % 13) / 13;
     const seed2 = ((i * 29 + (isTopLine ? 11 : 37)) % 11) / 11;
 
+    // Explosive horizontal blast: left characters shoot left, right shoot right
     const signX = relX >= 0 ? 1 : -1;
-    const x = Math.round(signX * (420 + Math.abs(relX) * 480) + (seed - 0.5) * 200);
+    const x = Math.round(signX * (440 + Math.abs(relX) * 520) + (seed - 0.5) * 220);
+    // Powerful upward firework detonation
     const y = Math.round(
       isTopLine
-        ? -280 - Math.abs(relX) * 220 - seed * 260
-        : -160 + (seed > 0.5 ? -200 : 180) - seed2 * 200
+        ? -320 - Math.abs(relX) * 250 - seed * 280
+        : -180 + (seed > 0.5 ? -220 : 200) - seed2 * 220
     );
-    const z = Math.round((seed2 - 0.5) * 550);
-    const rotateZ = Math.round(signX * (90 + seed * 160));
-    const rotateX = Math.round((seed - 0.5) * 240);
-    const rotateY = Math.round((seed2 - 0.5) * 240);
-    const scale = Number((0.25 + seed * 0.45).toFixed(2));
-    const delay = Number((Math.abs(relX) * 0.05 + seed * 0.03).toFixed(3));
+    const z = Math.round((seed2 - 0.5) * 600);
+    const rotateZ = Math.round(signX * (100 + seed * 180));
+    const rotateX = Math.round((seed - 0.5) * 260);
+    const rotateY = Math.round((seed2 - 0.5) * 260);
+    const scale = Number((0.15 + seed * 0.35).toFixed(2));
+    const delay = Number((Math.abs(relX) * 0.04 + seed * 0.025).toFixed(3));
 
     return { char, i, x, y, z, rotateZ, rotateX, rotateY, scale, delay };
   });
@@ -102,13 +105,13 @@ export default function PricingSection({ onOpenTrial }) {
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
   const headlineWrapperRef = useRef(null);
-  const compactHeaderRef = useRef(null);
-  const wheelContainerRef = useRef(null);
-  const wheelRef = useRef(null);
-  const circleRefs = useRef([]);
-  const cardMediaRefs = useRef([]);
+  const sublineRef = useRef(null);
+  const cursorRef = useRef(null);
   const line1CharRefs = useRef([]);
   const line2CharRefs = useRef([]);
+  const cardsRowRef = useRef(null);
+  const cardRefs = useRef([]);
+  const mobileCardsRef = useRef(null);
 
   const [activePlan, setActivePlan] = useState("annual");
 
@@ -129,42 +132,41 @@ export default function PricingSection({ onOpenTrial }) {
         const { isDesktop, isTablet, isMobile, reduceMotion } = context.conditions;
 
         if (reduceMotion) {
-          gsap.set(circleRefs.current, { opacity: 1, visibility: "visible", rotation: 0 });
-          gsap.set(cardMediaRefs.current, { scale: 1, rotation: 0, x: 0, y: 0, pointerEvents: "auto" });
-          gsap.set(compactHeaderRef.current, { opacity: 1, y: 0 });
-          gsap.set(headlineWrapperRef.current, { display: "none" });
+          gsap.set(headlineWrapperRef.current, { autoAlpha: 0 });
+          gsap.set(cardsRowRef.current, { autoAlpha: 1 });
+          cardRefs.current.forEach((el) => {
+            if (el) gsap.set(el, { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
+          });
           return;
         }
 
-        const scrollDist = isDesktop ? "+=3000" : isTablet ? "+=2400" : "+=1800";
-        const s = 6.5;
+        const scrollDist = isDesktop ? "+=2800" : isTablet ? "+=2200" : "+=1800";
+        const distMult = isMobile ? 0.45 : isTablet ? 0.75 : 1.0;
 
+        // Reset headline & character starting states
         if (headlineWrapperRef.current) {
-          headlineWrapperRef.current.style.display = "flex";
-          headlineWrapperRef.current.style.opacity = "1";
+          gsap.set(headlineWrapperRef.current, { autoAlpha: 1, opacity: 1 });
         }
-
         line1CharRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, scale: 1, opacity: 1, filter: "blur(0px)" });
+          if (el) gsap.set(el, { opacity: 0, y: 10, scale: 0.95, x: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, filter: "blur(0px)" });
         });
         line2CharRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, scale: 1, opacity: 1, filter: "blur(0px)" });
+          if (el) gsap.set(el, { opacity: 0, y: 10, scale: 0.95, x: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, filter: "blur(0px)" });
         });
+        if (sublineRef.current) gsap.set(sublineRef.current, { opacity: 0, y: 14, filter: "blur(0px)" });
+        if (cursorRef.current) gsap.set(cursorRef.current, { opacity: 1 });
 
-        gsap.set(compactHeaderRef.current, { opacity: 0, y: -20 });
-
+        // Reset cards initial state
+        if (cardsRowRef.current) {
+          gsap.set(cardsRowRef.current, { autoAlpha: 0 });
+        }
         if (isDesktop) {
-          if (circleRefs.current[0]) gsap.set(circleRefs.current[0], { rotation: -s, opacity: 0, visibility: "hidden" });
-          if (circleRefs.current[1]) gsap.set(circleRefs.current[1], { rotation: 0, opacity: 0, visibility: "hidden" });
-          if (circleRefs.current[2]) gsap.set(circleRefs.current[2], { rotation: s, opacity: 0, visibility: "hidden" });
-
-          if (wheelRef.current) gsap.set(wheelRef.current, { rotation: s });
-
-          cardMediaRefs.current.forEach((el) => {
-            if (el) gsap.set(el, { scale: 1, x: 0, y: 0, rotation: 0, pointerEvents: "none" });
-          });
+          if (cardRefs.current[0]) gsap.set(cardRefs.current[0], { x: 370, y: 35, rotation: -6, scale: 0.82, opacity: 0 });
+          if (cardRefs.current[1]) gsap.set(cardRefs.current[1], { x: 0, y: 45, rotation: 0, scale: 0.88, opacity: 0 });
+          if (cardRefs.current[2]) gsap.set(cardRefs.current[2], { x: -370, y: 35, rotation: 6, scale: 0.82, opacity: 0 });
         }
 
+        // Master Scrubbed Timeline (100% reversible bi-directional scrub)
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: sectionRef.current,
@@ -178,13 +180,84 @@ export default function PricingSection({ onOpenTrial }) {
           },
         });
 
-        const distMult = isMobile ? 0.45 : isTablet ? 0.75 : 1.0;
+        // ============================================================
+        // 1. TYPING TEXT EFFECT (0.00 -> 0.12)
+        // Sequential crisp typewriter reveal with blinking cursor
+        // ============================================================
+        const totalL1 = line1Vectors.length;
+        const totalL2 = line2Vectors.length;
 
+        line1Vectors.forEach((v, idx) => {
+          const el = line1CharRefs.current[idx];
+          if (!el) return;
+          const startTime = (idx / totalL1) * 0.048;
+          tl.to(
+            el,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.004,
+              ease: "power1.out",
+            },
+            startTime
+          );
+        });
+
+        line2Vectors.forEach((v, idx) => {
+          const el = line2CharRefs.current[idx];
+          if (!el) return;
+          const startTime = 0.05 + (idx / totalL2) * 0.058;
+          tl.to(
+            el,
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.004,
+              ease: "power1.out",
+            },
+            startTime
+          );
+        });
+
+        // Supporting paragraph types/fades in
+        if (sublineRef.current) {
+          tl.to(
+            sublineRef.current,
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.03,
+              ease: "power2.out",
+            },
+            0.11
+          );
+        }
+
+        // Blinking cursor fades right before detonation
+        if (cursorRef.current) {
+          tl.to(
+            cursorRef.current,
+            {
+              opacity: 0,
+              duration: 0.015,
+              ease: "power1.out",
+            },
+            0.165
+          );
+        }
+
+        // Reading hold between 0.12 and 0.18 (both lines fully visible)
+
+        // ============================================================
+        // 2. KINETIC WORD BLAST (0.18 -> 0.38)
+        // Radial 3D firework explosion with tumbling rotation & blur
+        // ============================================================
         line1Vectors.forEach((v) => {
           if (!v) return;
           const el = line1CharRefs.current[v.i];
           if (!el) return;
-
           tl.to(
             el,
             {
@@ -197,10 +270,10 @@ export default function PricingSection({ onOpenTrial }) {
               scale: v.scale,
               opacity: 0,
               filter: "blur(14px)",
-              duration: 0.16,
+              duration: 0.17,
               ease: "power2.in",
             },
-            0.12 + v.delay
+            0.18 + v.delay
           );
         });
 
@@ -208,7 +281,6 @@ export default function PricingSection({ onOpenTrial }) {
           if (!v) return;
           const el = line2CharRefs.current[v.i];
           if (!el) return;
-
           tl.to(
             el,
             {
@@ -221,231 +293,115 @@ export default function PricingSection({ onOpenTrial }) {
               scale: v.scale,
               opacity: 0,
               filter: "blur(14px)",
-              duration: 0.16,
+              duration: 0.17,
               ease: "power2.in",
             },
-            0.14 + v.delay
+            0.19 + v.delay
           );
         });
 
+        if (sublineRef.current) {
+          tl.to(
+            sublineRef.current,
+            {
+              opacity: 0,
+              y: 40,
+              filter: "blur(8px)",
+              duration: 0.12,
+              ease: "power2.in",
+            },
+            0.20
+          );
+        }
+
+        // Clean autoAlpha fade out for headline layer
         if (headlineWrapperRef.current) {
           tl.to(
             headlineWrapperRef.current,
             {
-              opacity: 0,
-              duration: 0.08,
+              autoAlpha: 0,
+              duration: 0.04,
               ease: "power1.out",
-              onComplete: () => {
-                if (headlineWrapperRef.current) headlineWrapperRef.current.style.display = "none";
-              },
-              onReverseComplete: () => {
-                if (headlineWrapperRef.current) headlineWrapperRef.current.style.display = "flex";
-              },
             },
-            0.26
+            0.35
           );
         }
 
-        tl.to(
-          compactHeaderRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.18,
-            ease: "power2.out",
-          },
-          0.30
-        );
-
-        let activeStep = -1;
-
-        const triggerWheelStep = (step) => {
-          if (step === activeStep || !isDesktop) return;
-          activeStep = step;
-
-          if (step === 0) {
-            const c0 = circleRefs.current[0];
-            const m0 = cardMediaRefs.current[0];
-            if (c0 && m0) {
-              c0.style.visibility = "visible";
-              gsap.to(c0, { opacity: 1, duration: 0.22, overwrite: "auto" });
-              gsap.from(m0, {
-                scale: 0.92,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (wheelRef.current) {
-              gsap.to(wheelRef.current, {
-                rotation: s,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (circleRefs.current[1]) gsap.to(circleRefs.current[1], { opacity: 0, duration: 0.2 });
-            if (circleRefs.current[2]) gsap.to(circleRefs.current[2], { opacity: 0, duration: 0.2 });
-          } else if (step === 1) {
-            const c1 = circleRefs.current[1];
-            const m1 = cardMediaRefs.current[1];
-            if (c1 && m1) {
-              c1.style.visibility = "visible";
-              gsap.to(c1, { opacity: 1, duration: 0.22, overwrite: "auto" });
-              gsap.from(m1, {
-                scale: 0.92,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (wheelRef.current) {
-              gsap.to(wheelRef.current, {
-                rotation: s / 2,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (circleRefs.current[0]) {
-              circleRefs.current[0].style.visibility = "visible";
-              gsap.to(circleRefs.current[0], { opacity: 1, duration: 0.22 });
-            }
-            if (circleRefs.current[2]) gsap.to(circleRefs.current[2], { opacity: 0, duration: 0.2 });
-          } else if (step === 2) {
-            const c2 = circleRefs.current[2];
-            const m2 = cardMediaRefs.current[2];
-            if (c2 && m2) {
-              c2.style.visibility = "visible";
-              gsap.to(c2, { opacity: 1, duration: 0.22, overwrite: "auto" });
-              gsap.from(m2, {
-                scale: 0.92,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (wheelRef.current) {
-              gsap.to(wheelRef.current, {
-                rotation: 0,
-                ease: "elastic.out(0.6, 0.3)",
-                duration: 0.55,
-                overwrite: "auto",
-              });
-            }
-            if (circleRefs.current[0]) {
-              circleRefs.current[0].style.visibility = "visible";
-              gsap.to(circleRefs.current[0], { opacity: 1, duration: 0.22 });
-            }
-            if (circleRefs.current[1]) {
-              circleRefs.current[1].style.visibility = "visible";
-              gsap.to(circleRefs.current[1], { opacity: 1, duration: 0.22 });
-            }
-          }
-        };
-
-        ScrollTrigger.create({
-          trigger: sectionRef.current,
-          start: "top top",
-          end: scrollDist,
-          onUpdate: (self) => {
-            const p = self.progress;
-
-            if (!isDesktop) return;
-
-            if (headlineWrapperRef.current) {
-              if (p >= 0.28) {
-                headlineWrapperRef.current.style.opacity = "0";
-                headlineWrapperRef.current.style.display = "none";
-              } else {
-                headlineWrapperRef.current.style.display = "flex";
-              }
-            }
-
-            if (p < 0.30) {
-              if (activeStep !== -1) {
-                activeStep = -1;
-                circleRefs.current.forEach((el) => {
-                  if (el) gsap.to(el, { opacity: 0, duration: 0.2 });
-                });
-              }
-            } else if (p >= 0.30 && p < 0.46) {
-              triggerWheelStep(0);
-            } else if (p >= 0.46 && p < 0.62) {
-              triggerWheelStep(1);
-            } else if (p >= 0.62 && p < 0.78) {
-              triggerWheelStep(2);
-            }
-          },
-          onLeaveBack: () => {
-            activeStep = -1;
-            if (headlineWrapperRef.current) {
-              headlineWrapperRef.current.style.display = "flex";
-              headlineWrapperRef.current.style.opacity = "1";
-            }
-            if (isDesktop) {
-              circleRefs.current.forEach((el) => {
-                if (el) {
-                  el.style.visibility = "hidden";
-                  gsap.set(el, { opacity: 0 });
-                }
-              });
-            }
-          },
-        });
+        // ============================================================
+        // 3. PHASE 3 & 4: THREE CARDS EMERGE & ALIGN (0.34 -> 0.80)
+        // Emerge in center cluster -> Fan out into level 3-column row
+        // ============================================================
+        if (cardsRowRef.current) {
+          tl.fromTo(
+            cardsRowRef.current,
+            { autoAlpha: 0 },
+            { autoAlpha: 1, duration: 0.04, ease: "power1.out" },
+            0.34
+          );
+        }
 
         if (isDesktop) {
-          tl.to(
-            cardMediaRefs.current[0],
-            {
-              x: -390,
-              y: 0,
-              rotation: s,
-              duration: 0.14,
-              ease: "power2.out",
-              pointerEvents: "auto",
-            },
-            0.78
-          );
+          // Card 0 (Monthly): Emerge from +370 to +180, then fan out to 0
+          if (cardRefs.current[0]) {
+            tl.fromTo(
+              cardRefs.current[0],
+              { x: 370, y: 35, rotation: -6, scale: 0.82, opacity: 0 },
+              { x: 180, y: 15, rotation: -4, scale: 0.92, opacity: 1, duration: 0.22, ease: "power2.out" },
+              0.34
+            );
+            tl.to(
+              cardRefs.current[0],
+              { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.22, ease: "power2.out" },
+              0.58
+            );
+          }
 
-          tl.to(
-            cardMediaRefs.current[1],
-            {
-              x: 0,
-              y: 0,
-              rotation: 0,
-              duration: 0.14,
-              ease: "power2.out",
-              pointerEvents: "auto",
-            },
-            0.78
-          );
+          // Card 1 (Six Months): Emerge in center, then settle to 1.0
+          if (cardRefs.current[1]) {
+            tl.fromTo(
+              cardRefs.current[1],
+              { x: 0, y: 45, rotation: 0, scale: 0.88, opacity: 0 },
+              { x: 0, y: 0, rotation: 0, scale: 0.96, opacity: 1, duration: 0.22, ease: "power2.out" },
+              0.36
+            );
+            tl.to(
+              cardRefs.current[1],
+              { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.22, ease: "power2.out" },
+              0.58
+            );
+          }
 
-          tl.to(
-            cardMediaRefs.current[2],
-            {
-              x: 390,
-              y: 0,
-              rotation: -s,
-              duration: 0.14,
-              ease: "power2.out",
-              pointerEvents: "auto",
-            },
-            0.78
-          );
+          // Card 2 (Annual): Emerge from -370 to -180, then fan out to 0
+          if (cardRefs.current[2]) {
+            tl.fromTo(
+              cardRefs.current[2],
+              { x: -370, y: 35, rotation: 6, scale: 0.82, opacity: 0 },
+              { x: -180, y: 15, rotation: 4, scale: 0.92, opacity: 1, duration: 0.22, ease: "power2.out" },
+              0.38
+            );
+            tl.to(
+              cardRefs.current[2],
+              { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.22, ease: "power2.out" },
+              0.58
+            );
+          }
         } else {
-          circleRefs.current.forEach((el) => {
-            if (el) {
-              el.style.visibility = "visible";
-              gsap.set(el, { opacity: 1 });
-            }
-          });
-          cardMediaRefs.current.forEach((el) => {
-            if (el) gsap.set(el, { pointerEvents: "auto" });
-          });
+          // Mobile & Tablet: Cards emerge vertically centered
+          if (mobileCardsRef.current) {
+            tl.fromTo(
+              mobileCardsRef.current,
+              { opacity: 0, y: 40, scale: 0.92 },
+              { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "power2.out" },
+              0.40
+            );
+          }
         }
 
-        tl.to({}, { duration: 0.08 }, 0.92);
+        // ============================================================
+        // 4. PHASE 5: STABLE INTERACTION HOLD (0.80 -> 1.00)
+        // Complete stability for reading, hovering and clicking CTAs
+        // ============================================================
+        tl.to({}, { duration: 0.20 }, 0.80);
       },
       sectionRef
     );
@@ -458,7 +414,7 @@ export default function PricingSection({ onOpenTrial }) {
       clearTimeout(refreshTimer);
       mm.revert();
     };
-  }, []);
+  }, [line1Vectors, line2Vectors]);
 
   const handleAction = (planId) => {
     if (onOpenTrial) {
@@ -474,10 +430,12 @@ export default function PricingSection({ onOpenTrial }) {
       ref={sectionRef}
       className="relative w-full bg-[#050507] text-[#F5F5F7] overflow-hidden"
     >
+      {/* PINNED STAGE (Controlled by GSAP ScrollTrigger scrub) */}
       <div
         ref={stageRef}
         className="relative w-full h-screen min-h-[640px] bg-[#050507] overflow-hidden flex flex-col justify-between py-4 sm:py-6 px-4 sm:px-8 select-none"
       >
+        {/* Technical Grid Background & Ambient Lighting */}
         <div
           className="absolute inset-0 pointer-events-none opacity-30"
           style={{
@@ -493,6 +451,7 @@ export default function PricingSection({ onOpenTrial }) {
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] bg-[#963DFF]/15 rounded-full blur-[170px] pointer-events-none" />
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#55A9FF]/10 rounded-full blur-[140px] pointer-events-none" />
 
+        {/* Top Eyebrow Badge */}
         <div className="relative z-30 w-full max-w-7xl mx-auto flex items-center justify-between">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF]">
             <span>/ TRANSPARENT PRICING</span>
@@ -504,14 +463,15 @@ export default function PricingSection({ onOpenTrial }) {
         </div>
 
         {/* ============================================================
-            PHASE 1 & 2: MASSIVE EDITORIAL TYPOGRAPHY LAYER
-            Wrapped in whitespace-nowrap spans to NEVER break words awkwardly!
+            PHASE 1 & 2: MASSIVE EDITORIAL TYPOGRAPHY WITH TYPING EFFECT
+            Pure crisp white characters, NO duplicate background text!
             ============================================================ */}
         <div
           ref={headlineWrapperRef}
           className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none px-4 text-center will-change-transform"
           style={{ perspective: "1200px" }}
         >
+          {/* Line 1: SIMPLE PRICING. (Individual character spans) */}
           <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
             {WORDS_LINE1.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE1[0].length;
@@ -535,7 +495,8 @@ export default function PricingSection({ onOpenTrial }) {
             })}
           </h2>
 
-          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_40px_rgba(194,138,255,0.45)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+          {/* Line 2: POWERFUL CONVERSATIONS. (Pure white with typing cursor) */}
+          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
             {WORDS_LINE2.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE2[0].length;
               return (
@@ -556,36 +517,30 @@ export default function PricingSection({ onOpenTrial }) {
                 </span>
               );
             })}
+            {/* Blinking Typing Cursor */}
+            <span
+              ref={cursorRef}
+              className="inline-block w-[3px] sm:w-[5px] h-[0.75em] bg-[#C28AFF] ml-2 align-middle shadow-[0_0_12px_#C28AFF] rounded-sm animate-pulse will-change-transform"
+            />
           </h2>
 
-          <p className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-[#9898A6] max-w-lg font-medium">
+          <p
+            ref={sublineRef}
+            className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-[#9898A6] max-w-lg font-medium will-change-transform"
+          >
             Choose the plan that works for your business.
           </p>
         </div>
 
-        <div
-          ref={compactHeaderRef}
-          className="relative z-30 w-full max-w-4xl mx-auto text-center will-change-transform pt-1"
-        >
-          <h3 className="font-sans font-extrabold tracking-tight text-xl sm:text-3xl text-white uppercase leading-tight">
-            <span>Simple Pricing. </span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] to-[#55A9FF]">
-              Powerful Conversations.
-            </span>
-          </h3>
-          <p className="mt-0.5 text-xs text-[#9898A6]">
-            Choose the plan that works for your business.
-          </p>
-        </div>
-
-        <div className="relative z-30 sm:hidden flex justify-center mt-2 mb-1">
+        {/* Mobile Plan Quick Switcher (Visible on small screens) */}
+        <div className="relative z-30 lg:hidden flex justify-center mt-2 mb-1">
           <div className="inline-flex p-1 rounded-full bg-white/[0.05] border border-white/[0.08]">
             {PRICING_PLANS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setActivePlan(p.id)}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all ${
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                   activePlan === p.id
                     ? "bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white shadow-sm"
                     : "text-[#9898A6]"
@@ -597,153 +552,39 @@ export default function PricingSection({ onOpenTrial }) {
           </div>
         </div>
 
+        {/* ============================================================
+            DESKTOP: PERFECTLY ALIGNED 3-COLUMN CARDS ROW
+            Level horizontal alignment, vertically centered, zero cut-off!
+            ============================================================ */}
         <div
-          ref={wheelContainerRef}
-          className="relative z-20 w-full flex-1 flex items-center justify-center overflow-hidden"
+          ref={cardsRowRef}
+          className="relative z-20 w-full max-w-6xl mx-auto hidden lg:flex items-stretch justify-center gap-6 xl:gap-8 px-4 my-auto will-change-transform"
         >
-          <div
-            ref={wheelRef}
-            className="hidden lg:block absolute will-change-transform"
-            style={{
-              width: "3600px",
-              height: "3600px",
-              top: "50%",
-              left: "50%",
-              marginLeft: "-1800px",
-              marginTop: "0px",
-              transformOrigin: "center center",
-            }}
-          >
-            {PRICING_PLANS.map((plan, idx) => {
-              const isAnnual = plan.id === "annual";
-              const isSixMonths = plan.id === "six-months";
+          {PRICING_PLANS.map((plan, idx) => {
+            const isAnnual = plan.id === "annual";
+            const isSixMonths = plan.id === "six-months";
 
-              return (
+            return (
+              <div
+                key={plan.id}
+                ref={(el) => (cardRefs.current[idx] = el)}
+                className="w-full max-w-[340px] xl:max-w-[360px] flex flex-col will-change-transform transform-gpu select-text"
+              >
                 <div
-                  key={plan.id}
-                  ref={(el) => (circleRefs.current[idx] = el)}
-                  className="absolute inset-0 w-full h-full will-change-transform"
-                  style={{
-                    transformOrigin: "center center",
-                    visibility: "hidden",
-                    opacity: 0,
-                  }}
-                >
-                  <div
-                    ref={(el) => (cardMediaRefs.current[idx] = el)}
-                    className="relative w-[340px] xl:w-[360px] mx-auto will-change-transform pointer-events-auto"
-                    style={{
-                      transform: "translateY(-50%)",
-                      transformOrigin: "center center",
-                    }}
-                  >
-                    <div
-                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group ${
-                        isAnnual
-                          ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_45px_rgba(150,61,255,0.3)]"
-                          : isSixMonths
-                          ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_40px_rgba(0,0,0,0.7)]"
-                          : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
-                      }`}
-                    >
-                      <span className="absolute bottom-5 right-6 text-7xl font-mono font-black text-white/[0.04] pointer-events-none select-none">
-                        {plan.number}
-                      </span>
-
-                      {isAnnual && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap">
-                          Best Value — Save ₹2,989
-                        </div>
-                      )}
-
-                      <div className="relative z-10">
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
-                              {plan.number} / PLAN
-                            </span>
-                            {isAnnual && (
-                              <span className="px-2 py-0.5 rounded bg-[#963DFF]/20 text-[#C28AFF] text-[10px] font-bold uppercase tracking-wider">
-                                Recommended
-                              </span>
-                            )}
-                          </div>
-                          <h4 className="font-bold text-2xl text-white tracking-tight mt-1">
-                            {plan.name}
-                          </h4>
-                          <p className="text-xs text-[#9898A6] mt-0.5">{plan.tagline}</p>
-                        </div>
-
-                        <div className="mb-4 pb-4 border-b border-white/[0.08]">
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                              {plan.price}
-                            </span>
-                            <span className="text-xs text-[#9898A6] font-medium">
-                              {plan.period}
-                            </span>
-                          </div>
-                          {plan.savings && (
-                            <p className="text-[11px] font-semibold text-[#55A9FF] mt-1.5 leading-snug">
-                              {plan.savings}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2.5 mb-6">
-                          {plan.features.map((feat, fIdx) => (
-                            <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
-                              <Check className="w-3.5 h-3.5 text-[#C28AFF] mt-0.5 shrink-0" />
-                              <span className="leading-tight">{feat}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="relative z-10 pt-2">
-                        <button
-                          type="button"
-                          onClick={() => handleAction(plan.id)}
-                          className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] ${
-                            isAnnual
-                              ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white hover:shadow-[0_0_24px_rgba(150,61,255,0.45)]"
-                              : "bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.1]"
-                          }`}
-                        >
-                          <span>{plan.ctaText}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="lg:hidden w-full max-w-md mx-auto flex flex-col justify-center px-4">
-            {PRICING_PLANS.map((plan) => {
-              const isAnnual = plan.id === "annual";
-              const isSixMonths = plan.id === "six-months";
-              const isHidden = activePlan !== plan.id;
-
-              return (
-                <div
-                  key={plan.id}
-                  className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden ${
-                    isHidden ? "hidden" : "flex"
-                  } ${
+                  className={`relative h-full rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group ${
                     isAnnual
-                      ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_35px_rgba(150,61,255,0.3)]"
+                      ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_45px_rgba(150,61,255,0.35)]"
                       : isSixMonths
-                      ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_35px_rgba(0,0,0,0.7)]"
-                      : "bg-[#12121A]/85 border border-white/[0.08] shadow-[0_15px_35px_rgba(0,0,0,0.6)]"
+                      ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_40px_rgba(0,0,0,0.7)]"
+                      : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
                   }`}
                 >
-                  <span className="absolute bottom-4 right-5 text-6xl font-mono font-black text-white/[0.04] pointer-events-none select-none">
+                  {/* Oversized Signature Watermark Number */}
+                  <span className="absolute bottom-5 right-6 text-7xl font-mono font-black text-white/[0.04] pointer-events-none select-none">
                     {plan.number}
                   </span>
 
+                  {/* Best Value Badge for Annual */}
                   {isAnnual && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap">
                       Best Value — Save ₹2,989
@@ -751,9 +592,10 @@ export default function PricingSection({ onOpenTrial }) {
                   )}
 
                   <div className="relative z-10">
+                    {/* Plan Header */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
+                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
                           {plan.number} / PLAN
                         </span>
                         {isAnnual && (
@@ -768,9 +610,10 @@ export default function PricingSection({ onOpenTrial }) {
                       <p className="text-xs text-[#9898A6] mt-0.5">{plan.tagline}</p>
                     </div>
 
+                    {/* Price Block */}
                     <div className="mb-4 pb-4 border-b border-white/[0.08]">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-3xl font-extrabold text-white tracking-tight">
+                        <span className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                           {plan.price}
                         </span>
                         <span className="text-xs text-[#9898A6] font-medium">
@@ -784,6 +627,7 @@ export default function PricingSection({ onOpenTrial }) {
                       )}
                     </div>
 
+                    {/* Feature Checklist (Exact User Specifications) */}
                     <div className="space-y-2.5 mb-6">
                       {plan.features.map((feat, fIdx) => (
                         <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
@@ -794,14 +638,15 @@ export default function PricingSection({ onOpenTrial }) {
                     </div>
                   </div>
 
-                  <div className="relative z-10 pt-2">
+                  {/* Card CTA Button */}
+                  <div className="relative z-10 pt-2 mt-auto">
                     <button
                       type="button"
                       onClick={() => handleAction(plan.id)}
-                      className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md ${
+                      className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] ${
                         isAnnual
-                          ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white"
-                          : "bg-white/[0.06] text-white border border-white/[0.1]"
+                          ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white hover:shadow-[0_0_24px_rgba(150,61,255,0.45)]"
+                          : "bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.1]"
                       }`}
                     >
                       <span>{plan.ctaText}</span>
@@ -809,19 +654,106 @@ export default function PricingSection({ onOpenTrial }) {
                     </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
 
+        {/* TABLET & MOBILE RESPONSIVE STACK (Clean, switcher compatible) */}
+        <div
+          ref={mobileCardsRef}
+          className="lg:hidden w-full max-w-md mx-auto flex flex-col justify-center px-4 my-auto will-change-transform"
+        >
+          {PRICING_PLANS.map((plan) => {
+            const isAnnual = plan.id === "annual";
+            const isSixMonths = plan.id === "six-months";
+            const isHidden = activePlan !== plan.id;
+
+            return (
+              <div
+                key={plan.id}
+                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden ${
+                  isHidden ? "hidden" : "flex"
+                } ${
+                  isAnnual
+                    ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_35px_rgba(150,61,255,0.3)]"
+                    : isSixMonths
+                    ? "bg-[#12121A]/90 border border-[#963DFF]/40"
+                    : "bg-[#12121A]/85 border border-white/[0.08]"
+                }`}
+              >
+                <div className="relative z-10">
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
+                        {plan.number} / PLAN
+                      </span>
+                      {isAnnual && (
+                        <span className="px-2 py-0.5 rounded bg-[#963DFF]/20 text-[#C28AFF] text-[10px] font-bold uppercase tracking-wider">
+                          Recommended
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-2xl text-white tracking-tight mt-1">
+                      {plan.name}
+                    </h4>
+                    <p className="text-xs text-[#9898A6] mt-0.5">{plan.tagline}</p>
+                  </div>
+
+                  <div className="mb-4 pb-4 border-b border-white/[0.08]">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-3xl font-extrabold text-white tracking-tight">
+                        {plan.price}
+                      </span>
+                      <span className="text-xs text-[#9898A6] font-medium">
+                        {plan.period}
+                      </span>
+                    </div>
+                    {plan.savings && (
+                      <p className="text-[11px] font-semibold text-[#55A9FF] mt-1.5 leading-snug">
+                        {plan.savings}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2.5 mb-6">
+                    {plan.features.map((feat, fIdx) => (
+                      <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
+                        <Check className="w-3.5 h-3.5 text-[#C28AFF] mt-0.5 shrink-0" />
+                        <span className="leading-tight">{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="relative z-10 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleAction(plan.id)}
+                    className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md ${
+                      isAnnual
+                        ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white"
+                        : "bg-white/[0.06] text-white border border-white/[0.1]"
+                    }`}
+                  >
+                    <span>{plan.ctaText}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom Guarantee Banner */}
         <div className="relative z-30 w-full max-w-5xl mx-auto flex items-center justify-between text-[10px] sm:text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold pt-1 px-2">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>Full 7-Day Free Evaluation on Every Plan</span>
           </div>
-          <span className="text-[#C28AFF]">
+          <div className="text-[#C28AFF] hidden sm:block">
             Autonomous Enterprise AI • Zero Risk
-          </span>
+          </div>
         </div>
       </div>
     </section>
