@@ -117,11 +117,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       }
 
       // =======================================================================
-      // MASTER COORDINATED GSAP TIMELINE
-      // 1. Letters shatter in 3D
-      // 2. Fullscreen typography FADES OUT (Eliminates ghost text overlap!)
-      // 3. Right-to-Left Carousel Track glides in from right to left
-      // 4. Cards fan out smoothly into final balanced layout
+      // MASTER GSAP TIMELINE — Awwwards Character Shatter + Cards Sequence
       // =======================================================================
       const masterTL = gsap.timeline({
         scrollTrigger: {
@@ -130,93 +126,91 @@ export default function HowItWorksSection({ onOpenTrial }) {
           end: "+=1200",
           pin: stage,
           pinSpacing: true,
-          scrub: 0.8,
+          scrub: 0.75,
           anticipatePin: 1,
           invalidateOnRefresh: true,
         },
       });
 
-      // 1. Letters shatter outwards in 3D
-      letterRefs.current.forEach((el, idx) => {
-        if (el) {
-          const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
+      // PHASE 1: Dramatic Character-by-Character Shatter in 3D Space
+      HEADLINE_LETTERS.forEach((item, idx) => {
+        if (!item.isSpace && letterRefs.current[idx]) {
           masterTL.to(
-            el,
+            letterRefs.current[idx],
             {
-              x: config.x * (isDesktop ? 1.2 : 0.7),
-              y: config.y * (isDesktop ? 1.2 : 0.7),
-              z: config.z,
-              rotateX: config.rx,
-              rotateY: config.ry,
-              rotateZ: config.rz,
-              scale: config.s,
+              x: item.x * (isDesktop ? 1.6 : 0.9),
+              y: item.y * (isDesktop ? 1.4 : 0.8),
+              z: item.z * (isDesktop ? 1.8 : 1.0),
+              rotateX: item.rx,
+              rotateY: item.ry,
+              rotateZ: item.rz,
+              scale: item.s,
               opacity: 0,
-              filter: "blur(12px)",
-              duration: 0.28,
+              filter: "blur(14px)",
+              duration: 0.42,
               ease: "power2.inOut",
             },
-            0.08 + (idx % 4) * 0.015
+            idx * 0.015
           );
         }
       });
 
-      // 2. WIPE OUT FULLSCREEN TYPOGRAPHY (Fixes overlapping text completely!)
+      // Ambient background flare expansion
+      if (glowOrbRef.current) {
+        masterTL.to(
+          glowOrbRef.current,
+          {
+            scale: 1.4,
+            opacity: 0.85,
+            duration: 0.5,
+            ease: "power2.out",
+          },
+          0.05
+        );
+      }
+
+      // Typography container gracefully collapses
       if (typographyRef.current) {
         masterTL.to(
           typographyRef.current,
           {
             opacity: 0,
-            duration: 0.20,
-            ease: "power2.out",
-            pointerEvents: "none",
+            duration: 0.28,
+            ease: "power2.in",
           },
-          0.10
+          0.12
         );
       }
 
-      // 3. Persistent Section Header fades in cleanly at top
+      // PHASE 2: Persistent Architecture Header Fades In
       if (sectionHeaderRef.current) {
         masterTL.to(
           sectionHeaderRef.current,
           {
             opacity: 1,
             y: 0,
-            duration: 0.22,
-            ease: "power2.out",
+            duration: 0.28,
+            ease: "power3.out",
           },
-          0.12
+          0.18
         );
       }
 
-      if (glowOrbRef.current) {
-        masterTL.to(
-          glowOrbRef.current,
-          {
-            scale: 1.25,
-            opacity: 0.9,
-            duration: 0.30,
-            ease: "power1.out",
-          },
-          0.12
-        );
-      }
-
-      // 4. RIGHT-TO-LEFT CAROUSEL ENTRANCE:
-      // The track glides smoothly from RIGHT to LEFT into view
+      // PHASE 3: Right-to-Left Carousel Slides Into Center Screen
       if (cardsTrackRef.current) {
         masterTL.to(
           cardsTrackRef.current,
           {
             xPercent: 0,
             opacity: 1,
-            duration: 0.35,
-            ease: "power2.out",
+            duration: 0.45,
+            ease: "power3.out",
           },
-          0.15
+          0.16
         );
       }
 
-      // 5. Individual cards stagger and glide from right to left into their spots
+      // Staggered reveal of the three architectural cards
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           masterTL.to(
@@ -268,8 +262,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
           className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none px-4"
         >
           {/* Top Kicker */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/20 text-zinc-300 text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
             <span>Fast Three-Step Setup</span>
           </div>
 
@@ -319,7 +313,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </h1>
 
           <p className="mt-6 text-sm sm:text-base text-[#9898A6] max-w-lg text-center tracking-wide font-mono uppercase">
-            Scroll to reveal architecture & deployment
+            Scroll to reveal architecture &amp; deployment
           </p>
         </div>
 
@@ -330,8 +324,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
           ref={sectionHeaderRef}
           className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-3"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-[11px] font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3 h-3 text-[#C28AFF]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/20 text-zinc-300 text-[11px] font-bold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3 h-3 text-zinc-300" />
             <span>Fast Three-Step Setup</span>
           </div>
           <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight">
@@ -346,68 +340,64 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* RIGHT-TO-LEFT CAROUSEL TRACK (COLORFUL ON HOVER!)                     */}
+        {/* RIGHT-TO-LEFT CAROUSEL TRACK (WHOLE COLOR CARDS!)                     */}
         {/* ===================================================================== */}
         <div
           ref={cardsTrackRef}
           className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch will-change-transform"
         >
           {/* =================================================================== */}
-          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE (COLORFUL ON HOVER)            */}
+          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE (FULL VIBRANT ICE TEAL)         */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[0] = el)}
             onMouseEnter={() => setActiveCardIndex(0)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#0B1528] via-[#091120] to-[#060B14] hover:from-[#0B2A4A] hover:via-[#09223D] hover:to-[#051626] border-2 border-[#38BDF8]/40 hover:border-[#38BDF8] shadow-[0_15px_40px_rgba(56,189,248,0.18)] hover:shadow-[0_25px_60px_rgba(56,189,248,0.45)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-500 hover:-translate-y-1.5 cursor-pointer"
+            className="group relative rounded-2xl bg-[#5EEAD4] text-black border-2 border-[#2DD4BF] shadow-[0_20px_50px_rgba(94,234,212,0.35)] hover:shadow-[0_25px_60px_rgba(94,234,212,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
           >
-            {/* Ambient Cyan Flare — Blooms into vibrant color on hover */}
-            <div className="absolute -top-16 -left-16 w-44 h-44 bg-[#38BDF8]/15 group-hover:bg-[#38BDF8]/40 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
-            <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-[#0284C7]/0 group-hover:bg-[#0284C7]/30 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
-
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#38BDF8]/15 group-hover:bg-[#38BDF8] text-[#38BDF8] group-hover:text-black border border-[#38BDF8]/30 group-hover:border-[#38BDF8] transition-all duration-300">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#5EEAD4] uppercase tracking-wider">
                     Step 01 · Ingestion
                   </span>
-                  <span className="font-headline font-black text-2xl text-white/30 group-hover:text-[#38BDF8] group-hover:drop-shadow-[0_0_15px_rgba(56,189,248,0.8)] transition-all duration-300">
+                  <span className="font-headline font-black text-2xl text-black/40">
                     01
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug group-hover:text-[#BAE6FD] transition-colors">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-black tracking-tight uppercase leading-snug">
                   CONNECT YOUR KNOWLEDGE BASE
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] group-hover:text-white leading-relaxed transition-colors">
+                <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
                   Upload brochures, pricing schedules, FAQs, technical manuals, or provide a website URL.
                 </p>
               </div>
 
               {/* Visual Graphic: Interactive Ingestion Dropzone */}
-              <div className="my-auto py-2 bg-[#040C1A]/90 group-hover:bg-[#06182E] rounded-xl p-3 border border-[#38BDF8]/20 group-hover:border-[#38BDF8]/50 space-y-2 shadow-inner transition-all duration-300">
-                <div className="flex items-center justify-between text-[10px] font-mono text-[#94A3B8]">
-                  <span className="flex items-center gap-1.5 text-[#38BDF8] font-bold">
-                    <Globe className="w-3 h-3 text-[#38BDF8]" />
-                    URL & Docs Sync
+              <div className="my-auto py-2 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
+                <div className="flex items-center justify-between text-[10px] font-mono text-black">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <Globe className="w-3 h-3 text-black" />
+                    URL &amp; Docs Sync
                   </span>
-                  <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                  <span className="px-1.5 py-0.2 rounded bg-black text-[#5EEAD4] font-bold text-[9px]">
                     Active
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[9px] text-white/80 group-hover:text-white bg-white/[0.05] group-hover:bg-[#38BDF8]/10 p-1.5 rounded border border-white/[0.05] group-hover:border-[#38BDF8]/30 transition-colors">
-                  <Upload className="w-3 h-3 text-[#38BDF8] shrink-0" />
-                  <span className="truncate font-mono">brochure_v2.pdf, faqs.docx</span>
+                <div className="flex items-center gap-1.5 text-[9px] text-black bg-black/5 p-1.5 rounded border border-black/10 font-mono">
+                  <Upload className="w-3 h-3 text-black shrink-0" />
+                  <span className="truncate">brochure_v2.pdf, faqs.docx</span>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#38BDF8]/20 group-hover:border-[#38BDF8]/40 flex items-start gap-2 transition-colors">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#38BDF8] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#94A3B8] group-hover:text-[#E0F2FE] font-medium leading-tight transition-colors">
+              <div className="pt-2.5 border-t border-black/15 flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
+                <span className="text-[11px] text-black/85 font-semibold leading-tight">
                   Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.
                 </span>
               </div>
@@ -415,64 +405,60 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* =================================================================== */}
-          {/* CARD 02: CALIBRATE PERSONA & LAUNCHER STYLING (COLORFUL ON HOVER)   */}
+          {/* CARD 02: CALIBRATE PERSONA (FULL VIBRANT ELECTRIC LAVENDER)         */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[1] = el)}
             onMouseEnter={() => setActiveCardIndex(1)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#1C0E36] via-[#120824] to-[#0A0414] hover:from-[#3B1266] hover:via-[#2A0C4A] hover:to-[#170529] border-2 border-[#963DFF]/60 hover:border-[#C28AFF] shadow-[0_20px_50px_rgba(150,61,255,0.32)] hover:shadow-[0_25px_65px_rgba(194,138,255,0.55)] ring-1 ring-[#C28AFF]/40 hover:ring-[#C28AFF] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-500 hover:-translate-y-1.5 cursor-pointer"
+            className="group relative rounded-2xl bg-[#D8B4FE] text-black border-2 border-[#C084FC] shadow-[0_20px_50px_rgba(216,180,254,0.35)] hover:shadow-[0_25px_60px_rgba(216,180,254,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
           >
-            {/* Ambient Purple Flare — Blooms into vibrant color on hover */}
-            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#963DFF]/25 group-hover:bg-[#963DFF]/50 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
-            <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-[#C28AFF]/0 group-hover:bg-[#C28AFF]/30 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
-
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/20 group-hover:bg-[#C28AFF] text-[#C28AFF] group-hover:text-black border border-[#963DFF]/40 group-hover:border-[#C28AFF] transition-all duration-300">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#D8B4FE] uppercase tracking-wider">
                     Step 02 · Persona Engine
                   </span>
-                  <span className="font-headline font-black text-2xl text-[#963DFF] group-hover:text-[#C28AFF] group-hover:drop-shadow-[0_0_15px_rgba(194,138,255,0.9)] transition-all duration-300">
+                  <span className="font-headline font-black text-2xl text-black/40">
                     02
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug group-hover:text-[#F3E8FF] transition-colors">
-                  CALIBRATE PERSONA & LAUNCHER STYLING
+                <h3 className="font-headline font-black text-lg sm:text-xl text-black tracking-tight uppercase leading-snug">
+                  CALIBRATE PERSONA &amp; LAUNCHER STYLING
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#E2E8F0] group-hover:text-white leading-relaxed transition-colors">
+                <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
                   Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and animation.
                 </p>
               </div>
 
               {/* Visual Graphic: Interactive Persona Selector */}
-              <div className="my-auto py-2 bg-[#0D051A]/90 group-hover:bg-[#200A38] rounded-xl p-3 border border-[#963DFF]/30 group-hover:border-[#C28AFF]/50 space-y-2 shadow-inner transition-all duration-300">
+              <div className="my-auto py-2 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-[#C28AFF] font-bold">
+                  <span className="text-[10px] font-mono text-black font-bold">
                     Tone Preset:
                   </span>
-                  <span className="text-[9px] font-mono font-bold text-white bg-[#963DFF]/40 group-hover:bg-[#963DFF] px-2 py-0.5 rounded border border-[#963DFF]/50 group-hover:border-[#C28AFF] transition-colors shadow-sm">
+                  <span className="text-[9px] font-mono font-bold text-white bg-black px-2 py-0.5 rounded">
                     Consultative AI
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#963DFF] to-[#55A9FF] border border-white/40 shadow-sm flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center">
                     <Bot className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <div className="flex-1 bg-white/[0.06] group-hover:bg-white/[0.12] rounded px-2 py-1 text-[9px] text-[#E2E8F0] group-hover:text-white truncate font-mono transition-colors">
+                  <div className="flex-1 bg-black/5 rounded px-2 py-1 text-[9px] text-black truncate font-mono font-semibold">
                     &quot;Welcome! How can I accelerate your goals today?&quot;
                   </div>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#963DFF]/30 group-hover:border-[#C28AFF]/40 flex items-start gap-2 transition-colors">
-                <Sparkles className="w-3.5 h-3.5 text-[#C28AFF] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#CBD5E1] group-hover:text-[#F3E8FF] font-medium leading-tight transition-colors">
+              <div className="pt-2.5 border-t border-black/15 flex items-start gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
+                <span className="text-[11px] text-black/85 font-semibold leading-tight">
                   Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.
                 </span>
               </div>
@@ -480,61 +466,57 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* =================================================================== */}
-          {/* CARD 03: DEPLOY WITH A SINGLE LINE OF CODE (COLORFUL ON HOVER)      */}
+          {/* CARD 03: DEPLOY WITH CODE (FULL VIBRANT WARM CORAL PEACH)            */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[2] = el)}
             onMouseEnter={() => setActiveCardIndex(2)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#0E1528] via-[#090F1C] to-[#060A14] hover:from-[#102B5C] hover:via-[#0D2147] hover:to-[#071329] border-2 border-[#55A9FF]/40 hover:border-[#55A9FF] shadow-[0_15px_40px_rgba(85,169,255,0.18)] hover:shadow-[0_25px_60px_rgba(85,169,255,0.45)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-500 hover:-translate-y-1.5 cursor-pointer"
+            className="group relative rounded-2xl bg-[#FED7AA] text-black border-2 border-[#FB923C] shadow-[0_20px_50px_rgba(254,215,170,0.35)] hover:shadow-[0_25px_60px_rgba(254,215,170,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
           >
-            {/* Ambient Blue Flare — Blooms into vibrant color on hover */}
-            <div className="absolute -bottom-16 -right-16 w-44 h-44 bg-[#55A9FF]/15 group-hover:bg-[#55A9FF]/40 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
-            <div className="absolute -top-16 -left-16 w-36 h-36 bg-[#2563EB]/0 group-hover:bg-[#2563EB]/30 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
-
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#55A9FF]/15 group-hover:bg-[#55A9FF] text-[#55A9FF] group-hover:text-black border border-[#55A9FF]/30 group-hover:border-[#55A9FF] transition-all duration-300">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#F97316] uppercase tracking-wider">
                     Step 03 · Live Embed
                   </span>
-                  <span className="font-headline font-black text-2xl text-white/30 group-hover:text-[#55A9FF] group-hover:drop-shadow-[0_0_15px_rgba(85,169,255,0.8)] transition-all duration-300">
+                  <span className="font-headline font-black text-2xl text-black/40">
                     03
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug group-hover:text-[#DBEAFE] transition-colors">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-black tracking-tight uppercase leading-snug">
                   DEPLOY WITH A SINGLE LINE OF CODE
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] group-hover:text-white leading-relaxed transition-colors">
+                <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
                   Integrate the assistant into the website using the provided script.
                 </p>
               </div>
 
               {/* Visual Graphic: Code Embed Terminal Snippet */}
-              <div className="my-auto py-2 bg-[#040814]/90 group-hover:bg-[#071933] rounded-xl p-3 border border-[#55A9FF]/20 group-hover:border-[#55A9FF]/50 space-y-1.5 shadow-inner transition-all duration-300">
-                <div className="flex items-center justify-between text-[10px] font-mono text-[#64748B]">
-                  <span className="flex items-center gap-1.5 text-[#55A9FF] font-bold">
-                    <Code2 className="w-3 h-3 text-[#55A9FF]" />
+              <div className="my-auto py-2 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-1.5 text-black">
+                <div className="flex items-center justify-between text-[10px] font-mono text-black font-semibold">
+                  <span className="flex items-center gap-1.5 text-black font-bold">
+                    <Code2 className="w-3 h-3 text-black" />
                     HTML Embed
                   </span>
-                  <span className="flex items-center gap-1 text-[9px] text-[#55A9FF] font-mono">
+                  <span className="flex items-center gap-1 text-[9px] text-black font-mono font-bold">
                     <Copy className="w-2.5 h-2.5" />
                     One-line
                   </span>
                 </div>
-                <div className="bg-black/60 group-hover:bg-black/80 p-2 rounded text-[9px] font-mono text-emerald-400 group-hover:text-emerald-300 overflow-hidden text-ellipsis whitespace-nowrap border border-white/[0.04] group-hover:border-[#55A9FF]/30 transition-colors">
+                <div className="bg-black text-[#86EFAC] p-2 rounded text-[9px] font-mono overflow-hidden text-ellipsis whitespace-nowrap">
                   <code>&lt;script src=&quot;nexus.js&quot; data-bot=&quot;nx_892&quot;&gt;&lt;/script&gt;</code>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#55A9FF]/20 group-hover:border-[#55A9FF]/40 flex items-start gap-2 transition-colors">
-                <Zap className="w-3.5 h-3.5 text-[#55A9FF] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#94A3B8] group-hover:text-[#DBEAFE] font-medium leading-tight transition-colors">
+              <div className="pt-2.5 border-t border-black/15 flex items-start gap-2">
+                <Zap className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
+                <span className="text-[11px] text-black/85 font-semibold leading-tight">
                   Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.
                 </span>
               </div>

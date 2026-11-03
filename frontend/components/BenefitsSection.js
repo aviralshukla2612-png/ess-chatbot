@@ -20,19 +20,11 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Crosshair SVG icon identical to Trionn
-const Crosshair = () => (
-  <svg
-    width="36"
-    height="36"
-    viewBox="0 0 40 40"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className="mx-6 sm:mx-10 w-5 h-5 sm:w-8 sm:h-8 shrink-0 text-purple-400/60"
-  >
-    <line x1="20" y1="0" x2="20" y2="40" stroke="currentColor" strokeWidth="1.5" />
-    <line x1="0" y1="20" x2="40" y2="20" stroke="currentColor" strokeWidth="1.5" />
-  </svg>
+// Crosshair / Plus icon identical to Trionn
+const PlusDivider = () => (
+  <span className="mx-6 sm:mx-10 text-white/50 font-light text-2xl sm:text-4xl select-none inline-block">
+    +
+  </span>
 );
 
 // Marquee track component containing user's exact requested line + chatbot-related terms
@@ -41,21 +33,21 @@ const MarqueeTrack = () => (
     <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E9D5FF] to-white">
       Don&apos;t Let Valuable Conversations Slip Away
     </span>
-    <Crosshair />
+    <PlusDivider />
     <span>Capture Every Lead</span>
-    <Crosshair />
+    <PlusDivider />
     <span>Qualify 24/7</span>
-    <Crosshair />
+    <PlusDivider />
     <span>Convert In Real-Time</span>
-    <Crosshair />
+    <PlusDivider />
     <span>Autonomous Sales AI</span>
-    <Crosshair />
+    <PlusDivider />
     <span>Sub-Second Intelligence</span>
-    <Crosshair />
+    <PlusDivider />
     <span>Scale Revenue Pipeline</span>
-    <Crosshair />
+    <PlusDivider />
     <span>Zero Hallucination</span>
-    <Crosshair />
+    <PlusDivider />
   </div>
 );
 
@@ -225,7 +217,7 @@ export default function BenefitsSection() {
                 Measured Commercial Execution.
               </span>
             </div>
-            <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 backdrop-blur-sm text-xs font-mono tracking-widest uppercase text-purple-300">
+            <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm text-xs font-mono tracking-widest uppercase text-zinc-300">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Scroll To Reveal Key Facts</span>
             </div>
@@ -262,8 +254,8 @@ export default function BenefitsSection() {
           <div className="relative z-10 max-w-7xl w-full mx-auto flex flex-col justify-center my-auto">
             {/* Section Header */}
             <div className="title-block flex flex-col items-center mb-6 sm:mb-8 gap-2 text-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-xs font-mono font-bold uppercase tracking-widest text-purple-300">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/20 text-xs font-mono font-bold uppercase tracking-widest text-zinc-300">
+                <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
                 <span>Key Facts &amp; Measured Impact</span>
               </div>
               <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight leading-tight">
@@ -280,216 +272,241 @@ export default function BenefitsSection() {
               style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
             >
               {/* =================================================================== */}
-              {/* CARD 01: VIBRANT CYBER EMERALD GREEN (Pipeline Acceleration)        */}
+              {/* CARD 01: CUSTOMER ENGAGEMENT (FULL VIBRANT MINT GREEN)              */}
               {/* =================================================================== */}
               <div
                 ref={(el) => (cardRefs.current[0] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#04281E] via-[#08382A] to-[#021A12] p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(16,185,129,0.35)] hover:shadow-[0_25px_60px_rgba(16,185,129,0.55)] border-2 border-[#10B981] hover:border-[#34D399] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
+                className="featured-card group relative rounded-2xl bg-[#90CDA6] text-black p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(144,205,166,0.35)] hover:shadow-[0_25px_60px_rgba(144,205,166,0.55)] border-2 border-[#74BA8C] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
               >
-                {/* Emerald Ambient Glow */}
-                <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#10B981]/25 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10">
-                  {/* Top Pill Tag */}
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/25 text-[#A7F3D0] border border-[#10B981]/50 uppercase tracking-wider">
-                      Key Metric 01 · Velocity
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-300 bg-black/40 px-2 py-0.5 rounded-full border border-emerald-500/40">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Live 24/7
-                    </span>
-                  </div>
-
-                  {/* Big Stat & Headline */}
-                  <div className="mt-3.5">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-headline font-black text-4xl sm:text-5xl text-[#34D399] tracking-tight">
-                        4.8x
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    {/* Top Pill Tag */}
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#90CDA6] uppercase tracking-wider">
+                        Card 01 — Customer Engagement
                       </span>
-                      <span className="text-xs font-mono font-bold text-emerald-300/80 uppercase">
-                        Velocity
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-white bg-black px-2.5 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#90CDA6] animate-pulse" />
+                        Available 24/7
                       </span>
                     </div>
-                    <h3 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-1">
-                      Pipeline Acceleration
-                    </h3>
-                    <p className="mt-1.5 text-xs text-slate-200 leading-relaxed font-medium">
-                      Convert high-intent enterprise visitors into scheduled consultations instantly — eliminating sales rep response delays and dropped leads.
-                    </p>
-                  </div>
 
-                  {/* Simulated Inbound Consultation Feed */}
-                  <div className="mt-3 bg-black/60 backdrop-blur-md rounded-xl p-3 border border-emerald-500/30 space-y-1.5 text-[11px]">
-                    <div className="flex items-start gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold shrink-0">
-                        INBOUND
+                    {/* Kicker & Headlines */}
+                    <div className="mt-3">
+                      <span className="text-[11px] font-mono font-black text-black/70 uppercase tracking-widest block">
+                        CUSTOMER EXPERIENCE
                       </span>
-                      <p className="text-slate-200 text-[10px] sm:text-[11px] leading-tight">
-                        &quot;Need SOC-2 compliance &amp; automated CRM sync for 40 reps.&quot;
+                      <h3 className="font-headline font-black text-xl sm:text-2xl text-black uppercase tracking-tight mt-0.5 leading-tight">
+                        ALWAYS-ON CONVERSATIONS
+                      </h3>
+                      <h4 className="font-headline font-black text-xs sm:text-sm text-black/80 uppercase tracking-tight mt-0.5">
+                        NEVER MISS AN ENQUIRY
+                      </h4>
+                      <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                        Answer customer questions instantly using your approved business information, even outside working hours.
                       </p>
                     </div>
-                    <div className="flex items-center justify-between pt-1.5 border-t border-emerald-500/20 text-[10px]">
-                      <span className="inline-flex items-center gap-1 text-emerald-300 font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        Consultation Booked
+                  </div>
+
+                  {/* Visual element: Customer question -> Nexus response -> Guided towards enquiry */}
+                  <div className="my-3 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
+                    {/* Customer asks a question */}
+                    <div className="flex items-start gap-2 bg-white/70 rounded-lg p-2 border border-black/10 text-[11px]">
+                      <span className="w-4 h-4 rounded-full bg-black text-white text-[9px] font-mono font-bold flex items-center justify-center shrink-0">
+                        Q
                       </span>
-                      <span className="text-slate-300 font-mono">Tomorrow 3:00 PM</span>
+                      <p className="text-black font-semibold text-[10px] sm:text-[11px] leading-tight">
+                        &quot;Can I get details on your enterprise packages and setup time?&quot;
+                      </p>
+                    </div>
+                    {/* Emperor Nexus assistant responds */}
+                    <div className="flex items-start gap-2 bg-black text-white rounded-lg p-2 text-[11px]">
+                      <Bot className="w-3.5 h-3.5 text-[#90CDA6] shrink-0 mt-0.5" />
+                      <p className="text-[#90CDA6] font-mono font-medium text-[10px] sm:text-[11px] leading-tight">
+                        &quot;Emperor Nexus deploys in 5 minutes with verified answers and CRM sync.&quot;
+                      </p>
+                    </div>
+                    {/* Visitor guided towards making an enquiry */}
+                    <div className="flex items-center justify-between pt-1 border-t border-black/15 text-[10px] font-mono font-bold text-black">
+                      <span className="inline-flex items-center gap-1 text-black font-bold">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-black" />
+                        Guided Towards Enquiry
+                      </span>
+                      <span className="bg-black text-[#90CDA6] px-1.5 py-0.5 rounded text-[9px]">
+                        Lead Captured
+                      </span>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom KPIs & Integrations */}
-                <div className="relative z-10 pt-3 border-t border-emerald-500/30 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-200/90 font-bold">
-                    <span>Salesforce</span>
-                    <span>·</span>
-                    <span>HubSpot</span>
-                    <span>·</span>
-                    <span>Zapier</span>
+                  {/* Footer */}
+                  <div className="pt-2.5 border-t border-black/15 flex items-center justify-between">
+                    <span className="font-mono text-[10px] sm:text-[11px] text-black font-extrabold uppercase tracking-wider">
+                      24/7 AI ASSISTANCE
+                    </span>
+                    <span className="font-mono text-[10px] font-bold text-white bg-black px-2 py-0.5 rounded">
+                      Instant Setup
+                    </span>
                   </div>
-                  <span className="font-mono text-[10px] font-bold text-[#6EE7B7] bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/30">
-                    +73% After-Hours
-                  </span>
                 </div>
               </div>
 
               {/* =================================================================== */}
-              {/* CARD 02: VIBRANT ROYAL INDIGO / PURPLE (Autonomous Resolution)     */}
+              {/* CARD 02: INTELLIGENT AUTOMATION (FULL VIBRANT LILAC ORCHID)         */}
               {/* =================================================================== */}
               <div
                 ref={(el) => (cardRefs.current[1] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#1E0D36] via-[#2D1252] to-[#140826] p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(168,85,247,0.35)] hover:shadow-[0_25px_60px_rgba(168,85,247,0.55)] border-2 border-[#A855F7] hover:border-[#C084FC] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
+                className="featured-card group relative rounded-2xl bg-[#C89BFF] text-black p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(200,155,255,0.35)] hover:shadow-[0_25px_60px_rgba(200,155,255,0.55)] border-2 border-[#AF73FF] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
               >
-                {/* Purple Ambient Glow */}
-                <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#A855F7]/25 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10">
-                  {/* Top Pill Tag */}
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#A855F7]/25 text-[#E9D5FF] border border-[#A855F7]/50 uppercase tracking-wider">
-                      Key Metric 02 · Autonomy
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-purple-300 bg-black/40 px-2 py-0.5 rounded-full border border-purple-500/40">
-                      Zero Hallucination
-                    </span>
-                  </div>
-
-                  <h3 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-3">
-                    Autonomous Resolution
-                  </h3>
-                  <p className="mt-1 text-xs text-slate-200 leading-relaxed font-medium">
-                    Handles complex multi-turn inquiries across enterprise pricing, compliance, and custom requirements using verified knowledge graphs.
-                  </p>
-                </div>
-
-                {/* Central Iconic Radial Hub (Trionn-inspired central circle) */}
-                <div className="relative z-10 my-3 flex flex-col items-center justify-center">
-                  <div className="relative flex items-center justify-center w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-b from-[#32135D] to-[#140726] border-2 border-[#C084FC] shadow-[0_0_35px_rgba(168,85,247,0.55)]">
-                    {/* Subtle pulsing outer ring */}
-                    <div className="absolute inset-0 rounded-full border border-purple-400/40 animate-ping opacity-25" />
-                    <div className="text-center">
-                      <span className="block font-headline font-black text-3xl sm:text-4xl text-white tracking-tight leading-none drop-shadow-md">
-                        1.5M+
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    {/* Top Pill Tag */}
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#C89BFF] uppercase tracking-wider">
+                        Card 02 — Intelligent Automation
                       </span>
-                      <span className="block font-mono text-[9px] font-bold tracking-widest uppercase text-purple-200 mt-1">
-                        Queries Solved
+                      <span className="text-[10px] font-mono font-bold text-white bg-black px-2.5 py-0.5 rounded-full">
+                        Business Knowledge
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* Bottom KPIs & Verification */}
-                <div className="relative z-10 pt-3 border-t border-purple-500/30 flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-purple-200 font-bold uppercase tracking-wider">
-                    94.2% Autonomous Rate
-                  </span>
-                  <span className="font-mono text-[10px] font-bold text-[#D8B4FE] bg-purple-950/70 px-2 py-0.5 rounded border border-purple-500/30">
-                    SOC-2 Grounded
-                  </span>
+                    {/* Kicker & Headlines */}
+                    <div className="mt-3">
+                      <span className="text-[11px] font-mono font-black text-black/70 uppercase tracking-widest block">
+                        SMART AUTOMATION
+                      </span>
+                      <h3 className="font-headline font-black text-xl sm:text-2xl text-black uppercase tracking-tight mt-0.5 leading-tight">
+                        LESS MANUAL WORK
+                      </h3>
+                      <h4 className="font-headline font-black text-xs sm:text-sm text-black/80 uppercase tracking-tight mt-0.5">
+                        LET AI HANDLE REPETITIVE QUESTIONS
+                      </h4>
+                      <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                        Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business information.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Visual element: Business info transforms into AI knowledge interface -> Assistant uses approved info */}
+                  <div className="my-3 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-black font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-black" />
+                        Knowledge Interface
+                      </span>
+                      <span className="bg-black text-[#C89BFF] px-1.5 py-0.5 rounded text-[9px]">
+                        100% Approved
+                      </span>
+                    </div>
+                    <div className="bg-black text-white rounded-lg p-2 text-[10px] font-mono space-y-1">
+                      <div className="flex items-center justify-between text-[#C89BFF]">
+                        <span>• Services &amp; Packages</span>
+                        <span className="text-white">Active</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[#C89BFF]">
+                        <span>• Pricing &amp; Business Info</span>
+                        <span className="text-white">Active</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-black pt-1 border-t border-black/15">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
+                      <span>Assistant uses approved information only</span>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="pt-2.5 border-t border-black/15 flex items-center justify-between">
+                    <span className="font-mono text-[10px] sm:text-[11px] text-black font-extrabold uppercase tracking-wider">
+                      MORE TIME FOR YOUR TEAM
+                    </span>
+                    <span className="font-mono text-[10px] font-bold text-white bg-black px-2 py-0.5 rounded">
+                      Zero Repetition
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* =================================================================== */}
-              {/* CARD 03: VIBRANT CYBER SAPPHIRE / BLUE (Sub-Second Latency)         */}
+              {/* CARD 03: ENQUIRY VISIBILITY (FULL VIBRANT SKY BLUE)                 */}
               {/* =================================================================== */}
               <div
                 ref={(el) => (cardRefs.current[2] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#061F38] via-[#0A2E54] to-[#041427] p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(56,189,248,0.35)] hover:shadow-[0_25px_60px_rgba(56,189,248,0.55)] border-2 border-[#38BDF8] hover:border-[#7DD3FC] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
+                className="featured-card group relative rounded-2xl bg-[#7DD3FC] text-black p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(125,211,252,0.35)] hover:shadow-[0_25px_60px_rgba(125,211,252,0.55)] border-2 border-[#38BDF8] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
               >
-                {/* Sapphire Ambient Glow */}
-                <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#38BDF8]/25 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    {/* Top Pill Tag */}
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#7DD3FC] uppercase tracking-wider">
+                        Card 03 — Enquiry Visibility
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-white bg-black px-2.5 py-0.5 rounded-full">
+                        Conversation Overview
+                      </span>
+                    </div>
 
-                <div className="relative z-10">
-                  {/* Top Pill Tag */}
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#38BDF8]/25 text-[#BAE6FD] border border-[#38BDF8]/50 uppercase tracking-wider">
-                      Key Metric 03 · SLA Speed
+                    {/* Kicker & Headlines */}
+                    <div className="mt-3">
+                      <span className="text-[11px] font-mono font-black text-black/70 uppercase tracking-widest block">
+                        BUSINESS INSIGHTS
+                      </span>
+                      <h3 className="font-headline font-black text-xl sm:text-2xl text-black uppercase tracking-tight mt-0.5 leading-tight">
+                        TURN CHATS INTO OPPORTUNITIES
+                      </h3>
+                      <h4 className="font-headline font-black text-xs sm:text-sm text-black/80 uppercase tracking-tight mt-0.5">
+                        STAY CONNECTED TO CUSTOMER INTEREST
+                      </h4>
+                      <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                        View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Visual element: Chat conversation preview + Enquiry overview panel */}
+                  <div className="my-3 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-black font-bold">
+                      <span className="flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-black" />
+                        Business Enquiry Panel
+                      </span>
+                      <span className="bg-black text-[#7DD3FC] px-1.5 py-0.5 rounded text-[9px]">
+                        98% Match
+                      </span>
+                    </div>
+                    <div className="bg-black text-white rounded-lg p-2 text-[10px] font-mono space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#7DD3FC] font-semibold">Elena Rostova</span>
+                        <span className="bg-[#7DD3FC] text-black font-bold px-1 rounded text-[9px]">
+                          Hot Enquiry
+                        </span>
+                      </div>
+                      <p className="text-white/80 text-[9px] truncate">
+                        &quot;Looking for automated sales assistant for 3 domains&quot;
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-black/15 text-[10px] font-mono text-black font-bold">
+                      <span>Customer Details &amp; Intent Logged</span>
+                      <span className="text-black">Instant Sync</span>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="pt-2.5 border-t border-black/15 flex items-center justify-between">
+                    <span className="font-mono text-[10px] sm:text-[11px] text-black font-extrabold uppercase tracking-wider">
+                      CONVERSATIONS &amp; ENQUIRIES
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-sky-300 bg-black/40 px-2 py-0.5 rounded-full border border-sky-500/40">
-                      <Zap className="w-3 h-3 text-sky-400" />
-                      Stream SLA
+                    <span className="font-mono text-[10px] font-bold text-white bg-black px-2 py-0.5 rounded">
+                      Live Dashboard
                     </span>
                   </div>
-
-                  {/* Big Stat & Headline */}
-                  <div className="mt-3.5">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-headline font-black text-4xl sm:text-5xl text-[#38BDF8] tracking-tight">
-                        &lt; 1.2s
-                      </span>
-                      <span className="text-xs font-mono font-bold text-sky-300/80 uppercase">
-                        Latency
-                      </span>
-                    </div>
-                    <h3 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-1">
-                      Sub-Second Intelligence
-                    </h3>
-                    <p className="mt-1.5 text-xs text-slate-200 leading-relaxed font-medium">
-                      Enterprise-grade streaming responses with real-time sentiment scoring and automated commercial objection handling.
-                    </p>
-                  </div>
-
-                  {/* Live Real-Time Telemetry Feed */}
-                  <div className="mt-3 bg-black/60 backdrop-blur-md rounded-xl p-3 border border-sky-500/30 space-y-1.5 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300 text-[10px] font-mono">Commercial Intent</span>
-                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        98.6% MATCH
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300 text-[10px] font-mono">Response First Token</span>
-                      <span className="text-sky-300 font-mono font-bold text-[10px]">
-                        0.84s Average
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-300 text-[10px] font-mono">High Availability</span>
-                      <span className="text-emerald-400 font-mono font-bold text-[10px]">
-                        99.98% Uptime SLA
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom KPIs */}
-                <div className="relative z-10 pt-3 border-t border-sky-500/30 flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-sky-200 font-bold uppercase tracking-wider">
-                    Zero-Buffer Edge Mesh
-                  </span>
-                  <span className="font-mono text-[10px] font-bold text-[#7DD3FC] bg-sky-950/70 px-2 py-0.5 rounded border border-sky-500/30">
-                    &lt; 600ms TTFT
-                  </span>
                 </div>
               </div>
             </div>
 
             {/* Mobile swipe hint */}
-            <div className="flex md:hidden items-center justify-center gap-2 mt-3 text-xs font-mono text-purple-300/80">
+            <div className="flex md:hidden items-center justify-center gap-2 mt-3 text-xs font-mono text-zinc-400">
               <span>Swipe cards to explore all metrics →</span>
             </div>
           </div>
@@ -503,7 +520,7 @@ export default function BenefitsSection() {
             <div
               key={i}
               ref={(el) => (stripeRefs.current[i] = el)}
-              className="stripe-item flex-1 w-full bg-[#08090E] border-b border-purple-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+              className="stripe-item flex-1 w-full bg-[#050507] border-b border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
               style={{
                 transform: "scaleY(0)",
                 transformOrigin: "bottom",
