@@ -297,20 +297,19 @@ export default function TrionnLoader({ onComplete }) {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[99999] bg-[#CECED4] select-none pointer-events-auto overflow-hidden"
+      className="fixed inset-0 z-[99999] bg-[#CECED4] select-none pointer-events-auto overflow-hidden flex items-center justify-center"
       style={{ willChange: "opacity, background-color" }}
     >
       {/* 
-        Master Center Box Wrap — Perfectly Centered in Viewport
+        Master Center Box Wrap — Perfectly Centered in Viewport via Flexbox
         Square aspect ratio matching Trionn (w: 300px, h: 300px)
         Corner pluses are locked as children so they move and scale together at all times
       */}
       <div
         ref={boxWrapRef}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-2xl"
+        className="relative w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-2xl shrink-0"
         style={{
           boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.35)",
-          transform: "translate(-50%, -50%) scale(0.2)",
           transformOrigin: "center center",
           willChange: "transform",
         }}
