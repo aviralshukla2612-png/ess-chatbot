@@ -152,9 +152,6 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
           WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
         }}
       />
-      <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/18 rounded-full blur-[140px] pointer-events-none z-0" />
-      <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/18 rounded-full blur-[140px] pointer-events-none z-0" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-purple-600/10 rounded-full blur-[160px] pointer-events-none z-0" />
 
       {/* 2. Central Hero Content Block (Vertically centered) */}
       <div className="relative z-10 max-w-6xl w-full mx-auto my-auto flex flex-col items-center text-center">
@@ -172,10 +169,10 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
             WHATEVER YOUR INDUSTRY,
           </span>
 
-          {/* Line 2: YOUR CUSTOMERS HAVE QUESTIONS. (Illuminated with radiant purple & electric blue bloom) */}
+          {/* Line 2: YOUR CUSTOMERS HAVE QUESTIONS. */}
           <span
             ref={highlightRef}
-            className="block tracking-[0.02em] mt-1 sm:mt-1.5 text-glow-purple text-gradient-purple-blue"
+            className="block tracking-[0.02em] mt-1 sm:mt-1.5 text-gradient-purple-blue drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]"
           >
             YOUR CUSTOMERS HAVE QUESTIONS.
           </span>

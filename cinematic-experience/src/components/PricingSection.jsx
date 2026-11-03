@@ -507,8 +507,6 @@ export default function PricingSection({ onOpenTrial }) {
             WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
           }}
         />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] bg-[#963DFF]/15 rounded-full blur-[170px] pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#55A9FF]/10 rounded-full blur-[140px] pointer-events-none" />
 
         {/* Top Eyebrow Badge */}
         <div className="relative z-30 w-full max-w-7xl mx-auto flex items-center justify-between">

@@ -181,8 +181,6 @@ export default function BenefitsSection() {
               "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
           }}
         />
-        <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none z-0" />
-        <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/15 rounded-full blur-[140px] pointer-events-none z-0" />
 
         {/* ======================================================================= */}
         {/* LAYER 1: VISION SECTION (Scrubbed Marquee + Slicing Typography)          */}

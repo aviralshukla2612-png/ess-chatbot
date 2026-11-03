@@ -403,8 +403,6 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 100%)",
           }}
         />
-        <div className="absolute top-1/4 -left-40 w-96 h-96 bg-[#963DFF]/15 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-[#55A9FF]/15 rounded-full blur-[140px] pointer-events-none" />
 
         {/* Top Eyebrow Badge */}
         <div
@@ -712,7 +710,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             {/* Line 2: 2 Line Text */}
             <div
               ref={line2TextRef}
-              className="mt-1 sm:mt-1.5 text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#B379FF] to-[#55A9FF] drop-shadow-[0_0_35px_rgba(194,138,255,0.45)] will-change-transform"
+              className="mt-1 sm:mt-1.5 text-transparent bg-clip-text bg-gradient-to-r from-[#E0C8FF] via-[#C28AFF] to-[#79B8FF] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] will-change-transform"
             >
               Your Customer Experience Should Be Too.
             </div>

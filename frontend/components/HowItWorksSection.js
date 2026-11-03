@@ -256,10 +256,10 @@ export default function HowItWorksSection({ onOpenTrial }) {
         className="relative w-full h-screen overflow-hidden flex flex-col justify-between pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8 bg-[#050507]"
         style={{ perspective: "1500px" }}
       >
-        {/* Ambient Purple Central Glow */}
+        {/* Ambient Dark Canvas */}
         <div
           ref={glowOrbRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[#963DFF]/20 rounded-full blur-[140px] pointer-events-none z-0"
+          className="hidden"
         />
 
         {/* ===================================================================== */}
