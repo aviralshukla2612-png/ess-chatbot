@@ -90,15 +90,12 @@ export default function NexusHero() {
       <header className="border-b border-neutral-900/80 bg-black/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
           {/* Brand Logo & Wordmark */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-white shadow-sm group-hover:border-neutral-600 transition-colors">
-              <span className="font-extrabold text-lg text-white">N</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-lg tracking-tight text-white">
-                Nexus<span className="text-neutral-400">AI</span>
-              </span>
-            </div>
+          <Link href="/" className="flex items-center group">
+            <img
+              src="/emperor_nexus_sales_ai_assistant.png"
+              alt="Emperor Nexus — Sales AI Assistant"
+              className="h-9 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}

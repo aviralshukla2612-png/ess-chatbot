@@ -45,42 +45,14 @@ export default function Navbar({ onOpenTrial }) {
         <a
           href="#home"
           onClick={(e) => handleNavClick(e, { label: "Home", href: "#home" })}
-          className="group flex items-center gap-3 cursor-pointer"
+          className="group flex items-center cursor-pointer focus:outline-none"
+          aria-label="Emperor Nexus Home"
         >
-          {/* Logo Mark: Stylized geometric Emperor chevron */}
-          <div className="relative w-9 h-9 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[#963DFF]/30 to-[#55A9FF]/20 blur-sm group-hover:blur-md transition-all" />
-            <svg
-              className="w-8 h-8 relative z-10 transition-transform duration-300 group-hover:scale-105"
-              viewBox="0 0 40 40"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M8 28L18 8H26L16 28H8Z"
-                fill="#FFFFFF"
-              />
-              <path
-                d="M17 28L27 8H33L23 28H17Z"
-                fill="url(#logo-grad)"
-              />
-              <defs>
-                <linearGradient id="logo-grad" x1="17" y1="8" x2="33" y2="28" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#C28AFF" />
-                  <stop offset="1" stopColor="#55A9FF" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-
-          <div className="flex flex-col">
-            <span className="font-extrabold text-base tracking-[0.14em] text-white uppercase leading-none group-hover:text-white transition-colors">
-              EMPEROR
-            </span>
-            <span className="text-[9px] font-semibold tracking-[0.24em] text-[#9898A6] uppercase mt-1 leading-none group-hover:text-[#D9D9E2] transition-colors">
-              SMART SOLUTIONS
-            </span>
-          </div>
+          <img
+            src="/emperor_nexus_sales_ai_assistant.png"
+            alt="Emperor Nexus — Sales AI Assistant"
+            className="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+          />
         </a>
 
         {/* Center: Desktop Navigation Links */}

@@ -14,32 +14,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-16">
           {/* Brand Info (2 Cols) */}
           <div className="lg:col-span-2 space-y-5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 flex items-center justify-center">
-                <svg
-                  className="w-8 h-8"
-                  viewBox="0 0 40 40"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M8 28L18 8H26L16 28H8Z" fill="#FFFFFF" />
-                  <path d="M17 28L27 8H33L23 28H17Z" fill="url(#footer-logo-grad)" />
-                  <defs>
-                    <linearGradient id="footer-logo-grad" x1="17" y1="8" x2="33" y2="28" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#C28AFF" />
-                      <stop offset="1" stopColor="#55A9FF" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-base tracking-[0.14em] text-white uppercase leading-none">
-                  EMPEROR
-                </span>
-                <span className="text-[9px] font-semibold tracking-[0.24em] text-[#9898A6] uppercase mt-1 leading-none">
-                  SMART SOLUTIONS
-                </span>
-              </div>
+            <div className="flex items-center">
+              <img
+                src="/emperor_nexus_sales_ai_assistant.png"
+                alt="Emperor Nexus — Sales AI Assistant"
+                className="h-10 sm:h-11 w-auto object-contain"
+              />
             </div>
 
             <p className="text-xs sm:text-sm text-[#9898A6] max-w-sm leading-relaxed">

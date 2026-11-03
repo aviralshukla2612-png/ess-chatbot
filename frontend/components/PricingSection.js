@@ -1,5 +1,6 @@
 "use client";
 
+
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -554,11 +555,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 key={p.id}
                 type="button"
                 onClick={() => setActivePlan(p.id)}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
-                  activePlan === p.id
+                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${activePlan === p.id
                     ? "bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white shadow-sm"
                     : "text-[#9898A6]"
-                }`}
+                  }`}
               >
                 {p.name}
               </button>
@@ -612,13 +612,12 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                     }}
                   >
                     <div
-                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group shadow-2xl ${
-                        isAnnual
+                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group shadow-2xl ${isAnnual
                           ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_45px_rgba(150,61,255,0.35)]"
                           : isSixMonths
-                          ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_40px_rgba(0,0,0,0.7)]"
-                          : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
-                      }`}
+                            ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_40px_rgba(0,0,0,0.7)]"
+                            : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
+                        }`}
                     >
                       {/* Oversized Signature Watermark Number */}
                       <span className="absolute bottom-5 right-6 text-7xl font-mono font-black text-white/[0.04] pointer-events-none select-none">
@@ -683,11 +682,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                       <div className="relative z-10 pt-2 mt-auto">
                         <Link
                           href={getCheckoutUrl(plan.id)}
-                          className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] ${
-                            isAnnual
+                          className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] ${isAnnual
                               ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white hover:shadow-[0_0_24px_rgba(150,61,255,0.45)]"
                               : "bg-white/[0.06] hover:bg-white/[0.12] text-white border border-white/[0.1]"
-                          }`}
+                            }`}
                         >
                           <span>{plan.ctaText}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -714,15 +712,13 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden ${
-                  isHidden ? "hidden" : "flex"
-                } ${
-                  isAnnual
+                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden ${isHidden ? "hidden" : "flex"
+                  } ${isAnnual
                     ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_35px_rgba(150,61,255,0.3)]"
                     : isSixMonths
-                    ? "bg-[#12121A]/90 border border-[#963DFF]/40"
-                    : "bg-[#12121A]/85 border border-white/[0.08]"
-                }`}
+                      ? "bg-[#12121A]/90 border border-[#963DFF]/40"
+                      : "bg-[#12121A]/85 border border-white/[0.08]"
+                  }`}
               >
                 <div className="relative z-10">
                   <div className="mb-4">
@@ -771,11 +767,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 <div className="relative z-10 pt-2">
                   <Link
                     href={getCheckoutUrl(plan.id)}
-                    className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md ${
-                      isAnnual
+                    className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md ${isAnnual
                         ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white"
                         : "bg-white/[0.06] text-white border border-white/[0.1]"
-                    }`}
+                      }`}
                   >
                     <span>{plan.ctaText}</span>
                     <ArrowRight className="w-3.5 h-3.5" />

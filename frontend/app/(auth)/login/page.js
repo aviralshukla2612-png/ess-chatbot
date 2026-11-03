@@ -147,18 +147,12 @@ export default function LoginPage() {
 
         <div className="relative z-10 space-y-8">
           {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-slate-900 border border-slate-700 shadow-lg shadow-indigo-500/20">
-              <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
-            </div>
-            <div>
-              <span className="font-extrabold text-2xl tracking-tight text-white">
-                NexusAI
-              </span>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Autonomous AI Chatbot & Lead Generation
-              </p>
-            </div>
+          <div className="flex items-center">
+            <img
+              src="/emperor_nexus_sales_ai_assistant.png"
+              alt="Emperor Nexus — Sales AI Assistant"
+              className="h-11 sm:h-12 w-auto object-contain"
+            />
           </div>
 
           {/* Heading & bullet points */}
@@ -248,8 +242,12 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-2xl border border-slate-200/80 shadow-xl space-y-6">
           {/* Header */}
           <div className="text-center">
-            <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center mx-auto mb-3 bg-slate-50 border border-slate-200/80 shadow-xs">
-              <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1.5" />
+            <div className="flex justify-center mx-auto mb-3">
+              <img
+                src="/emperor_nexus_sales_ai_assistant.png"
+                alt="Emperor Nexus"
+                className="h-10 sm:h-11 w-auto object-contain"
+              />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
               {activeTab === "login" ? "Welcome back" : "Create your workspace"}

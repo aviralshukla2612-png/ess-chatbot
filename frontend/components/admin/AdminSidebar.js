@@ -77,13 +77,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
       >
         {/* ChatPilot Logo & Super Admin Header */}
         <div className="p-5 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-black border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-              <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
-            </div>
-            <span className="font-bold text-lg text-[#252525] dark:text-white tracking-tight">
-              NexusAI
-            </span>
+          <div className="flex items-center">
+            <Link href="/admin" className="flex items-center">
+              <img
+                src="/emperor_nexus_sales_ai_assistant.png"
+                alt="Emperor Nexus"
+                className="h-8 sm:h-9 w-auto max-w-[170px] object-contain"
+              />
+            </Link>
           </div>
 
           {/* Super Admin Organization Identity */}

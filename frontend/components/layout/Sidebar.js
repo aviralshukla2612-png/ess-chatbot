@@ -134,13 +134,12 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
         {/* Brand & Organization */}
         <div className="p-5 border-b border-[#EFE7DC] dark:border-neutral-800">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-                <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1" />
-              </div>
-              <span className="font-bold text-lg text-[#252525] dark:text-white tracking-tight">
-                NexusAI
-              </span>
+            <Link href="/dashboard" className="flex items-center">
+              <img
+                src="/emperor_nexus_sales_ai_assistant.png"
+                alt="Emperor Nexus"
+                className="h-8 sm:h-9 w-auto max-w-[170px] object-contain"
+              />
             </Link>
             <button
               onClick={onClose}

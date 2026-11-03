@@ -5,9 +5,9 @@ export const metadata = {
   title: "Emperor Nexus — Premium AI Sales Assistant",
   description: "Autonomous enterprise sales and customer support AI assistant builder.",
   icons: {
-    icon: "/e-logoicon.webp",
-    shortcut: "/e-logoicon.webp",
-    apple: "/e-logoicon.webp",
+    icon: "/emperor_nexus_sales_ai_assistant.png",
+    shortcut: "/emperor_nexus_sales_ai_assistant.png",
+    apple: "/emperor_nexus_sales_ai_assistant.png",
   },
 };
 
@@ -19,9 +19,9 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/e-logoicon.webp" type="image/webp" />
-        <link rel="shortcut icon" href="/e-logoicon.webp" type="image/webp" />
-        <link rel="apple-touch-icon" href="/e-logoicon.webp" />
+        <link rel="icon" href="/emperor_nexus_sales_ai_assistant.png" type="image/png" />
+        <link rel="shortcut icon" href="/emperor_nexus_sales_ai_assistant.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/emperor_nexus_sales_ai_assistant.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />

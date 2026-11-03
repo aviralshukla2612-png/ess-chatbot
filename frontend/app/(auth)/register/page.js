@@ -45,8 +45,12 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center mx-auto bg-slate-900 border border-slate-800 shadow-lg shadow-indigo-600/20">
-          <img src="/e-logoicon.webp" alt="Logo" className="w-full h-full object-contain p-1.5" />
+        <div className="flex justify-center mx-auto mb-3">
+          <img
+            src="/emperor_nexus_sales_ai_assistant.png"
+            alt="Emperor Nexus"
+            className="h-10 sm:h-11 w-auto object-contain"
+          />
         </div>
         <h2 className="mt-4 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
           Create Organization Workspace
