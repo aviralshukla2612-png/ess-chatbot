@@ -227,13 +227,10 @@ export default function BenefitsSection({ onOpenTrial }) {
         <div
           className="relative z-40 w-full h-full flex flex-col justify-between py-12 sm:py-16 px-6 sm:px-12 text-white mix-blend-difference pointer-events-none select-none"
         >
-          {/* Top Editorial Eyebrow */}
+          {/* Top Editorial Eyebrow (Matching Trionn) */}
           <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
             <span className="font-mono text-xs sm:text-sm font-bold uppercase tracking-widest">
               Focused vision. <br className="sm:hidden" />Measured execution.
-            </span>
-            <span className="font-mono text-xs font-bold uppercase tracking-wider hidden sm:block">
-              04 / Autonomous Architecture
             </span>
           </div>
 
@@ -262,13 +259,8 @@ export default function BenefitsSection({ onOpenTrial }) {
             </div>
           </div>
 
-          {/* Bottom Subtitle Line */}
-          <div className="w-full max-w-7xl mx-auto flex items-center justify-between text-xs sm:text-sm font-medium">
-            <span>✦ From conversation to conversion.</span>
-            <span className="hidden sm:inline-block font-mono text-xs">
-              Scroll to reveal capabilities ↓
-            </span>
-          </div>
+          {/* Empty spacer to keep central marquee perfectly balanced */}
+          <div className="w-full max-w-7xl mx-auto h-6" />
         </div>
 
         {/* 5 HORIZONTAL STRIPES (Exact Trionn Architecture) */}
