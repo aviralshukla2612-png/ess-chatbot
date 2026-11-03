@@ -59,6 +59,50 @@ export const PRICING_PLANS = [
   },
 ];
 
+export const CARD_THEMES = {
+  monthly: {
+    bg: "bg-[#90CDA6] border-2 border-[#76B88E] shadow-[0_15px_45px_rgba(144,205,166,0.35)]",
+    watermark: "text-black/[0.08]",
+    numLabel: "text-black/60",
+    name: "text-black",
+    tagline: "text-black/70",
+    price: "text-black",
+    period: "text-black/60",
+    border: "border-black/10",
+    check: "text-black",
+    feature: "text-black/85 font-medium",
+    btn: "bg-black text-[#90CDA6] hover:bg-neutral-900 hover:text-white shadow-md",
+  },
+  "six-months": {
+    bg: "bg-[#D6FD84] border-2 border-[#BDE868] shadow-[0_15px_45px_rgba(214,253,132,0.35)]",
+    watermark: "text-black/[0.08]",
+    numLabel: "text-black/60",
+    name: "text-black",
+    tagline: "text-black/70",
+    price: "text-black",
+    period: "text-black/60",
+    border: "border-black/10",
+    check: "text-black",
+    feature: "text-black/85 font-medium",
+    btn: "bg-black text-[#D6FD84] hover:bg-neutral-900 hover:text-white shadow-md",
+  },
+  annual: {
+    bg: "bg-[#CAEFFC] border-2 border-[#9FDEFC] shadow-[0_15px_50px_rgba(202,239,252,0.4)]",
+    watermark: "text-black/[0.08]",
+    numLabel: "text-black/60",
+    name: "text-black",
+    tagline: "text-black/70",
+    price: "text-black",
+    period: "text-black/60",
+    savings: "text-[#0369A1] font-bold",
+    badge: "bg-black text-[#CAEFFC]",
+    border: "border-black/10",
+    check: "text-black",
+    feature: "text-black/85 font-medium",
+    btn: "bg-black text-[#CAEFFC] hover:bg-neutral-900 hover:text-white shadow-md",
+  },
+};
+
 const WORDS_LINE1 = ["SIMPLE", "PRICING."];
 const WORDS_LINE2 = ["POWERFUL", "CONVERSATIONS."];
 
@@ -583,6 +627,7 @@ export default function PricingSection({ onOpenTrial }) {
             {PRICING_PLANS.map((plan, idx) => {
               const isAnnual = plan.id === "annual";
               const isSixMonths = plan.id === "six-months";
+              const theme = CARD_THEMES[plan.id] || CARD_THEMES.monthly;
 
               // Stacking order: Annual (03) sits on top, then Six Months (02), then Monthly (01)
               const zIndex = isAnnual ? 30 : isSixMonths ? 20 : 10;
@@ -608,78 +653,54 @@ export default function PricingSection({ onOpenTrial }) {
                     }}
                   >
                     <div
-                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group shadow-2xl h-[415px] xl:h-[425px] ${
-                        isAnnual
-                          ? "bg-gradient-to-br from-[#380E68] via-[#140D2E] to-[#0A2255] border-2 border-[#A855F7] shadow-[0_0_55px_rgba(168,85,247,0.5),inset_0_1px_20px_rgba(194,138,255,0.25)]"
-                          : isSixMonths
-                          ? "bg-gradient-to-br from-[#290B4A] via-[#160B2C] to-[#200A3D] border-2 border-[#C084FC]/60 shadow-[0_0_40px_rgba(192,132,252,0.25),inset_0_1px_15px_rgba(192,132,252,0.12)]"
-                          : "bg-gradient-to-br from-[#091E3A] via-[#0A1628] to-[#0D2447] border-2 border-[#38BDF8]/60 shadow-[0_0_40px_rgba(56,189,248,0.25),inset_0_1px_15px_rgba(56,189,248,0.12)]"
-                      }`}
+                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 overflow-hidden group shadow-2xl h-[415px] xl:h-[425px] ${theme.bg}`}
                     >
                       {/* Oversized Signature Watermark Number */}
-                      <span className="absolute bottom-5 right-6 text-7xl font-mono font-black text-white/[0.04] pointer-events-none select-none">
+                      <span className={`absolute bottom-5 right-6 text-7xl font-mono font-black ${theme.watermark} pointer-events-none select-none`}>
                         {plan.number}
                       </span>
-
-                      {/* Ambient colorful glow for all cards */}
-                      {isAnnual ? (
-                        <>
-                          <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#963DFF]/40 rounded-full blur-3xl pointer-events-none" />
-                          <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-[#55A9FF]/30 rounded-full blur-3xl pointer-events-none" />
-                        </>
-                      ) : isSixMonths ? (
-                        <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#C084FC]/25 rounded-full blur-3xl pointer-events-none" />
-                      ) : (
-                        <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#38BDF8]/20 rounded-full blur-3xl pointer-events-none" />
-                      )}
 
                       <div className="relative z-10">
                         {/* Plan Header */}
                         <div className="mb-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
+                            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${theme.numLabel}`}>
                               {plan.number} / PLAN
                             </span>
                             {isAnnual && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                              <span className={`px-2.5 py-0.5 rounded-full ${theme.badge} text-[10px] font-bold uppercase tracking-wider shadow-sm`}>
                                 Recommended · Save ₹2,989
                               </span>
                             )}
                           </div>
-                          <h4 className="font-bold text-2xl text-white tracking-tight mt-1">
+                          <h4 className={`font-black text-2xl tracking-tight mt-1 ${theme.name}`}>
                             {plan.name}
                           </h4>
-                          <p className="text-xs text-[#9898A6] mt-0.5">{plan.tagline}</p>
+                          <p className={`text-xs mt-0.5 ${theme.tagline}`}>{plan.tagline}</p>
                         </div>
 
                         {/* Price Block */}
-                        <div className="mb-4 pb-4 border-b border-white/[0.08]">
+                        <div className={`mb-4 pb-4 border-b ${theme.border}`}>
                           <div className="flex items-baseline gap-1.5">
-                            <span className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                            <span className={`text-3xl sm:text-4xl font-black tracking-tight ${theme.price}`}>
                               {plan.price}
                             </span>
-                            <span className="text-xs text-[#9898A6] font-medium">
+                            <span className={`text-xs font-bold ${theme.period}`}>
                               {plan.period}
                             </span>
                           </div>
                           {plan.savings && (
-                            <p className="text-[11px] font-semibold text-[#55A9FF] mt-1.5 leading-snug">
+                            <p className={`text-[11px] ${theme.savings} mt-1.5 leading-snug`}>
                               {plan.savings}
                             </p>
                           )}
                         </div>
 
-                        {/* Feature Checklist (Exact User Specifications) */}
+                        {/* Feature Checklist */}
                         <div className="space-y-2.5 mb-6">
                           {plan.features.map((feat, fIdx) => (
-                            <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
-                              <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
-                                isAnnual
-                                  ? "text-[#C28AFF]"
-                                  : isSixMonths
-                                  ? "text-[#C084FC]"
-                                  : "text-[#38BDF8]"
-                              }`} />
+                            <div key={fIdx} className={`flex items-start gap-2.5 text-xs ${theme.feature}`}>
+                              <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.check}`} />
                               <span className="leading-tight">{feat}</span>
                             </div>
                           ))}
@@ -691,13 +712,7 @@ export default function PricingSection({ onOpenTrial }) {
                         <button
                           type="button"
                           onClick={() => handleAction(plan.id)}
-                          className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] active:scale-[0.98] ${
-                            isAnnual
-                              ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white hover:shadow-[0_0_24px_rgba(150,61,255,0.45)]"
-                              : isSixMonths
-                              ? "bg-gradient-to-r from-[#9333EA] to-[#C084FC] text-white hover:shadow-[0_0_24px_rgba(192,132,252,0.45)]"
-                              : "bg-gradient-to-r from-[#0284C7] to-[#38BDF8] text-white hover:shadow-[0_0_24px_rgba(56,189,248,0.45)]"
-                          }`}
+                          className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn}`}
                         >
                           <span>{plan.ctaText}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -718,51 +733,50 @@ export default function PricingSection({ onOpenTrial }) {
         >
           {PRICING_PLANS.map((plan) => {
             const isAnnual = plan.id === "annual";
-            const isSixMonths = plan.id === "six-months";
             const isHidden = activePlan !== plan.id;
+            const theme = CARD_THEMES[plan.id] || CARD_THEMES.monthly;
 
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden ${
+                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 overflow-hidden ${
                   isHidden ? "hidden" : "flex"
-                } ${
-                  isAnnual
-                    ? "bg-gradient-to-br from-[#380E68] via-[#140D2E] to-[#0A2255] border-2 border-[#A855F7] shadow-[0_0_35px_rgba(150,61,255,0.4)]"
-                    : isSixMonths
-                    ? "bg-gradient-to-br from-[#290B4A] via-[#160B2C] to-[#200A3D] border-2 border-[#C084FC]/60 shadow-[0_0_30px_rgba(192,132,252,0.25)]"
-                    : "bg-gradient-to-br from-[#091E3A] via-[#0A1628] to-[#0D2447] border-2 border-[#38BDF8]/60 shadow-[0_0_30px_rgba(56,189,248,0.25)]"
-                }`}
+                } ${theme.bg}`}
               >
+                {/* Oversized Signature Watermark Number */}
+                <span className={`absolute bottom-5 right-6 text-7xl font-mono font-black ${theme.watermark} pointer-events-none select-none`}>
+                  {plan.number}
+                </span>
+
                 <div className="relative z-10">
                   <div className="mb-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
+                      <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${theme.numLabel}`}>
                         {plan.number} / PLAN
                       </span>
                       {isAnnual && (
-                        <span className="px-2 py-0.5 rounded bg-[#963DFF]/20 text-[#C28AFF] text-[10px] font-bold uppercase tracking-wider">
-                          Recommended
+                        <span className={`px-2 py-0.5 rounded ${theme.badge} text-[10px] font-bold uppercase tracking-wider`}>
+                          Recommended · Save ₹2,989
                         </span>
                       )}
                     </div>
-                    <h4 className="font-bold text-2xl text-white tracking-tight mt-1">
+                    <h4 className={`font-black text-2xl tracking-tight mt-1 ${theme.name}`}>
                       {plan.name}
                     </h4>
-                    <p className="text-xs text-[#9898A6] mt-0.5">{plan.tagline}</p>
+                    <p className={`text-xs mt-0.5 ${theme.tagline}`}>{plan.tagline}</p>
                   </div>
 
-                  <div className="mb-4 pb-4 border-b border-white/[0.08]">
+                  <div className={`mb-4 pb-4 border-b ${theme.border}`}>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-extrabold text-white tracking-tight">
+                      <span className={`text-3xl font-black tracking-tight ${theme.price}`}>
                         {plan.price}
                       </span>
-                      <span className="text-xs text-[#9898A6] font-medium">
+                      <span className={`text-xs font-bold ${theme.period}`}>
                         {plan.period}
                       </span>
                     </div>
                     {plan.savings && (
-                      <p className="text-[11px] font-semibold text-[#55A9FF] mt-1.5 leading-snug">
+                      <p className={`text-[11px] ${theme.savings} mt-1.5 leading-snug`}>
                         {plan.savings}
                       </p>
                     )}
@@ -770,14 +784,8 @@ export default function PricingSection({ onOpenTrial }) {
 
                   <div className="space-y-2.5 mb-6">
                     {plan.features.map((feat, fIdx) => (
-                      <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#D9D9E2]">
-                        <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
-                          isAnnual
-                            ? "text-[#C28AFF]"
-                            : isSixMonths
-                            ? "text-[#C084FC]"
-                            : "text-[#38BDF8]"
-                        }`} />
+                      <div key={fIdx} className={`flex items-start gap-2.5 text-xs ${theme.feature}`}>
+                        <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.check}`} />
                         <span className="leading-tight">{feat}</span>
                       </div>
                     ))}
@@ -788,13 +796,7 @@ export default function PricingSection({ onOpenTrial }) {
                   <button
                     type="button"
                     onClick={() => handleAction(plan.id)}
-                    className={`w-full py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-md ${
-                      isAnnual
-                        ? "bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] text-white"
-                        : isSixMonths
-                        ? "bg-gradient-to-r from-[#9333EA] to-[#C084FC] text-white"
-                        : "bg-gradient-to-r from-[#0284C7] to-[#38BDF8] text-white"
-                    }`}
+                    className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${theme.btn}`}
                   >
                     <span>{plan.ctaText}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
