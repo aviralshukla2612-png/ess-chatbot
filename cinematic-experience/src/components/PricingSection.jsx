@@ -54,7 +54,6 @@ export const PRICING_PLANS = [
       "1 account",
       "1 chatbot",
       "7-day free trial",
-      "Save ₹2,989 compared with twelve monthly payments.",
     ],
     ctaText: "Start 7-Day Free Trial",
   },
@@ -609,9 +608,9 @@ export default function PricingSection({ onOpenTrial }) {
                     }}
                   >
                     <div
-                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group shadow-2xl ${
+                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 backdrop-blur-2xl overflow-hidden group shadow-2xl h-[415px] xl:h-[425px] ${
                         isAnnual
-                          ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_45px_rgba(150,61,255,0.35)]"
+                          ? "bg-gradient-to-br from-[#2D0F55] via-[#140D2E] to-[#0A1A44] border-2 border-[#A855F7] shadow-[0_0_50px_rgba(150,61,255,0.45),inset_0_1px_20px_rgba(194,138,255,0.2)]"
                           : isSixMonths
                           ? "bg-[#12121A]/90 border border-[#963DFF]/40 shadow-[0_15px_40px_rgba(0,0,0,0.7)]"
                           : "bg-[#12121A]/85 border border-white/[0.08] hover:border-white/[0.18] shadow-[0_15px_40px_rgba(0,0,0,0.6)]"
@@ -622,23 +621,24 @@ export default function PricingSection({ onOpenTrial }) {
                         {plan.number}
                       </span>
 
-                      {/* Best Value Badge for Annual */}
+                      {/* Ambient colorful glow for Annual card */}
                       {isAnnual && (
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-md whitespace-nowrap">
-                          Best Value — Save ₹2,989
-                        </div>
+                        <>
+                          <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#963DFF]/40 rounded-full blur-3xl pointer-events-none" />
+                          <div className="absolute -bottom-16 -left-16 w-44 h-44 bg-[#55A9FF]/30 rounded-full blur-3xl pointer-events-none" />
+                        </>
                       )}
 
                       <div className="relative z-10">
                         {/* Plan Header */}
-                        <div className="mb-4">
+                        <div className="mb-3">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#9898A6]">
                               {plan.number} / PLAN
                             </span>
                             {isAnnual && (
-                              <span className="px-2 py-0.5 rounded bg-[#963DFF]/20 text-[#C28AFF] text-[10px] font-bold uppercase tracking-wider">
-                                Recommended
+                              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                                Recommended · Save ₹2,989
                               </span>
                             )}
                           </div>
@@ -716,7 +716,7 @@ export default function PricingSection({ onOpenTrial }) {
                   isHidden ? "hidden" : "flex"
                 } ${
                   isAnnual
-                    ? "bg-[#12121A]/95 border-2 border-[#963DFF] shadow-[0_0_35px_rgba(150,61,255,0.3)]"
+                    ? "bg-gradient-to-br from-[#2D0F55] via-[#140D2E] to-[#0A1A44] border-2 border-[#A855F7] shadow-[0_0_35px_rgba(150,61,255,0.4)]"
                     : isSixMonths
                     ? "bg-[#12121A]/90 border border-[#963DFF]/40"
                     : "bg-[#12121A]/85 border border-white/[0.08]"
