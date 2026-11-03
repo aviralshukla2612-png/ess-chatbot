@@ -28,18 +28,41 @@ const Crosshair = () => (
     viewBox="0 0 40 40"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className="mx-8 sm:mx-14 w-6 h-6 sm:w-9 sm:h-9 shrink-0 text-purple-400/60"
+    className="mx-6 sm:mx-10 w-5 h-5 sm:w-8 sm:h-8 shrink-0 text-purple-400/60"
   >
     <line x1="20" y1="0" x2="20" y2="40" stroke="currentColor" strokeWidth="1.5" />
     <line x1="0" y1="20" x2="40" y2="20" stroke="currentColor" strokeWidth="1.5" />
   </svg>
 );
 
+// Marquee track component containing user's exact requested line + chatbot-related terms
+const MarqueeTrack = () => (
+  <div className="shrink-0 flex items-center uppercase font-headline font-black text-3xl sm:text-5xl md:text-6xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight leading-none text-white drop-shadow-[0_4px_24px_rgba(255,255,255,0.2)]">
+    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E9D5FF] to-white">
+      Don&apos;t Let Valuable Conversations Slip Away
+    </span>
+    <Crosshair />
+    <span>Capture Every Lead</span>
+    <Crosshair />
+    <span>Qualify 24/7</span>
+    <Crosshair />
+    <span>Convert In Real-Time</span>
+    <Crosshair />
+    <span>Autonomous Sales AI</span>
+    <Crosshair />
+    <span>Sub-Second Intelligence</span>
+    <Crosshair />
+    <span>Scale Revenue Pipeline</span>
+    <Crosshair />
+    <span>Zero Hallucination</span>
+    <Crosshair />
+  </div>
+);
+
 export default function BenefitsSection() {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
   const visionRef = useRef(null);
-  const marqueeRef = useRef(null);
   const stripeRefs = useRef([]);
   const keyfactsRef = useRef(null);
   const cardRefs = useRef([]);
@@ -85,20 +108,7 @@ export default function BenefitsSection() {
         defaults: { ease: "none" },
       });
 
-      // 1. Horizontal Marquee glide across Vision phase (duration 3.5)
-      if (marqueeRef.current) {
-        tl.to(
-          marqueeRef.current,
-          {
-            x: -360,
-            duration: 3.5,
-            ease: "none",
-          },
-          0
-        );
-      }
-
-      // 2. Trionn Shutter Slats scale up from bottom, slicing through text
+      // 1. Trionn Shutter Slats scale up from bottom, slicing through the infinite moving text
       stripes.forEach((stripe, i) => {
         const s = ((0.3 * (4 - i)) / 4) * 4.0; // staggered from 0 to 3.0
         const a = s + 1.4;
@@ -113,14 +123,14 @@ export default function BenefitsSection() {
         );
       });
 
-      // 3. Peak shutter coverage (at ~3.3): seamlessly swap vision for key facts behind closed slats
+      // 2. Peak shutter coverage (at ~3.3): seamlessly swap vision for key facts behind closed slats
       tl.to(vision, { autoAlpha: 0, duration: 0.1 }, 3.3);
       tl.to(keyfacts, { autoAlpha: 1, duration: 0.1 }, 3.3);
 
-      // 4. Change transformOrigin of slats to top
+      // 3. Change transformOrigin of slats to top
       tl.set(stripes, { transformOrigin: "top" }, 3.4);
 
-      // 5. Slats wipe open from top to bottom (like blinds opening)
+      // 4. Slats wipe open from top to bottom (like blinds opening)
       stripes.forEach((stripe, i) => {
         const delay = 3.5 + i * 0.14;
         tl.to(
@@ -134,7 +144,7 @@ export default function BenefitsSection() {
         );
       });
 
-      // 6. Trionn 3D Card Flip-Down (rotateX: -92 -> 0) directly unfolds as slats wipe open
+      // 5. Trionn 3D Card Flip-Down (rotateX: -92 -> 0) directly unfolds as slats wipe open
       tl.to(
         cards,
         {
@@ -148,7 +158,7 @@ export default function BenefitsSection() {
         4.4
       );
 
-      // 7. Settled comfortable hold (from 6.8 to 10.0) so user can comfortably read metrics
+      // 6. Settled comfortable hold (from 6.8 to 10.0) so user can comfortably read metrics
       tl.to({}, { duration: 3.2 });
     }, containerRef);
 
@@ -161,6 +171,20 @@ export default function BenefitsSection() {
       id="benefits"
       className="relative w-full bg-[#050507] text-[#F5F5F7] select-none"
     >
+      {/* Scoped CSS for smooth GPU-accelerated infinite marquee loop */}
+      <style>{`
+        @keyframes benefitsMarqueeLoop {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+        .benefits-infinite-track {
+          display: flex;
+          width: max-content;
+          animation: benefitsMarqueeLoop 30s linear infinite;
+          will-change: transform;
+        }
+      `}</style>
+
       {/* ========================================================================= */}
       {/* UNIFIED PINNED STAGE (ZERO SCROLL GAP — VISION + SHUTTER + KEY FACTS)      */}
       {/* ========================================================================= */}
@@ -168,9 +192,9 @@ export default function BenefitsSection() {
         ref={stageRef}
         className="relative w-full h-screen min-h-[640px] max-h-screen overflow-hidden bg-[#050507] flex flex-col justify-center items-center"
       >
-        {/* Subtle Technical Grid Background & Ambient Lighting */}
+        {/* Subtle Technical Grid Background without any purple tint */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-30 z-0"
+          className="absolute inset-0 pointer-events-none opacity-25 z-0"
           style={{
             backgroundImage: `
               linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
@@ -185,7 +209,7 @@ export default function BenefitsSection() {
         />
 
         {/* ======================================================================= */}
-        {/* LAYER 1: VISION SECTION (Scrubbed Marquee + Slicing Typography)          */}
+        {/* LAYER 1: VISION SECTION (Infinite Looping Marquee + Slicing Typography)   */}
         {/* ======================================================================= */}
         <div
           ref={visionRef}
@@ -207,28 +231,12 @@ export default function BenefitsSection() {
             </div>
           </div>
 
-          {/* Center Giant Sliced Marquee */}
+          {/* Center Giant Infinite Looping Sliced Marquee */}
           <div className="relative z-10 overflow-hidden w-full py-4 select-none my-auto">
-            <div
-              ref={marqueeRef}
-              className="flex whitespace-nowrap will-change-transform"
-            >
-              <div className="shrink-0 flex items-center uppercase font-headline font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7.5rem] tracking-tight leading-none text-white drop-shadow-[0_4px_30px_rgba(255,255,255,0.25)]">
-                <span>Capture</span>
-                <Crosshair />
-                <span>Qualify</span>
-                <Crosshair />
-                <span>Convert</span>
-                <Crosshair />
-                <span>Scale</span>
-                <Crosshair />
-                <span>Capture</span>
-                <Crosshair />
-                <span>Qualify</span>
-                <Crosshair />
-                <span>Convert</span>
-                <Crosshair />
-                <span>Scale</span>
+            <div className="benefits-infinite-track flex whitespace-nowrap will-change-transform">
+              <MarqueeTrack />
+              <div aria-hidden="true" className="shrink-0 flex items-center">
+                <MarqueeTrack />
               </div>
             </div>
           </div>
@@ -236,7 +244,7 @@ export default function BenefitsSection() {
           {/* Bottom Vision Subtitle */}
           <div className="relative z-10 w-full flex items-center justify-between">
             <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/70">
-              ✦ From visitor curiosity to committed enterprise pipeline.
+              ✦ Don&apos;t let valuable conversations slip away — autonomous 24/7 sales.
             </span>
             <span className="hidden sm:inline-block font-mono text-xs tracking-widest uppercase text-white/40">
               [ 01 — 03 KEY METRICS ]
@@ -259,7 +267,7 @@ export default function BenefitsSection() {
                 <span>Key Facts &amp; Measured Impact</span>
               </div>
               <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight leading-tight">
-                A Snapshot of Real-World Commercial Impact.
+                Don&apos;t Let Valuable Conversations Slip Away.
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-xl mx-auto leading-relaxed">
                 Your website should be ready to answer, qualify, and capture enterprise interest — even when your sales team is unavailable.
