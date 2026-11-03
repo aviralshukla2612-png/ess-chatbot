@@ -5,12 +5,12 @@ import gsap from "gsap";
 
 /**
  * TrionnLoader — Inspired by Trionn.com's award-winning preloader.
- * Sequence:
- * 1. Small: Box + locked corner plus marks start small at center
- * 2. Medium: Box scales smoothly from small to medium square size
- * 3. Box line made: SVG perimeter line draws around box edges (0% -> 100%)
- * 4. Logo appears: Inside the box, the logo video fades in and animates
- * 5. Big: Box expands to full viewport (100vw x 100vh) and reveals the landing page
+ * Exact sequence:
+ * 1. Small: Box + locked corner plus marks + logo start together small at center (scale: 0.2)
+ * 2. Medium: Box scales smoothly together to medium size (scale: 1.0)
+ * 3. Box line made: SVG perimeter line draws around box edges (0% -> 100%) while counter rolls to 100%
+ * 4. Logo appears in full vibrancy inside the box as line is drawn
+ * 5. Big: Box expands to BIG (scale: 8) covering the entire viewport, dissolving into the dark landing page
  */
 export default function TrionnLoader({ onComplete }) {
   const [percent, setPercent] = useState(0);
@@ -51,13 +51,13 @@ export default function TrionnLoader({ onComplete }) {
 
       // 0. Initial state: Box starts SMALL
       gsap.set(boxWrapRef.current, {
-        scale: 0.15,
+        scale: 0.2,
+        transformOrigin: "center center",
         opacity: 1,
-        borderRadius: "16px",
       });
 
       gsap.set(logoWrapRef.current, {
-        opacity: 0,
+        opacity: 0.85,
       });
 
       gsap.set(
@@ -70,7 +70,7 @@ export default function TrionnLoader({ onComplete }) {
         {
           opacity: 1,
           scale: 1,
-          rotation: -360,
+          rotation: -180,
         }
       );
 
@@ -89,13 +89,15 @@ export default function TrionnLoader({ onComplete }) {
         videoRef.current.play().catch(() => {});
       }
 
-      // --- 1. SMALL -> MEDIUM SIZE (0.0s -> 0.8s) ---
-      // Box and corner pluses move together from small to medium size
+      // ========================================================
+      // 1. SMALL -> MEDIUM SIZE (0.0s -> 0.75s)
+      // Box, corner pluses and logo move together from small to medium size
+      // ========================================================
       tl.to(
         boxWrapRef.current,
         {
           scale: 1,
-          duration: 0.8,
+          duration: 0.75,
           ease: "power3.out",
         },
         0
@@ -110,14 +112,26 @@ export default function TrionnLoader({ onComplete }) {
         ],
         {
           rotation: 0,
-          duration: 0.8,
+          duration: 0.75,
           ease: "power3.out",
         },
         0
       );
 
-      // --- 2. BOX LINE IS MADE + LOGO APPEARS (0.8s -> 3.2s) ---
+      tl.to(
+        logoWrapRef.current,
+        {
+          opacity: 1,
+          duration: 0.5,
+          ease: "power2.out",
+        },
+        0.2
+      );
+
+      // ========================================================
+      // 2. BOX LINE IS MADE + COUNTER 000% -> 100% (0.75s -> 2.65s)
       // Perimeter drawing from top-left, along top, down right, across bottom, up to top-left
+      // ========================================================
       const prog = { value: 0 };
       const lastSpun = { tr: false, br: false, bl: false, tl: false };
 
@@ -125,7 +139,7 @@ export default function TrionnLoader({ onComplete }) {
         prog,
         {
           value: 100,
-          duration: 2.4,
+          duration: 1.9,
           ease: "power1.inOut",
           onUpdate: () => {
             const v = Math.round(prog.value);
@@ -172,75 +186,68 @@ export default function TrionnLoader({ onComplete }) {
             }
           },
         },
-        0.8
-      );
-
-      // Logo / video appears inside the box as the line is made
-      tl.to(
-        logoWrapRef.current,
-        {
-          opacity: 1,
-          duration: 0.7,
-          ease: "power2.out",
-        },
-        0.9
+        0.75
       );
 
       // Tagline words appear staggered
-      tl.to(word1Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.1);
-      tl.to(dot1Ref.current, { opacity: 0.7, duration: 0.25 }, 1.3);
-      tl.to(word2Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.5);
-      tl.to(dot2Ref.current, { opacity: 0.7, duration: 0.25 }, 1.7);
-      tl.to(word3Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.9);
+      tl.to(word1Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.0);
+      tl.to(dot1Ref.current, { opacity: 0.7, duration: 0.25 }, 1.2);
+      tl.to(word2Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.4);
+      tl.to(dot2Ref.current, { opacity: 0.7, duration: 0.25 }, 1.6);
+      tl.to(word3Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.8);
 
-      // --- 3. AND THEN BIG LIKE THIS (3.25s -> 4.1s) ---
+      // ========================================================
+      // 3. AND THEN BIG LIKE THIS (2.65s -> 3.35s)
+      // Box expands from medium to BIG, filling the screen with dark luxury
+      // ========================================================
       // Fade tagline and bottom counter
       tl.to(
         [taglineRef.current, counterRef.current],
         {
           opacity: 0,
-          y: -10,
+          y: -12,
           duration: 0.3,
           ease: "power2.in",
         },
-        3.2
+        2.65
       );
 
       // Fade out the perimeter stroke
       if (borderRectRef.current) {
-        tl.to(borderRectRef.current, { opacity: 0, duration: 0.2 }, 3.25);
+        tl.to(borderRectRef.current, { opacity: 0, duration: 0.2 }, 2.7);
       }
 
       // Corner pluses fly outward as box expands and fade
       tl.to(
-        [
-          cornerTlRef.current,
-          cornerTrRef.current,
-          cornerBlRef.current,
-          cornerBrRef.current,
-        ],
-        {
-          opacity: 0,
-          scale: 1.4,
-          duration: 0.6,
-          ease: "power3.in",
-        },
-        3.3
+        cornerTlRef.current,
+        { x: -140, y: -140, opacity: 0, duration: 0.55, ease: "power3.in" },
+        2.7
+      );
+      tl.to(
+        cornerTrRef.current,
+        { x: 140, y: -140, opacity: 0, duration: 0.55, ease: "power3.in" },
+        2.7
+      );
+      tl.to(
+        cornerBlRef.current,
+        { x: -140, y: 140, opacity: 0, duration: 0.55, ease: "power3.in" },
+        2.7
+      );
+      tl.to(
+        cornerBrRef.current,
+        { x: 140, y: 140, opacity: 0, duration: 0.55, ease: "power3.in" },
+        2.7
       );
 
-      // Box expands from medium size to BIG (100vw x 100vh)
+      // Box expands smoothly from medium size to BIG (scale: 8 covers viewport cleanly from center)
       tl.to(
         boxWrapRef.current,
         {
-          width: "100vw",
-          height: "100dvh",
-          maxWidth: "100vw",
-          maxHeight: "100dvh",
-          borderRadius: "0px",
-          duration: 0.85,
+          scale: 8,
+          duration: 0.65,
           ease: "power4.inOut",
         },
-        3.25
+        2.7
       );
 
       // Screen turns to obsidian black
@@ -248,21 +255,23 @@ export default function TrionnLoader({ onComplete }) {
         containerRef.current,
         {
           backgroundColor: "#050507",
-          duration: 0.5,
+          duration: 0.45,
           ease: "power2.inOut",
         },
-        3.4
+        2.8
       );
 
-      // --- 4. CURTAIN DISSOLVE INTO SITE (4.1s -> 4.55s) ---
+      // ========================================================
+      // 4. CURTAIN DISSOLVE INTO SITE (3.35s -> 3.75s)
+      // ========================================================
       tl.to(
         containerRef.current,
         {
           opacity: 0,
-          duration: 0.45,
+          duration: 0.4,
           ease: "power2.inOut",
         },
-        4.1
+        3.35
       );
     }, containerRef);
 
@@ -282,34 +291,36 @@ export default function TrionnLoader({ onComplete }) {
       xmlns="http://www.w3.org/2000/svg"
       className="block"
     >
-      <line x1="7.5" y1="0" x2="7.5" y2="15" stroke="#333333" strokeWidth="1.2" />
-      <line x1="15" y1="7.5" x2="0" y2="7.5" stroke="#333333" strokeWidth="1.2" />
+      <line x1="7.5" y1="0" x2="7.5" y2="15" stroke="#222226" strokeWidth="1.2" />
+      <line x1="15" y1="7.5" x2="0" y2="7.5" stroke="#222226" strokeWidth="1.2" />
     </svg>
   );
 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[99999] bg-[#CECED4] flex flex-col items-center justify-center select-none pointer-events-auto overflow-hidden"
+      className="fixed inset-0 z-[99999] bg-[#CECED4] select-none pointer-events-auto overflow-hidden"
       style={{ willChange: "opacity, background-color" }}
     >
       {/* 
-        Master Center Box Wrap
+        Master Center Box Wrap — Perfectly Centered in Viewport
         Square aspect ratio matching Trionn (w: 300px, h: 300px)
-        Corner pluses are locked as children so they move together at all times
+        Corner pluses are locked as children so they move and scale together at all times
       */}
       <div
         ref={boxWrapRef}
-        className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[340px] md:h-[340px] max-w-[90vw] max-h-[75vh] flex items-center justify-center bg-[#C8C8CE] border border-black/[0.06] shadow-xl"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-2xl"
         style={{
-          boxShadow: "0 20px 50px -10px rgba(0, 0, 0, 0.25)",
-          willChange: "transform, width, height, border-radius",
+          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.35)",
+          transform: "translate(-50%, -50%) scale(0.2)",
+          transformOrigin: "center center",
+          willChange: "transform",
         }}
       >
-        {/* Inside: Logo / Video container that appears as line is drawn */}
+        {/* Inside: Logo / Video container that moves with the box */}
         <div
           ref={logoWrapRef}
-          className="absolute inset-3 sm:inset-4 rounded-xl overflow-hidden flex items-center justify-center bg-[#09090D] shadow-inner"
+          className="absolute inset-1 overflow-hidden flex items-center justify-center bg-[#07070A]"
         >
           <video
             ref={videoRef}
@@ -325,6 +336,7 @@ export default function TrionnLoader({ onComplete }) {
         {/* 
           SVG Perimeter Drawing Border
           Starts top-left (0,0), draws across top, down right, across bottom, up to top-left
+          rx="0" ensures the stroke line connects the 4 plus crosshair centers with exact precision
         */}
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible"
@@ -337,12 +349,12 @@ export default function TrionnLoader({ onComplete }) {
             width="100%"
             height="100%"
             fill="none"
-            stroke="#222222"
+            stroke="#222226"
             strokeWidth="1.5"
             strokeDasharray="1"
             strokeDashoffset="1"
             pathLength="1"
-            rx="16"
+            rx="0"
           />
         </svg>
 
@@ -383,7 +395,7 @@ export default function TrionnLoader({ onComplete }) {
       {/* Tagline Words Underneath (Trionn Style) */}
       <div
         ref={taglineRef}
-        className="flex items-center justify-center gap-2 mt-8 font-mono text-[11px] sm:text-xs tracking-[0.25em] uppercase font-bold text-[#222226] z-20"
+        className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 font-mono text-[11px] sm:text-xs tracking-[0.28em] uppercase font-bold text-[#222226] z-20"
       >
         <span ref={word1Ref}>INSPIRE</span>
         <span ref={dot1Ref} className="text-[#666] font-normal">·</span>
@@ -395,7 +407,7 @@ export default function TrionnLoader({ onComplete }) {
       {/* Percentage Rolling Counter (Bottom Center) */}
       <div
         ref={counterRef}
-        className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-baseline gap-1 font-mono font-bold text-sm tracking-widest text-[#222226] z-20 select-none"
+        className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 flex items-baseline gap-1 font-mono font-bold text-sm tracking-widest text-[#222226] z-20 select-none"
       >
         <span className="text-base text-[#111115]">
           {percent < 10 ? `00${percent}` : percent < 100 ? `0${percent}` : percent}
