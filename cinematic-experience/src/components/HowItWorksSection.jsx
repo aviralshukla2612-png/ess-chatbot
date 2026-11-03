@@ -16,6 +16,9 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  Headphones,
+  Rocket,
+  Lightbulb,
 } from "lucide-react";
 
 if (typeof window !== "undefined") {
@@ -36,6 +39,58 @@ const HEADLINE_LETTERS = [
   { char: "R", x: 260, y: 160, z: 340, rx: -60, ry: 35, rz: 50, s: 2.0 },
   { char: "K", x: 340, y: -150, z: 190, rx: 40, ry: -60, rz: -50, s: 2.2 },
   { char: "S", x: 400, y: 220, z: 280, rx: -70, ry: 55, rz: 40, s: 1.9 },
+];
+
+// 3 Process Cards matching Dribbble Wave Card Design Reference
+const PROCESS_CARDS = [
+  {
+    step: "01",
+    tagline: "Step 01 · Ingestion",
+    title: "Connect Knowledge Base",
+    subTitle: "Instant Ingestion",
+    icon: Headphones,
+    iconBg: "bg-purple-100/70 text-[#8B5CF6]",
+    tags: ["PDF · DOCX", "URL SYNC"],
+    description: "Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.",
+    feature: "Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.",
+    waveColor: "#8B5CF6",
+    gradient: "from-[#8B5CF6] via-[#9333EA] to-[#7E22CE]",
+    shadow: "shadow-[0_20px_50px_rgba(139,92,246,0.30)] hover:shadow-[0_25px_65px_rgba(139,92,246,0.50)]",
+    footerLeft: "Ingestion Engine",
+    ctaText: "Start Ingestion",
+  },
+  {
+    step: "02",
+    tagline: "Step 02 · Persona Engine",
+    title: "Calibrate Persona Styling",
+    subTitle: "Persona Engine",
+    icon: Rocket,
+    iconBg: "bg-orange-100/70 text-[#FF5E3A]",
+    tags: ["BRAND VOICE", "19 MOTIONS"],
+    description: "Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.",
+    feature: "Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.",
+    waveColor: "#FF5E3A",
+    gradient: "from-[#FF5E3A] via-[#F97316] to-[#EA580C]",
+    shadow: "shadow-[0_20px_50px_rgba(255,94,58,0.30)] hover:shadow-[0_25px_65px_rgba(255,94,58,0.50)]",
+    footerLeft: "Persona Engine",
+    ctaText: "Calibrate Persona",
+  },
+  {
+    step: "03",
+    tagline: "Step 03 · Live Embed",
+    title: "Deploy Single Line Code",
+    subTitle: "Universal Live Embed",
+    icon: Lightbulb,
+    iconBg: "bg-cyan-100/70 text-[#06B6D4]",
+    tags: ["ONE-LINE", "ZERO CONFIG"],
+    description: "Integrate the assistant into your website using the provided script with instant anti-cache live updates.",
+    feature: "Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.",
+    waveColor: "#06B6D4",
+    gradient: "from-[#06B6D4] via-[#0EA5E9] to-[#0284C7]",
+    shadow: "shadow-[0_20px_50px_rgba(6,182,212,0.30)] hover:shadow-[0_25px_65px_rgba(6,182,212,0.50)]",
+    footerLeft: "Edge Deploy",
+    ctaText: "Get Embed Code",
+  },
 ];
 
 export default function HowItWorksSection({ onOpenTrial }) {
@@ -327,188 +382,144 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* RIGHT-TO-LEFT CAROUSEL TRACK (WHOLE COLOR CARDS!)                     */}
+        {/* RIGHT-TO-LEFT CAROUSEL TRACK (DRIBBBLE WAVE CARDS WITH LIQUID DIVIDER) */}
         {/* ===================================================================== */}
         <div
           ref={cardsTrackRef}
-          className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch will-change-transform"
+          onMouseLeave={() => setActiveCardIndex(1)}
+          className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-7 items-stretch will-change-transform"
         >
-          {/* =================================================================== */}
-          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE (GLASSMORPHISM + GLOWING BORDER)*/}
-          {/* =================================================================== */}
-          <div
-            ref={(el) => (cardRefs.current[0] = el)}
-            onMouseEnter={() => setActiveCardIndex(0)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#2DD4BF]/18 via-[#09232B]/85 to-[#041217]/95 backdrop-blur-2xl text-white border-2 border-[#2DD4BF] shadow-[0_0_28px_rgba(45,212,191,0.30)] hover:shadow-[0_0_50px_rgba(45,212,191,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
-          >
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                {/* Top Badge & Number */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#2DD4BF]/20 text-[#2DD4BF] border border-[#2DD4BF]/40 uppercase tracking-wider">
-                    Step 01 · Ingestion
-                  </span>
-                  <span className="font-headline font-black text-2xl text-[#2DD4BF]">
-                    01
-                  </span>
-                </div>
+          {PROCESS_CARDS.map((card, idx) => {
+            const Icon = card.icon;
+            const isExpanded = activeCardIndex === idx;
 
-                {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-[#FFFFFF] !text-[#FFFFFF] tracking-tight uppercase leading-snug drop-shadow-md">
-                  CONNECT YOUR KNOWLEDGE BASE
-                </h3>
-
-                {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed font-normal">
-                  Upload brochures, pricing schedules, FAQs, technical manuals, or provide a website URL.
-                </p>
-              </div>
-
-              {/* Visual Graphic: Interactive Ingestion Dropzone */}
-              <div className="my-auto py-2 bg-black/50 border border-[#2DD4BF]/30 backdrop-blur-md rounded-xl p-3 space-y-2 text-white">
-                <div className="flex items-center justify-between text-[10px] font-mono text-white">
-                  <span className="flex items-center gap-1.5 font-bold text-[#2DD4BF]">
-                    <Globe className="w-3 h-3 text-[#2DD4BF]" />
-                    URL &amp; Docs Sync
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-[#2DD4BF]/20 text-[#2DD4BF] border border-[#2DD4BF]/40 font-bold text-[9px]">
-                    Active
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[9px] text-white/90 bg-[#2DD4BF]/10 p-2 rounded border border-[#2DD4BF]/20 font-mono">
-                  <Upload className="w-3 h-3 text-[#2DD4BF] shrink-0" />
-                  <span className="truncate">brochure_v2.pdf, faqs.docx</span>
-                </div>
-              </div>
-
-              {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#2DD4BF]/30 flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#2DD4BF] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
-                  Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* =================================================================== */}
-          {/* CARD 02: CALIBRATE PERSONA (GLASSMORPHISM + GLOWING BORDER)         */}
-          {/* =================================================================== */}
-          <div
-            ref={(el) => (cardRefs.current[1] = el)}
-            onMouseEnter={() => setActiveCardIndex(1)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#C084FC]/18 via-[#1C0D2E]/85 to-[#0C0517]/95 backdrop-blur-2xl text-white border-2 border-[#C084FC] shadow-[0_0_28px_rgba(192,132,252,0.30)] hover:shadow-[0_0_50px_rgba(192,132,252,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
-          >
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                {/* Top Badge & Number */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#C084FC]/20 text-[#C084FC] border border-[#C084FC]/40 uppercase tracking-wider">
-                    Step 02 · Persona Engine
-                  </span>
-                  <span className="font-headline font-black text-2xl text-[#C084FC]">
-                    02
-                  </span>
-                </div>
-
-                {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-[#FFFFFF] !text-[#FFFFFF] tracking-tight uppercase leading-snug drop-shadow-md">
-                  CALIBRATE PERSONA &amp; LAUNCHER STYLING
-                </h3>
-
-                {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed font-normal">
-                  Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and animation.
-                </p>
-              </div>
-
-              {/* Visual Graphic: Interactive Persona Selector */}
-              <div className="my-auto py-2 bg-black/50 border border-[#C084FC]/30 backdrop-blur-md rounded-xl p-3 space-y-2 text-white">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-[#CBD5E1] font-bold">
-                    Tone Preset:
-                  </span>
-                  <span className="text-[9px] font-mono font-bold text-[#C084FC] bg-[#C084FC]/20 border border-[#C084FC]/40 px-2 py-0.5 rounded">
-                    Consultative AI
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#C084FC] text-black flex items-center justify-center font-bold">
-                    <Bot className="w-3.5 h-3.5 text-black" />
+            return (
+              <div
+                key={card.step}
+                ref={(el) => (cardRefs.current[idx] = el)}
+                onMouseEnter={() => setActiveCardIndex(idx)}
+                onClick={() => setActiveCardIndex(idx)}
+                className={`group relative rounded-3xl bg-white text-slate-900 overflow-hidden h-[415px] sm:h-[435px] lg:h-[455px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-white/20 ${card.shadow}`}
+              >
+                {/* TOP SECTION: Always visible, clean crisp white background */}
+                <div className="relative z-10 px-6 pt-6 pb-2 flex flex-col items-center text-center transition-all duration-300">
+                  {/* Icon Container with subtle halo and decorative sparkle dots */}
+                  <div className="relative flex items-center justify-center">
+                    <div className={`w-14 h-14 rounded-2xl ${card.iconBg} flex items-center justify-center shadow-inner transition-transform duration-300 group-hover:scale-110`}>
+                      <Icon className="w-7 h-7 stroke-[2]" />
+                    </div>
+                    {/* Decorative sparkle dots around icon like the reference image */}
+                    <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-slate-300" />
+                    <span className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full bg-slate-300" />
                   </div>
-                  <div className="flex-1 bg-[#C084FC]/10 border border-[#C084FC]/20 rounded px-2 py-1 text-[9px] text-white/95 truncate font-mono font-medium">
-                    &quot;Welcome! How can I accelerate your goals today?&quot;
+
+                  {/* Title & Step Tag */}
+                  <h3 className="font-headline font-black text-xl sm:text-2xl text-slate-900 tracking-tight uppercase mt-3 leading-snug">
+                    {card.title}
+                  </h3>
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 mt-1">
+                    {card.tagline}
+                  </span>
+                </div>
+
+                {/* DYNAMIC WAVE FILL LAYER: Expands smoothly on hover/active */}
+                <div
+                  className={`absolute inset-x-0 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${
+                    isExpanded ? "h-[74%] sm:h-[76%]" : "h-[45%] sm:h-[47%]"
+                  }`}
+                >
+                  {/* Liquid Organic Wave SVG Divider */}
+                  <div className="relative w-full h-10 sm:h-12 -mt-9 sm:-mt-11 pointer-events-none shrink-0 overflow-visible">
+                    {/* Back Wave (translucent) */}
+                    <svg
+                      viewBox="0 0 500 80"
+                      preserveAspectRatio="none"
+                      className="absolute inset-0 w-full h-full opacity-35"
+                      style={{ color: card.waveColor }}
+                    >
+                      <path
+                        d="M0,50 Q140,15 280,50 T500,50 L500,80 L0,80 Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    {/* Front Wave (solid, seamless into body) */}
+                    <svg
+                      viewBox="0 0 500 80"
+                      preserveAspectRatio="none"
+                      className="absolute inset-0 w-full h-full"
+                      style={{ color: card.waveColor }}
+                    >
+                      <path
+                        d="M0,35 Q125,70 250,35 T500,35 L500,80 L0,80 Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Wave Gradient Body */}
+                  <div
+                    className={`flex-1 w-full bg-gradient-to-b ${card.gradient} px-6 pb-6 pt-2 text-white flex flex-col justify-between overflow-hidden`}
+                  >
+                    {isExpanded ? (
+                      /* EXPANDED CONTENT (Matching Card 2 in reference image) */
+                      <div className="flex flex-col h-full justify-between">
+                        <div>
+                          <h4 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight">
+                            {card.subTitle}
+                          </h4>
+                          <p className="mt-2 text-xs sm:text-[13px] text-white/95 leading-relaxed font-normal">
+                            {card.description}
+                          </p>
+                          <p className="mt-2.5 text-[11px] font-mono text-white/90 bg-black/20 p-2 rounded-lg border border-white/15">
+                            ✦ {card.feature}
+                          </p>
+                        </div>
+
+                        {/* Bottom Action Arrow Button (exact match to screenshot) */}
+                        <div className="pt-3 mt-auto flex items-center justify-between border-t border-white/20">
+                          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-white/90">
+                            {card.footerLeft}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenTrial?.();
+                            }}
+                            className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+                            aria-label={card.ctaText}
+                          >
+                            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* RESTING CONTENT (Matching Card 1 & 3 in reference image) */
+                      <div className="flex flex-col h-full justify-between">
+                        <div className="my-auto flex items-center justify-center gap-6 text-xs sm:text-sm font-black tracking-wider uppercase text-white">
+                          {card.tags.map((tag, tIdx) => (
+                            <span
+                              key={tIdx}
+                              className="border-b-2 border-white/50 pb-0.5 tracking-widest drop-shadow-sm"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] font-mono text-white/75 pt-2 border-t border-white/20">
+                          <span>{card.footerLeft}</span>
+                          <span className="flex items-center gap-1 font-bold text-white hover:underline">
+                            Explore →
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#C084FC]/30 flex items-start gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-[#C084FC] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
-                  Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* =================================================================== */}
-          {/* CARD 03: DEPLOY WITH CODE (GLASSMORPHISM + GLOWING BORDER)          */}
-          {/* =================================================================== */}
-          <div
-            ref={(el) => (cardRefs.current[2] = el)}
-            onMouseEnter={() => setActiveCardIndex(2)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#FB923C]/18 via-[#2A1408]/85 to-[#140803]/95 backdrop-blur-2xl text-white border-2 border-[#FB923C] shadow-[0_0_28px_rgba(251,146,60,0.30)] hover:shadow-[0_0_50px_rgba(251,146,60,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
-          >
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                {/* Top Badge & Number */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FB923C]/20 text-[#FB923C] border border-[#FB923C]/40 uppercase tracking-wider">
-                    Step 03 · Live Embed
-                  </span>
-                  <span className="font-headline font-black text-2xl text-[#FB923C]">
-                    03
-                  </span>
-                </div>
-
-                {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-[#FFFFFF] !text-[#FFFFFF] tracking-tight uppercase leading-snug drop-shadow-md">
-                  DEPLOY WITH A SINGLE LINE OF CODE
-                </h3>
-
-                {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed font-normal">
-                  Integrate the assistant into the website using the provided script.
-                </p>
-              </div>
-
-              {/* Visual Graphic: Code Embed Terminal Snippet */}
-              <div className="my-auto py-2 bg-black/50 border border-[#FB923C]/30 backdrop-blur-md rounded-xl p-3 space-y-1.5 text-white">
-                <div className="flex items-center justify-between text-[10px] font-mono text-white font-semibold">
-                  <span className="flex items-center gap-1.5 text-[#FB923C] font-bold">
-                    <Code2 className="w-3 h-3 text-[#FB923C]" />
-                    HTML Embed
-                  </span>
-                  <span className="flex items-center gap-1 text-[9px] text-[#CBD5E1] font-mono font-bold">
-                    <Copy className="w-2.5 h-2.5 text-[#FB923C]" />
-                    One-line
-                  </span>
-                </div>
-                <div className="bg-black/80 text-[#86EFAC] border border-[#FB923C]/30 p-2 rounded text-[9px] font-mono overflow-hidden text-ellipsis whitespace-nowrap">
-                  <code>&lt;script src=&quot;nexus.js&quot; data-bot=&quot;nx_892&quot;&gt;&lt;/script&gt;</code>
-                </div>
-              </div>
-
-              {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#FB923C]/30 flex items-start gap-2">
-                <Zap className="w-3.5 h-3.5 text-[#FB923C] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
-                  Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.
-                </span>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         {/* ===================================================================== */}
