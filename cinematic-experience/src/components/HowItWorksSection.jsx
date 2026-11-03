@@ -261,12 +261,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
           ref={typographyRef}
           className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none px-4"
         >
-          {/* Top Kicker */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/20 text-zinc-300 text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
-            <span>Fast Three-Step Setup</span>
-          </div>
-
           {/* Oversized Centered "HOW IT WORKS" Typography */}
           <h1
             className="font-headline font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl tracking-tight text-white uppercase text-center flex flex-wrap justify-center items-center gap-x-4 md:gap-x-6"
@@ -324,10 +318,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
           ref={sectionHeaderRef}
           className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-3"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/20 text-zinc-300 text-[11px] font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3 h-3 text-zinc-300" />
-            <span>Fast Three-Step Setup</span>
-          </div>
           <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight">
             From Raw Documents To{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#55A9FF]">
