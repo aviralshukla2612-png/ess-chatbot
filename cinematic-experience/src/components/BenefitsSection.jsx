@@ -696,154 +696,154 @@ export default function BenefitsSection({ onOpenTrial }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3 BRIGHT COLORFUL CARDS (EACH CARD HAS A BRIGHT, DIFFERENT COLOR)          */}
+        {/* 3 COLORFUL VIBRANT CARDS (RICH DEEP COLOR PALETTE WITH 100% VISIBLE TEXT)  */}
         {/* ========================================================================= */}
         <div
           className="key-card-list relative z-20 grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch w-full max-w-6xl mx-auto my-auto"
           style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
         >
           {/* ======================================================================= */}
-          {/* CARD 01: BRIGHT MINT / EMERALD GREEN                                    */}
+          {/* CARD 01: VIBRANT CYBER EMERALD GREEN (Rich deep saturated color)        */}
           {/* ======================================================================= */}
           <div
             ref={(el) => (cardRefs.current[0] = el)}
-            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#E6FBF2] via-[#D1FAE5] to-[#A7F3D0] p-5 sm:p-6 flex flex-col justify-between shadow-[0_15px_35px_rgba(16,185,129,0.30)] hover:shadow-[0_20px_45px_rgba(16,185,129,0.45)] border-2 border-[#10B981] hover:border-[#059669] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#062D21] via-[#0A3D2D] to-[#031E15] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_45px_rgba(16,185,129,0.35)] hover:shadow-[0_25px_55px_rgba(16,185,129,0.50)] border-2 border-[#10B981] hover:border-[#34D399] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
           >
             {/* Ambient Green Glow */}
-            <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#10B981]/25 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#10B981]/30 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10">
               {/* Top Pill Tag */}
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/25 text-[#064E3B] border border-[#10B981]/40">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/25 text-[#6EE7B7] border border-[#10B981]/50">
                   Card 01 · 24/7 Engine
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#064E3B]">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#A7F3D0]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                   Live 24/7
                 </span>
               </div>
 
-              {/* Heading & Subtitle in Deep Dark Green */}
-              <h3 className="font-headline font-black text-xl sm:text-2xl text-[#064E3B] tracking-tight mt-3 uppercase">
+              {/* Heading & Subtitle in 100% Crisp High-Contrast White */}
+              <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-3 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                 24/7 AI ASSISTANCE
               </h3>
-              <p className="text-xs text-[#065F46] mt-1.5 leading-relaxed font-semibold">
+              <p className="text-xs text-[#D1FAE5] mt-1.5 leading-relaxed font-medium">
                 Let customers get answers to their questions anytime, even outside business hours.
               </p>
             </div>
 
             {/* Interactive Chat Preview */}
-            <div className="relative z-10 my-3 py-2 bg-white/95 rounded-xl p-3 border border-[#10B981]/30 space-y-1.5 shadow-sm">
-              <div className="bg-[#ECFDF5] text-[#064E3B] border border-[#10B981]/20 rounded-lg p-2 text-[10px] leading-snug max-w-[92%] ml-auto font-medium">
+            <div className="relative z-10 my-3 py-2 bg-[#02150E]/85 backdrop-blur-md rounded-xl p-3 border border-[#10B981]/40 space-y-1.5 shadow-inner">
+              <div className="bg-[#0A3D2D] text-[#E6FBF2] border border-[#10B981]/30 rounded-lg p-2 text-[10px] leading-snug max-w-[92%] ml-auto font-medium">
                 Can I schedule an executive consultation for tomorrow?
               </div>
-              <div className="bg-[#10B981] text-white rounded-lg p-2 text-[10px] leading-snug max-w-[95%] font-medium shadow-xs">
+              <div className="bg-[#10B981] text-white rounded-lg p-2 text-[10px] leading-snug max-w-[95%] font-semibold shadow-sm">
                 Absolutely! Reserved 3:00 PM tomorrow with our senior specialist.
               </div>
             </div>
 
             {/* Bottom Label */}
             <div className="relative z-10 pt-2.5 border-t border-[#10B981]/30 flex items-center justify-between">
-              <span className="font-mono text-[10px] font-black tracking-widest text-[#064E3B] uppercase">
+              <span className="font-mono text-[10px] font-black tracking-widest text-[#6EE7B7] uppercase">
                 ALWAYS AVAILABLE
               </span>
-              <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#34D399] shrink-0" />
             </div>
           </div>
 
           {/* ======================================================================= */}
-          {/* CARD 02: BRIGHT ROYAL LAVENDER / LILAC VIOLET                           */}
+          {/* CARD 02: VIBRANT ROYAL VIOLET / PURPLE (Rich deep saturated color)      */}
           {/* ======================================================================= */}
           <div
             ref={(el) => (cardRefs.current[1] = el)}
-            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#F5F0FF] via-[#EDE4FF] to-[#D8B4FE] p-5 sm:p-6 flex flex-col justify-between shadow-[0_15px_35px_rgba(150,61,255,0.30)] hover:shadow-[0_20px_45px_rgba(150,61,255,0.45)] border-2 border-[#963DFF] hover:border-[#7C2CE8] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#270E43] via-[#35135C] to-[#1A0830] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_45px_rgba(150,61,255,0.40)] hover:shadow-[0_25px_55px_rgba(150,61,255,0.55)] border-2 border-[#963DFF] hover:border-[#B86BFF] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
           >
             {/* Ambient Purple Glow */}
-            <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#963DFF]/25 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#963DFF]/35 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10">
               {/* Top Pill Tag */}
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/25 text-[#2E0854] border border-[#963DFF]/40">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/30 text-[#D8B4FE] border border-[#963DFF]/50">
                   Card 02 · Auto Assist
                 </span>
-                <span className="text-[11px] font-bold text-[#2E0854]">
+                <span className="text-[11px] font-bold text-[#E9D5FF]">
                   AI Assistant
                 </span>
               </div>
 
-              {/* Heading & Subtitle in Deep Dark Purple (High Contrast!) */}
-              <h3 className="font-headline font-black text-xl sm:text-2xl text-[#2E0854] tracking-tight mt-3 uppercase">
+              {/* Heading & Subtitle in 100% Crisp High-Contrast White */}
+              <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-3 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                 LESS MANUAL WORK
               </h3>
-              <p className="text-xs text-[#4A157A] mt-1.5 leading-relaxed font-semibold">
+              <p className="text-xs text-[#EDE4FF] mt-1.5 leading-relaxed font-medium">
                 Reduce repetitive customer interactions and give your team more time for important work.
               </p>
             </div>
 
             {/* Central Metric Ring */}
             <div className="relative z-10 my-3 flex flex-col items-center justify-center">
-              <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-white shadow-[0_8px_25px_rgba(150,61,255,0.25)] border-2 border-[#963DFF]/30 flex flex-col items-center justify-center transition-transform duration-300 group-hover:scale-105">
-                <span className="font-headline font-black text-2xl text-[#2E0854] tracking-tight">
-                  1.5K<span className="text-[#963DFF]">+</span>
+              <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-[#1A0830] shadow-[0_8px_30px_rgba(150,61,255,0.40)] border-2 border-[#963DFF]/60 flex flex-col items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                <span className="font-headline font-black text-2xl text-white tracking-tight">
+                  1.5K<span className="text-[#C28AFF]">+</span>
                 </span>
-                <span className="text-[9px] font-mono font-bold uppercase text-[#4A157A] mt-0.5">
+                <span className="text-[9px] font-mono font-bold uppercase text-[#D8B4FE] mt-0.5">
                   Automated
                 </span>
               </div>
             </div>
 
             {/* Bottom Label */}
-            <div className="relative z-10 pt-2.5 border-t border-[#963DFF]/30 flex items-center justify-between">
-              <span className="font-mono text-[10px] font-black tracking-widest text-[#2E0854] uppercase">
+            <div className="relative z-10 pt-2.5 border-t border-[#963DFF]/40 flex items-center justify-between">
+              <span className="font-mono text-[10px] font-black tracking-widest text-[#D8B4FE] uppercase">
                 AUTOMATED QUERY RESOLUTION
               </span>
-              <Sparkles className="w-4 h-4 text-[#963DFF] shrink-0" />
+              <Sparkles className="w-4 h-4 text-[#C28AFF] shrink-0" />
             </div>
           </div>
 
           {/* ======================================================================= */}
-          {/* CARD 03: BRIGHT ELECTRIC AZURE / SKY BLUE                               */}
+          {/* CARD 03: VIBRANT ELECTRIC AZURE BLUE (Rich deep saturated color)        */}
           {/* ======================================================================= */}
           <div
             ref={(el) => (cardRefs.current[2] = el)}
-            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#F0F9FF] via-[#E0F2FE] to-[#BAE6FD] p-5 sm:p-6 flex flex-col justify-between shadow-[0_15px_35px_rgba(2,132,199,0.30)] hover:shadow-[0_20px_45px_rgba(2,132,199,0.45)] border-2 border-[#0284C7] hover:border-[#0369A1] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#082F49] via-[#0C4A6E] to-[#041D2E] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_45px_rgba(2,132,199,0.35)] hover:shadow-[0_25px_55px_rgba(2,132,199,0.50)] border-2 border-[#0284C7] hover:border-[#38BDF8] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
           >
             {/* Ambient Blue Glow */}
-            <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#0284C7]/25 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#0284C7]/30 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10">
               {/* Top Pill Tag */}
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#0284C7]/25 text-[#082F49] border border-[#0284C7]/40">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#0284C7]/25 text-[#7DD3FC] border border-[#0284C7]/50">
                   Card 03 · Pipeline IQ
                 </span>
-                <span className="text-[11px] font-bold text-[#082F49]">
+                <span className="text-[11px] font-bold text-[#BAE6FD]">
                   Enquiries
                 </span>
               </div>
 
-              {/* Heading & Subtitle in Deep Dark Navy */}
-              <h3 className="font-headline font-black text-xl sm:text-2xl text-[#082F49] tracking-tight mt-3 uppercase">
+              {/* Heading & Subtitle in 100% Crisp High-Contrast White */}
+              <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-3 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                 LEAD VISIBILITY
               </h3>
-              <p className="text-xs text-[#0C4A6E] mt-1.5 leading-relaxed font-semibold">
+              <p className="text-xs text-[#E0F2FE] mt-1.5 leading-relaxed font-medium">
                 See customer conversations and enquiries generated through your website assistant.
               </p>
             </div>
 
             {/* Pipeline Feed Box */}
-            <div className="relative z-10 my-3 py-2 bg-white/95 rounded-xl p-3 border border-[#0284C7]/30 space-y-2 shadow-sm text-[11px]">
-              <div className="flex items-center justify-between border-b border-[#0284C7]/20 pb-1.5">
-                <span className="text-[#082F49] font-bold text-[10px]">Commercial Rollout</span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/30">
+            <div className="relative z-10 my-3 py-2 bg-[#021827]/85 backdrop-blur-md rounded-xl p-3 border border-[#0284C7]/40 space-y-2 shadow-inner text-[11px]">
+              <div className="flex items-center justify-between border-b border-[#0284C7]/30 pb-1.5">
+                <span className="text-white font-bold text-[10px]">Commercial Rollout</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                   HOT LEAD
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#082F49] font-bold text-[10px]">Executive Consultation</span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#FAF5FF] text-[#6B21A8] border border-[#963DFF]/30">
+                <span className="text-white font-bold text-[10px]">Executive Consultation</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
                   QUALIFIED
                 </span>
               </div>
@@ -851,10 +851,10 @@ export default function BenefitsSection({ onOpenTrial }) {
 
             {/* Bottom Label */}
             <div className="relative z-10 pt-2.5 border-t border-[#0284C7]/30 flex items-center justify-between">
-              <span className="font-mono text-[10px] font-black tracking-widest text-[#082F49] uppercase">
+              <span className="font-mono text-[10px] font-black tracking-widest text-[#7DD3FC] uppercase">
                 CONVERSATIONS & ENQUIRIES
               </span>
-              <TrendingUp className="w-4 h-4 text-[#0284C7] shrink-0" />
+              <TrendingUp className="w-4 h-4 text-[#38BDF8] shrink-0" />
             </div>
           </div>
         </div>

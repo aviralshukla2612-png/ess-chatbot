@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowUpRight, ShieldCheck, Mail, Calendar } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -232,10 +232,10 @@ export default function Footer() {
       gsap.set(letters, { autoAlpha: 1, yPercent: 120 });
       gsap.set(accent, { autoAlpha: 1, scale: 0 });
 
-      // 2. Entrance Animation: ScrollTrigger at 95% viewport
+      // 2. Entrance Animation: Triggers when the Footer reaches view
       ScrollTrigger.create({
-        trigger: svg,
-        start: "top 95%",
+        trigger: footer,
+        start: "top 80%",
         once: true,
         onEnter: () => {
           // Organic random shuffle stagger identical to noth.in SOTD
@@ -281,7 +281,7 @@ export default function Footer() {
             })
             .to(p, {
               scale: 0.05,
-              duration: 0.5,
+              duration: 0.55,
               ease: "power2.inOut",
             })
             .to(p, {
@@ -302,7 +302,7 @@ export default function Footer() {
     <footer
       id="footer"
       ref={footerRef}
-      className="relative bg-[#000000] text-white pt-20 sm:pt-28 pb-10 sm:pb-14 px-6 sm:px-12 lg:px-16 overflow-hidden min-h-screen flex flex-col justify-between selection:bg-[#963DFF] selection:text-white"
+      className="relative bg-[#000000] text-white pt-12 sm:pt-16 pb-8 sm:pb-12 px-6 sm:px-12 lg:px-16 overflow-hidden min-h-screen flex flex-col justify-between selection:bg-[#963DFF] selection:text-white"
     >
       {/* Subtle top divider line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-white/[0.08]" />
@@ -311,9 +311,9 @@ export default function Footer() {
         {/* ========================================================================= */}
         {/* 1. TOP SECTION: Headline, Actions & Links (noth.in style)                  */}
         {/* ========================================================================= */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-12 sm:gap-16 pt-2 pb-12 sm:pb-16">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 sm:gap-12 pt-2 pb-6 sm:pb-10">
           {/* Left: Brand + Headline + Interactive Action Pills */}
-          <div className="max-w-3xl space-y-8">
+          <div className="max-w-3xl space-y-6">
             {/* Emperor Nexus Logo: B&W by default, color on hover */}
             <div className="group relative inline-flex items-center cursor-pointer">
               <img
@@ -323,16 +323,16 @@ export default function Footer() {
               />
             </div>
 
-            <h2 className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.04]">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.06]">
               Let’s start <br />
               with Emperor Nexus.
             </h2>
 
             {/* Pill CTA Buttons identical to noth.in */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center gap-4 pt-1">
               <a
                 href="/register"
-                className="group inline-flex items-center gap-4 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full border border-white/30 text-xs sm:text-sm font-semibold uppercase tracking-widest text-white hover:border-white hover:bg-white hover:text-black transition-all duration-300"
+                className="group inline-flex items-center gap-4 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full border border-white/30 text-xs sm:text-sm font-semibold uppercase tracking-widest text-white hover:border-white hover:bg-white hover:text-black transition-all duration-300"
               >
                 <span>Book a call</span>
                 <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
@@ -340,7 +340,7 @@ export default function Footer() {
 
               <a
                 href="mailto:contact@vardaansmartsolutions.com"
-                className="group inline-flex items-center gap-4 px-7 sm:px-8 py-3.5 sm:py-4 rounded-full border border-white/30 text-xs sm:text-sm font-semibold uppercase tracking-widest text-white hover:border-white hover:bg-white hover:text-black transition-all duration-300"
+                className="group inline-flex items-center gap-4 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full border border-white/30 text-xs sm:text-sm font-semibold uppercase tracking-widest text-white hover:border-white hover:bg-white hover:text-black transition-all duration-300"
               >
                 <span>Drop us an email</span>
                 <span className="font-mono text-base">@</span>
@@ -379,12 +379,12 @@ export default function Footer() {
         {/* 2. MASSIVE CENTERPIECE: Screen-filling vector "EMPEROR NEXUS ✦" with       */}
         {/*    noth.in's scroll reveal and interactive elastic hover bounce            */}
         {/* ========================================================================= */}
-        <div className="w-full my-auto py-10 sm:py-16 overflow-hidden footer-svg-w">
+        <div className="w-full my-auto py-6 sm:py-10 overflow-hidden footer-svg-w">
           <svg
             ref={svgRef}
             viewBox={VIEWBOX}
             fill="none"
-            className="w-full h-auto max-h-[42vh] overflow-visible text-white select-none cursor-pointer"
+            className="w-full h-auto max-h-[38vh] overflow-visible text-white select-none cursor-pointer"
           >
             {FOOTER_LETTERS.map((item, idx) => (
               <path
@@ -405,7 +405,7 @@ export default function Footer() {
         {/* ========================================================================= */}
         {/* 3. BOTTOM INFO BAR: Copyright, SLA Status, and Section Navigation          */}
         {/* ========================================================================= */}
-        <div className="w-full pt-8 sm:pt-10 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[#9898A6]">
+        <div className="w-full pt-6 sm:pt-8 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#9898A6]">
           {/* Left: Brand Copyright & Trust */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-center md:text-left">
             <span>© 2026 — Emperor Smart Solutions — Enterprise Autonomous AI</span>
