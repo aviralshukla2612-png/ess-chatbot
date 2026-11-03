@@ -418,14 +418,14 @@ export default function BenefitsSection({ onOpenTrial }) {
                 data-kf-card="true"
                 onMouseEnter={() => setActiveCardIndex(idx)}
                 onClick={() => setActiveCardIndex(idx)}
-                className={`featured-card group relative rounded-3xl bg-[#EAEBED] text-black overflow-hidden h-[420px] sm:h-[440px] lg:h-[460px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-white/30 will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.45)] ${card.shadow}`}
+                className={`featured-card group relative rounded-3xl bg-[#C5CAD4] text-black overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-slate-300/40 will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${card.shadow}`}
               >
-                {/* TOP SECTION: Premium off-white / light gray with high-contrast jet black typography */}
-                <div className="card-wave-top relative z-10 px-6 pt-5 pb-1 flex flex-col items-center text-center transition-all duration-300">
+                {/* TOP SECTION: Soft grey (#C5CAD4) with high-contrast jet black typography */}
+                <div className="card-wave-top relative z-10 px-5 pt-4 pb-1 flex flex-col items-center text-center transition-all duration-300">
                   {/* Icon Container with subtle halo and decorative sparkle dots */}
                   <div className="relative flex items-center justify-center">
-                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-white shadow-[0_8px_24px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04)] border border-slate-200/90 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
-                      <Icon className="w-10 h-10 sm:w-11 sm:h-11" />
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-md border border-black/10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                      <Icon className="w-9 h-9 sm:w-10 sm:h-10" />
                     </div>
                     {/* Decorative sparkle dots around icon matched to card accent */}
                     <span
@@ -441,13 +441,13 @@ export default function BenefitsSection({ onOpenTrial }) {
                   {/* Title & Tagline */}
                   <h3
                     style={{ color: "#000000" }}
-                    className="!text-black text-black font-headline font-black text-xl sm:text-2xl tracking-tight uppercase mt-2.5 leading-snug drop-shadow-none"
+                    className="!text-black text-black font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-none"
                   >
                     {card.title}
                   </h3>
                   <span
-                    style={{ color: "#475569" }}
-                    className="!text-slate-600 text-slate-600 text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
+                    style={{ color: "#1E293B" }}
+                    className="!text-slate-800 text-slate-800 text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
                   >
                     {card.tagline}
                   </span>
@@ -456,11 +456,11 @@ export default function BenefitsSection({ onOpenTrial }) {
                 {/* DYNAMIC WAVE FILL LAYER: Expands smoothly on hover/active */}
                 <div
                   className={`absolute inset-x-0 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${
-                    isExpanded ? "h-[60%] sm:h-[62%]" : "h-[39%] sm:h-[41%]"
+                    isExpanded ? "h-[62%] sm:h-[64%]" : "h-[38%] sm:h-[40%]"
                   }`}
                 >
                   {/* Liquid Organic Wave SVG Divider */}
-                  <div className="relative w-full h-9 sm:h-11 -mt-8 sm:-mt-10 pointer-events-none shrink-0 overflow-visible">
+                  <div className="relative w-full h-8 sm:h-10 -mt-7 sm:-mt-9 pointer-events-none shrink-0 overflow-visible">
                     {/* Back Wave (translucent) */}
                     <svg
                       viewBox="0 0 500 80"
