@@ -111,7 +111,6 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
   const stageRef = useRef(null);
   const headlineWrapperRef = useRef(null);
   const sublineRef = useRef(null);
-  const cursorRef = useRef(null);
   const line1CharRefs = useRef([]);
   const line2CharRefs = useRef([]);
   const cardsRowRef = useRef(null);
@@ -147,7 +146,8 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           return;
         }
 
-        const scrollDist = isDesktop ? "+=2800" : isTablet ? "+=2200" : "+=1800";
+        // Paced scroll distance: reduced speed for a relaxed, cinematic progression
+        const scrollDist = isDesktop ? "+=4200" : isTablet ? "+=3400" : "+=2600";
         const distMult = isMobile ? 0.45 : isTablet ? 0.75 : 1.0;
 
         // Reset headline & character starting states
@@ -155,25 +155,24 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           gsap.set(headlineWrapperRef.current, { autoAlpha: 1, opacity: 1 });
         }
         line1CharRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { opacity: 0, y: 10, scale: 0.95, x: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, filter: "blur(0px)" });
+          if (el) gsap.set(el, { opacity: 0, y: 8, scale: 0.96, x: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, filter: "blur(0px)" });
         });
         line2CharRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { opacity: 0, y: 10, scale: 0.95, x: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, filter: "blur(0px)" });
+          if (el) gsap.set(el, { opacity: 0, y: 8, scale: 0.96, x: 0, z: 0, rotationX: 0, rotationY: 0, rotationZ: 0, filter: "blur(0px)" });
         });
-        if (sublineRef.current) gsap.set(sublineRef.current, { opacity: 0, y: 14, filter: "blur(0px)" });
-        if (cursorRef.current) gsap.set(cursorRef.current, { opacity: 1 });
+        if (sublineRef.current) gsap.set(sublineRef.current, { opacity: 0, y: 12, filter: "blur(0px)" });
 
-        // Reset cards initial state
+        // Reset cards initial state (invisible and prepared to arrive 1 by 1)
         if (cardsRowRef.current) {
-          gsap.set(cardsRowRef.current, { autoAlpha: 0 });
+          gsap.set(cardsRowRef.current, { autoAlpha: 1 });
         }
         if (isDesktop) {
-          if (cardRefs.current[0]) gsap.set(cardRefs.current[0], { x: 370, y: 35, rotation: -6, scale: 0.82, opacity: 0 });
-          if (cardRefs.current[1]) gsap.set(cardRefs.current[1], { x: 0, y: 45, rotation: 0, scale: 0.88, opacity: 0 });
-          if (cardRefs.current[2]) gsap.set(cardRefs.current[2], { x: -370, y: 35, rotation: 6, scale: 0.82, opacity: 0 });
+          cardRefs.current.forEach((el) => {
+            if (el) gsap.set(el, { opacity: 0, y: 70, scale: 0.9, x: 0, rotation: 0 });
+          });
         }
 
-        // Master Scrubbed Timeline (100% reversible bi-directional scrub)
+        // Master Scrubbed Timeline (100% reversible bi-directional scrub with relaxed inertia)
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: sectionRef.current,
@@ -181,15 +180,15 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             end: scrollDist,
             pin: stageRef.current,
             pinSpacing: true,
-            scrub: 0.8,
+            scrub: 1.1,
             anticipatePin: 1,
             invalidateOnRefresh: true,
           },
         });
 
         // ============================================================
-        // 1. TYPING TEXT EFFECT (0.00 -> 0.12)
-        // Sequential crisp typewriter reveal with blinking cursor
+        // 1. TYPING TEXT EFFECT (0.00 -> 0.16)
+        // Sequential crisp typewriter reveal without any trailing line
         // ============================================================
         const totalL1 = line1Vectors.length;
         const totalL2 = line2Vectors.length;
@@ -197,14 +196,14 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         line1Vectors.forEach((v, idx) => {
           const el = line1CharRefs.current[idx];
           if (!el) return;
-          const startTime = (idx / totalL1) * 0.048;
+          const startTime = (idx / totalL1) * 0.065;
           tl.to(
             el,
             {
               opacity: 1,
               y: 0,
               scale: 1,
-              duration: 0.004,
+              duration: 0.006,
               ease: "power1.out",
             },
             startTime
@@ -214,14 +213,14 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         line2Vectors.forEach((v, idx) => {
           const el = line2CharRefs.current[idx];
           if (!el) return;
-          const startTime = 0.05 + (idx / totalL2) * 0.058;
+          const startTime = 0.07 + (idx / totalL2) * 0.075;
           tl.to(
             el,
             {
               opacity: 1,
               y: 0,
               scale: 1,
-              duration: 0.004,
+              duration: 0.006,
               ease: "power1.out",
             },
             startTime
@@ -235,30 +234,17 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             {
               opacity: 1,
               y: 0,
-              duration: 0.03,
+              duration: 0.035,
               ease: "power2.out",
             },
-            0.11
+            0.15
           );
         }
 
-        // Blinking cursor fades right before detonation
-        if (cursorRef.current) {
-          tl.to(
-            cursorRef.current,
-            {
-              opacity: 0,
-              duration: 0.015,
-              ease: "power1.out",
-            },
-            0.165
-          );
-        }
-
-        // Reading hold between 0.12 and 0.18 (both lines fully visible)
+        // Reading hold between 0.16 and 0.22 (headline fully visible, editorial, centered)
 
         // ============================================================
-        // 2. KINETIC WORD BLAST (0.18 -> 0.38)
+        // 2. KINETIC WORD BLAST (0.22 -> 0.38)
         // Radial 3D firework explosion with tumbling rotation & blur
         // ============================================================
         line1Vectors.forEach((v) => {
@@ -277,10 +263,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
               scale: v.scale,
               opacity: 0,
               filter: "blur(14px)",
-              duration: 0.17,
+              duration: 0.16,
               ease: "power2.in",
             },
-            0.18 + v.delay
+            0.22 + v.delay
           );
         });
 
@@ -300,10 +286,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
               scale: v.scale,
               opacity: 0,
               filter: "blur(14px)",
-              duration: 0.17,
+              duration: 0.16,
               ease: "power2.in",
             },
-            0.19 + v.delay
+            0.23 + v.delay
           );
         });
 
@@ -314,10 +300,10 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
               opacity: 0,
               y: 40,
               filter: "blur(8px)",
-              duration: 0.12,
+              duration: 0.11,
               ease: "power2.in",
             },
-            0.20
+            0.24
           );
         }
 
@@ -330,82 +316,74 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
               duration: 0.04,
               ease: "power1.out",
             },
-            0.35
+            0.36
           );
         }
 
         // ============================================================
-        // 3. PHASE 3 & 4: THREE CARDS EMERGE & ALIGN (0.34 -> 0.80)
-        // Emerge in center cluster -> Fan out into level 3-column row
+        // 3. PHASE 3: THREE CARDS ARRIVE ONE BY ONE (0.36 -> 0.80)
+        // Card 1 arrives -> Card 2 arrives -> Card 3 arrives sequentially!
+        // No simultaneous overlap, perfectly aligned into 3 columns!
         // ============================================================
-        if (cardsRowRef.current) {
-          tl.fromTo(
-            cardsRowRef.current,
-            { autoAlpha: 0 },
-            { autoAlpha: 1, duration: 0.04, ease: "power1.out" },
-            0.34
-          );
-        }
-
         if (isDesktop) {
-          // Card 0 (Monthly): Emerge from +370 to +180, then fan out to 0
+          // STEP 1: Card 1 (Monthly) arrives FIRST (0.36 -> 0.50)
           if (cardRefs.current[0]) {
-            tl.fromTo(
-              cardRefs.current[0],
-              { x: 370, y: 35, rotation: -6, scale: 0.82, opacity: 0 },
-              { x: 180, y: 15, rotation: -4, scale: 0.92, opacity: 1, duration: 0.22, ease: "power2.out" },
-              0.34
-            );
             tl.to(
               cardRefs.current[0],
-              { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.22, ease: "power2.out" },
-              0.58
-            );
-          }
-
-          // Card 1 (Six Months): Emerge in center, then settle to 1.0
-          if (cardRefs.current[1]) {
-            tl.fromTo(
-              cardRefs.current[1],
-              { x: 0, y: 45, rotation: 0, scale: 0.88, opacity: 0 },
-              { x: 0, y: 0, rotation: 0, scale: 0.96, opacity: 1, duration: 0.22, ease: "power2.out" },
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.14,
+                ease: "power2.out",
+              },
               0.36
             );
+          }
+
+          // STEP 2: Card 2 (Six Months) arrives SECOND (0.50 -> 0.65)
+          if (cardRefs.current[1]) {
             tl.to(
               cardRefs.current[1],
-              { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.22, ease: "power2.out" },
-              0.58
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.15,
+                ease: "power2.out",
+              },
+              0.50
             );
           }
 
-          // Card 2 (Annual): Emerge from -370 to -180, then fan out to 0
+          // STEP 3: Card 3 (Annual) arrives THIRD (0.65 -> 0.80)
           if (cardRefs.current[2]) {
-            tl.fromTo(
-              cardRefs.current[2],
-              { x: -370, y: 35, rotation: 6, scale: 0.82, opacity: 0 },
-              { x: -180, y: 15, rotation: 4, scale: 0.92, opacity: 1, duration: 0.22, ease: "power2.out" },
-              0.38
-            );
             tl.to(
               cardRefs.current[2],
-              { x: 0, y: 0, rotation: 0, scale: 1, duration: 0.22, ease: "power2.out" },
-              0.58
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.15,
+                ease: "power2.out",
+              },
+              0.65
             );
           }
         } else {
-          // Mobile & Tablet: Cards emerge vertically centered
+          // Mobile & Tablet: Cards reveal smoothly in sequence
           if (mobileCardsRef.current) {
             tl.fromTo(
               mobileCardsRef.current,
-              { opacity: 0, y: 40, scale: 0.92 },
-              { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "power2.out" },
-              0.40
+              { opacity: 0, y: 50, scale: 0.92 },
+              { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power2.out" },
+              0.42
             );
           }
         }
 
         // ============================================================
-        // 4. PHASE 5: STABLE INTERACTION HOLD (0.80 -> 1.00)
+        // 4. PHASE 4: STABLE INTERACTION HOLD (0.80 -> 1.00)
         // Complete stability for reading, hovering and clicking CTAs
         // ============================================================
         tl.to({}, { duration: 0.20 }, 0.80);
@@ -467,7 +445,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
         {/* ============================================================
             PHASE 1 & 2: MASSIVE EDITORIAL TYPOGRAPHY WITH TYPING EFFECT
-            Pure crisp white characters, NO duplicate background text!
+            Pure crisp white characters, clean without any trailing line!
             ============================================================ */}
         <div
           ref={headlineWrapperRef}
@@ -498,7 +476,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             })}
           </h2>
 
-          {/* Line 2: POWERFUL CONVERSATIONS. (Pure white with typing cursor) */}
+          {/* Line 2: POWERFUL CONVERSATIONS. (Pure white without any trailing cursor) */}
           <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
             {WORDS_LINE2.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE2[0].length;
@@ -520,11 +498,6 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 </span>
               );
             })}
-            {/* Blinking Typing Cursor */}
-            <span
-              ref={cursorRef}
-              className="inline-block w-[3px] sm:w-[5px] h-[0.75em] bg-[#C28AFF] ml-2 align-middle shadow-[0_0_12px_#C28AFF] rounded-sm animate-pulse will-change-transform"
-            />
           </h2>
 
           <p
@@ -558,6 +531,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
         {/* ============================================================
             DESKTOP: PERFECTLY ALIGNED 3-COLUMN CARDS ROW
             Level horizontal alignment, vertically centered, zero cut-off!
+            Cards arrive sequentially 1 by 1!
             ============================================================ */}
         <div
           ref={cardsRowRef}
