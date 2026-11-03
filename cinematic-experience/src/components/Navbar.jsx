@@ -65,13 +65,20 @@ export default function Navbar({ onOpenTrial }) {
         <a
           href="#home"
           onClick={(e) => handleNavClick(e, { label: "Home", href: "#home" })}
-          className="group flex items-center cursor-pointer focus:outline-none"
+          className="group relative flex items-center cursor-pointer focus:outline-none"
           aria-label="Emperor Nexus Home"
         >
+          {/* Base: Crisp Black & White Mascot + Colorful Text */}
           <img
             src="/emperor_nexus_sales_ai_assistant_v2.png"
             alt="Emperor Nexus — Sales AI Assistant"
-            className="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+            className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+          />
+          {/* Hover Overlay: 100% Full Vibrant Colorful Mascot & Glow */}
+          <img
+            src="/emperor_nexus_sales_ai_assistant_original.png"
+            alt="Emperor Nexus Full Color"
+            className="absolute inset-0 h-10 sm:h-11 w-auto object-contain transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-hover:scale-105 pointer-events-none drop-shadow-[0_0_20px_rgba(150,61,255,0.45)]"
           />
         </a>
 

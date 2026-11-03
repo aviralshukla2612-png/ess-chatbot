@@ -14,11 +14,18 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-16">
           {/* Brand Info (2 Cols) */}
           <div className="lg:col-span-2 space-y-5">
-            <div className="flex items-center">
+            <div className="group relative inline-flex items-center cursor-pointer">
+              {/* Base: Crisp Black & White Mascot + Colorful Text */}
               <img
                 src="/emperor_nexus_sales_ai_assistant_v2.png"
                 alt="Emperor Nexus — Sales AI Assistant"
-                className="h-10 sm:h-11 w-auto object-contain hover:scale-105 transition-all duration-300 cursor-pointer drop-shadow-[0_0_20px_rgba(150,61,255,0.35)]"
+                className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105"
+              />
+              {/* Hover Overlay: 100% Full Vibrant Colorful Mascot & Glow */}
+              <img
+                src="/emperor_nexus_sales_ai_assistant_original.png"
+                alt="Emperor Nexus Full Color"
+                className="absolute inset-0 h-10 sm:h-11 w-auto object-contain transition-opacity duration-300 opacity-0 group-hover:opacity-100 group-hover:scale-105 pointer-events-none drop-shadow-[0_0_20px_rgba(150,61,255,0.45)]"
               />
             </div>
 

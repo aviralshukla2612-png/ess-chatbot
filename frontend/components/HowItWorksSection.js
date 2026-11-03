@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -16,6 +16,8 @@ import {
   Copy,
   Check,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 if (typeof window !== "undefined") {
@@ -44,8 +46,10 @@ export default function HowItWorksSection({ onOpenTrial }) {
   const typographyRef = useRef(null);
   const letterRefs = useRef([]);
   const cardRefs = useRef([]);
+  const cardsTrackRef = useRef(null);
   const glowOrbRef = useRef(null);
   const sectionHeaderRef = useRef(null);
+  const [activeCardIndex, setActiveCardIndex] = useState(1); // Default middle card
 
   useEffect(() => {
     const container = containerRef.current;
@@ -59,8 +63,9 @@ export default function HowItWorksSection({ onOpenTrial }) {
       // Handle Reduced Motion preferences
       if (prefersReducedMotion) {
         if (typographyRef.current) gsap.set(typographyRef.current, { display: "none" });
+        if (cardsTrackRef.current) gsap.set(cardsTrackRef.current, { x: 0, opacity: 1 });
         cardRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { opacity: 1, x: 0, y: 0, scale: 1, rotateY: 0, rotateZ: 0 });
+          if (el) gsap.set(el, { opacity: 1, x: 0, y: 0, scale: 1 });
         });
         if (sectionHeaderRef.current) gsap.set(sectionHeaderRef.current, { opacity: 1, y: 0 });
         return;
@@ -68,7 +73,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
       // =======================================================================
       // INITIAL 3D SCENE CONFIGURATION
-      // Zero blank frames: Typography starts centered, Cards emerge seamlessly
       // =======================================================================
       letterRefs.current.forEach((el) => {
         if (el) {
@@ -88,59 +92,23 @@ export default function HowItWorksSection({ onOpenTrial }) {
         }
       });
 
-      // Cards start prepared in background depth, ready to fly in
-      if (isDesktop) {
-        if (cardRefs.current[0]) {
-          gsap.set(cardRefs.current[0], {
-            xPercent: -80,
-            yPercent: 0,
-            z: -180,
-            rotateY: 35,
-            rotateZ: -8,
-            scale: 0.82,
-            opacity: 0,
-            transformOrigin: "center center",
-            force3D: true,
-          });
-        }
-
-        if (cardRefs.current[1]) {
-          gsap.set(cardRefs.current[1], {
-            xPercent: 0,
-            yPercent: 10,
-            z: -300,
-            rotateX: 18,
-            scale: 0.70,
-            opacity: 0,
-            transformOrigin: "center center",
-            force3D: true,
-          });
-        }
-
-        if (cardRefs.current[2]) {
-          gsap.set(cardRefs.current[2], {
-            xPercent: 80,
-            yPercent: 0,
-            z: -180,
-            rotateY: -35,
-            rotateZ: 8,
-            scale: 0.82,
-            opacity: 0,
-            transformOrigin: "center center",
-            force3D: true,
-          });
-        }
-      } else {
-        cardRefs.current.forEach((card, idx) => {
-          if (card) {
-            gsap.set(card, {
-              opacity: 0,
-              y: 30 + idx * 15,
-              scale: 0.95,
-            });
-          }
+      // Right-to-Left Carousel Track starts off-screen to the right
+      if (cardsTrackRef.current) {
+        gsap.set(cardsTrackRef.current, {
+          xPercent: isDesktop ? 45 : 30,
+          opacity: 0,
         });
       }
+
+      cardRefs.current.forEach((card, idx) => {
+        if (card) {
+          gsap.set(card, {
+            x: 100 + idx * 60,
+            opacity: 0,
+            scale: 0.9,
+          });
+        }
+      });
 
       if (sectionHeaderRef.current) {
         gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
@@ -151,17 +119,17 @@ export default function HowItWorksSection({ onOpenTrial }) {
       }
 
       // =======================================================================
-      // MASTER COORDINATED GSAP TIMELINE (Crisp, zero-empty-space scrub)
-      // 0.00 - 0.12: Big Typography "HOW IT WORKS" displayed
-      // 0.10 - 0.40: Letters shatter in 3D WHILE cards immediately fly into view
-      // 0.35 - 0.70: Cards fan out into final balanced 3-column layout
-      // 0.70 - 1.00: Cards remain rock-solid in place and interactive
+      // MASTER COORDINATED GSAP TIMELINE
+      // 1. Letters shatter in 3D
+      // 2. Fullscreen typography FADES OUT (Eliminates ghost text overlap!)
+      // 3. Right-to-Left Carousel Track glides in from right to left
+      // 4. Cards fan out smoothly into final balanced layout
       // =======================================================================
       const masterTL = gsap.timeline({
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: "+=1300",
+          end: "+=1200",
           pin: stage,
           pinSpacing: true,
           scrub: 0.8,
@@ -194,7 +162,21 @@ export default function HowItWorksSection({ onOpenTrial }) {
         }
       });
 
-      // 2. Persistent Section Header fades in as letters disperse
+      // 2. WIPE OUT FULLSCREEN TYPOGRAPHY (Fixes overlapping text completely!)
+      if (typographyRef.current) {
+        masterTL.to(
+          typographyRef.current,
+          {
+            opacity: 0,
+            duration: 0.20,
+            ease: "power2.out",
+            pointerEvents: "none",
+          },
+          0.10
+        );
+      }
+
+      // 3. Persistent Section Header fades in cleanly at top
       if (sectionHeaderRef.current) {
         masterTL.to(
           sectionHeaderRef.current,
@@ -204,7 +186,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             duration: 0.22,
             ease: "power2.out",
           },
-          0.14
+          0.12
         );
       }
 
@@ -221,124 +203,40 @@ export default function HowItWorksSection({ onOpenTrial }) {
         );
       }
 
-      // 3. Three Cards EMERGE IMMEDIATELY through moving letters (No empty space!)
-      if (isDesktop) {
-        // Card 02 (Center Hero) emerges from depth
-        if (cardRefs.current[1]) {
-          masterTL.to(
-            cardRefs.current[1],
-            {
-              z: 20,
-              yPercent: 0,
-              rotateX: 0,
-              scale: 0.96,
-              opacity: 1,
-              duration: 0.24,
-              ease: "power2.out",
-            },
-            0.12
-          );
-        }
-
-        // Card 01 (Left) flies in with 3D perspective
-        if (cardRefs.current[0]) {
-          masterTL.to(
-            cardRefs.current[0],
-            {
-              xPercent: -25,
-              z: 0,
-              rotateY: 16,
-              rotateZ: -4,
-              scale: 0.92,
-              opacity: 1,
-              duration: 0.26,
-              ease: "power2.out",
-            },
-            0.15
-          );
-        }
-
-        // Card 03 (Right) flies in with 3D perspective
-        if (cardRefs.current[2]) {
-          masterTL.to(
-            cardRefs.current[2],
-            {
-              xPercent: 25,
-              z: 0,
-              rotateY: -16,
-              rotateZ: 4,
-              scale: 0.92,
-              opacity: 1,
-              duration: 0.26,
-              ease: "power2.out",
-            },
-            0.17
-          );
-        }
-
-        // 4. Cards fan out smoothly into balanced 3-column composition
-        if (cardRefs.current[0]) {
-          masterTL.to(
-            cardRefs.current[0],
-            {
-              xPercent: 0,
-              rotateY: 0,
-              rotateZ: 0,
-              scale: 1,
-              opacity: 1,
-              duration: 0.28,
-              ease: "power3.out",
-            },
-            0.40
-          );
-        }
-
-        if (cardRefs.current[1]) {
-          masterTL.to(
-            cardRefs.current[1],
-            {
-              z: 0,
-              scale: 1,
-              opacity: 1,
-              duration: 0.28,
-              ease: "power3.out",
-            },
-            0.40
-          );
-        }
-
-        if (cardRefs.current[2]) {
-          masterTL.to(
-            cardRefs.current[2],
-            {
-              xPercent: 0,
-              rotateY: 0,
-              rotateZ: 0,
-              scale: 1,
-              opacity: 1,
-              duration: 0.28,
-              ease: "power3.out",
-            },
-            0.42
-          );
-        }
-      } else {
+      // 4. RIGHT-TO-LEFT CAROUSEL ENTRANCE:
+      // The track glides smoothly from RIGHT to LEFT into view
+      if (cardsTrackRef.current) {
         masterTL.to(
-          cardRefs.current,
+          cardsTrackRef.current,
           {
+            xPercent: 0,
             opacity: 1,
-            y: 0,
-            scale: 1,
-            stagger: 0.08,
-            duration: 0.30,
+            duration: 0.35,
             ease: "power2.out",
           },
-          0.14
+          0.15
         );
       }
 
+      // 5. Individual cards stagger and glide from right to left into their spots
+      cardRefs.current.forEach((card, idx) => {
+        if (card) {
+          masterTL.to(
+            card,
+            {
+              x: 0,
+              opacity: 1,
+              scale: 1,
+              duration: 0.32,
+              ease: "power3.out",
+            },
+            0.20 + idx * 0.08
+          );
+        }
+      });
+
       // Settle and hold steady for interactive browsing
-      masterTL.to({}, { duration: 0.32 }, 0.68);
+      masterTL.to({}, { duration: 0.35 }, 0.65);
     }, containerRef);
 
     return () => {
@@ -365,13 +263,13 @@ export default function HowItWorksSection({ onOpenTrial }) {
         />
 
         {/* ===================================================================== */}
-        {/* FULLSCREEN TYPOGRAPHY & CHARACTER SHATTER                             */}
+        {/* FULLSCREEN TYPOGRAPHY & CHARACTER SHATTER (LAYER 30 - FADES AT 0.10s) */}
         {/* ===================================================================== */}
         <div
           ref={typographyRef}
           className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none px-4"
         >
-          {/* Subtle Top Kicker */}
+          {/* Top Kicker */}
           <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#963DFF]/15 border border-[#963DFF]/30 text-[#C28AFF] text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
             <span>Fast Three-Step Setup</span>
@@ -450,67 +348,68 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* THREE-CARD REVEAL & BALANCED 3-COLUMN COMPOSITION (LAYER 20)          */}
+        {/* RIGHT-TO-LEFT CAROUSEL TRACK (COLORFUL ON HOVER!)                     */}
         {/* ===================================================================== */}
         <div
-          className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch"
-          style={{ transformStyle: "preserve-3d" }}
+          ref={cardsTrackRef}
+          className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch will-change-transform"
         >
           {/* =================================================================== */}
-          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE                               */}
+          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE (COLORFUL ON HOVER)            */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[0] = el)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#0B1528] via-[#091120] to-[#060B14] border-2 border-[#38BDF8]/40 hover:border-[#38BDF8] shadow-[0_15px_40px_rgba(56,189,248,0.18)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300"
-            style={{ transformStyle: "preserve-3d" }}
+            onMouseEnter={() => setActiveCardIndex(0)}
+            className="group relative rounded-2xl bg-gradient-to-b from-[#0B1528] via-[#091120] to-[#060B14] hover:from-[#0B2A4A] hover:via-[#09223D] hover:to-[#051626] border-2 border-[#38BDF8]/40 hover:border-[#38BDF8] shadow-[0_15px_40px_rgba(56,189,248,0.18)] hover:shadow-[0_25px_60px_rgba(56,189,248,0.45)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-500 hover:-translate-y-1.5 cursor-pointer"
           >
-            {/* Ambient Cyan Flare */}
-            <div className="absolute -top-16 -left-16 w-44 h-44 bg-[#38BDF8]/15 rounded-full blur-3xl pointer-events-none" />
+            {/* Ambient Cyan Flare — Blooms into vibrant color on hover */}
+            <div className="absolute -top-16 -left-16 w-44 h-44 bg-[#38BDF8]/15 group-hover:bg-[#38BDF8]/40 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
+            <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-[#0284C7]/0 group-hover:bg-[#0284C7]/30 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
 
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#38BDF8]/15 group-hover:bg-[#38BDF8] text-[#38BDF8] group-hover:text-black border border-[#38BDF8]/30 group-hover:border-[#38BDF8] transition-all duration-300">
                     Step 01 · Ingestion
                   </span>
-                  <span className="font-headline font-black text-2xl text-white/30 group-hover:text-[#38BDF8] transition-colors">
+                  <span className="font-headline font-black text-2xl text-white/30 group-hover:text-[#38BDF8] group-hover:drop-shadow-[0_0_15px_rgba(56,189,248,0.8)] transition-all duration-300">
                     01
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug group-hover:text-[#BAE6FD] transition-colors">
                   CONNECT YOUR KNOWLEDGE BASE
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed">
+                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] group-hover:text-white leading-relaxed transition-colors">
                   Upload brochures, pricing schedules, FAQs, technical manuals, or provide a website URL.
                 </p>
               </div>
 
               {/* Visual Graphic: Interactive Ingestion Dropzone */}
-              <div className="my-auto py-2 bg-[#040C1A]/90 rounded-xl p-3 border border-[#38BDF8]/20 space-y-2 shadow-inner">
+              <div className="my-auto py-2 bg-[#040C1A]/90 group-hover:bg-[#06182E] rounded-xl p-3 border border-[#38BDF8]/20 group-hover:border-[#38BDF8]/50 space-y-2 shadow-inner transition-all duration-300">
                 <div className="flex items-center justify-between text-[10px] font-mono text-[#94A3B8]">
                   <span className="flex items-center gap-1.5 text-[#38BDF8] font-bold">
                     <Globe className="w-3 h-3 text-[#38BDF8]" />
                     URL & Docs Sync
                   </span>
-                  <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold">
+                  <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
                     Active
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[9px] text-white/80 bg-white/[0.05] p-1.5 rounded border border-white/[0.05]">
+                <div className="flex items-center gap-1.5 text-[9px] text-white/80 group-hover:text-white bg-white/[0.05] group-hover:bg-[#38BDF8]/10 p-1.5 rounded border border-white/[0.05] group-hover:border-[#38BDF8]/30 transition-colors">
                   <Upload className="w-3 h-3 text-[#38BDF8] shrink-0" />
                   <span className="truncate font-mono">brochure_v2.pdf, faqs.docx</span>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#38BDF8]/20 flex items-start gap-2">
+              <div className="pt-2.5 border-t border-[#38BDF8]/20 group-hover:border-[#38BDF8]/40 flex items-start gap-2 transition-colors">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#38BDF8] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#94A3B8] font-medium leading-tight">
+                <span className="text-[11px] text-[#94A3B8] group-hover:text-[#E0F2FE] font-medium leading-tight transition-colors">
                   Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.
                 </span>
               </div>
@@ -518,46 +417,47 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* =================================================================== */}
-          {/* CARD 02: CALIBRATE PERSONA & LAUNCHER STYLING (Luminous Hero)       */}
+          {/* CARD 02: CALIBRATE PERSONA & LAUNCHER STYLING (COLORFUL ON HOVER)   */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[1] = el)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#1C0E36] via-[#120824] to-[#0A0414] border-2 border-[#963DFF]/60 hover:border-[#C28AFF] shadow-[0_20px_50px_rgba(150,61,255,0.32)] ring-1 ring-[#C28AFF]/40 p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 md:-translate-y-1"
-            style={{ transformStyle: "preserve-3d" }}
+            onMouseEnter={() => setActiveCardIndex(1)}
+            className="group relative rounded-2xl bg-gradient-to-b from-[#1C0E36] via-[#120824] to-[#0A0414] hover:from-[#3B1266] hover:via-[#2A0C4A] hover:to-[#170529] border-2 border-[#963DFF]/60 hover:border-[#C28AFF] shadow-[0_20px_50px_rgba(150,61,255,0.32)] hover:shadow-[0_25px_65px_rgba(194,138,255,0.55)] ring-1 ring-[#C28AFF]/40 hover:ring-[#C28AFF] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-500 hover:-translate-y-1.5 cursor-pointer"
           >
-            {/* Ambient Purple Flare */}
-            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#963DFF]/25 rounded-full blur-3xl pointer-events-none" />
+            {/* Ambient Purple Flare — Blooms into vibrant color on hover */}
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#963DFF]/25 group-hover:bg-[#963DFF]/50 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
+            <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-[#C28AFF]/0 group-hover:bg-[#C28AFF]/30 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
 
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/20 text-[#C28AFF] border border-[#963DFF]/40">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/20 group-hover:bg-[#C28AFF] text-[#C28AFF] group-hover:text-black border border-[#963DFF]/40 group-hover:border-[#C28AFF] transition-all duration-300">
                     Step 02 · Persona Engine
                   </span>
-                  <span className="font-headline font-black text-2xl text-[#963DFF] group-hover:text-[#C28AFF] transition-colors">
+                  <span className="font-headline font-black text-2xl text-[#963DFF] group-hover:text-[#C28AFF] group-hover:drop-shadow-[0_0_15px_rgba(194,138,255,0.9)] transition-all duration-300">
                     02
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug group-hover:text-[#F3E8FF] transition-colors">
                   CALIBRATE PERSONA & LAUNCHER STYLING
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#E2E8F0] leading-relaxed">
+                <p className="mt-2 text-xs sm:text-[13px] text-[#E2E8F0] group-hover:text-white leading-relaxed transition-colors">
                   Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and animation.
                 </p>
               </div>
 
               {/* Visual Graphic: Interactive Persona Selector */}
-              <div className="my-auto py-2 bg-[#0D051A]/90 rounded-xl p-3 border border-[#963DFF]/30 space-y-2 shadow-inner">
+              <div className="my-auto py-2 bg-[#0D051A]/90 group-hover:bg-[#200A38] rounded-xl p-3 border border-[#963DFF]/30 group-hover:border-[#C28AFF]/50 space-y-2 shadow-inner transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono text-[#C28AFF] font-bold">
                     Tone Preset:
                   </span>
-                  <span className="text-[9px] font-mono font-bold text-white bg-[#963DFF]/40 px-2 py-0.5 rounded border border-[#963DFF]/50">
+                  <span className="text-[9px] font-mono font-bold text-white bg-[#963DFF]/40 group-hover:bg-[#963DFF] px-2 py-0.5 rounded border border-[#963DFF]/50 group-hover:border-[#C28AFF] transition-colors shadow-sm">
                     Consultative AI
                   </span>
                 </div>
@@ -565,16 +465,16 @@ export default function HowItWorksSection({ onOpenTrial }) {
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#963DFF] to-[#55A9FF] border border-white/40 shadow-sm flex items-center justify-center">
                     <Bot className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <div className="flex-1 bg-white/[0.06] rounded px-2 py-1 text-[9px] text-[#E2E8F0] truncate font-mono">
-                    "Welcome! How can I accelerate your goals today?"
+                  <div className="flex-1 bg-white/[0.06] group-hover:bg-white/[0.12] rounded px-2 py-1 text-[9px] text-[#E2E8F0] group-hover:text-white truncate font-mono transition-colors">
+                    &quot;Welcome! How can I accelerate your goals today?&quot;
                   </div>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#963DFF]/30 flex items-start gap-2">
+              <div className="pt-2.5 border-t border-[#963DFF]/30 group-hover:border-[#C28AFF]/40 flex items-start gap-2 transition-colors">
                 <Sparkles className="w-3.5 h-3.5 text-[#C28AFF] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
+                <span className="text-[11px] text-[#CBD5E1] group-hover:text-[#F3E8FF] font-medium leading-tight transition-colors">
                   Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.
                 </span>
               </div>
@@ -582,60 +482,61 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* =================================================================== */}
-          {/* CARD 03: DEPLOY WITH A SINGLE LINE OF CODE                         */}
+          {/* CARD 03: DEPLOY WITH A SINGLE LINE OF CODE (COLORFUL ON HOVER)      */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[2] = el)}
-            className="group relative rounded-2xl bg-gradient-to-b from-[#0E1528] via-[#090F1C] to-[#060A14] border-2 border-[#55A9FF]/40 hover:border-[#55A9FF] shadow-[0_15px_40px_rgba(85,169,255,0.18)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300"
-            style={{ transformStyle: "preserve-3d" }}
+            onMouseEnter={() => setActiveCardIndex(2)}
+            className="group relative rounded-2xl bg-gradient-to-b from-[#0E1528] via-[#090F1C] to-[#060A14] hover:from-[#102B5C] hover:via-[#0D2147] hover:to-[#071329] border-2 border-[#55A9FF]/40 hover:border-[#55A9FF] shadow-[0_15px_40px_rgba(85,169,255,0.18)] hover:shadow-[0_25px_60px_rgba(85,169,255,0.45)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-500 hover:-translate-y-1.5 cursor-pointer"
           >
-            {/* Ambient Blue Flare */}
-            <div className="absolute -bottom-16 -right-16 w-44 h-44 bg-[#55A9FF]/15 rounded-full blur-3xl pointer-events-none" />
+            {/* Ambient Blue Flare — Blooms into vibrant color on hover */}
+            <div className="absolute -bottom-16 -right-16 w-44 h-44 bg-[#55A9FF]/15 group-hover:bg-[#55A9FF]/40 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
+            <div className="absolute -top-16 -left-16 w-36 h-36 bg-[#2563EB]/0 group-hover:bg-[#2563EB]/30 rounded-full blur-3xl pointer-events-none transition-all duration-500" />
 
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#55A9FF]/15 text-[#55A9FF] border border-[#55A9FF]/30">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#55A9FF]/15 group-hover:bg-[#55A9FF] text-[#55A9FF] group-hover:text-black border border-[#55A9FF]/30 group-hover:border-[#55A9FF] transition-all duration-300">
                     Step 03 · Live Embed
                   </span>
-                  <span className="font-headline font-black text-2xl text-white/30 group-hover:text-[#55A9FF] transition-colors">
+                  <span className="font-headline font-black text-2xl text-white/30 group-hover:text-[#55A9FF] group-hover:drop-shadow-[0_0_15px_rgba(85,169,255,0.8)] transition-all duration-300">
                     03
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-white tracking-tight uppercase leading-snug group-hover:text-[#DBEAFE] transition-colors">
                   DEPLOY WITH A SINGLE LINE OF CODE
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed">
+                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] group-hover:text-white leading-relaxed transition-colors">
                   Integrate the assistant into the website using the provided script.
                 </p>
               </div>
 
               {/* Visual Graphic: Code Embed Terminal Snippet */}
-              <div className="my-auto py-2 bg-[#040814]/90 rounded-xl p-3 border border-[#55A9FF]/20 space-y-1.5 shadow-inner">
+              <div className="my-auto py-2 bg-[#040814]/90 group-hover:bg-[#071933] rounded-xl p-3 border border-[#55A9FF]/20 group-hover:border-[#55A9FF]/50 space-y-1.5 shadow-inner transition-all duration-300">
                 <div className="flex items-center justify-between text-[10px] font-mono text-[#64748B]">
-                  <span className="flex items-center gap-1.5 text-[#55A9FF]">
-                    <Code2 className="w-3 h-3" />
+                  <span className="flex items-center gap-1.5 text-[#55A9FF] font-bold">
+                    <Code2 className="w-3 h-3 text-[#55A9FF]" />
                     HTML Embed
                   </span>
-                  <span className="flex items-center gap-1 text-[9px] text-[#55A9FF]/80">
+                  <span className="flex items-center gap-1 text-[9px] text-[#55A9FF] font-mono">
                     <Copy className="w-2.5 h-2.5" />
                     One-line
                   </span>
                 </div>
-                <div className="bg-black/50 p-2 rounded text-[9px] font-mono text-emerald-400 overflow-hidden text-ellipsis whitespace-nowrap border border-white/[0.04]">
+                <div className="bg-black/60 group-hover:bg-black/80 p-2 rounded text-[9px] font-mono text-emerald-400 group-hover:text-emerald-300 overflow-hidden text-ellipsis whitespace-nowrap border border-white/[0.04] group-hover:border-[#55A9FF]/30 transition-colors">
                   <code>&lt;script src=&quot;nexus.js&quot; data-bot=&quot;nx_892&quot;&gt;&lt;/script&gt;</code>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-[#55A9FF]/20 flex items-start gap-2">
+              <div className="pt-2.5 border-t border-[#55A9FF]/20 group-hover:border-[#55A9FF]/40 flex items-start gap-2 transition-colors">
                 <Zap className="w-3.5 h-3.5 text-[#55A9FF] shrink-0 mt-0.5" />
-                <span className="text-[11px] text-[#94A3B8] font-medium leading-tight">
+                <span className="text-[11px] text-[#94A3B8] group-hover:text-[#DBEAFE] font-medium leading-tight transition-colors">
                   Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.
                 </span>
               </div>

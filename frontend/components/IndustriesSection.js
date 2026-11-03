@@ -449,10 +449,10 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               >
                 <div
                   ref={collageInnerRef}
-                  className="w-full h-full flex gap-1 sm:gap-1.5 rounded-none overflow-hidden shadow-2xl"
+                  className="w-full h-full flex gap-[1.5px] rounded-none overflow-hidden shadow-2xl"
                 >
                   {/* Column 1 (31% width): Real Estate (57%) + Hospitality (43%) */}
-                  <div className="w-[31%] h-full flex flex-col gap-1 sm:gap-1.5">
+                  <div className="w-[31%] h-full flex flex-col gap-[1.5px]">
                     {/* Tile 0: Real Estate */}
                     <div
                       ref={(el) => (tileRefs.current[0] = el)}
@@ -525,7 +525,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                   </div>
 
                   {/* Column 2 (38% width, Center Hero Column): Healthcare (29%) + AI Assistant (42%) + Retail (29%) */}
-                  <div className="w-[38%] h-full flex flex-col gap-1 sm:gap-1.5">
+                  <div className="w-[38%] h-full flex flex-col gap-[1.5px]">
                     {/* Tile 1: Healthcare */}
                     <div
                       ref={(el) => (tileRefs.current[1] = el)}
@@ -634,7 +634,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                   </div>
 
                   {/* Column 3 (31% width): Education (43%) + Services (57%) */}
-                  <div className="w-[31%] h-full flex flex-col gap-1 sm:gap-1.5">
+                  <div className="w-[31%] h-full flex flex-col gap-[1.5px]">
                     {/* Tile 2: Education */}
                     <div
                       ref={(el) => (tileRefs.current[2] = el)}
