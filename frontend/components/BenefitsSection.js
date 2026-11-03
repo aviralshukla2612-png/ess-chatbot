@@ -30,7 +30,7 @@ const PlusDivider = () => (
 // Marquee track component containing user's exact requested line + chatbot-related terms
 const MarqueeTrack = () => (
   <div className="shrink-0 flex items-center uppercase font-headline font-black text-3xl sm:text-5xl md:text-6xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight leading-[1.1] py-4 text-white drop-shadow-[0_4px_24px_rgba(255,255,255,0.2)]">
-    <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E9D5FF] to-white">
+    <span className="text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF]">
       Don&apos;t Let Valuable Conversations Slip Away
     </span>
     <PlusDivider />
@@ -278,7 +278,7 @@ export default function BenefitsSection() {
           ref={sectionHeaderRef}
           className="relative z-20 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-2"
         >
-          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight leading-tight">
+          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
             Don&apos;t Let Valuable Conversations Slip Away.
           </h2>
           <p className="mt-1.5 text-xs sm:text-sm text-[#C5CAD4] font-medium max-w-2xl mx-auto leading-relaxed">

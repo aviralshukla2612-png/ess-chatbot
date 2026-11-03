@@ -272,7 +272,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 <span
                   key={idx}
                   ref={(el) => (letterRefs.current[idx] = el)}
-                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-white via-[#EDEDF2] to-[#888898] drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]"
+                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_15px_30px_rgba(150,61,255,0.4)]"
                 >
                   {item.char}
                 </span>
@@ -285,7 +285,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 <span
                   key={idx + 4}
                   ref={(el) => (letterRefs.current[idx + 4] = el)}
-                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-white via-[#EDEDF2] to-[#888898] drop-shadow-[0_15px_30px_rgba(0,0,0,0.8)]"
+                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_15px_30px_rgba(150,61,255,0.4)]"
                 >
                   {item.char}
                 </span>
@@ -318,11 +318,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
           ref={sectionHeaderRef}
           className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-3"
         >
-          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight">
-            From Raw Documents To{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#55A9FF]">
-              Autonomous Sales In 5 Minutes
-            </span>
+          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
+            From Raw Documents To Autonomous Sales In 5 Minutes
           </h2>
           <p className="mt-1 text-xs sm:text-sm text-[#9898A6] max-w-2xl mx-auto hidden sm:block">
             No machine learning engineers, vector database setups, or prompt writing required.

@@ -301,10 +301,6 @@ export default function TrionnLoader({ onComplete }) {
       className="fixed inset-0 z-[99999] bg-[#050507] select-none pointer-events-auto overflow-hidden flex items-center justify-center"
       style={{ willChange: "opacity, background-color" }}
     >
-      {/* Ambient background glow for luxury dark depth */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-purple-600/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[110px] pointer-events-none" />
-
       {/* 
         Master Center Box Wrap — Perfectly Centered in Viewport via Flexbox
         Square aspect ratio matching Trionn (w: 300px, h: 300px)

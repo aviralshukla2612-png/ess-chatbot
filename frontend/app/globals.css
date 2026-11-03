@@ -245,7 +245,7 @@ body::-webkit-scrollbar {
 }
 
 .text-gradient-purple-blue {
-  background: linear-gradient(135deg, #FFFFFF 0%, #C28AFF 45%, #55A9FF 100%);
+  background: linear-gradient(180deg, #C28AFF 0%, #FFFFFF 50%, #55A9FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

@@ -533,7 +533,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           style={{ perspective: "1200px" }}
         >
           {/* Line 1: SIMPLE PRICING. (Individual character spans) */}
-          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
             {WORDS_LINE1.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE1[0].length;
               return (
@@ -544,7 +544,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                       <span
                         key={cIdx}
                         ref={(el) => (line1CharRefs.current[idx] = el)}
-                        className="inline-block will-change-transform transform-gpu"
+                        className="inline-block will-change-transform transform-gpu text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF]"
                         style={{ transformStyle: "preserve-3d" }}
                       >
                         {char}
@@ -557,7 +557,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           </h2>
 
           {/* Line 2: POWERFUL CONVERSATIONS. (Pure white without any trailing cursor) */}
-          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
             {WORDS_LINE2.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE2[0].length;
               return (
@@ -568,7 +568,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                       <span
                         key={cIdx}
                         ref={(el) => (line2CharRefs.current[idx] = el)}
-                        className="inline-block will-change-transform transform-gpu"
+                        className="inline-block will-change-transform transform-gpu text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF]"
                         style={{ transformStyle: "preserve-3d" }}
                       >
                         {char}

@@ -176,24 +176,9 @@ const FOOTER_LETTERS = [
       "w": 93,
       "h": 193
     }
-  },
-  {
-    "char": "✦",
-    "d": "M 1511.10546875 75 Q 1511.10546875 100 1536.10546875 100 Q 1511.10546875 100 1511.10546875 125 Q 1511.10546875 100 1486.10546875 100 Q 1511.10546875 100 1511.10546875 75 Z",
-    "isAccent": true,
-    "bbox": {
-      "x1": 1486.10546875,
-      "y1": 75,
-      "x2": 1536.10546875,
-      "y2": 125,
-      "cx": 1511,
-      "cy": 100,
-      "w": 50,
-      "h": 50
-    }
   }
 ];
-const VIEWBOX = "0 0 1567 250";
+const VIEWBOX = "0 0 1485 250";
 
 export default function Footer() {
   const footerRef = useRef(null);
@@ -219,17 +204,13 @@ export default function Footer() {
         });
       });
 
-      const accent = paths[paths.length - 1]; // ✦ accent spark
-      const letters = paths.slice(0, -1);      // EMPEROR NEXUS letters
-
       if (prefersReducedMotion) {
         gsap.set(paths, { autoAlpha: 1, yPercent: 0, scale: 1 });
         return;
       }
 
-      // 1. Initial State: letters concealed below, accent scaled down
-      gsap.set(letters, { autoAlpha: 1, yPercent: 120 });
-      gsap.set(accent, { autoAlpha: 1, scale: 0 });
+      // 1. Initial State: letters concealed below
+      gsap.set(paths, { autoAlpha: 1, yPercent: 120 });
 
       // 2. Entrance Animation: Triggers when the Footer reaches view
       ScrollTrigger.create({
@@ -238,7 +219,7 @@ export default function Footer() {
         once: true,
         onEnter: () => {
           // Organic random shuffle stagger identical to noth.in SOTD
-          const shuffled = letters.slice().sort(() => Math.random() - 0.5);
+          const shuffled = paths.slice().sort(() => Math.random() - 0.5);
 
           gsap.fromTo(
             shuffled,
@@ -249,18 +230,6 @@ export default function Footer() {
               ease: "power4.inOut",
               stagger: 0.035,
               delay: 0.15,
-            }
-          );
-
-          // Accent pops in with back.out(0.9)
-          gsap.fromTo(
-            accent,
-            { autoAlpha: 1, scale: 0 },
-            {
-              scale: 1,
-              duration: 0.7,
-              ease: "back.out(0.9)",
-              delay: 0.95,
             }
           );
         },
@@ -402,20 +371,12 @@ export default function Footer() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. BOTTOM INFO BAR: Copyright, SLA Status, and Section Navigation          */}
+        {/* 3. BOTTOM INFO BAR: Copyright and Section Navigation                       */}
         {/* ========================================================================= */}
         <div className="w-full pt-6 sm:pt-8 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-[#9898A6]">
-          {/* Left: Brand Copyright & Trust */}
+          {/* Left: Brand Copyright */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-center md:text-left">
             <span>© 2026 — Emperor Smart Solutions — Enterprise Autonomous AI</span>
-            <span className="hidden sm:inline text-white/20">•</span>
-            <span className="text-[#6B7280]">SOC 2 Certified & Bank-Grade Security</span>
-          </div>
-
-          {/* Center: System Status */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[11px] font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>99.98% SLA OPERATIONAL</span>
           </div>
 
           {/* Right: Quick Links */}

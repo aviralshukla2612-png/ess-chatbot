@@ -429,7 +429,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 md:gap-5 w-full">
               <span
                 ref={line1TextRef}
-                className="text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)] will-change-transform"
+                className="text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)] will-change-transform"
               >
                 Your Business Is Unique.
               </span>
@@ -704,7 +704,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             {/* Line 2: 2 Line Text */}
             <div
               ref={line2TextRef}
-              className="mt-1 sm:mt-1.5 text-transparent bg-clip-text bg-gradient-to-r from-[#E0C8FF] via-[#C28AFF] to-[#79B8FF] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] will-change-transform"
+              className="mt-1 sm:mt-1.5 text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] will-change-transform"
             >
               Your Customer Experience Should Be Too.
             </div>
