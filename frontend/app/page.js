@@ -380,7 +380,7 @@ export default function HomePage() {
                 <img
                   src="/emperor_nexus_sales_ai_assistant.png"
                   alt="Emperor Nexus — Sales AI Assistant"
-                  className="h-10 sm:h-11 w-auto object-contain grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300 cursor-pointer"
+                  className="h-10 sm:h-11 w-auto object-contain hover:scale-105 transition-all duration-300 cursor-pointer drop-shadow-[0_0_20px_rgba(150,61,255,0.35)]"
                 />
               </div>
 
