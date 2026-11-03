@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import IndustriesSection from "@/components/IndustriesSection";
 import PricingSection from "@/components/PricingSection";
+import TrionnLoader from "@/components/TrionnLoader";
 
 // Register ScrollTrigger globally
 if (typeof window !== "undefined") {
@@ -40,6 +41,7 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
+  const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [experienceModalOpen, setExperienceModalOpen] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState("real-estate");
@@ -189,6 +191,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#050507] text-[#F5F5F7] selection:bg-[#963DFF] selection:text-white relative">
+      {/* 0. Trionn-style Cinematic Preloader with User's Video */}
+      {loading && <TrionnLoader onComplete={() => setLoading(false)} />}
+
       {/* 1. TOP HEADER / NAVIGATION */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${

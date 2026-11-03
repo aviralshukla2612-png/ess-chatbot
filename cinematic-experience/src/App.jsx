@@ -10,11 +10,13 @@ import BenefitsSection from "./components/BenefitsSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 import PricingSection from "./components/PricingSection";
 import Footer from "./components/Footer";
+import TrionnLoader from "./components/TrionnLoader";
 
 // Register ScrollTrigger globally
 gsap.registerPlugin(ScrollTrigger);
 
 export default function App() {
+  const [loading, setLoading] = useState(true);
   const [experienceModalOpen, setExperienceModalOpen] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState("real-estate");
 
@@ -62,6 +64,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#050507] text-[#F5F5F7] font-body selection:bg-[#963DFF] selection:text-white relative">
+      {/* 0. Trionn-style Cinematic Preloader with User's Video */}
+      {loading && <TrionnLoader onComplete={() => setLoading(false)} />}
+
       {/* 1. Header / Navigation */}
       <Navbar
         onOpenExperience={() => handleOpenExperience("real-estate")}
