@@ -29,27 +29,29 @@ const PlusDivider = () => (
   </span>
 );
 
-// Marquee track component containing user's exact requested line + chatbot-related terms
+// Marquee phrases containing user's exact requested line + chatbot-related terms
+const MARQUEE_ITEMS = [
+  "Don't Let Valuable Conversations Slip Away",
+  "Capture Every Lead",
+  "Qualify 24/7",
+  "Convert In Real-Time",
+  "Autonomous Sales AI",
+  "Sub-Second Intelligence",
+  "Scale Revenue Pipeline",
+  "Zero Hallucination",
+];
+
+// Marquee track component where ALL texts uniformly use the purple-to-blue gradient
 const MarqueeTrack = () => (
-  <div className="shrink-0 flex items-center uppercase font-headline font-black text-3xl sm:text-5xl md:text-6xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight leading-[1.1] py-4 text-white drop-shadow-[0_4px_24px_rgba(255,255,255,0.2)]">
-    <span className="text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF]">
-      Don&apos;t Let Valuable Conversations Slip Away
-    </span>
-    <PlusDivider />
-    <span>Capture Every Lead</span>
-    <PlusDivider />
-    <span>Qualify 24/7</span>
-    <PlusDivider />
-    <span>Convert In Real-Time</span>
-    <PlusDivider />
-    <span>Autonomous Sales AI</span>
-    <PlusDivider />
-    <span>Sub-Second Intelligence</span>
-    <PlusDivider />
-    <span>Scale Revenue Pipeline</span>
-    <PlusDivider />
-    <span>Zero Hallucination</span>
-    <PlusDivider />
+  <div className="shrink-0 flex items-center uppercase font-headline font-black text-3xl sm:text-5xl md:text-6xl lg:text-[5.5rem] xl:text-[6.25rem] tracking-tight leading-[1.1] py-4 drop-shadow-[0_4px_24px_rgba(255,255,255,0.2)]">
+    {MARQUEE_ITEMS.map((item, idx) => (
+      <React.Fragment key={idx}>
+        <span className="text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF]">
+          {item}
+        </span>
+        <PlusDivider />
+      </React.Fragment>
+    ))}
   </div>
 );
 
