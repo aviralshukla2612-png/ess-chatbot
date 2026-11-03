@@ -399,25 +399,31 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 ref={(el) => (cardRefs.current[idx] = el)}
                 onMouseEnter={() => setActiveCardIndex(idx)}
                 onClick={() => setActiveCardIndex(idx)}
-                className={`group relative rounded-3xl bg-white text-slate-900 overflow-hidden h-[415px] sm:h-[435px] lg:h-[455px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-white/20 ${card.shadow}`}
+                className={`group relative rounded-3xl bg-[#EAEBED] text-black overflow-hidden h-[420px] sm:h-[440px] lg:h-[460px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-white/30 shadow-[0_20px_50px_rgba(0,0,0,0.45)] ${card.shadow}`}
               >
-                {/* TOP SECTION: Always visible, clean crisp white background */}
-                <div className="relative z-10 px-6 pt-6 pb-2 flex flex-col items-center text-center transition-all duration-300">
+                {/* TOP SECTION: Premium off-white / light gray with high-contrast jet black typography */}
+                <div className="card-wave-top relative z-10 px-6 pt-5 pb-1 flex flex-col items-center text-center transition-all duration-300">
                   {/* Icon Container with subtle halo and decorative sparkle dots */}
                   <div className="relative flex items-center justify-center">
-                    <div className={`w-14 h-14 rounded-2xl ${card.iconBg} flex items-center justify-center shadow-inner transition-transform duration-300 group-hover:scale-110`}>
-                      <Icon className="w-7 h-7 stroke-[2]" />
+                    <div className={`w-13 h-13 rounded-2xl ${card.iconBg} flex items-center justify-center shadow-sm border border-black/10 transition-transform duration-300 group-hover:scale-105`}>
+                      <Icon className="w-6 h-6 stroke-[2.2]" />
                     </div>
                     {/* Decorative sparkle dots around icon like the reference image */}
-                    <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-slate-300" />
-                    <span className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full bg-slate-300" />
+                    <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    <span className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full bg-slate-400" />
                   </div>
 
                   {/* Title & Step Tag */}
-                  <h3 className="font-headline font-black text-xl sm:text-2xl text-slate-900 tracking-tight uppercase mt-3 leading-snug">
+                  <h3
+                    style={{ color: "#000000" }}
+                    className="!text-black text-black font-headline font-black text-xl sm:text-2xl tracking-tight uppercase mt-2.5 leading-snug drop-shadow-none"
+                  >
                     {card.title}
                   </h3>
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 mt-1">
+                  <span
+                    style={{ color: "#475569" }}
+                    className="!text-slate-600 text-slate-600 text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
+                  >
                     {card.tagline}
                   </span>
                 </div>
@@ -425,11 +431,11 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 {/* DYNAMIC WAVE FILL LAYER: Expands smoothly on hover/active */}
                 <div
                   className={`absolute inset-x-0 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${
-                    isExpanded ? "h-[74%] sm:h-[76%]" : "h-[45%] sm:h-[47%]"
+                    isExpanded ? "h-[60%] sm:h-[62%]" : "h-[39%] sm:h-[41%]"
                   }`}
                 >
                   {/* Liquid Organic Wave SVG Divider */}
-                  <div className="relative w-full h-10 sm:h-12 -mt-9 sm:-mt-11 pointer-events-none shrink-0 overflow-visible">
+                  <div className="relative w-full h-9 sm:h-11 -mt-8 sm:-mt-10 pointer-events-none shrink-0 overflow-visible">
                     {/* Back Wave (translucent) */}
                     <svg
                       viewBox="0 0 500 80"

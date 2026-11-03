@@ -46,6 +46,16 @@ body {
   color: #F8FAFC;
 }
 
+/* Specific guarantee for wave card top elements: off-white/gray card top with jet black headings */
+.card-wave-top h3,
+.card-wave-top h3.font-headline {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+.card-wave-top span {
+  color: #475569 !important;
+}
+
 /* Scoped strictly to .dark class so light mode is pure Ivory & Charcoal */
 .dark input,
 .dark select,
