@@ -1,423 +1,49 @@
 import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Bot, ShieldCheck, Sparkles, TrendingUp, CheckCircle2 } from "lucide-react";
+import {
+  Sparkles,
+  TrendingUp,
+  CheckCircle2,
+  Clock,
+  Zap,
+  ShieldCheck,
+  Bot,
+  CalendarCheck,
+  Cpu,
+  Layers,
+  ArrowUpRight,
+} from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Explosive 360-degree 3D Shatter trajectories for "DON'T LET VALUABLE CONVERSATIONS SLIP AWAY."
-const SHATTER_LETTERS = [
-  {
-    "char": "D",
-    "x": -1514,
-    "y": 838,
-    "z": 1073,
-    "rx": 151,
-    "ry": -218,
-    "rz": -13,
-    "s": 4.7
-  },
-  {
-    "char": "O",
-    "x": -872,
-    "y": 676,
-    "z": 436,
-    "rx": -8,
-    "ry": 93,
-    "rz": 34,
-    "s": 2.9
-  },
-  {
-    "char": "N",
-    "x": -684,
-    "y": 694,
-    "z": 1032,
-    "rx": -142,
-    "ry": 115,
-    "rz": -24,
-    "s": 4.5
-  },
-  {
-    "char": "'",
-    "x": -1779,
-    "y": 383,
-    "z": 1166,
-    "rx": 172,
-    "ry": -220,
-    "rz": -4,
-    "s": 4.9
-  },
-  {
-    "char": "T",
-    "x": -1180,
-    "y": 509,
-    "z": 653,
-    "rx": -57,
-    "ry": 126,
-    "rz": 23,
-    "s": 3.5
-  },
-  {
-    "char": " ",
-    "isSpace": true
-  },
-  {
-    "char": "L",
-    "x": -1738,
-    "y": -79,
-    "z": 1200,
-    "rx": 180,
-    "ry": -216,
-    "rz": 2,
-    "s": 5
-  },
-  {
-    "char": "E",
-    "x": -1448,
-    "y": 267,
-    "z": 850,
-    "rx": -101,
-    "ry": 154,
-    "rz": 12,
-    "s": 4
-  },
-  {
-    "char": "T",
-    "x": -1119,
-    "y": 42,
-    "z": 680,
-    "rx": -63,
-    "ry": 47,
-    "rz": -12,
-    "s": 3.6
-  },
-  {
-    "char": " ",
-    "isSpace": true
-  },
-  {
-    "char": "V",
-    "x": -1632,
-    "y": -49,
-    "z": 1014,
-    "rx": -138,
-    "ry": 178,
-    "rz": 4,
-    "s": 4.5
-  },
-  {
-    "char": "A",
-    "x": -933,
-    "y": -245,
-    "z": 465,
-    "rx": -15,
-    "ry": 10,
-    "rz": -3,
-    "s": 3
-  },
-  {
-    "char": "L",
-    "x": -1070,
-    "y": -736,
-    "z": 1088,
-    "rx": 155,
-    "ry": -189,
-    "rz": 0,
-    "s": 4.7
-  },
-  {
-    "char": "U",
-    "x": -1678,
-    "y": -424,
-    "z": 1130,
-    "rx": -164,
-    "ry": 197,
-    "rz": -1,
-    "s": 4.8
-  },
-  {
-    "char": "A",
-    "x": -719,
-    "y": -501,
-    "z": 555,
-    "rx": 35,
-    "ry": -27,
-    "rz": 6,
-    "s": 3.2
-  },
-  {
-    "char": "B",
-    "x": -634,
-    "y": -889,
-    "z": 951,
-    "rx": 124,
-    "ry": -168,
-    "rz": -7,
-    "s": 4.3
-  },
-  {
-    "char": "L",
-    "x": -1526,
-    "y": -819,
-    "z": 1192,
-    "rx": -178,
-    "ry": 211,
-    "rz": -3,
-    "s": 5
-  },
-  {
-    "char": "E",
-    "x": -324,
-    "y": -715,
-    "z": 763,
-    "rx": 82,
-    "ry": -63,
-    "rz": 15,
-    "s": 3.8
-  },
-  {
-    "char": " ",
-    "isSpace": true
-  },
-  {
-    "char": "C",
-    "x": -1136,
-    "y": -1170,
-    "z": 1193,
-    "rx": -178,
-    "ry": 218,
-    "rz": 0,
-    "s": 5
-  },
-  {
-    "char": "O",
-    "x": 246,
-    "y": -778,
-    "z": 944,
-    "rx": 122,
-    "ry": -98,
-    "rz": 21,
-    "s": 4.3
-  },
-  {
-    "char": "N",
-    "x": 127,
-    "y": -920,
-    "z": 565,
-    "rx": 37,
-    "ry": -111,
-    "rz": -27,
-    "s": 3.3
-  },
-  {
-    "char": "V",
-    "x": -520,
-    "y": -1389,
-    "z": 1134,
-    "rx": -165,
-    "ry": 220,
-    "rz": 7,
-    "s": 4.8
-  },
-  {
-    "char": "E",
-    "x": 848,
-    "y": -654,
-    "z": 1083,
-    "rx": 154,
-    "ry": -130,
-    "rz": 24,
-    "s": 4.7
-  },
-  {
-    "char": "R",
-    "x": 402,
-    "y": -842,
-    "z": 455,
-    "rx": -12,
-    "ry": -77,
-    "rz": -38,
-    "s": 3
-  },
-  {
-    "char": "S",
-    "x": 231,
-    "y": -1390,
-    "z": 1020,
-    "rx": -139,
-    "ry": 215,
-    "rz": 18,
-    "s": 4.5
-  },
-  {
-    "char": "A",
-    "x": 1339,
-    "y": -367,
-    "z": 1171,
-    "rx": 173,
-    "ry": -158,
-    "rz": 22,
-    "s": 4.9
-  },
-  {
-    "char": "T",
-    "x": 596,
-    "y": -724,
-    "z": 671,
-    "rx": -61,
-    "ry": -42,
-    "rz": -48,
-    "s": 3.5
-  },
-  {
-    "char": "I",
-    "x": 952,
-    "y": -1131,
-    "z": 858,
-    "rx": -103,
-    "ry": 204,
-    "rz": 32,
-    "s": 4.1
-  },
-  {
-    "char": "O",
-    "x": 1629,
-    "y": 12,
-    "z": 1200,
-    "rx": 180,
-    "ry": -181,
-    "rz": 16,
-    "s": 5
-  },
-  {
-    "char": "N",
-    "x": 705,
-    "y": -582,
-    "z": 866,
-    "rx": -105,
-    "ry": -5,
-    "rz": -54,
-    "s": 4.1
-  },
-  {
-    "char": "S",
-    "x": 1449,
-    "y": -648,
-    "z": 662,
-    "rx": -59,
-    "ry": 187,
-    "rz": 47,
-    "s": 3.5
-  },
-  {
-    "char": " ",
-    "isSpace": true
-  },
-  {
-    "char": "S",
-    "x": 950,
-    "y": -508,
-    "z": 1026,
-    "rx": -141,
-    "ry": 32,
-    "rz": -57,
-    "s": 4.5
-  },
-  {
-    "char": "L",
-    "x": 1584,
-    "y": -56,
-    "z": 445,
-    "rx": -10,
-    "ry": 164,
-    "rz": 62,
-    "s": 2.9
-  },
-  {
-    "char": "I",
-    "x": 1565,
-    "y": 749,
-    "z": 1078,
-    "rx": 153,
-    "ry": -212,
-    "rz": -11,
-    "s": 4.7
-  },
-  {
-    "char": "P",
-    "x": 1192,
-    "y": -346,
-    "z": 1138,
-    "rx": -166,
-    "ry": 68,
-    "rz": -55,
-    "s": 4.8
-  },
-  {
-    "char": " ",
-    "isSpace": true
-  },
-  {
-    "char": "A",
-    "x": 1295,
-    "y": 1006,
-    "z": 937,
-    "rx": 121,
-    "ry": -219,
-    "rz": -29,
-    "s": 4.3
-  },
-  {
-    "char": "W",
-    "x": 1334,
-    "y": -70,
-    "z": 1194,
-    "rx": -179,
-    "ry": 103,
-    "rz": -47,
-    "s": 5
-  },
-  {
-    "char": "A",
-    "x": 828,
-    "y": 852,
-    "z": 781,
-    "rx": 86,
-    "ry": 107,
-    "rz": 86,
-    "s": 3.8
-  },
-  {
-    "char": "Y",
-    "x": 937,
-    "y": 1162,
-    "z": 755,
-    "rx": 80,
-    "ry": -219,
-    "rz": -50,
-    "s": 3.8
-  },
-  {
-    "char": ".",
-    "x": 1289,
-    "y": 293,
-    "z": 1190,
-    "rx": -178,
-    "ry": 134,
-    "rz": -34,
-    "s": 5
-  }
-];
+// Crosshair SVG icon identical to Trionn
+const Crosshair = () => (
+  <svg
+    width="36"
+    height="36"
+    viewBox="0 0 40 40"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="mx-8 sm:mx-14 w-6 h-6 sm:w-9 sm:h-9 shrink-0 text-white/50"
+  >
+    <line x1="20" y1="0" x2="20" y2="40" stroke="currentColor" strokeWidth="1.5" />
+    <line x1="0" y1="20" x2="40" y2="20" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
 
-export default function BenefitsSection({ onOpenTrial }) {
+export default function BenefitsSection() {
   const containerRef = useRef(null);
   const stageRef = useRef(null);
-  const typographyRef = useRef(null);
-  const letterRefs = useRef([]);
+  const marqueeRef = useRef(null);
+  const visionContentRef = useRef(null);
+  const stripesWrapperRef = useRef(null);
+  const stripeRefs = useRef([]);
+  const keyfactsSectionRef = useRef(null);
+  const keyfactsHeaderRef = useRef(null);
   const cardRefs = useRef([]);
-  const sectionHeaderRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -425,46 +51,42 @@ export default function BenefitsSection({ onOpenTrial }) {
     if (!container || !stage) return;
 
     const ctx = gsap.context(() => {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const isDesktop = window.innerWidth >= 768;
+      const isDesktop = window.innerWidth >= 1024;
 
-      if (prefersReducedMotion) {
-        if (typographyRef.current) gsap.set(typographyRef.current, { display: "none" });
-        if (sectionHeaderRef.current) gsap.set(sectionHeaderRef.current, { opacity: 1, y: 0 });
-        cardRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { opacity: 1, x: 0, y: 0, z: 0, scale: 1, rotateY: 0, rotateX: 0 });
-        });
-        return;
+      // 1. Initial State for Vision Marquee & Stripes
+      if (marqueeRef.current) {
+        gsap.set(marqueeRef.current, { x: 0 });
+      }
+      if (visionContentRef.current) {
+        gsap.set(visionContentRef.current, { opacity: 1 });
       }
 
-      // 1. Initial State: Centered headline letters in pristine position
-      letterRefs.current.forEach((el) => {
-        if (el) {
-          gsap.set(el, {
-            x: 0,
-            y: 0,
-            z: 0,
-            rotateX: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px)",
-            transformOrigin: "center center",
-            force3D: true,
+      // Stripes begin at scaleY 0 from bottom
+      stripeRefs.current.forEach((stripe) => {
+        if (stripe) {
+          gsap.set(stripe, {
+            scaleY: 0,
+            transformOrigin: "bottom",
+            willChange: "transform",
           });
         }
       });
 
-      // 2. Initial State: Cards primed in 3D space ready for entrance
+      // 2. Initial State for Key Facts & 3 Cards
+      if (keyfactsSectionRef.current) {
+        gsap.set(keyfactsSectionRef.current, { opacity: 0 });
+      }
+      if (keyfactsHeaderRef.current) {
+        gsap.set(keyfactsHeaderRef.current, { opacity: 0, y: 30 });
+      }
+
       if (cardRefs.current[0]) {
         gsap.set(cardRefs.current[0], {
           opacity: 0,
-          x: isDesktop ? -260 : -40,
+          x: isDesktop ? -120 : -40,
           y: isDesktop ? 40 : 20,
-          z: -280,
-          rotateY: isDesktop ? 26 : 0,
-          scale: 0.78,
+          rotateY: isDesktop ? 16 : 0,
+          scale: 0.88,
           transformOrigin: "center center",
           force3D: true,
         });
@@ -473,9 +95,8 @@ export default function BenefitsSection({ onOpenTrial }) {
         gsap.set(cardRefs.current[1], {
           opacity: 0,
           x: 0,
-          y: isDesktop ? 70 : 30,
-          z: -360,
-          scale: 0.68,
+          y: isDesktop ? 60 : 30,
+          scale: 0.82,
           transformOrigin: "center center",
           force3D: true,
         });
@@ -483,94 +104,121 @@ export default function BenefitsSection({ onOpenTrial }) {
       if (cardRefs.current[2]) {
         gsap.set(cardRefs.current[2], {
           opacity: 0,
-          x: isDesktop ? 260 : 40,
+          x: isDesktop ? 120 : 40,
           y: isDesktop ? 40 : 20,
-          z: -280,
-          rotateY: isDesktop ? -26 : 0,
-          scale: 0.78,
+          rotateY: isDesktop ? -16 : 0,
+          scale: 0.88,
           transformOrigin: "center center",
           force3D: true,
         });
       }
 
-      if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
-      }
-
       // ============================================================
-      // MASTER COORDINATED GSAP SCROLL-TRIGGER TIMELINE
-      // 0.00 -> 0.04: Headline intact
-      // 0.02 -> 0.28: High-velocity 3D explosive shatter flying completely off-screen
-      // 0.14 -> 0.28: Typography wrapper fades out, persistent header emerges
-      // 0.16 -> 0.42: 3 Bright cards fan out from left, center, right
-      // 0.42 -> 1.00: Steady hold for full card interaction & hover
+      // MASTER COORDINATED GSAP SCROLL-TRIGGER TIMELINE (Trionn Shutter)
+      // 0.00 -> 0.35: Horizontal marquee scrub + 5 horizontal shutter stripes expand (slicing text)
+      // 0.35 -> 0.48: Vision text fades out, shutters complete coverage
+      // 0.45 -> 0.65: Shutters open/wipe away revealing Key Facts section
+      // 0.55 -> 0.78: 3 Bright colorful enterprise cards fan out in 3D perspective
+      // 0.78 -> 1.00: Steady interactive hold for reading & hover
       // ============================================================
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: "+=1100",
+          end: "+=1600",
           pin: stage,
           pinSpacing: true,
-          scrub: 0.65,
+          scrub: 0.75,
           anticipatePin: 1,
           invalidateOnRefresh: true,
         },
       });
 
-      // A. Explosive Letter Shatter: Letters shoot out across entire screen
-      letterRefs.current.forEach((el, idx) => {
-        if (el) {
-          const cfg = SHATTER_LETTERS[idx] || { x: 0, y: 0, z: 400, rx: 0, ry: 0, rz: 0, s: 3.5 };
+      // A. Horizontal Marquee Scroll during shutter expansion
+      if (marqueeRef.current) {
+        tl.to(
+          marqueeRef.current,
+          {
+            x: isDesktop ? -380 : -180,
+            duration: 0.45,
+            ease: "none",
+          },
+          0
+        );
+      }
+
+      // B. Trionn Shutter Slats Expand (ScaleY 0 -> 1 with staggered timing)
+      stripeRefs.current.forEach((stripe, idx) => {
+        if (stripe) {
           tl.to(
-            el,
+            stripe,
             {
-              x: cfg.x * (isDesktop ? 1.0 : 0.55),
-              y: cfg.y * (isDesktop ? 1.0 : 0.55),
-              z: cfg.z,
-              rotateX: cfg.rx,
-              rotateY: cfg.ry,
-              rotateZ: cfg.rz,
-              scale: cfg.s,
-              opacity: 0,
-              filter: "blur(14px)",
-              duration: 0.26,
+              scaleY: 1,
+              duration: 0.34,
               ease: "power2.inOut",
             },
-            0.02 + (idx % 6) * 0.01
+            0.05 + idx * 0.045
           );
         }
       });
 
-      // B. Typography Container Fades Out (Clean transition, no ghosting)
-      if (typographyRef.current) {
+      // C. Vision content fades out under shutters
+      if (visionContentRef.current) {
         tl.to(
-          typographyRef.current,
+          visionContentRef.current,
           {
             opacity: 0,
             duration: 0.15,
             ease: "power2.out",
-            pointerEvents: "none",
           },
-          0.18
+          0.32
         );
       }
 
-      // C. Persistent Section Header Fades In at Top
-      if (sectionHeaderRef.current) {
+      // D. Key Facts background becomes active
+      if (keyfactsSectionRef.current) {
         tl.to(
-          sectionHeaderRef.current,
+          keyfactsSectionRef.current,
+          {
+            opacity: 1,
+            duration: 0.15,
+            ease: "power1.inOut",
+          },
+          0.38
+        );
+      }
+
+      // E. Shutters Wipe/Open from Top to reveal Key Facts stage
+      stripeRefs.current.forEach((stripe, idx) => {
+        if (stripe) {
+          tl.to(
+            stripe,
+            {
+              scaleY: 0,
+              transformOrigin: "top",
+              duration: 0.30,
+              ease: "power2.inOut",
+            },
+            0.44 + idx * 0.035
+          );
+        }
+      });
+
+      // F. Key Facts Section Header Fades In
+      if (keyfactsHeaderRef.current) {
+        tl.to(
+          keyfactsHeaderRef.current,
           {
             opacity: 1,
             y: 0,
-            duration: 0.20,
-            ease: "power2.out",
+            duration: 0.22,
+            ease: "power3.out",
           },
-          0.16
+          0.50
         );
       }
 
-      // D. Three-Card 3D Entrance: Left zooms in, Center scales from depth, Right zooms in
+      // G. The 3 Vibrant Enterprise Cards Fly in with 3D Perspective
       if (cardRefs.current[0]) {
         tl.to(
           cardRefs.current[0],
@@ -578,15 +226,15 @@ export default function BenefitsSection({ onOpenTrial }) {
             opacity: 1,
             x: 0,
             y: 0,
-            z: 0,
             rotateY: 0,
             scale: 1,
             duration: 0.32,
             ease: "power3.out",
           },
-          0.16
+          0.54
         );
       }
+
       if (cardRefs.current[1]) {
         tl.to(
           cardRefs.current[1],
@@ -594,14 +242,14 @@ export default function BenefitsSection({ onOpenTrial }) {
             opacity: 1,
             x: 0,
             y: 0,
-            z: 0,
             scale: 1,
             duration: 0.34,
             ease: "power3.out",
           },
-          0.20
+          0.58
         );
       }
+
       if (cardRefs.current[2]) {
         tl.to(
           cardRefs.current[2],
@@ -609,18 +257,17 @@ export default function BenefitsSection({ onOpenTrial }) {
             opacity: 1,
             x: 0,
             y: 0,
-            z: 0,
             rotateY: 0,
             scale: 1,
             duration: 0.32,
             ease: "power3.out",
           },
-          0.24
+          0.62
         );
       }
 
-      // E. Hold composition steady for reading & interaction
-      tl.to({}, { duration: 0.40 }, 0.60);
+      // H. Interactive reading hold
+      tl.to({}, { duration: 0.38 }, 0.62);
     }, containerRef);
 
     return () => ctx.revert();
@@ -630,241 +277,338 @@ export default function BenefitsSection({ onOpenTrial }) {
     <section
       id="benefits"
       ref={containerRef}
-      className="relative w-full bg-[linear-gradient(180deg,#D2D2D2_0%,#DFDFE4_35%,#ECECEF_100%)] select-none"
+      className="relative w-full bg-[#08090D] select-none"
     >
       {/* PINNED STAGE VIEWPORT */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen overflow-hidden flex flex-col justify-between pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8 bg-[linear-gradient(180deg,#D2D2D2_0%,#DFDFE4_35%,#ECECEF_100%)]"
+        className="relative w-full h-screen overflow-hidden bg-[#08090D]"
         style={{ perspective: "1500px", transformStyle: "preserve-3d" }}
       >
         {/* ========================================================================= */}
-        {/* PHASE 1 & 2: FULLSCREEN SHATTER TYPOGRAPHY (Explodes across entire screen)*/}
+        {/* PHASE 1: TRIONN VISION & HORIZONTAL SHUTTER TRANSITION                   */}
         {/* ========================================================================= */}
         <div
-          ref={typographyRef}
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none px-4"
-          style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
+          ref={visionContentRef}
+          className="absolute inset-0 z-20 flex flex-col justify-between py-12 sm:py-16 px-6 sm:px-14 pointer-events-none text-white"
+          style={{ mixBlendMode: "difference" }}
         >
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/[0.06] border border-black/[0.12] text-[#2A2A32] text-xs font-mono font-bold uppercase tracking-widest mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            <span>Autonomous Enterprise Advantages</span>
+          {/* Top Vision Title */}
+          <div className="w-full flex items-center justify-between">
+            <div className="flex flex-col gap-1">
+              <span className="font-mono text-xs sm:text-sm tracking-[0.28em] uppercase text-[#A1A1AA] font-bold">
+                Focused Intelligence.
+              </span>
+              <span className="font-mono text-xs sm:text-sm tracking-[0.28em] uppercase text-white font-extrabold">
+                Measured Commercial Execution.
+              </span>
+            </div>
+            <div className="hidden md:flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm text-xs font-mono tracking-widest uppercase text-white/80">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Scroll To Reveal Impact</span>
+            </div>
           </div>
 
-          <h1
-            className="font-headline font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight text-[#0B0B10] uppercase text-center max-w-5xl leading-tight flex flex-wrap justify-center gap-x-2 sm:gap-x-3"
-            style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
-          >
-            {SHATTER_LETTERS.map((item, idx) =>
-              item.isSpace ? (
-                <span key={idx} className="w-2 sm:w-3" />
-              ) : (
-                <span
-                  key={idx}
-                  ref={(el) => (letterRefs.current[idx] = el)}
-                  className="inline-block will-change-transform text-[#0B0B10] drop-shadow-[0_8px_16px_rgba(0,0,0,0.15)]"
-                  style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
-                >
-                  {item.char}
-                </span>
-              )
-            )}
-          </h1>
+          {/* Center Giant Sliced Marquee */}
+          <div className="relative overflow-hidden w-full py-4 select-none">
+            <div
+              ref={marqueeRef}
+              className="flex whitespace-nowrap will-change-transform"
+            >
+              <div className="shrink-0 flex items-center uppercase font-headline font-black text-5xl sm:text-7xl md:text-8xl lg:text-[7.5rem] tracking-tight leading-none text-white">
+                <span>Capture</span>
+                <Crosshair />
+                <span>Qualify</span>
+                <Crosshair />
+                <span>Convert</span>
+                <Crosshair />
+                <span>Scale</span>
+                <Crosshair />
+                <span>Capture</span>
+                <Crosshair />
+                <span>Qualify</span>
+                <Crosshair />
+                <span>Convert</span>
+                <Crosshair />
+                <span>Scale</span>
+              </div>
+            </div>
+          </div>
 
-          <p className="mt-6 text-xs sm:text-sm text-[#374151] max-w-xl text-center font-semibold leading-relaxed">
-            Your website should be ready to answer, assist, and capture interest — even when your team is unavailable.
-          </p>
+          {/* Bottom Vision Subtitle */}
+          <div className="w-full flex items-center justify-between">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/70">
+              From visitor curiosity to committed enterprise pipeline.
+            </span>
+            <span className="hidden sm:inline-block font-mono text-xs tracking-widest uppercase text-white/40">
+              [ 01 — 03 KEY METRICS ]
+            </span>
+          </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* PERSISTENT HEADER (Appears smoothly as letters shatter)                   */}
+        {/* THE 5 HORIZONTAL SHUTTER STRIPES (Slices across viewport like blinds)     */}
         {/* ========================================================================= */}
         <div
-          ref={sectionHeaderRef}
-          className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-3"
+          ref={stripesWrapperRef}
+          className="stripes-container absolute inset-0 pointer-events-none flex flex-col w-full h-full z-30"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/[0.06] border border-black/[0.1] text-xs font-mono font-bold uppercase tracking-widest text-[#2A2A32] mb-2">
-            <Sparkles className="w-3 h-3 text-purple-600" />
-            <span>Autonomous Enterprise Advantages</span>
-          </div>
-          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-[#0B0B10] tracking-tight leading-tight">
-            Don&apos;t Let Valuable Conversations Slip Away.
-          </h2>
-          <p className="mt-1.5 text-xs sm:text-sm text-[#1F2937] font-semibold max-w-xl mx-auto hidden sm:block">
-            Your website should be ready to answer, assist, and capture interest — even when your team is unavailable.
-          </p>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              ref={(el) => (stripeRefs.current[i] = el)}
+              className="stripe-item flex-1 w-full bg-[#DCDCE2] border-b border-[#C8C8D0]/50"
+              style={{
+                transform: "scaleY(0)",
+                transformOrigin: "bottom",
+                willChange: "transform",
+              }}
+            />
+          ))}
         </div>
 
         {/* ========================================================================= */}
-        {/* 3 COLORFUL VIBRANT CARDS (RICH DEEP COLOR PALETTE WITH 100% VISIBLE TEXT)  */}
+        {/* PHASE 2: KEY FACTS SECTION & 3 VIBRANT HIGH-IMPACT ENTERPRISE CARDS       */}
         {/* ========================================================================= */}
         <div
-          className="key-card-list relative z-20 grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch w-full max-w-6xl mx-auto my-auto"
-          style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
+          ref={keyfactsSectionRef}
+          className="absolute inset-0 z-40 flex flex-col justify-between pt-14 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8 bg-[linear-gradient(180deg,#090A0F_0%,#10121A_50%,#090A0F_100%)]"
         >
-          {/* ======================================================================= */}
-          {/* CARD 01: VIBRANT CYBER EMERALD GREEN (Rich deep saturated color)        */}
-          {/* ======================================================================= */}
+          {/* Section Header */}
           <div
-            ref={(el) => (cardRefs.current[0] = el)}
-            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#062D21] via-[#0A3D2D] to-[#031E15] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_45px_rgba(16,185,129,0.35)] hover:shadow-[0_25px_55px_rgba(16,185,129,0.50)] border-2 border-[#10B981] hover:border-[#34D399] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            ref={keyfactsHeaderRef}
+            className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-1"
           >
-            {/* Ambient Green Glow */}
-            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#10B981]/30 rounded-full blur-3xl pointer-events-none" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-xs font-mono font-bold uppercase tracking-widest text-purple-300 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Autonomous Enterprise Advantages</span>
+            </div>
+            <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase text-white tracking-tight leading-tight">
+              Don&apos;t Let Valuable Conversations Slip Away.
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-slate-300 font-medium max-w-xl mx-auto">
+              Your website should be ready to answer, qualify, and capture enterprise interest — even when your team is unavailable.
+            </p>
+          </div>
 
-            <div className="relative z-10">
-              {/* Top Pill Tag */}
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/25 text-[#6EE7B7] border border-[#10B981]/50">
-                  Card 01 · 24/7 Engine
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#A7F3D0]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                  Live 24/7
-                </span>
+          {/* The 3 Cards Container */}
+          <div
+            className="key-card-list relative z-20 grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch w-full max-w-6xl mx-auto my-auto"
+            style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
+          >
+            {/* =================================================================== */}
+            {/* CARD 01: VIBRANT CYBER EMERALD GREEN (Pipeline Acceleration)        */}
+            {/* =================================================================== */}
+            <div
+              ref={(el) => (cardRefs.current[0] = el)}
+              className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#04281E] via-[#08382A] to-[#021A12] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(16,185,129,0.35)] hover:shadow-[0_25px_60px_rgba(16,185,129,0.50)] border-2 border-[#10B981] hover:border-[#34D399] overflow-hidden min-h-[360px] sm:min-h-[380px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            >
+              {/* Emerald Ambient Glow */}
+              <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#10B981]/25 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10">
+                {/* Top Pill Tag */}
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#10B981]/25 text-[#A7F3D0] border border-[#10B981]/50 uppercase tracking-wider">
+                    Card 01 · Velocity
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-300 bg-black/40 px-2 py-0.5 rounded-full border border-emerald-500/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Live 24/7
+                  </span>
+                </div>
+
+                {/* Big Stat & Headline */}
+                <div className="mt-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-headline font-black text-4xl sm:text-5xl text-[#34D399] tracking-tight">
+                      4.8x
+                    </span>
+                    <span className="text-xs font-mono font-bold text-emerald-300/80 uppercase">
+                      Velocity
+                    </span>
+                  </div>
+                  <h3 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-1">
+                    Pipeline Acceleration
+                  </h3>
+                  <p className="mt-1.5 text-xs text-slate-200 leading-relaxed font-medium">
+                    Convert high-intent enterprise visitors into scheduled consultations instantly — eliminating sales rep response delays and dropped leads.
+                  </p>
+                </div>
+
+                {/* Simulated Inbound Consultation Feed */}
+                <div className="mt-3.5 bg-black/60 backdrop-blur-md rounded-xl p-3 border border-emerald-500/30 space-y-2 text-[11px]">
+                  <div className="flex items-start gap-2">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold shrink-0">
+                      INBOUND
+                    </span>
+                    <p className="text-slate-200 text-[11px] leading-tight">
+                      &quot;Need SOC-2 compliance &amp; automated CRM sync for 40 reps.&quot;
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between pt-1.5 border-t border-emerald-500/20 text-[10px]">
+                    <span className="inline-flex items-center gap-1 text-emerald-300 font-bold">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      Consultation Booked
+                    </span>
+                    <span className="text-slate-300 font-mono">Tomorrow 3:00 PM</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Heading & Subtitle in 100% Crisp High-Contrast White */}
-              <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-3 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                24/7 AI ASSISTANCE
-              </h3>
-              <p className="text-xs text-[#D1FAE5] mt-1.5 leading-relaxed font-medium">
-                Let customers get answers to their questions anytime, even outside business hours.
-              </p>
+              {/* Bottom KPIs & Integrations */}
+              <div className="relative z-10 pt-3 border-t border-emerald-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-200/90 font-bold">
+                  <span>Salesforce</span>
+                  <span>·</span>
+                  <span>HubSpot</span>
+                  <span>·</span>
+                  <span>Zapier</span>
+                </div>
+                <span className="font-mono text-[10px] font-bold text-[#6EE7B7] bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/30">
+                  +73% After-Hours
+                </span>
+              </div>
             </div>
 
-            {/* Interactive Chat Preview */}
-            <div className="relative z-10 my-3 py-2 bg-[#02150E]/85 backdrop-blur-md rounded-xl p-3 border border-[#10B981]/40 space-y-1.5 shadow-inner">
-              <div className="bg-[#0A3D2D] text-[#E6FBF2] border border-[#10B981]/30 rounded-lg p-2 text-[10px] leading-snug max-w-[92%] ml-auto font-medium">
-                Can I schedule an executive consultation for tomorrow?
+            {/* =================================================================== */}
+            {/* CARD 02: VIBRANT ROYAL INDIGO / PURPLE (Autonomous Resolution)     */}
+            {/* =================================================================== */}
+            <div
+              ref={(el) => (cardRefs.current[1] = el)}
+              className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#1E0D36] via-[#2D1252] to-[#140826] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(168,85,247,0.35)] hover:shadow-[0_25px_60px_rgba(168,85,247,0.50)] border-2 border-[#A855F7] hover:border-[#C084FC] overflow-hidden min-h-[360px] sm:min-h-[380px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            >
+              {/* Purple Ambient Glow */}
+              <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#A855F7]/25 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10">
+                {/* Top Pill Tag */}
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#A855F7]/25 text-[#E9D5FF] border border-[#A855F7]/50 uppercase tracking-wider">
+                    Card 02 · Autonomy
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-purple-300 bg-black/40 px-2 py-0.5 rounded-full border border-purple-500/40">
+                    Zero Hallucination
+                  </span>
+                </div>
+
+                <h3 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-3">
+                  Autonomous Resolution
+                </h3>
+                <p className="mt-1 text-xs text-slate-200 leading-relaxed font-medium">
+                  Handles complex multi-turn inquiries across enterprise pricing, compliance, and custom requirements using verified knowledge graphs.
+                </p>
               </div>
-              <div className="bg-[#10B981] text-white rounded-lg p-2 text-[10px] leading-snug max-w-[95%] font-semibold shadow-sm">
-                Absolutely! Reserved 3:00 PM tomorrow with our senior specialist.
+
+              {/* Central Iconic Radial Hub (Trionn-inspired central circle) */}
+              <div className="relative z-10 my-3 flex flex-col items-center justify-center">
+                <div className="relative flex items-center justify-center w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-b from-[#2E1256] to-[#120724] border-2 border-[#C084FC] shadow-[0_0_35px_rgba(168,85,247,0.55)]">
+                  {/* Subtle pulsing outer ring */}
+                  <div className="absolute inset-0 rounded-full border border-purple-400/40 animate-ping opacity-25" />
+                  <div className="text-center">
+                    <span className="block font-headline font-black text-3xl sm:text-4xl text-white tracking-tight leading-none drop-shadow-md">
+                      1.5M+
+                    </span>
+                    <span className="block font-mono text-[9px] font-bold tracking-widest uppercase text-purple-200 mt-1">
+                      Queries Solved
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom KPIs & Verification */}
+              <div className="relative z-10 pt-3 border-t border-purple-500/30 flex items-center justify-between">
+                <span className="font-mono text-[10px] text-purple-200 font-bold uppercase tracking-wider">
+                  94.2% Autonomous Rate
+                </span>
+                <span className="font-mono text-[10px] font-bold text-[#D8B4FE] bg-purple-950/70 px-2 py-0.5 rounded border border-purple-500/30">
+                  SOC-2 Grounded
+                </span>
               </div>
             </div>
 
-            {/* Bottom Label */}
-            <div className="relative z-10 pt-2.5 border-t border-[#10B981]/30 flex items-center justify-between">
-              <span className="font-mono text-[10px] font-black tracking-widest text-[#6EE7B7] uppercase">
-                ALWAYS AVAILABLE
-              </span>
-              <CheckCircle2 className="w-4 h-4 text-[#34D399] shrink-0" />
+            {/* =================================================================== */}
+            {/* CARD 03: VIBRANT CYBER SAPPHIRE / BLUE (Sub-Second Latency)         */}
+            {/* =================================================================== */}
+            <div
+              ref={(el) => (cardRefs.current[2] = el)}
+              className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#061F38] via-[#0A2E54] to-[#041427] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_50px_rgba(56,189,248,0.35)] hover:shadow-[0_25px_60px_rgba(56,189,248,0.50)] border-2 border-[#38BDF8] hover:border-[#7DD3FC] overflow-hidden min-h-[360px] sm:min-h-[380px] will-change-transform transition-all duration-300 hover:-translate-y-1"
+            >
+              {/* Sapphire Ambient Glow */}
+              <div className="absolute -top-16 -right-16 w-52 h-52 bg-[#38BDF8]/25 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10">
+                {/* Top Pill Tag */}
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#38BDF8]/25 text-[#BAE6FD] border border-[#38BDF8]/50 uppercase tracking-wider">
+                    Card 03 · SLA Speed
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-sky-300 bg-black/40 px-2 py-0.5 rounded-full border border-sky-500/40">
+                    <Zap className="w-3 h-3 text-sky-400" />
+                    Stream SLA
+                  </span>
+                </div>
+
+                {/* Big Stat & Headline */}
+                <div className="mt-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-headline font-black text-4xl sm:text-5xl text-[#38BDF8] tracking-tight">
+                      &lt; 1.2s
+                    </span>
+                    <span className="text-xs font-mono font-bold text-sky-300/80 uppercase">
+                      Latency
+                    </span>
+                  </div>
+                  <h3 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-1">
+                    Sub-Second Intelligence
+                  </h3>
+                  <p className="mt-1.5 text-xs text-slate-200 leading-relaxed font-medium">
+                    Enterprise-grade streaming responses with real-time sentiment scoring and automated commercial objection handling.
+                  </p>
+                </div>
+
+                {/* Live Real-Time Telemetry Feed */}
+                <div className="mt-3 bg-black/60 backdrop-blur-md rounded-xl p-3 border border-sky-500/30 space-y-1.5 text-[11px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 text-[10px] font-mono">Commercial Intent</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      98.6% MATCH
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 text-[10px] font-mono">Response First Token</span>
+                    <span className="text-sky-300 font-mono font-bold text-[10px]">
+                      0.84s Average
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-300 text-[10px] font-mono">High Availability</span>
+                    <span className="text-emerald-400 font-mono font-bold text-[10px]">
+                      99.98% Uptime SLA
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom KPIs & Isolation */}
+              <div className="relative z-10 pt-3 border-t border-sky-500/30 flex items-center justify-between">
+                <span className="font-mono text-[10px] text-sky-200 font-bold uppercase tracking-wider">
+                  Multi-Tenant Isolation
+                </span>
+                <span className="font-mono text-[10px] font-bold text-[#7DD3FC] bg-sky-950/70 px-2 py-0.5 rounded border border-sky-500/30">
+                  Global Edge
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* ======================================================================= */}
-          {/* CARD 02: VIBRANT ROYAL VIOLET / PURPLE (Rich deep saturated color)      */}
-          {/* ======================================================================= */}
-          <div
-            ref={(el) => (cardRefs.current[1] = el)}
-            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#270E43] via-[#35135C] to-[#1A0830] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_45px_rgba(150,61,255,0.40)] hover:shadow-[0_25px_55px_rgba(150,61,255,0.55)] border-2 border-[#963DFF] hover:border-[#B86BFF] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
-          >
-            {/* Ambient Purple Glow */}
-            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#963DFF]/35 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10">
-              {/* Top Pill Tag */}
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#963DFF]/30 text-[#D8B4FE] border border-[#963DFF]/50">
-                  Card 02 · Auto Assist
-                </span>
-                <span className="text-[11px] font-bold text-[#E9D5FF]">
-                  AI Assistant
-                </span>
-              </div>
-
-              {/* Heading & Subtitle in 100% Crisp High-Contrast White */}
-              <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-3 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                LESS MANUAL WORK
-              </h3>
-              <p className="text-xs text-[#EDE4FF] mt-1.5 leading-relaxed font-medium">
-                Reduce repetitive customer interactions and give your team more time for important work.
-              </p>
-            </div>
-
-            {/* Central Metric Ring */}
-            <div className="relative z-10 my-3 flex flex-col items-center justify-center">
-              <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full bg-[#1A0830] shadow-[0_8px_30px_rgba(150,61,255,0.40)] border-2 border-[#963DFF]/60 flex flex-col items-center justify-center transition-transform duration-300 group-hover:scale-105">
-                <span className="font-headline font-black text-2xl text-white tracking-tight">
-                  1.5K<span className="text-[#C28AFF]">+</span>
-                </span>
-                <span className="text-[9px] font-mono font-bold uppercase text-[#D8B4FE] mt-0.5">
-                  Automated
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom Label */}
-            <div className="relative z-10 pt-2.5 border-t border-[#963DFF]/40 flex items-center justify-between">
-              <span className="font-mono text-[10px] font-black tracking-widest text-[#D8B4FE] uppercase">
-                AUTOMATED QUERY RESOLUTION
-              </span>
-              <Sparkles className="w-4 h-4 text-[#C28AFF] shrink-0" />
-            </div>
+          {/* Interactive Inspection Hint */}
+          <div className="relative z-10 max-w-xl mx-auto text-center shrink-0">
+            <p className="font-mono text-[11px] text-slate-400 tracking-widest uppercase font-bold flex items-center justify-center gap-2">
+              <span>Hover over any card to inspect commercial parameters</span>
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping" />
+            </p>
           </div>
-
-          {/* ======================================================================= */}
-          {/* CARD 03: VIBRANT ELECTRIC AZURE BLUE (Rich deep saturated color)        */}
-          {/* ======================================================================= */}
-          <div
-            ref={(el) => (cardRefs.current[2] = el)}
-            className="featured-card group relative rounded-2xl bg-gradient-to-br from-[#082F49] via-[#0C4A6E] to-[#041D2E] p-5 sm:p-6 flex flex-col justify-between shadow-[0_20px_45px_rgba(2,132,199,0.35)] hover:shadow-[0_25px_55px_rgba(2,132,199,0.50)] border-2 border-[#0284C7] hover:border-[#38BDF8] overflow-hidden min-h-[350px] sm:min-h-[370px] will-change-transform transition-all duration-300 hover:-translate-y-1"
-          >
-            {/* Ambient Blue Glow */}
-            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#0284C7]/30 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10">
-              {/* Top Pill Tag */}
-              <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#0284C7]/25 text-[#7DD3FC] border border-[#0284C7]/50">
-                  Card 03 · Pipeline IQ
-                </span>
-                <span className="text-[11px] font-bold text-[#BAE6FD]">
-                  Enquiries
-                </span>
-              </div>
-
-              {/* Heading & Subtitle in 100% Crisp High-Contrast White */}
-              <h3 className="font-headline font-black text-xl sm:text-2xl text-white tracking-tight mt-3 uppercase drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                LEAD VISIBILITY
-              </h3>
-              <p className="text-xs text-[#E0F2FE] mt-1.5 leading-relaxed font-medium">
-                See customer conversations and enquiries generated through your website assistant.
-              </p>
-            </div>
-
-            {/* Pipeline Feed Box */}
-            <div className="relative z-10 my-3 py-2 bg-[#021827]/85 backdrop-blur-md rounded-xl p-3 border border-[#0284C7]/40 space-y-2 shadow-inner text-[11px]">
-              <div className="flex items-center justify-between border-b border-[#0284C7]/30 pb-1.5">
-                <span className="text-white font-bold text-[10px]">Commercial Rollout</span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  HOT LEAD
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white font-bold text-[10px]">Executive Consultation</span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                  QUALIFIED
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom Label */}
-            <div className="relative z-10 pt-2.5 border-t border-[#0284C7]/30 flex items-center justify-between">
-              <span className="font-mono text-[10px] font-black tracking-widest text-[#7DD3FC] uppercase">
-                CONVERSATIONS & ENQUIRIES
-              </span>
-              <TrendingUp className="w-4 h-4 text-[#38BDF8] shrink-0" />
-            </div>
-          </div>
-        </div>
-
-        {/* Phase 5 Interactive Hover Hint */}
-        <div className="relative z-10 max-w-xl mx-auto text-center shrink-0">
-          <p className="font-mono text-[11px] text-[#4B5563] tracking-widest uppercase font-bold flex items-center justify-center gap-2">
-            <span>Hover over any card to inspect commercial parameters</span>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-600 animate-ping" />
-          </p>
         </div>
       </div>
     </section>
