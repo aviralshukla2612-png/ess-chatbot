@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Zap,
   Bot,
-  Clock,
   ArrowRight,
   MessageSquare,
 } from "lucide-react";
@@ -19,757 +18,448 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// Explosive vector generator for 3D headline typography shatter
-function computeShatterVectors(lineWords, isTopLine) {
-  let charCount = 0;
-  const list = [];
-  lineWords.forEach((word, wIdx) => {
-    word.split("").forEach((char) => {
-      list.push({ char, wIdx, overallIdx: charCount++ });
-    });
-  });
-
-  const total = list.length;
-  const mid = (total - 1) / 2;
-
-  return list.map(({ char, wIdx, overallIdx }, i) => {
-    const relX = (i - mid) / (mid || 1); // -1.0 (far left) to +1.0 (far right)
-    const signX = relX >= 0 ? 1 : -1;
-    const seed = ((i * 19 + (isTopLine ? 31 : 53)) % 17) / 17;
-    const seed2 = ((i * 23 + (isTopLine ? 13 : 47)) % 13) / 13;
-
-    // Physical directional blast: characters fly outward with heavy 3D rotation and depth
-    const x = Math.round(signX * (380 + Math.abs(relX) * 480) + (seed - 0.5) * 180);
-    const y = Math.round(
-      isTopLine
-        ? -260 - Math.abs(relX) * 220 - seed * 260
-        : 220 + Math.abs(relX) * 180 + seed2 * 240
-    );
-    const z = Math.round((seed - 0.5) * 600); // 3D depth towards/away from camera
-    const rotateX = Math.round((seed - 0.5) * 280);
-    const rotateY = Math.round(signX * (60 + seed * 140));
-    const rotateZ = Math.round(signX * (45 + seed2 * 120));
-    const scale = Number((0.6 + seed * 0.9).toFixed(2));
-
-    return {
-      char,
-      wIdx,
-      overallIdx,
-      x,
-      y,
-      z,
-      rotateX,
-      rotateY,
-      rotateZ,
-      scale,
-    };
-  });
+// Trionn's signature cross separator
+function TrionnCross() {
+  return (
+    <svg
+      width="36"
+      height="36"
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="mx-6 sm:mx-10 lg:mx-14 w-6 sm:w-8 h-6 sm:h-8 inline-block opacity-60"
+    >
+      <line x1="20" y1="0" x2="20" y2="40" stroke="currentColor" strokeWidth="2.5" />
+      <line x1="40" y1="20" x2="0" y2="20" stroke="currentColor" strokeWidth="2.5" />
+    </svg>
+  );
 }
 
-const HEADLINE_LINE1 = ["EVERY", "CONVERSATION"];
-const HEADLINE_LINE2 = ["CREATES", "REVENUE."];
-const SLATS_COUNT = 6;
+const STRIPES_COUNT = 5;
 
 export default function BenefitsSection({ onOpenTrial }) {
-  const sectionRef = useRef(null);
-  const stageRef = useRef(null);
-  const darkSceneRef = useRef(null);
-  const lightSceneRef = useRef(null);
-  const bgVisualRef = useRef(null);
-  const slatRefs = useRef([]);
+  const containerRef = useRef(null);
+  const visionSectionRef = useRef(null);
+  const stripeRefs = useRef([]);
+  const marqueeTrackRef = useRef(null);
+  const bg3DRef = useRef(null);
 
-  // Headline character refs
-  const l1CharRefs = useRef([]);
-  const l2CharRefs = useRef([]);
-
-  // Three card refs
-  const cardsWrapperRef = useRef(null);
-  const card1Ref = useRef(null);
-  const card2Ref = useRef(null);
-  const card3Ref = useRef(null);
-
-  // Compute character vector physics
-  const l1Vectors = useMemo(() => computeShatterVectors(HEADLINE_LINE1, true), []);
-  const l2Vectors = useMemo(() => computeShatterVectors(HEADLINE_LINE2, false), []);
+  // Key facts section and cards
+  const keyfactsRef = useRef(null);
+  const cardRefs = useRef([]);
 
   useEffect(() => {
-    const section = sectionRef.current;
-    const stage = stageRef.current;
-    if (!section || !stage) return;
+    const container = containerRef.current;
+    const visionSec = visionSectionRef.current;
+    const keyfactsSec = keyfactsRef.current;
+    if (!container || !visionSec || !keyfactsSec) return;
 
     const ctx = gsap.context(() => {
-      // Respect user's motion preferences
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const isMobile = window.innerWidth < 1024;
+      const isDesktop = window.innerWidth >= 768;
 
       if (prefersReducedMotion) {
-        // Simplified non-scrolling or static state
-        gsap.set(darkSceneRef.current, { display: "none" });
-        gsap.set(lightSceneRef.current, { opacity: 1 });
-        [card1Ref.current, card2Ref.current, card3Ref.current].forEach((card) => {
-          if (card) gsap.set(card, { opacity: 1, x: 0, y: 0, scale: 1 });
+        stripeRefs.current.forEach((el) => {
+          if (el) gsap.set(el, { scaleY: 1 });
+        });
+        cardRefs.current.forEach((el) => {
+          if (el) gsap.set(el, { rotateX: 0, autoAlpha: 1 });
         });
         return;
       }
 
-      // Initial States
-      gsap.set(darkSceneRef.current, { opacity: 1, visibility: "visible" });
-      gsap.set(lightSceneRef.current, { opacity: 1 }); // Visible through slats
-      if (bgVisualRef.current) {
-        gsap.set(bgVisualRef.current, { scale: 1, rotation: 0, opacity: 0.85 });
-      }
-
-      // Characters start intact
-      l1CharRefs.current.forEach((el) => {
-        if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1, opacity: 1 });
-      });
-      l2CharRefs.current.forEach((el) => {
-        if (el) gsap.set(el, { x: 0, y: 0, z: 0, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1, opacity: 1 });
-      });
-
-      // Horizontal shutter slats start flush across the viewport
-      slatRefs.current.forEach((slat) => {
-        if (slat) gsap.set(slat, { xPercent: 0, rotationZ: 0, skewX: 0 });
-      });
-
-      // Cards initial state (Phase A hidden/perspective)
-      if (card1Ref.current) {
-        gsap.set(card1Ref.current, {
-          x: isMobile ? 0 : -220,
-          y: isMobile ? 40 : 0,
-          z: isMobile ? 0 : -140,
-          rotationY: isMobile ? 0 : 28,
-          rotationZ: isMobile ? 0 : -3,
-          scale: 0.88,
-          opacity: 0,
-          transformPerspective: 1200,
+      // 1. Continuous Marquee Velocity
+      if (marqueeTrackRef.current) {
+        gsap.to(marqueeTrackRef.current, {
+          xPercent: -50,
+          repeat: -1,
+          duration: 22,
+          ease: "none",
         });
       }
-      if (card2Ref.current) {
-        gsap.set(card2Ref.current, {
-          x: 0,
-          y: isMobile ? 40 : 0,
-          z: isMobile ? 0 : -180,
-          scale: 0.82,
-          opacity: 0,
-          transformPerspective: 1200,
-        });
-      }
-      if (card3Ref.current) {
-        gsap.set(card3Ref.current, {
-          x: isMobile ? 0 : 220,
-          y: isMobile ? 40 : 0,
-          z: isMobile ? 0 : -140,
-          rotationY: isMobile ? 0 : -28,
-          rotationZ: isMobile ? 0 : 3,
-          scale: 0.88,
-          opacity: 0,
-          transformPerspective: 1200,
-        });
-      }
+
+      // 2. Initial Setup: Stripe Items start at scaleY(0) with transformOrigin: bottom
+      stripeRefs.current.forEach((stripe) => {
+        if (stripe) {
+          gsap.set(stripe, {
+            scaleY: 0,
+            transformOrigin: "bottom",
+            willChange: "transform",
+          });
+        }
+      });
+
+      // 3. Initial Setup: Cards start folded up against ceiling (rotateX: -92, transformOrigin: center top)
+      cardRefs.current.forEach((card) => {
+        if (card) {
+          gsap.set(card, {
+            autoAlpha: 0,
+            rotateX: isDesktop ? -92 : 0,
+            y: isDesktop ? 0 : 40,
+            transformOrigin: "center top",
+            force3D: true,
+          });
+        }
+      });
 
       // ============================================================
-      // MASTER COORDINATED GSAP SCROLLTRIGGER TIMELINE
-      // Progression:
-      //  0% - 15%: Dark hero and oversized headline stable
-      // 15% - 35%: Headline fragments begin moving & shutter effect starts
-      // 35% - 55%: Dark scene breaks apart and light section is revealed
-      // 55% - 75%: Phase A - Three cards emerge with depth and staggered movement
-      // 75% - 90%: Phase B - Cards settle into balanced three-column composition
-      // 90% - 100%: Phase C - Final composition remains visible and rock-solid
+      // PHASE 1: PINNED VISION STRIPES TIMELINE (Exact Trionn Math)
       // ============================================================
-      const tl = gsap.timeline({
+      const visionTl = gsap.timeline({
         scrollTrigger: {
-          trigger: section,
+          trigger: visionSec,
           start: "top top",
-          end: "+=3200",
-          pin: stage,
-          pinSpacing: true,
-          scrub: 1.1,
+          end: "+=180%",
+          pin: true,
           anticipatePin: 1,
+          scrub: 0.6,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+        },
+        defaults: { ease: "none" },
+      });
+
+      // 3D background element reacts subtly to scroll
+      if (bg3DRef.current) {
+        visionTl.to(
+          bg3DRef.current,
+          {
+            rotationZ: 45,
+            scale: 1.15,
+            opacity: 0.4,
+            duration: 0.6,
+          },
+          0
+        );
+      }
+
+      // Trionn's exact stripe animation formula:
+      // Strip items expand from bottom upward, creating the horizontal banding effect
+      visionTl.addLabel("stripes_start", 0.1);
+      for (let i = 0; i < STRIPES_COUNT; i++) {
+        const s = (0.3 * (STRIPES_COUNT - 1 - i)) / (STRIPES_COUNT - 1);
+        const a = s + 0.35;
+        const el = stripeRefs.current[i];
+        if (el) {
+          visionTl.to(
+            el,
+            {
+              scaleY: 1,
+              duration: a - s,
+              ease: "none",
+            },
+            `stripes_start+=${s}`
+          );
+        }
+      }
+
+      // Slight hold at the end of stripes before scrolling into key facts
+      visionTl.to({}, { duration: 0.1 });
+
+      // ============================================================
+      // PHASE 2: KEY FACTS 3-CARDS FLIP DOWN FROM UP (Exact Trionn Math)
+      // Cards start at rotateX: -92deg (folded at top) and swing DOWN into place!
+      // ============================================================
+      const cardsTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: keyfactsSec,
+          start: isDesktop ? "top 70%" : "top 80%",
+          end: isDesktop ? "top 10%" : "top 20%",
+          scrub: 1.4,
           invalidateOnRefresh: true,
         },
       });
 
-      // --- 1. SUBTLE 3D VISUAL ELEMENT DYNAMICS (0.05 -> 0.40) ---
-      if (bgVisualRef.current) {
-        tl.to(
-          bgVisualRef.current,
-          {
-            scale: 1.6,
-            rotation: 120,
-            opacity: 0,
-            duration: 0.35,
-            ease: "power2.inOut",
+      if (isDesktop) {
+        cardsTl.to(cardRefs.current, {
+          rotateX: 0,
+          autoAlpha: 1,
+          stagger: {
+            each: 0.35,
+            from: "start",
           },
-          0.10
-        );
+          ease: "power2.out",
+          force3D: true,
+          duration: 2.2,
+        });
+      } else {
+        cardsTl.to(cardRefs.current, {
+          y: 0,
+          autoAlpha: 1,
+          stagger: 0.25,
+          ease: "power2.out",
+          duration: 1.5,
+        });
       }
-
-      // --- 2. HEADLINE CHARACTER SHATTER ANIMATION (0.15 -> 0.45) ---
-      const multX = isMobile ? 0.35 : 1;
-      const multY = isMobile ? 0.35 : 1;
-
-      l1Vectors.forEach((v, idx) => {
-        const el = l1CharRefs.current[idx];
-        if (!el) return;
-        const delayOffset = 0.15 + (idx / l1Vectors.length) * 0.08;
-        tl.to(
-          el,
-          {
-            x: v.x * multX,
-            y: v.y * multY,
-            z: v.z,
-            rotateX: v.rotateX,
-            rotateY: v.rotateY,
-            rotateZ: v.rotateZ,
-            scale: v.scale,
-            opacity: 0,
-            filter: "blur(6px)",
-            duration: 0.28,
-            ease: "power3.in",
-          },
-          delayOffset
-        );
-      });
-
-      l2Vectors.forEach((v, idx) => {
-        const el = l2CharRefs.current[idx];
-        if (!el) return;
-        const delayOffset = 0.17 + (idx / l2Vectors.length) * 0.08;
-        tl.to(
-          el,
-          {
-            x: v.x * multX,
-            y: v.y * multY,
-            z: v.z,
-            rotateX: v.rotateX,
-            rotateY: v.rotateY,
-            rotateZ: v.rotateZ,
-            scale: v.scale,
-            opacity: 0,
-            filter: "blur(6px)",
-            duration: 0.28,
-            ease: "power3.in",
-          },
-          delayOffset
-        );
-      });
-
-      // --- 3. HORIZONTAL SHUTTER SLATS BREAKAWAY (0.18 -> 0.52) ---
-      slatRefs.current.forEach((slat, idx) => {
-        if (!slat) return;
-        const isEven = idx % 2 === 0;
-        const targetXPercent = isEven ? -112 : 112;
-        const targetRotate = isEven ? -2.5 : 2.5;
-        const targetSkew = isEven ? -3 : 3;
-        const slatStart = 0.18 + idx * 0.038;
-
-        tl.to(
-          slat,
-          {
-            xPercent: targetXPercent,
-            rotationZ: targetRotate,
-            skewX: targetSkew,
-            duration: 0.28,
-            ease: "power2.inOut",
-          },
-          slatStart
-        );
-      });
-
-      // Dark Scene Root Container fades out completely as slats clear
-      tl.to(
-        darkSceneRef.current,
-        {
-          opacity: 0,
-          pointerEvents: "none",
-          duration: 0.10,
-          ease: "power1.out",
-        },
-        0.50
-      );
-
-      // --- 4. PHASE A: THREE-CARD EMERGENCE (0.55 -> 0.75) ---
-      // Left Card (Card 1) sweeps in from left with 3D perspective
-      if (card1Ref.current) {
-        tl.to(
-          card1Ref.current,
-          {
-            x: isMobile ? 0 : -50,
-            y: 0,
-            z: isMobile ? 0 : -40,
-            rotationY: isMobile ? 0 : 12,
-            rotationZ: isMobile ? 0 : -1.5,
-            scale: isMobile ? 1 : 0.96,
-            opacity: 1,
-            duration: 0.20,
-            ease: "power2.out",
-          },
-          0.55
-        );
-      }
-
-      // Middle Card (Card 2 - Hero Light) emerges with scale and depth
-      if (card2Ref.current) {
-        tl.to(
-          card2Ref.current,
-          {
-            y: 0,
-            z: isMobile ? 0 : 30,
-            scale: isMobile ? 1 : 1.05,
-            opacity: 1,
-            duration: 0.20,
-            ease: "power2.out",
-          },
-          0.58
-        );
-      }
-
-      // Right Card (Card 3) sweeps in from right with 3D perspective
-      if (card3Ref.current) {
-        tl.to(
-          card3Ref.current,
-          {
-            x: isMobile ? 0 : 50,
-            y: 0,
-            z: isMobile ? 0 : -40,
-            rotationY: isMobile ? 0 : -12,
-            rotationZ: isMobile ? 0 : 1.5,
-            scale: isMobile ? 1 : 0.96,
-            opacity: 1,
-            duration: 0.20,
-            ease: "power2.out",
-          },
-          0.61
-        );
-      }
-
-      // --- 5. PHASE B: SETTLING INTO BALANCED 3-COLUMN COMPOSITION (0.75 -> 0.90) ---
-      if (card1Ref.current) {
-        tl.to(
-          card1Ref.current,
-          {
-            x: 0,
-            y: 0,
-            z: 0,
-            rotationY: 0,
-            rotationZ: 0,
-            scale: 1,
-            duration: 0.15,
-            ease: "power2.out",
-          },
-          0.75
-        );
-      }
-
-      if (card2Ref.current) {
-        tl.to(
-          card2Ref.current,
-          {
-            z: 0,
-            scale: 1,
-            duration: 0.15,
-            ease: "power2.out",
-          },
-          0.76
-        );
-      }
-
-      if (card3Ref.current) {
-        tl.to(
-          card3Ref.current,
-          {
-            x: 0,
-            y: 0,
-            z: 0,
-            rotationY: 0,
-            rotationZ: 0,
-            scale: 1,
-            duration: 0.15,
-            ease: "power2.out",
-          },
-          0.77
-        );
-      }
-
-      // --- 6. PHASE C: COMPOSITION STABILIZES SOLIDLY THROUGH 100% (0.90 -> 1.00) ---
-      tl.to(
-        {},
-        {
-          duration: 0.10,
-        },
-        0.90
-      );
-    }, sectionRef);
+    }, containerRef);
 
     return () => {
       ctx.revert();
     };
-  }, [l1Vectors, l2Vectors]);
+  }, []);
 
   return (
-    <section
-      id="benefits"
-      ref={sectionRef}
-      className="relative w-full bg-[#050507] overflow-hidden"
-    >
-      {/* PINNED STAGE VIEWPORT */}
-      <div
-        ref={stageRef}
-        className="relative w-full h-screen overflow-hidden flex items-center justify-center"
+    <div id="benefits" ref={containerRef} className="relative w-full bg-[#050507]">
+      {/* ========================================================================= */}
+      {/* 1. VISION SECTION (Dark hero + 3D emblem + mix-blend marquee + 5 stripes)  */}
+      {/* ========================================================================= */}
+      <section
+        ref={visionSectionRef}
+        id="vision-section"
+        className="relative w-full h-screen min-h-[640px] overflow-hidden bg-[#050507]"
       >
-        {/* ========================================================= */}
-        {/* LAYER 0 (UNDERNEATH): REVEALED CLEAN LIGHT SECTION        */}
-        {/* ========================================================= */}
+        {/* Subtle 3D Geometric Emblem in Background */}
         <div
-          ref={lightSceneRef}
-          className="absolute inset-0 w-full h-full bg-[#F4F4F6] text-[#0B0B10] flex flex-col justify-between py-8 sm:py-12 px-4 sm:px-8 z-0 overflow-hidden select-none"
+          ref={bg3DRef}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] sm:w-[520px] sm:h-[520px] pointer-events-none z-10 will-change-transform"
+          style={{ perspective: "1000px" }}
         >
-          {/* Subtle Ambient Background Polish */}
-          <div className="absolute top-0 inset-x-0 h-48 bg-gradient-to-b from-black/[0.04] to-transparent pointer-events-none" />
-          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-purple-200/35 rounded-full blur-[140px] pointer-events-none" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#963DFF]/20 via-purple-900/10 to-[#55A9FF]/15 blur-[100px]" />
+          <div
+            className="absolute inset-6 rounded-full border border-white/10 border-dashed"
+            style={{ transform: "rotateX(55deg) rotateY(15deg)" }}
+          />
+          <div
+            className="absolute inset-20 rounded-full border border-[#963DFF]/30"
+            style={{ transform: "rotateX(-45deg) rotateY(-20deg)" }}
+          />
+        </div>
 
-          {/* Section Heading & Subtext */}
-          <div className="relative z-10 max-w-4xl mx-auto text-center pt-2 sm:pt-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-black/[0.04] border border-black/[0.08] text-[#963DFF] text-[11px] font-mono font-bold uppercase tracking-wider mb-2.5">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Key Capabilities</span>
+        {/* Text Content Layer with mix-blend-difference (Slices dynamically over stripes!) */}
+        <div
+          className="relative z-40 w-full h-full flex flex-col justify-between py-12 sm:py-16 px-6 sm:px-12 text-white mix-blend-difference pointer-events-none select-none"
+        >
+          {/* Top Editorial Eyebrow */}
+          <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
+            <span className="font-mono text-xs sm:text-sm font-bold uppercase tracking-widest">
+              Focused vision. <br className="sm:hidden" />Measured execution.
+            </span>
+            <span className="font-mono text-xs font-bold uppercase tracking-wider hidden sm:block">
+              04 / Autonomous Architecture
+            </span>
+          </div>
+
+          {/* Central Oversized Marquee Typography (INNOVATE ✦ IMPACT ✦ INSPIRE) */}
+          <div className="relative overflow-hidden w-full my-auto py-8">
+            <div
+              ref={marqueeTrackRef}
+              className="flex whitespace-nowrap will-change-transform items-center"
+              style={{ width: "fit-content" }}
+            >
+              {[1, 2].map((loopIdx) => (
+                <div
+                  key={loopIdx}
+                  className="flex items-center font-headline font-black text-6xl sm:text-8xl md:text-9xl tracking-tighter uppercase shrink-0"
+                >
+                  <span className="px-2">INNOVATE</span>
+                  <TrionnCross />
+                  <span className="px-2">IMPACT</span>
+                  <TrionnCross />
+                  <span className="px-2">INSPIRE</span>
+                  <TrionnCross />
+                  <span className="px-2">CONVERT</span>
+                  <TrionnCross />
+                </div>
+              ))}
             </div>
+          </div>
 
-            <h2 className="font-headline tracking-normal text-[#0B0B10] uppercase text-3xl sm:text-5xl lg:text-6xl font-black leading-tight">
-              Every Conversation Creates an Opportunity.
+          {/* Bottom Subtitle Line */}
+          <div className="w-full max-w-7xl mx-auto flex items-center justify-between text-xs sm:text-sm font-medium">
+            <span>✦ From conversation to conversion.</span>
+            <span className="hidden sm:inline-block font-mono text-xs">
+              Scroll to reveal capabilities ↓
+            </span>
+          </div>
+        </div>
+
+        {/* 5 HORIZONTAL STRIPES (Exact Trionn Architecture) */}
+        <div className="stripes-container absolute inset-0 pointer-events-none flex flex-col w-full h-full z-30">
+          {Array.from({ length: STRIPES_COUNT }).map((_, idx) => (
+            <div
+              key={idx}
+              ref={(el) => (stripeRefs.current[idx] = el)}
+              className="stripe-item flex-1 w-full h-full"
+              style={{
+                backgroundColor: "#D2D2D2",
+                willChange: "transform",
+                transform: "scaleY(0)",
+                transformOrigin: "bottom",
+                marginTop: idx > 0 ? "-1px" : undefined,
+                paddingBottom: "1px",
+              }}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 2. KEY FACTS SECTION (Exact Trionn Layout & 3-Card Drop Down Animation)   */}
+      {/* ========================================================================= */}
+      <section
+        ref={keyfactsRef}
+        id="keyfacts-section"
+        className="relative z-20 w-full min-h-screen py-20 lg:py-32 px-4 sm:px-8 bg-[linear-gradient(180deg,#D2D2D2_0%,#E4E4E8_40%,#ECECEF_100%)] text-[#0B0B10] overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto w-full">
+          {/* Centered Title Block (Exact Trionn Hierarchy) */}
+          <div className="title-block flex flex-col items-center mb-12 lg:mb-20 text-center">
+            <h2 className="font-headline text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#0B0B10] uppercase">
+              Key facts
             </h2>
-
-            <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-[#52525C] max-w-2xl mx-auto leading-relaxed font-normal">
-              Your website should be ready to answer, assist, and capture interest — even when your team is unavailable.
+            <p className="mt-3 text-base sm:text-lg text-[#0B0B10]/75 max-w-lg leading-relaxed">
+              A snapshot of our experience and impact.
             </p>
           </div>
 
-          {/* Three-Card Composition (Trionn-Style: Dark - Light Center - Dark) */}
+          {/* Key Card List with 3D Perspective (Exact Trionn 3-Card Structure) */}
           <div
-            ref={cardsWrapperRef}
-            className="relative z-10 max-w-7xl mx-auto w-full my-auto px-2 sm:px-4"
+            className="key-card-list grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch w-full"
             style={{ perspective: "1400px" }}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-7 items-stretch">
-              {/* ================================================= */}
-              {/* CARD 1 — 24/7 AVAILABILITY (DARK CARD)             */}
-              {/* ================================================= */}
-              <div
-                ref={card1Ref}
-                className="group relative rounded-3xl bg-[#0B0B10] border border-white/[0.08] p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.18)] hover:-translate-y-1.5 transition-all duration-300 min-h-[380px] lg:h-[460px] xl:h-[475px] overflow-hidden"
-              >
-                {/* Subtle Ambient Glow */}
-                <div className="absolute -top-20 -left-20 w-44 h-44 bg-[#55A9FF]/15 rounded-full blur-3xl pointer-events-none" />
+            {/* ======================================================= */}
+            {/* CARD 1 (LEFT — FEATURED & AWARDS / 24/7 AVAILABILITY)   */}
+            {/* ======================================================= */}
+            <div
+              ref={(el) => (cardRefs.current[0] = el)}
+              className="featured-card group relative rounded-2xl bg-black text-white p-7 lg:p-9 flex flex-col justify-between shadow-2xl overflow-hidden min-h-[460px] lg:h-[500px] will-change-transform"
+            >
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+                  Featured & Awards
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live 24/7
+                </span>
+              </div>
 
-                <div className="relative z-10">
-                  {/* Category Pill */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#55A9FF]">
-                      01 / ALWAYS ON
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Live Response
-                    </span>
-                  </div>
-
-                  {/* Large Heading & Title */}
-                  <div className="mt-3">
-                    <div className="font-headline font-black text-4xl sm:text-5xl text-white tracking-tight">
-                      24/7
-                    </div>
-                    <h3 className="font-bold text-lg sm:text-xl text-white/95 mt-1">
-                      24/7 Availability
-                    </h3>
-                    <p className="text-xs text-[#9898A6] mt-1.5 leading-relaxed">
-                      Your business information stays accessible, even outside working hours.
-                    </p>
-                  </div>
+              {/* Chat / Assistant UI Mockup */}
+              <div className="relative z-10 my-auto py-3 bg-[#121216] rounded-xl p-4 border border-white/[0.08] space-y-2.5 shadow-inner">
+                <div className="flex items-center justify-between text-[10px] text-white/50 border-b border-white/[0.06] pb-1.5">
+                  <span className="flex items-center gap-1">
+                    <Bot className="w-3 h-3 text-[#55A9FF]" />
+                    Nexus Intelligence
+                  </span>
+                  <span className="font-mono text-[9px]">11:42 PM</span>
                 </div>
-
-                {/* Premium Chat Interface Mockup */}
-                <div className="relative z-10 mt-4 bg-[#12121A] rounded-2xl p-3.5 border border-white/[0.06] space-y-2.5 shadow-inner">
-                  <div className="flex items-center justify-between text-[10px] text-[#9898A6] border-b border-white/[0.05] pb-1.5">
-                    <span className="flex items-center gap-1">
-                      <Bot className="w-3 h-3 text-[#55A9FF]" />
-                      Emperor Assistant
-                    </span>
-                    <span className="font-mono text-[9px] text-[#9898A6]/70">11:42 PM</span>
-                  </div>
-
-                  {/* Visitor Query Bubble */}
-                  <div className="bg-white/[0.08] text-white/90 rounded-xl rounded-tr-xs p-2.5 text-[11px] leading-snug max-w-[90%] ml-auto shadow-sm">
-                    Can I schedule an executive consultation for tomorrow at 3 PM?
-                  </div>
-
-                  {/* Assistant Response Bubble */}
-                  <div className="bg-gradient-to-r from-[#963DFF]/25 to-[#55A9FF]/15 border border-[#963DFF]/30 text-white rounded-xl rounded-tl-xs p-2.5 text-[11px] leading-snug max-w-[94%] shadow-sm">
-                    <p>
-                      Absolutely! I&apos;ve reserved 3:00 PM tomorrow with our senior specialist. A confirmation is on its way.
-                    </p>
-                    <div className="mt-1 flex items-center gap-1 text-[9px] text-[#C28AFF] font-medium">
-                      <ShieldCheck className="w-2.5 h-2.5" />
-                      <span>Grounded Vector Retrieval</span>
-                    </div>
-                  </div>
+                <div className="bg-white/[0.08] text-white/90 rounded-lg p-2.5 text-xs leading-snug max-w-[90%] ml-auto">
+                  Can I schedule an executive consultation for tomorrow?
+                </div>
+                <div className="bg-[#963DFF]/20 border border-[#963DFF]/40 text-white rounded-lg p-2.5 text-xs leading-snug max-w-[94%]">
+                  Absolutely! I&apos;ve reserved 3:00 PM tomorrow with our senior specialist.
                 </div>
               </div>
 
-              {/* ================================================= */}
-              {/* CARD 2 — LESS MANUAL WORK (LIGHT CENTRAL CARD)     */}
-              {/* ================================================= */}
-              <div
-                ref={card2Ref}
-                className="group relative rounded-3xl bg-white border-2 border-black/[0.08] p-6 sm:p-7 flex flex-col justify-between shadow-[0_25px_65px_rgba(0,0,0,0.12)] hover:-translate-y-1.5 transition-all duration-300 min-h-[380px] lg:h-[460px] xl:h-[475px] overflow-hidden"
-              >
-                {/* Subtle Ambient Radial Highlight */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-100/60 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10 text-center">
-                  {/* Category Pill */}
-                  <span className="inline-block text-[10px] font-mono font-bold uppercase tracking-wider text-[#963DFF] px-2.5 py-0.5 rounded-full bg-[#963DFF]/10">
-                    02 / AUTOMATION
-                  </span>
-
-                  {/* Title & Description */}
-                  <h3 className="font-headline font-black text-2xl sm:text-3xl text-[#0B0B10] tracking-tight mt-2.5">
-                    Less Manual Work
-                  </h3>
-                  <p className="text-xs text-[#52525C] mt-1.5 leading-relaxed max-w-xs mx-auto">
-                    Handle repetitive customer questions without answering every query manually.
+              {/* Bottom Row (GSAP + Description + Huge 50+ / 24/7 Number) */}
+              <div className="relative z-10 pt-4 border-t border-white/10 flex items-end justify-between gap-4">
+                <div className="max-w-[70%]">
+                  <div className="font-headline font-black text-lg text-white tracking-wide">
+                    GSAP Verified
+                  </div>
+                  <p className="text-xs text-white/70 mt-1 leading-snug">
+                    Featured on top design platforms worldwide. 24/7 continuous edge retrieval.
                   </p>
                 </div>
+                <span className="font-headline font-black text-4xl sm:text-5xl text-white tracking-tight shrink-0">
+                  50<span className="text-2xl text-[#C28AFF]">+</span>
+                </span>
+              </div>
+            </div>
 
-                {/* Central Visual: Large Typographic AI & Orbital Conversational Chips */}
-                <div className="relative z-10 my-auto py-2 flex flex-col items-center justify-center">
-                  <div className="relative w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center">
-                    {/* Pulsing Orbital Halo */}
-                    <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#963DFF]/30 bg-gradient-to-tr from-[#963DFF]/15 via-purple-50 to-[#55A9FF]/15 animate-spin-slow" />
+            {/* ======================================================= */}
+            {/* CARD 2 (CENTER — PROJECTS COMPLETED / LESS MANUAL WORK) */}
+            {/* ======================================================= */}
+            <div
+              ref={(el) => (cardRefs.current[1] = el)}
+              className="project-card group relative rounded-2xl bg-[#ECECEC] text-[#0B0B10] p-7 lg:p-9 flex flex-col justify-between shadow-xl overflow-hidden min-h-[460px] lg:h-[500px] border border-black/5 will-change-transform"
+            >
+              <div className="relative z-10 text-center">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#0B0B10]/60">
+                  Projects Completed
+                </span>
+              </div>
 
-                    {/* Core White Circular Disc */}
-                    <div className="relative z-10 w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-[0_10px_25px_rgba(0,0,0,0.08)] border border-black/[0.06] flex items-center justify-center">
-                      <span className="font-headline font-black text-5xl sm:text-6xl text-[#0B0B10] tracking-tighter select-none">
-                        AI
-                      </span>
-                    </div>
-
-                    {/* Integrated Conversational Chips */}
-                    <div className="absolute -top-1 -right-2 bg-black text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                      <Check className="w-2.5 h-2.5 text-[#D6FD84]" />
-                      <span>FAQs Handled</span>
-                    </div>
-
-                    <div className="absolute -bottom-1 -left-2 bg-white border border-black/10 text-[#0B0B10] text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5 text-[#963DFF]" />
-                      <span>Zero Queue</span>
-                    </div>
-                  </div>
+              {/* Central White Circular Disc with 1.5K+ (Exact Trionn Iconography) */}
+              <div className="relative z-10 my-auto py-2 flex flex-col items-center justify-center">
+                <div className="w-40 h-40 rounded-full bg-white shadow-[0_12px_30px_rgba(0,0,0,0.08)] flex items-center justify-center border border-black/[0.04]">
+                  <span className="font-headline font-black text-5xl sm:text-6xl text-[#0B0B10] tracking-tight">
+                    1.5K<span className="text-3xl text-[#963DFF]">+</span>
+                  </span>
                 </div>
+                <div className="mt-3 px-3 py-1 rounded-full bg-black/5 text-[11px] font-bold text-[#0B0B10]/80">
+                  Less Manual Work
+                </div>
+              </div>
 
-                {/* Bottom Status Pill */}
-                <div className="relative z-10 pt-2 border-t border-black/[0.06] text-center">
-                  <span className="text-[11px] font-medium text-[#71717A]">
-                    Autonomous query resolution & smart escalation
+              {/* Bottom Copy (Exact Trionn Proportion) */}
+              <div className="relative z-10 pt-4 border-t border-black/10 text-center">
+                <p className="text-xs sm:text-sm text-[#0B0B10]/80 font-medium leading-relaxed max-w-xs mx-auto">
+                  90% of our clients seek our services for a second project. Automated query resolution.
+                </p>
+              </div>
+            </div>
+
+            {/* ======================================================= */}
+            {/* CARD 3 (RIGHT — OUR TEAM MEMBERS / ENQUIRY VISIBILITY)  */}
+            {/* ======================================================= */}
+            <div
+              ref={(el) => (cardRefs.current[2] = el)}
+              className="team-card group relative rounded-2xl bg-[#23252A] text-white p-7 lg:p-9 flex flex-col justify-between shadow-2xl overflow-hidden min-h-[460px] lg:h-[500px] will-change-transform"
+            >
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-white/60">
+                  Our Team Members
+                </span>
+                <span className="text-[10px] font-mono text-[#55A9FF]">
+                  CRM Pipeline
+                </span>
+              </div>
+
+              {/* Business Dashboard Visual */}
+              <div className="relative z-10 my-auto py-3 bg-[#18191E] rounded-xl p-4 border border-white/[0.06] space-y-2 shadow-inner">
+                <div className="flex items-center justify-between text-[10px] text-white/50 border-b border-white/[0.06] pb-1.5">
+                  <span className="font-semibold text-white/90">Lead Visibility Overview</span>
+                  <span className="text-emerald-400">98% Intent</span>
+                </div>
+                <div className="bg-white/[0.04] rounded-lg p-2 flex items-center justify-between border border-white/[0.04]">
+                  <div>
+                    <div className="text-xs font-bold text-white">Commercial Rollout</div>
+                    <div className="text-[10px] text-white/60">Enterprise Tier</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase">
+                    Hot Lead
+                  </span>
+                </div>
+                <div className="bg-white/[0.04] rounded-lg p-2 flex items-center justify-between border border-white/[0.04]">
+                  <div>
+                    <div className="text-xs font-bold text-white">Elena Rostova</div>
+                    <div className="text-[10px] text-white/60">Consultation Scheduled</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-[#963DFF]/25 text-[#C28AFF] text-[9px] font-bold uppercase">
+                    Qualified
                   </span>
                 </div>
               </div>
 
-              {/* ================================================= */}
-              {/* CARD 3 — ENQUIRY VISIBILITY (DARK CARD)            */}
-              {/* ================================================= */}
-              <div
-                ref={card3Ref}
-                className="group relative rounded-3xl bg-[#0B0B10] border border-white/[0.08] p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.18)] hover:-translate-y-1.5 transition-all duration-300 min-h-[380px] lg:h-[460px] xl:h-[475px] overflow-hidden"
-              >
-                {/* Subtle Ambient Glow */}
-                <div className="absolute -bottom-20 -right-20 w-44 h-44 bg-[#963DFF]/15 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10">
-                  {/* Category Pill */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#C28AFF]">
-                      03 / CRM PIPELINE
-                    </span>
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[#55A9FF]">
-                      <TrendingUp className="w-3 h-3 text-[#55A9FF]" />
-                      Real-Time Sync
-                    </span>
+              {/* Bottom Row (Different skills + Huge 20+ Number) */}
+              <div className="relative z-10 pt-4 border-t border-white/10 flex items-end justify-between gap-4">
+                <div className="max-w-[70%]">
+                  <div className="font-headline font-bold text-sm text-white/90">
+                    Different skills. One standard.
                   </div>
-
-                  {/* Large Heading & Title */}
-                  <div className="mt-3">
-                    <div className="font-headline font-black text-4xl sm:text-5xl text-white tracking-tight">
-                      Enquiries
-                    </div>
-                    <h3 className="font-bold text-lg sm:text-xl text-white/95 mt-1">
-                      Enquiry Visibility
-                    </h3>
-                    <p className="text-xs text-[#9898A6] mt-1.5 leading-relaxed">
-                      See customer conversations and the enquiries generated through your website assistant.
-                    </p>
-                  </div>
+                  <p className="text-xs text-white/60 mt-0.5 leading-snug">
+                    See customer conversations and the enquiries generated through your assistant.
+                  </p>
                 </div>
-
-                {/* Premium Dashboard Overview Mockup */}
-                <div className="relative z-10 mt-4 bg-[#12121A] rounded-2xl p-3.5 border border-white/[0.06] space-y-2 shadow-inner">
-                  <div className="flex items-center justify-between text-[10px] text-[#9898A6] border-b border-white/[0.05] pb-1.5">
-                    <span className="font-semibold text-white/80">Active Lead Feed</span>
-                    <span className="font-mono text-[9px] text-[#55A9FF]">CRM Synced</span>
-                  </div>
-
-                  {/* Lead Item 1 */}
-                  <div className="bg-white/[0.04] rounded-xl p-2.5 flex items-center justify-between gap-2 border border-white/[0.04]">
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-bold text-white truncate">
-                        Sarah Jenkins
-                      </div>
-                      <div className="text-[9px] text-[#9898A6] truncate">
-                        Executive Demo Requested
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider shrink-0">
-                      High Intent
-                    </span>
-                  </div>
-
-                  {/* Lead Item 2 */}
-                  <div className="bg-white/[0.04] rounded-xl p-2.5 flex items-center justify-between gap-2 border border-white/[0.04]">
-                    <div className="min-w-0">
-                      <div className="text-[11px] font-bold text-white truncate">
-                        Marcus Vance
-                      </div>
-                      <div className="text-[9px] text-[#9898A6] truncate">
-                        Commercial Pricing Inquiry
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded bg-[#963DFF]/25 text-[#C28AFF] text-[9px] font-bold uppercase tracking-wider shrink-0">
-                      Qualified
-                    </span>
-                  </div>
-                </div>
+                <span className="font-headline font-black text-4xl sm:text-5xl text-white tracking-tight shrink-0">
+                  20<span className="text-2xl text-[#55A9FF]">+</span>
+                </span>
               </div>
             </div>
           </div>
-
-          {/* Bottom Trust Line */}
-          <div className="relative z-10 max-w-7xl mx-auto w-full flex items-center justify-between text-[10px] text-[#52525C] font-semibold uppercase tracking-wider pt-2 border-t border-black/[0.06]">
-            <span>Emperor Nexus Conversational Suite</span>
-            <span>Zero Risk · Grounded In Your Data</span>
-          </div>
         </div>
-
-        {/* ========================================================= */}
-        {/* LAYER 1 (ON TOP): DARK BREAKING SCENE WITH SHUTTER SLATS  */}
-        {/* ========================================================= */}
-        <div
-          ref={darkSceneRef}
-          className="absolute inset-0 w-full h-full z-20 pointer-events-none overflow-hidden"
-        >
-          {/* HORIZONTAL SHUTTER SLATS GRID */}
-          <div className="absolute inset-0 w-full h-full overflow-hidden">
-            {Array.from({ length: SLATS_COUNT }).map((_, idx) => (
-              <div
-                key={idx}
-                ref={(el) => (slatRefs.current[idx] = el)}
-                className="absolute left-0 w-full bg-[#050507] will-change-transform"
-                style={{
-                  top: `${(idx * 100) / SLATS_COUNT}%`,
-                  height: `calc(${100 / SLATS_COUNT}% + 1.5px)`, // +1.5px eliminates any subpixel hairline seam
-                }}
-              >
-                {/* Micro accent seam */}
-                <div className="absolute inset-x-0 bottom-0 h-px bg-white/[0.03]" />
-              </div>
-            ))}
-          </div>
-
-          {/* SUBTLE 3D VISUAL ELEMENT BEHIND THE TYPOGRAPHY */}
-          <div
-            ref={bgVisualRef}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] sm:w-[500px] sm:h-[500px] pointer-events-none will-change-transform"
-            style={{ perspective: "1000px" }}
-          >
-            {/* Ambient Radial Color Glow */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#963DFF]/25 via-purple-900/10 to-[#55A9FF]/20 blur-[90px]" />
-
-            {/* Concentric 3D Wireframe Rings */}
-            <div
-              className="absolute inset-4 rounded-full border border-[#963DFF]/30 border-dashed"
-              style={{ transform: "rotateX(55deg) rotateY(15deg)" }}
-            />
-            <div
-              className="absolute inset-16 rounded-full border border-[#55A9FF]/25"
-              style={{ transform: "rotateX(-45deg) rotateY(-20deg)" }}
-            />
-            <div
-              className="absolute inset-28 rounded-full border border-white/20 border-dotted"
-              style={{ transform: "rotateX(30deg) rotateZ(45deg)" }}
-            />
-          </div>
-
-          {/* OVERSIZED EDITORIAL TYPOGRAPHY */}
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center text-center px-4"
-            style={{ perspective: "1200px" }}
-          >
-            <div className="mb-3 sm:mb-4 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-mono font-bold tracking-widest text-[#C28AFF] uppercase">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#55A9FF]" />
-              <span>04 / System Architecture</span>
-            </div>
-
-            <h2 className="font-headline tracking-normal text-white uppercase text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.95] select-none">
-              {/* Line 1 */}
-              <div className="flex items-center justify-center gap-x-3 sm:gap-x-5 flex-wrap">
-                {HEADLINE_LINE1.map((word, wIdx) => {
-                  const wordChars = l1Vectors.filter((v) => v.wIdx === wIdx);
-                  return (
-                    <span key={wIdx} className="inline-flex whitespace-nowrap">
-                      {wordChars.map((item) => (
-                        <span
-                          key={item.overallIdx}
-                          ref={(el) => (l1CharRefs.current[item.overallIdx] = el)}
-                          className="inline-block will-change-transform"
-                        >
-                          {item.char}
-                        </span>
-                      ))}
-                    </span>
-                  );
-                })}
-              </div>
-
-              {/* Line 2 with Cybernetic Purple Gradient Accent */}
-              <div className="flex items-center justify-center gap-x-3 sm:gap-x-5 flex-wrap mt-2 sm:mt-3">
-                {HEADLINE_LINE2.map((word, wIdx) => {
-                  const wordChars = l2Vectors.filter((v) => v.wIdx === wIdx);
-                  return (
-                    <span
-                      key={wIdx}
-                      className="inline-flex whitespace-nowrap text-glow-purple text-gradient-purple-blue"
-                    >
-                      {wordChars.map((item) => (
-                        <span
-                          key={item.overallIdx}
-                          ref={(el) => (l2CharRefs.current[item.overallIdx] = el)}
-                          className="inline-block will-change-transform"
-                        >
-                          {item.char}
-                        </span>
-                      ))}
-                    </span>
-                  );
-                })}
-              </div>
-            </h2>
-
-            <p className="mt-4 sm:mt-5 text-xs sm:text-sm text-[#9898A6] max-w-md mx-auto leading-relaxed font-normal">
-              Scroll down to witness the transition into Emperor Nexus conversational intelligence.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }
