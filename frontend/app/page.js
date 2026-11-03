@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import IndustriesSection from "@/components/IndustriesSection";
+import BenefitsSection from "@/components/BenefitsSection";
 import PricingSection from "@/components/PricingSection";
 import TrionnLoader from "@/components/TrionnLoader";
 
@@ -349,89 +350,10 @@ export default function HomePage() {
         onOpenTrial={() => (window.location.href = "/register")}
       />
 
-      {/* 4. BENEFITS SECTION */}
-      <section id="benefits" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#050507] overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#963DFF]/10 rounded-full blur-[140px] pointer-events-none" />
-
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.1] text-white text-xs font-bold uppercase tracking-wider mb-4">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#55A9FF]" />
-              <span>Architecture & Performance</span>
-            </div>
-
-            <h2 className="font-headline tracking-normal text-white uppercase text-4xl sm:text-6xl md:text-7xl leading-tight">
-              Engineered For Precision, <br />
-              <span className="text-glow-purple text-gradient-purple-blue">
-                Security & High Conversion
-              </span>
-            </h2>
-
-            <p className="mt-4 text-base sm:text-lg text-[#9898A6] leading-relaxed">
-              Unlike generic AI chat wrappers, Emperor Nexus combines enterprise vector retrieval,
-              customizable sales personas, and real-time lead qualification workflows.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {benefits.map((b, idx) => {
-              const Icon = b.icon;
-              return (
-                <div
-                  key={idx}
-                  className="group relative p-8 sm:p-10 rounded-3xl glass-panel glass-panel-hover flex flex-col justify-between overflow-hidden"
-                >
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center group-hover:border-[#963DFF]/50 group-hover:bg-[#963DFF]/20 transition-all duration-300 shadow-md">
-                        <Icon className="w-7 h-7 text-[#D9D9E2] group-hover:text-white transition-colors" />
-                      </div>
-                      <span
-                        className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border"
-                        style={{
-                          color: b.accentColor,
-                          backgroundColor: "rgba(255,255,255,0.03)",
-                          borderColor: "rgba(255,255,255,0.1)",
-                        }}
-                      >
-                        {b.badge}
-                      </span>
-                    </div>
-
-                    <h3 className="font-bold text-2xl text-white group-hover:text-[#F5F5F7] transition-colors">
-                      {b.title}
-                    </h3>
-
-                    <p className="mt-4 text-sm text-[#9898A6] leading-relaxed">
-                      {b.description}
-                    </p>
-
-                    <div className="mt-6 space-y-2.5">
-                      {b.points.map((pt, i) => (
-                        <div key={i} className="flex items-center gap-2.5 text-xs text-[#D9D9E2]">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>{pt}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 mt-8 pt-5 border-t border-white/[0.06] flex items-center justify-between">
-                    <span className="text-xs text-[#9898A6] font-medium">Enterprise Guaranteed SLA</span>
-                    <Link
-                      href={isAuthenticated ? "/dashboard" : "/register"}
-                      className="flex items-center gap-1.5 text-xs font-bold text-white hover:text-[#C28AFF] transition-colors cursor-pointer"
-                    >
-                      <span>Get Started</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* 4. DRAMATIC SHATTER TRANSITION + THREE-CARD REVEAL BENEFITS */}
+      <BenefitsSection
+        onOpenTrial={() => (window.location.href = "/register")}
+      />
 
       {/* 5. HOW IT WORKS SECTION */}
       <section id="how-it-works" className="relative py-28 px-4 sm:px-6 lg:px-8 bg-[#0B0B10] overflow-hidden">
