@@ -283,7 +283,10 @@ export default function HomePage() {
                     setActiveNav(nav.id);
                     const el = document.getElementById(nav.id);
                     if (el) {
-                      const topOffset = el.getBoundingClientRect().top + window.scrollY - 70;
+                      const isPinned = nav.id === "benefits" || nav.id === "how-it-works";
+                      const topOffset = isPinned
+                        ? el.getBoundingClientRect().top + window.scrollY
+                        : el.getBoundingClientRect().top + window.scrollY - 70;
                       window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
                     }
                   }}

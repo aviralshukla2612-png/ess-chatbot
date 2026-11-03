@@ -73,7 +73,10 @@ export default function Navbar({ onOpenTrial }) {
     setMobileMenuOpen(false);
     const target = document.querySelector(item.href);
     if (target) {
-      const topOffset = target.getBoundingClientRect().top + window.scrollY - 70;
+      const isPinnedSection = item.href === "#benefits" || item.href === "#how-it-works";
+      const topOffset = isPinnedSection
+        ? target.getBoundingClientRect().top + window.scrollY
+        : target.getBoundingClientRect().top + window.scrollY - 70;
       window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
     }
   };
