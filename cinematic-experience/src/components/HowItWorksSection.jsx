@@ -105,7 +105,7 @@ const CodeDeployIcon = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
-// 3 Process Cards matching Dribbble Wave Card Design Reference
+// 3 Process Cards matching Option 1 Deep Jewel Tint Reference
 const PROCESS_CARDS = [
   {
     step: "01",
@@ -113,6 +113,10 @@ const PROCESS_CARDS = [
     title: "Connect Knowledge Base",
     subTitle: "Instant Ingestion",
     icon: KnowledgeBaseIcon,
+    topBg: "bg-[#140C26]",
+    borderColor: "border-[#8B5CF6]/35",
+    taglineColor: "#C4B5FD",
+    iconContainerBg: "bg-[#21133F] border border-[#8B5CF6]/40",
     tags: ["PDF · DOCX", "URL SYNC"],
     description: "Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.",
     feature: "Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.",
@@ -128,6 +132,10 @@ const PROCESS_CARDS = [
     title: "Calibrate Persona Styling",
     subTitle: "Persona Engine",
     icon: PersonaEngineIcon,
+    topBg: "bg-[#220E07]",
+    borderColor: "border-[#FF5E3A]/35",
+    taglineColor: "#FDBA74",
+    iconContainerBg: "bg-[#38160B] border border-[#FF5E3A]/40",
     tags: ["BRAND VOICE", "19 MOTIONS"],
     description: "Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.",
     feature: "Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.",
@@ -143,6 +151,10 @@ const PROCESS_CARDS = [
     title: "Deploy Single Line Code",
     subTitle: "Universal Live Embed",
     icon: CodeDeployIcon,
+    topBg: "bg-[#051724]",
+    borderColor: "border-[#06B6D4]/35",
+    taglineColor: "#67E8F9",
+    iconContainerBg: "bg-[#082B42] border border-[#06B6D4]/40",
     tags: ["ONE-LINE", "ZERO CONFIG"],
     description: "Integrate the assistant into your website using the provided script with instant anti-cache live updates.",
     feature: "Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.",
@@ -460,18 +472,18 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 ref={(el) => (cardRefs.current[idx] = el)}
                 onMouseEnter={() => setActiveCardIndex(idx)}
                 onClick={() => setActiveCardIndex(idx)}
-                className={`group relative rounded-3xl bg-[#C5CAD4] text-black overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-slate-300/40 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${card.shadow}`}
+                className={`group relative rounded-3xl ${card.topBg} text-white overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border ${card.borderColor} shadow-[0_20px_50px_rgba(0,0,0,0.6)] ${card.shadow}`}
               >
-                {/* TOP SECTION: Soft grey (#C5CAD4) with high-contrast jet black typography */}
+                {/* TOP SECTION: Deep jewel tone with glowing white typography */}
                 <div className="card-wave-top relative z-10 px-5 pt-4 pb-1 flex flex-col items-center text-center transition-all duration-300">
                   {/* Icon Container with subtle halo and decorative sparkle dots */}
                   <div className="relative flex items-center justify-center">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-md border border-black/10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${card.iconContainerBg} flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105`}>
                       <Icon className="w-9 h-9 sm:w-10 sm:h-10" />
                     </div>
                     {/* Decorative sparkle dots around icon matched to card accent */}
                     <span
-                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm"
+                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm animate-pulse"
                       style={{ backgroundColor: card.waveColor }}
                     />
                     <span
@@ -482,14 +494,14 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
                   {/* Title & Step Tag */}
                   <h3
-                    style={{ color: "#000000" }}
-                    className="!text-black text-black font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-none"
+                    style={{ color: "#FFFFFF" }}
+                    className="!text-white text-white font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-md"
                   >
                     {card.title}
                   </h3>
                   <span
-                    style={{ color: "#1E293B" }}
-                    className="!text-slate-800 text-slate-800 text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
+                    style={{ color: card.taglineColor }}
+                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
                   >
                     {card.tagline}
                   </span>

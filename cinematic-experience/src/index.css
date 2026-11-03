@@ -63,14 +63,11 @@ body {
   letter-spacing: 0.03em;
 }
 
-/* Specific guarantee for wave card top elements: off-white/gray card top with jet black headings */
+/* Specific guarantee for wave card top elements: deep jewel tone top with pure white headings */
 .card-wave-top h3,
 .card-wave-top h3.font-headline {
-  color: #000000 !important;
-  -webkit-text-fill-color: #000000 !important;
-}
-.card-wave-top span {
-  color: #475569 !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
 }
 
 .font-display {

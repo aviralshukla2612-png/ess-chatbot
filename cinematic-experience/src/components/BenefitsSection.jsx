@@ -110,7 +110,7 @@ const EnquiryIcon = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
-// 3 Benefit Cards matching Dribbble Wave Card Design Reference
+// 3 Benefit Cards matching Option 1 Deep Jewel Tint Reference
 const BENEFIT_CARDS = [
   {
     step: "01",
@@ -119,6 +119,10 @@ const BENEFIT_CARDS = [
     subTitle: "Always-On Conversations",
     kicker: "NEVER MISS AN ENQUIRY",
     icon: EngagementIcon,
+    topBg: "bg-[#02281D]",
+    borderColor: "border-[#00D98B]/35",
+    taglineColor: "#6EE7B7",
+    iconContainerBg: "bg-[#043828] border border-[#00D98B]/40",
     tags: ["ALWAYS-ON", "24/7 LIVE"],
     description: "Answer customer questions instantly using your approved business information, even outside working hours.",
     feature: "Visitor is guided towards making an enquiry with instant lead capture.",
@@ -135,6 +139,10 @@ const BENEFIT_CARDS = [
     subTitle: "Less Manual Work",
     kicker: "LET AI HANDLE REPETITIVE QUESTIONS",
     icon: AutomationIcon,
+    topBg: "bg-[#1E042A]",
+    borderColor: "border-[#C653FF]/35",
+    taglineColor: "#E9D5FF",
+    iconContainerBg: "bg-[#330847] border border-[#C653FF]/40",
     tags: ["ZERO REPETITION", "AI GROUNDED"],
     description: "Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business information.",
     feature: "Business knowledge interface grounded in approved information only.",
@@ -151,6 +159,10 @@ const BENEFIT_CARDS = [
     subTitle: "Turn Chats Into Opportunities",
     kicker: "STAY CONNECTED TO CUSTOMER INTEREST",
     icon: EnquiryIcon,
+    topBg: "bg-[#011D3D]",
+    borderColor: "border-[#009DFF]/35",
+    taglineColor: "#BAE6FD",
+    iconContainerBg: "bg-[#032B59] border border-[#009DFF]/40",
     tags: ["HOT LEADS", "INSTANT SYNC"],
     description: "View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for.",
     feature: "Customer interest and conversation details logged directly into CRM.",
@@ -418,18 +430,18 @@ export default function BenefitsSection({ onOpenTrial }) {
                 data-kf-card="true"
                 onMouseEnter={() => setActiveCardIndex(idx)}
                 onClick={() => setActiveCardIndex(idx)}
-                className={`featured-card group relative rounded-3xl bg-[#C5CAD4] text-black overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-slate-300/40 will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${card.shadow}`}
+                className={`featured-card group relative rounded-3xl ${card.topBg} text-white overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border ${card.borderColor} will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] ${card.shadow}`}
               >
-                {/* TOP SECTION: Soft grey (#C5CAD4) with high-contrast jet black typography */}
+                {/* TOP SECTION: Deep jewel tone with glowing white typography */}
                 <div className="card-wave-top relative z-10 px-5 pt-4 pb-1 flex flex-col items-center text-center transition-all duration-300">
                   {/* Icon Container with subtle halo and decorative sparkle dots */}
                   <div className="relative flex items-center justify-center">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white shadow-md border border-black/10 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${card.iconContainerBg} flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105`}>
                       <Icon className="w-9 h-9 sm:w-10 sm:h-10" />
                     </div>
                     {/* Decorative sparkle dots around icon matched to card accent */}
                     <span
-                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm"
+                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm animate-pulse"
                       style={{ backgroundColor: card.waveColor }}
                     />
                     <span
@@ -440,14 +452,14 @@ export default function BenefitsSection({ onOpenTrial }) {
 
                   {/* Title & Tagline */}
                   <h3
-                    style={{ color: "#000000" }}
-                    className="!text-black text-black font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-none"
+                    style={{ color: "#FFFFFF" }}
+                    className="!text-white text-white font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-md"
                   >
                     {card.title}
                   </h3>
                   <span
-                    style={{ color: "#1E293B" }}
-                    className="!text-slate-800 text-slate-800 text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
+                    style={{ color: card.taglineColor }}
+                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
                   >
                     {card.tagline}
                   </span>
