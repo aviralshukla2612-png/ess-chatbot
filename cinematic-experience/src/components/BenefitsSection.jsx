@@ -270,79 +270,79 @@ export default function BenefitsSection() {
               style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
             >
               {/* =================================================================== */}
-              {/* CARD 01: CUSTOMER ENGAGEMENT (FULL VIBRANT MINT GREEN)              */}
+              {/* CARD 01: CUSTOMER ENGAGEMENT (DEEP EMERALD GREEN #003D2B + #00D98B)*/}
               {/* =================================================================== */}
               <div
                 ref={(el) => (cardRefs.current[0] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-2xl bg-[#90CDA6] text-black p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(144,205,166,0.35)] hover:shadow-[0_25px_60px_rgba(144,205,166,0.55)] border-2 border-[#74BA8C] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
+                className="featured-card group relative rounded-2xl bg-[#003D2B] text-white p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,217,139,0.22)] hover:shadow-[0_25px_60px_rgba(0,217,139,0.40)] border-2 border-[#00D98B] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
               >
                 <div className="relative z-10 flex flex-col h-full justify-between">
                   <div>
                     {/* Top Pill Tag */}
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#90CDA6] uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black/50 text-[#00D98B] border border-[#00D98B]/40 uppercase tracking-wider">
                         Card 01 — Customer Engagement
                       </span>
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-white bg-black px-2.5 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#90CDA6] animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-white bg-black/50 border border-[#00D98B]/40 px-2.5 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#00D98B] animate-pulse" />
                         Available 24/7
                       </span>
                     </div>
 
                     {/* Kicker & Headlines */}
                     <div className="mt-3">
-                      <span className="text-[11px] font-mono font-black text-black/70 uppercase tracking-widest block">
+                      <span className="text-[11px] font-mono font-black text-[#00D98B] uppercase tracking-widest block">
                         CUSTOMER EXPERIENCE
                       </span>
-                      <h3 className="font-headline font-black text-xl sm:text-2xl text-black uppercase tracking-tight mt-0.5 leading-tight">
+                      <h3 className="font-headline font-black text-xl sm:text-2xl text-[#FFFFFF] uppercase tracking-tight mt-0.5 leading-tight">
                         ALWAYS-ON CONVERSATIONS
                       </h3>
-                      <h4 className="font-headline font-black text-xs sm:text-sm text-black/80 uppercase tracking-tight mt-0.5">
+                      <h4 className="font-headline font-bold text-xs sm:text-sm text-[#00D98B] uppercase tracking-tight mt-0.5">
                         NEVER MISS AN ENQUIRY
                       </h4>
-                      <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                      <p className="mt-2 text-xs sm:text-[13px] text-[#C5CAD4] leading-relaxed font-normal">
                         Answer customer questions instantly using your approved business information, even outside working hours.
                       </p>
                     </div>
                   </div>
 
                   {/* Visual element: Customer question -> Nexus response -> Guided towards enquiry */}
-                  <div className="my-3 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
+                  <div className="my-3 bg-[#050507]/60 rounded-xl p-3 border border-[#00D98B]/30 space-y-2 text-white">
                     {/* Customer asks a question */}
-                    <div className="flex items-start gap-2 bg-white/70 rounded-lg p-2 border border-black/10 text-[11px]">
-                      <span className="w-4 h-4 rounded-full bg-black text-white text-[9px] font-mono font-bold flex items-center justify-center shrink-0">
+                    <div className="flex items-start gap-2 bg-[#003D2B] rounded-lg p-2 border border-[#00D98B]/30 text-[11px]">
+                      <span className="w-4 h-4 rounded-full bg-[#00D98B] text-black text-[9px] font-mono font-black flex items-center justify-center shrink-0">
                         Q
                       </span>
-                      <p className="text-black font-semibold text-[10px] sm:text-[11px] leading-tight">
+                      <p className="text-[#FFFFFF] font-medium text-[10px] sm:text-[11px] leading-tight">
                         &quot;Can I get details on your enterprise packages and setup time?&quot;
                       </p>
                     </div>
                     {/* Emperor Nexus assistant responds */}
-                    <div className="flex items-start gap-2 bg-black text-white rounded-lg p-2 text-[11px]">
-                      <Bot className="w-3.5 h-3.5 text-[#90CDA6] shrink-0 mt-0.5" />
-                      <p className="text-[#90CDA6] font-mono font-medium text-[10px] sm:text-[11px] leading-tight">
+                    <div className="flex items-start gap-2 bg-[#050507] border border-[#00D98B]/50 rounded-lg p-2 text-[11px]">
+                      <Bot className="w-3.5 h-3.5 text-[#00D98B] shrink-0 mt-0.5" />
+                      <p className="text-[#00D98B] font-mono font-medium text-[10px] sm:text-[11px] leading-tight">
                         &quot;Emperor Nexus deploys in 5 minutes with verified answers and CRM sync.&quot;
                       </p>
                     </div>
                     {/* Visitor guided towards making an enquiry */}
-                    <div className="flex items-center justify-between pt-1 border-t border-black/15 text-[10px] font-mono font-bold text-black">
-                      <span className="inline-flex items-center gap-1 text-black font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-black" />
+                    <div className="flex items-center justify-between pt-1 border-t border-[#00D98B]/20 text-[10px] font-mono font-bold text-white">
+                      <span className="inline-flex items-center gap-1 text-[#C5CAD4]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#00D98B]" />
                         Guided Towards Enquiry
                       </span>
-                      <span className="bg-black text-[#90CDA6] px-1.5 py-0.5 rounded text-[9px]">
+                      <span className="bg-[#00D98B] text-black px-2 py-0.5 rounded text-[9px] font-bold">
                         Lead Captured
                       </span>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="pt-2.5 border-t border-black/15 flex items-center justify-between">
-                    <span className="font-mono text-[10px] sm:text-[11px] text-black font-extrabold uppercase tracking-wider">
+                  <div className="pt-2.5 border-t border-[#00D98B]/30 flex items-center justify-between">
+                    <span className="font-mono text-[10px] sm:text-[11px] text-[#00D98B] font-black uppercase tracking-wider">
                       24/7 AI ASSISTANCE
                     </span>
-                    <span className="font-mono text-[10px] font-bold text-white bg-black px-2 py-0.5 rounded">
+                    <span className="font-mono text-[10px] font-bold text-[#00D98B] bg-black/50 border border-[#00D98B]/40 px-2.5 py-0.5 rounded">
                       Instant Setup
                     </span>
                   </div>
@@ -350,75 +350,75 @@ export default function BenefitsSection() {
               </div>
 
               {/* =================================================================== */}
-              {/* CARD 02: INTELLIGENT AUTOMATION (FULL VIBRANT LILAC ORCHID)         */}
+              {/* CARD 02: INTELLIGENT AUTOMATION (RICH ELECTRIC PURPLE #310044 + #C653FF) */}
               {/* =================================================================== */}
               <div
                 ref={(el) => (cardRefs.current[1] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-2xl bg-[#C89BFF] text-black p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(200,155,255,0.35)] hover:shadow-[0_25px_60px_rgba(200,155,255,0.55)] border-2 border-[#AF73FF] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
+                className="featured-card group relative rounded-2xl bg-[#310044] text-white p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(198,83,255,0.22)] hover:shadow-[0_25px_60px_rgba(198,83,255,0.40)] border-2 border-[#C653FF] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
               >
                 <div className="relative z-10 flex flex-col h-full justify-between">
                   <div>
                     {/* Top Pill Tag */}
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#C89BFF] uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black/50 text-[#C653FF] border border-[#C653FF]/40 uppercase tracking-wider">
                         Card 02 — Intelligent Automation
                       </span>
-                      <span className="text-[10px] font-mono font-bold text-white bg-black px-2.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-mono font-bold text-white bg-black/50 border border-[#C653FF]/40 px-2.5 py-0.5 rounded-full">
                         Business Knowledge
                       </span>
                     </div>
 
                     {/* Kicker & Headlines */}
                     <div className="mt-3">
-                      <span className="text-[11px] font-mono font-black text-black/70 uppercase tracking-widest block">
+                      <span className="text-[11px] font-mono font-black text-[#C653FF] uppercase tracking-widest block">
                         SMART AUTOMATION
                       </span>
-                      <h3 className="font-headline font-black text-xl sm:text-2xl text-black uppercase tracking-tight mt-0.5 leading-tight">
+                      <h3 className="font-headline font-black text-xl sm:text-2xl text-[#FFFFFF] uppercase tracking-tight mt-0.5 leading-tight">
                         LESS MANUAL WORK
                       </h3>
-                      <h4 className="font-headline font-black text-xs sm:text-sm text-black/80 uppercase tracking-tight mt-0.5">
+                      <h4 className="font-headline font-bold text-xs sm:text-sm text-[#C653FF] uppercase tracking-tight mt-0.5">
                         LET AI HANDLE REPETITIVE QUESTIONS
                       </h4>
-                      <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                      <p className="mt-2 text-xs sm:text-[13px] text-[#C5CAD4] leading-relaxed font-normal">
                         Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business information.
                       </p>
                     </div>
                   </div>
 
                   {/* Visual element: Business info transforms into AI knowledge interface -> Assistant uses approved info */}
-                  <div className="my-3 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
-                    <div className="flex items-center justify-between text-[10px] font-mono text-black font-bold">
-                      <span className="flex items-center gap-1.5">
-                        <Cpu className="w-3.5 h-3.5 text-black" />
+                  <div className="my-3 bg-[#050507]/60 rounded-xl p-3 border border-[#C653FF]/30 space-y-2 text-white">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-bold">
+                      <span className="flex items-center gap-1.5 text-[#C5CAD4]">
+                        <Cpu className="w-3.5 h-3.5 text-[#C653FF]" />
                         Knowledge Interface
                       </span>
-                      <span className="bg-black text-[#C89BFF] px-1.5 py-0.5 rounded text-[9px]">
+                      <span className="bg-[#C653FF] text-black px-2 py-0.5 rounded text-[9px] font-bold">
                         100% Approved
                       </span>
                     </div>
-                    <div className="bg-black text-white rounded-lg p-2 text-[10px] font-mono space-y-1">
-                      <div className="flex items-center justify-between text-[#C89BFF]">
+                    <div className="bg-[#310044] border border-[#C653FF]/30 rounded-lg p-2 text-[10px] font-mono space-y-1">
+                      <div className="flex items-center justify-between text-[#C653FF]">
                         <span>• Services &amp; Packages</span>
                         <span className="text-white">Active</span>
                       </div>
-                      <div className="flex items-center justify-between text-[#C89BFF]">
+                      <div className="flex items-center justify-between text-[#C653FF]">
                         <span>• Pricing &amp; Business Info</span>
                         <span className="text-white">Active</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-black pt-1 border-t border-black/15">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#C5CAD4] pt-1 border-t border-[#C653FF]/20">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#C653FF] shrink-0" />
                       <span>Assistant uses approved information only</span>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="pt-2.5 border-t border-black/15 flex items-center justify-between">
-                    <span className="font-mono text-[10px] sm:text-[11px] text-black font-extrabold uppercase tracking-wider">
+                  <div className="pt-2.5 border-t border-[#C653FF]/30 flex items-center justify-between">
+                    <span className="font-mono text-[10px] sm:text-[11px] text-[#C653FF] font-black uppercase tracking-wider">
                       MORE TIME FOR YOUR TEAM
                     </span>
-                    <span className="font-mono text-[10px] font-bold text-white bg-black px-2 py-0.5 rounded">
+                    <span className="font-mono text-[10px] font-bold text-[#C653FF] bg-black/50 border border-[#C653FF]/40 px-2.5 py-0.5 rounded">
                       Zero Repetition
                     </span>
                   </div>
@@ -426,76 +426,76 @@ export default function BenefitsSection() {
               </div>
 
               {/* =================================================================== */}
-              {/* CARD 03: ENQUIRY VISIBILITY (FULL VIBRANT SKY BLUE)                 */}
+              {/* CARD 03: ENQUIRY VISIBILITY (MIDNIGHT NAVY BLUE #002653 + #009DFF)  */}
               {/* =================================================================== */}
               <div
                 ref={(el) => (cardRefs.current[2] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-2xl bg-[#7DD3FC] text-black p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(125,211,252,0.35)] hover:shadow-[0_25px_60px_rgba(125,211,252,0.55)] border-2 border-[#38BDF8] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
+                className="featured-card group relative rounded-2xl bg-[#002653] text-white p-6 sm:p-7 flex flex-col justify-between shadow-[0_20px_50px_rgba(0,157,255,0.22)] hover:shadow-[0_25px_60px_rgba(0,157,255,0.40)] border-2 border-[#009DFF] overflow-hidden w-[84vw] shrink-0 snap-center sm:w-auto md:w-full min-h-[400px] sm:min-h-[420px] will-change-transform backface-hidden transition-all duration-300 hover:-translate-y-1.5"
               >
                 <div className="relative z-10 flex flex-col h-full justify-between">
                   <div>
                     {/* Top Pill Tag */}
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#7DD3FC] uppercase tracking-wider">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black/50 text-[#009DFF] border border-[#009DFF]/40 uppercase tracking-wider">
                         Card 03 — Enquiry Visibility
                       </span>
-                      <span className="text-[10px] font-mono font-bold text-white bg-black px-2.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-mono font-bold text-white bg-black/50 border border-[#009DFF]/40 px-2.5 py-0.5 rounded-full">
                         Conversation Overview
                       </span>
                     </div>
 
                     {/* Kicker & Headlines */}
                     <div className="mt-3">
-                      <span className="text-[11px] font-mono font-black text-black/70 uppercase tracking-widest block">
+                      <span className="text-[11px] font-mono font-black text-[#009DFF] uppercase tracking-widest block">
                         BUSINESS INSIGHTS
                       </span>
-                      <h3 className="font-headline font-black text-xl sm:text-2xl text-black uppercase tracking-tight mt-0.5 leading-tight">
+                      <h3 className="font-headline font-black text-xl sm:text-2xl text-[#FFFFFF] uppercase tracking-tight mt-0.5 leading-tight">
                         TURN CHATS INTO OPPORTUNITIES
                       </h3>
-                      <h4 className="font-headline font-black text-xs sm:text-sm text-black/80 uppercase tracking-tight mt-0.5">
+                      <h4 className="font-headline font-bold text-xs sm:text-sm text-[#009DFF] uppercase tracking-tight mt-0.5">
                         STAY CONNECTED TO CUSTOMER INTEREST
                       </h4>
-                      <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                      <p className="mt-2 text-xs sm:text-[13px] text-[#C5CAD4] leading-relaxed font-normal">
                         View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for.
                       </p>
                     </div>
                   </div>
 
                   {/* Visual element: Chat conversation preview + Enquiry overview panel */}
-                  <div className="my-3 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
-                    <div className="flex items-center justify-between text-[10px] font-mono text-black font-bold">
-                      <span className="flex items-center gap-1.5">
-                        <TrendingUp className="w-3.5 h-3.5 text-black" />
+                  <div className="my-3 bg-[#050507]/60 rounded-xl p-3 border border-[#009DFF]/30 space-y-2 text-white">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-bold">
+                      <span className="flex items-center gap-1.5 text-[#C5CAD4]">
+                        <TrendingUp className="w-3.5 h-3.5 text-[#009DFF]" />
                         Business Enquiry Panel
                       </span>
-                      <span className="bg-black text-[#7DD3FC] px-1.5 py-0.5 rounded text-[9px]">
+                      <span className="bg-[#009DFF] text-black px-2 py-0.5 rounded text-[9px] font-bold">
                         98% Match
                       </span>
                     </div>
-                    <div className="bg-black text-white rounded-lg p-2 text-[10px] font-mono space-y-1">
+                    <div className="bg-[#002653] border border-[#009DFF]/30 rounded-lg p-2 text-[10px] font-mono space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[#7DD3FC] font-semibold">Elena Rostova</span>
-                        <span className="bg-[#7DD3FC] text-black font-bold px-1 rounded text-[9px]">
+                        <span className="text-[#FFFFFF] font-bold">Elena Rostova</span>
+                        <span className="bg-[#009DFF] text-black font-bold px-1.5 py-0.2 rounded text-[9px]">
                           Hot Enquiry
                         </span>
                       </div>
-                      <p className="text-white/80 text-[9px] truncate">
+                      <p className="text-[#C5CAD4] text-[9px] truncate">
                         &quot;Looking for automated sales assistant for 3 domains&quot;
                       </p>
                     </div>
-                    <div className="flex items-center justify-between pt-1 border-t border-black/15 text-[10px] font-mono text-black font-bold">
-                      <span>Customer Details &amp; Intent Logged</span>
-                      <span className="text-black">Instant Sync</span>
+                    <div className="flex items-center justify-between pt-1 border-t border-[#009DFF]/20 text-[10px] font-mono font-bold">
+                      <span className="text-[#C5CAD4]">Customer Details &amp; Intent Logged</span>
+                      <span className="text-[#009DFF]">Instant Sync</span>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="pt-2.5 border-t border-black/15 flex items-center justify-between">
-                    <span className="font-mono text-[10px] sm:text-[11px] text-black font-extrabold uppercase tracking-wider">
+                  <div className="pt-2.5 border-t border-[#009DFF]/30 flex items-center justify-between">
+                    <span className="font-mono text-[10px] sm:text-[11px] text-[#009DFF] font-black uppercase tracking-wider">
                       CONVERSATIONS &amp; ENQUIRIES
                     </span>
-                    <span className="font-mono text-[10px] font-bold text-white bg-black px-2 py-0.5 rounded">
+                    <span className="font-mono text-[10px] font-bold text-[#009DFF] bg-black/50 border border-[#009DFF]/40 px-2.5 py-0.5 rounded">
                       Live Dashboard
                     </span>
                   </div>
