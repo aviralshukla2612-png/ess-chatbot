@@ -280,7 +280,7 @@ export default function TrionnLoader({ onComplete }) {
     };
   }, [onComplete]);
 
-  // Trionn crosshair plus SVG
+  // Trionn crosshair plus SVG (Crisp light on dark)
   const renderPlus = () => (
     <svg
       width="15"
@@ -290,17 +290,21 @@ export default function TrionnLoader({ onComplete }) {
       xmlns="http://www.w3.org/2000/svg"
       className="block"
     >
-      <line x1="7.5" y1="0" x2="7.5" y2="15" stroke="#222226" strokeWidth="1.2" />
-      <line x1="15" y1="7.5" x2="0" y2="7.5" stroke="#222226" strokeWidth="1.2" />
+      <line x1="7.5" y1="0" x2="7.5" y2="15" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" />
+      <line x1="15" y1="7.5" x2="0" y2="7.5" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" />
     </svg>
   );
 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[99999] bg-[#CECED4] select-none pointer-events-auto overflow-hidden flex items-center justify-center"
+      className="fixed inset-0 z-[99999] bg-[#050507] select-none pointer-events-auto overflow-hidden flex items-center justify-center"
       style={{ willChange: "opacity, background-color" }}
     >
+      {/* Ambient background glow for luxury dark depth */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-purple-600/12 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[110px] pointer-events-none" />
+
       {/* 
         Master Center Box Wrap — Perfectly Centered in Viewport via Flexbox
         Square aspect ratio matching Trionn (w: 300px, h: 300px)
@@ -308,9 +312,8 @@ export default function TrionnLoader({ onComplete }) {
       */}
       <div
         ref={boxWrapRef}
-        className="relative w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-2xl shrink-0"
+        className="relative w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/[0.08] shrink-0"
         style={{
-          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.35)",
           transformOrigin: "center center",
           willChange: "transform",
         }}
@@ -347,7 +350,7 @@ export default function TrionnLoader({ onComplete }) {
             width="100%"
             height="100%"
             fill="none"
-            stroke="#222226"
+            stroke="#C28AFF"
             strokeWidth="1.5"
             strokeDasharray="1"
             strokeDashoffset="1"
@@ -393,24 +396,24 @@ export default function TrionnLoader({ onComplete }) {
       {/* Tagline Words Underneath (Trionn Style) */}
       <div
         ref={taglineRef}
-        className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 font-mono text-[11px] sm:text-xs tracking-[0.28em] uppercase font-bold text-[#222226] z-20"
+        className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 font-mono text-[11px] sm:text-xs tracking-[0.28em] uppercase font-bold text-white/80 z-20"
       >
         <span ref={word1Ref}>INSPIRE</span>
-        <span ref={dot1Ref} className="text-[#666] font-normal">·</span>
+        <span ref={dot1Ref} className="text-[#C28AFF] font-bold">·</span>
         <span ref={word2Ref}>INNOVATE</span>
-        <span ref={dot2Ref} className="text-[#666] font-normal">·</span>
+        <span ref={dot2Ref} className="text-[#C28AFF] font-bold">·</span>
         <span ref={word3Ref}>IMPACT</span>
       </div>
 
       {/* Percentage Rolling Counter (Bottom Center) */}
       <div
         ref={counterRef}
-        className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 flex items-baseline gap-1 font-mono font-bold text-sm tracking-widest text-[#222226] z-20 select-none"
+        className="absolute bottom-8 sm:bottom-10 left-1/2 -translate-x-1/2 flex items-baseline gap-1 font-mono font-bold text-sm tracking-widest text-white z-20 select-none"
       >
-        <span className="text-base text-[#111115]">
+        <span className="text-base text-white font-extrabold">
           {percent < 10 ? `00${percent}` : percent < 100 ? `0${percent}` : percent}
         </span>
-        <span className="text-xs text-[#555]">%</span>
+        <span className="text-xs text-[#C28AFF] font-bold">%</span>
       </div>
     </div>
   );
