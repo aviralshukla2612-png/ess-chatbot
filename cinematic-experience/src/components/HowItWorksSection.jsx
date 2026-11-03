@@ -245,7 +245,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       {/* PINNED STAGE VIEWPORT */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen overflow-hidden flex flex-col justify-between pt-16 sm:pt-20 pb-8 px-4 sm:px-6 lg:px-8 bg-[#050507]"
+        className="relative w-full h-screen overflow-hidden flex flex-col justify-between pt-20 sm:pt-24 pb-8 px-4 sm:px-6 lg:px-8 bg-[#050507]"
         style={{ perspective: "1500px" }}
       >
         {/* Ambient Dark Canvas */}
@@ -337,57 +337,57 @@ export default function HowItWorksSection({ onOpenTrial }) {
           className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch will-change-transform"
         >
           {/* =================================================================== */}
-          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE (FULL VIBRANT ICE TEAL)         */}
+          {/* CARD 01: CONNECT YOUR KNOWLEDGE BASE (GLASSMORPHISM + GLOWING BORDER)*/}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[0] = el)}
             onMouseEnter={() => setActiveCardIndex(0)}
-            className="group relative rounded-2xl bg-[#5EEAD4] text-black border-2 border-[#2DD4BF] shadow-[0_20px_50px_rgba(94,234,212,0.35)] hover:shadow-[0_25px_60px_rgba(94,234,212,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
+            className="group relative rounded-2xl bg-gradient-to-b from-[#2DD4BF]/18 via-[#09232B]/85 to-[#041217]/95 backdrop-blur-2xl text-white border-2 border-[#2DD4BF] shadow-[0_0_28px_rgba(45,212,191,0.30)] hover:shadow-[0_0_50px_rgba(45,212,191,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
           >
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#5EEAD4] uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#2DD4BF]/20 text-[#2DD4BF] border border-[#2DD4BF]/40 uppercase tracking-wider">
                     Step 01 · Ingestion
                   </span>
-                  <span className="font-headline font-black text-2xl text-black/40">
+                  <span className="font-headline font-black text-2xl text-[#2DD4BF]">
                     01
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-black tracking-tight uppercase leading-snug">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-[#FFFFFF] !text-[#FFFFFF] tracking-tight uppercase leading-snug drop-shadow-md">
                   CONNECT YOUR KNOWLEDGE BASE
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed font-normal">
                   Upload brochures, pricing schedules, FAQs, technical manuals, or provide a website URL.
                 </p>
               </div>
 
               {/* Visual Graphic: Interactive Ingestion Dropzone */}
-              <div className="my-auto py-2 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
-                <div className="flex items-center justify-between text-[10px] font-mono text-black">
-                  <span className="flex items-center gap-1.5 font-bold">
-                    <Globe className="w-3 h-3 text-black" />
+              <div className="my-auto py-2 bg-black/50 border border-[#2DD4BF]/30 backdrop-blur-md rounded-xl p-3 space-y-2 text-white">
+                <div className="flex items-center justify-between text-[10px] font-mono text-white">
+                  <span className="flex items-center gap-1.5 font-bold text-[#2DD4BF]">
+                    <Globe className="w-3 h-3 text-[#2DD4BF]" />
                     URL &amp; Docs Sync
                   </span>
-                  <span className="px-1.5 py-0.2 rounded bg-black text-[#5EEAD4] font-bold text-[9px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[#2DD4BF]/20 text-[#2DD4BF] border border-[#2DD4BF]/40 font-bold text-[9px]">
                     Active
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[9px] text-black bg-black/5 p-1.5 rounded border border-black/10 font-mono">
-                  <Upload className="w-3 h-3 text-black shrink-0" />
+                <div className="flex items-center gap-1.5 text-[9px] text-white/90 bg-[#2DD4BF]/10 p-2 rounded border border-[#2DD4BF]/20 font-mono">
+                  <Upload className="w-3 h-3 text-[#2DD4BF] shrink-0" />
                   <span className="truncate">brochure_v2.pdf, faqs.docx</span>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-black/15 flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
-                <span className="text-[11px] text-black/85 font-semibold leading-tight">
+              <div className="pt-2.5 border-t border-[#2DD4BF]/30 flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#2DD4BF] shrink-0 mt-0.5" />
+                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
                   Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.
                 </span>
               </div>
@@ -395,60 +395,60 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* =================================================================== */}
-          {/* CARD 02: CALIBRATE PERSONA (FULL VIBRANT ELECTRIC LAVENDER)         */}
+          {/* CARD 02: CALIBRATE PERSONA (GLASSMORPHISM + GLOWING BORDER)         */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[1] = el)}
             onMouseEnter={() => setActiveCardIndex(1)}
-            className="group relative rounded-2xl bg-[#D8B4FE] text-black border-2 border-[#C084FC] shadow-[0_20px_50px_rgba(216,180,254,0.35)] hover:shadow-[0_25px_60px_rgba(216,180,254,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
+            className="group relative rounded-2xl bg-gradient-to-b from-[#C084FC]/18 via-[#1C0D2E]/85 to-[#0C0517]/95 backdrop-blur-2xl text-white border-2 border-[#C084FC] shadow-[0_0_28px_rgba(192,132,252,0.30)] hover:shadow-[0_0_50px_rgba(192,132,252,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
           >
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#D8B4FE] uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#C084FC]/20 text-[#C084FC] border border-[#C084FC]/40 uppercase tracking-wider">
                     Step 02 · Persona Engine
                   </span>
-                  <span className="font-headline font-black text-2xl text-black/40">
+                  <span className="font-headline font-black text-2xl text-[#C084FC]">
                     02
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-black tracking-tight uppercase leading-snug">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-[#FFFFFF] !text-[#FFFFFF] tracking-tight uppercase leading-snug drop-shadow-md">
                   CALIBRATE PERSONA &amp; LAUNCHER STYLING
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed font-normal">
                   Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and animation.
                 </p>
               </div>
 
               {/* Visual Graphic: Interactive Persona Selector */}
-              <div className="my-auto py-2 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-2 text-black">
+              <div className="my-auto py-2 bg-black/50 border border-[#C084FC]/30 backdrop-blur-md rounded-xl p-3 space-y-2 text-white">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-black font-bold">
+                  <span className="text-[10px] font-mono text-[#CBD5E1] font-bold">
                     Tone Preset:
                   </span>
-                  <span className="text-[9px] font-mono font-bold text-white bg-black px-2 py-0.5 rounded">
+                  <span className="text-[9px] font-mono font-bold text-[#C084FC] bg-[#C084FC]/20 border border-[#C084FC]/40 px-2 py-0.5 rounded">
                     Consultative AI
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center">
-                    <Bot className="w-3.5 h-3.5 text-white" />
+                  <div className="w-6 h-6 rounded-full bg-[#C084FC] text-black flex items-center justify-center font-bold">
+                    <Bot className="w-3.5 h-3.5 text-black" />
                   </div>
-                  <div className="flex-1 bg-black/5 rounded px-2 py-1 text-[9px] text-black truncate font-mono font-semibold">
+                  <div className="flex-1 bg-[#C084FC]/10 border border-[#C084FC]/20 rounded px-2 py-1 text-[9px] text-white/95 truncate font-mono font-medium">
                     &quot;Welcome! How can I accelerate your goals today?&quot;
                   </div>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-black/15 flex items-start gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
-                <span className="text-[11px] text-black/85 font-semibold leading-tight">
+              <div className="pt-2.5 border-t border-[#C084FC]/30 flex items-start gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#C084FC] shrink-0 mt-0.5" />
+                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
                   Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.
                 </span>
               </div>
@@ -456,57 +456,57 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* =================================================================== */}
-          {/* CARD 03: DEPLOY WITH CODE (FULL VIBRANT WARM CORAL PEACH)            */}
+          {/* CARD 03: DEPLOY WITH CODE (GLASSMORPHISM + GLOWING BORDER)          */}
           {/* =================================================================== */}
           <div
             ref={(el) => (cardRefs.current[2] = el)}
             onMouseEnter={() => setActiveCardIndex(2)}
-            className="group relative rounded-2xl bg-[#FED7AA] text-black border-2 border-[#FB923C] shadow-[0_20px_50px_rgba(254,215,170,0.35)] hover:shadow-[0_25px_60px_rgba(254,215,170,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
+            className="group relative rounded-2xl bg-gradient-to-b from-[#FB923C]/18 via-[#2A1408]/85 to-[#140803]/95 backdrop-blur-2xl text-white border-2 border-[#FB923C] shadow-[0_0_28px_rgba(251,146,60,0.30)] hover:shadow-[0_0_50px_rgba(251,146,60,0.55)] p-5 sm:p-6 flex flex-col justify-between overflow-hidden h-[360px] sm:h-[385px] lg:h-[410px] will-change-transform transition-all duration-300 hover:-translate-y-1.5 cursor-pointer"
           >
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div>
                 {/* Top Badge & Number */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black text-[#F97316] uppercase tracking-wider">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FB923C]/20 text-[#FB923C] border border-[#FB923C]/40 uppercase tracking-wider">
                     Step 03 · Live Embed
                   </span>
-                  <span className="font-headline font-black text-2xl text-black/40">
+                  <span className="font-headline font-black text-2xl text-[#FB923C]">
                     03
                   </span>
                 </div>
 
                 {/* Card Title */}
-                <h3 className="font-headline font-black text-lg sm:text-xl text-black tracking-tight uppercase leading-snug">
+                <h3 className="font-headline font-black text-lg sm:text-xl text-[#FFFFFF] !text-[#FFFFFF] tracking-tight uppercase leading-snug drop-shadow-md">
                   DEPLOY WITH A SINGLE LINE OF CODE
                 </h3>
 
                 {/* Description */}
-                <p className="mt-2 text-xs sm:text-[13px] text-black/85 leading-relaxed font-semibold">
+                <p className="mt-2 text-xs sm:text-[13px] text-[#CBD5E1] leading-relaxed font-normal">
                   Integrate the assistant into the website using the provided script.
                 </p>
               </div>
 
               {/* Visual Graphic: Code Embed Terminal Snippet */}
-              <div className="my-auto py-2 bg-black/10 backdrop-blur-md rounded-xl p-3 border border-black/15 space-y-1.5 text-black">
-                <div className="flex items-center justify-between text-[10px] font-mono text-black font-semibold">
-                  <span className="flex items-center gap-1.5 text-black font-bold">
-                    <Code2 className="w-3 h-3 text-black" />
+              <div className="my-auto py-2 bg-black/50 border border-[#FB923C]/30 backdrop-blur-md rounded-xl p-3 space-y-1.5 text-white">
+                <div className="flex items-center justify-between text-[10px] font-mono text-white font-semibold">
+                  <span className="flex items-center gap-1.5 text-[#FB923C] font-bold">
+                    <Code2 className="w-3 h-3 text-[#FB923C]" />
                     HTML Embed
                   </span>
-                  <span className="flex items-center gap-1 text-[9px] text-black font-mono font-bold">
-                    <Copy className="w-2.5 h-2.5" />
+                  <span className="flex items-center gap-1 text-[9px] text-[#CBD5E1] font-mono font-bold">
+                    <Copy className="w-2.5 h-2.5 text-[#FB923C]" />
                     One-line
                   </span>
                 </div>
-                <div className="bg-black text-[#86EFAC] p-2 rounded text-[9px] font-mono overflow-hidden text-ellipsis whitespace-nowrap">
+                <div className="bg-black/80 text-[#86EFAC] border border-[#FB923C]/30 p-2 rounded text-[9px] font-mono overflow-hidden text-ellipsis whitespace-nowrap">
                   <code>&lt;script src=&quot;nexus.js&quot; data-bot=&quot;nx_892&quot;&gt;&lt;/script&gt;</code>
                 </div>
               </div>
 
               {/* Card Footer Highlight */}
-              <div className="pt-2.5 border-t border-black/15 flex items-start gap-2">
-                <Zap className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
-                <span className="text-[11px] text-black/85 font-semibold leading-tight">
+              <div className="pt-2.5 border-t border-[#FB923C]/30 flex items-start gap-2">
+                <Zap className="w-3.5 h-3.5 text-[#FB923C] shrink-0 mt-0.5" />
+                <span className="text-[11px] text-[#CBD5E1] font-medium leading-tight">
                   Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.
                 </span>
               </div>
