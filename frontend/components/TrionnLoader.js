@@ -5,32 +5,24 @@ import gsap from "gsap";
 
 /**
  * TrionnLoader — Inspired by Trionn.com's award-winning preloader.
- * Features:
- * - 4 spinning crosshair / plus marks flying from screen corners
- * - Centered box reveal with spring physics
- * - High-tech perimeter SVG drawing border
- * - Synchronized corner plus spin on boundary completion
- * - Slot reel / percentage ticker counting 0 -> 100%
- * - Staggered tagline words
- * - Embedded 4K video playing smoothly inside the box
- * - Full-viewport expansion wipe into the dark luxury landing page
+ * Sequence:
+ * 1. Small: Box + locked corner plus marks start small at center
+ * 2. Medium: Box scales smoothly from small to medium square size
+ * 3. Box line made: SVG perimeter line draws around box edges (0% -> 100%)
+ * 4. Logo appears: Inside the box, the logo video fades in and animates
+ * 5. Big: Box expands to full viewport (100vw x 100vh) and reveals the landing page
  */
 export default function TrionnLoader({ onComplete }) {
   const [percent, setPercent] = useState(0);
   const containerRef = useRef(null);
   const boxWrapRef = useRef(null);
+  const logoWrapRef = useRef(null);
   const videoRef = useRef(null);
   const borderRectRef = useRef(null);
   const counterRef = useRef(null);
   const taglineRef = useRef(null);
 
-  // Flying plus refs (from screen corners)
-  const flyTlRef = useRef(null);
-  const flyTrRef = useRef(null);
-  const flyBlRef = useRef(null);
-  const flyBrRef = useRef(null);
-
-  // Corner plus refs (attached to box)
+  // 4 Corner plus refs — locked directly to the box corners
   const cornerTlRef = useRef(null);
   const cornerTrRef = useRef(null);
   const cornerBlRef = useRef(null);
@@ -44,7 +36,7 @@ export default function TrionnLoader({ onComplete }) {
   const dot2Ref = useRef(null);
 
   useEffect(() => {
-    // 1. Lock body scroll during preloader
+    // Lock scroll during preloader
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.scrollTo(0, 0);
@@ -57,105 +49,18 @@ export default function TrionnLoader({ onComplete }) {
         },
       });
 
-      // Initial element state
+      // 0. Initial state: Box starts SMALL
       gsap.set(boxWrapRef.current, {
-        scale: 0.6,
-        opacity: 0,
-        borderRadius: "20px",
-      });
-
-      gsap.set(
-        [
-          flyTlRef.current,
-          flyTrRef.current,
-          flyBlRef.current,
-          flyBrRef.current,
-        ],
-        { opacity: 1, scale: 1 }
-      );
-
-      gsap.set(
-        [
-          cornerTlRef.current,
-          cornerTrRef.current,
-          cornerBlRef.current,
-          cornerBrRef.current,
-        ],
-        { opacity: 0 }
-      );
-
-      gsap.set([word1Ref.current, word2Ref.current, word3Ref.current], {
-        opacity: 0,
-        y: 8,
-      });
-      gsap.set([dot1Ref.current, dot2Ref.current], { opacity: 0 });
-
-      if (borderRectRef.current) {
-        borderRectRef.current.style.strokeDashoffset = "1";
-      }
-
-      // Try autoplaying video
-      if (videoRef.current) {
-        videoRef.current.play().catch(() => {});
-      }
-
-      // --- STAGE 1: Flying plus icons converge from screen margins (0.0s -> 0.8s) ---
-      tl.to(flyTlRef.current, {
-        x: () => window.innerWidth * 0.35,
-        y: () => window.innerHeight * 0.35,
-        rotation: 720,
-        duration: 0.85,
-        ease: "power3.inOut",
-      }, 0);
-
-      tl.to(flyTrRef.current, {
-        x: () => -window.innerWidth * 0.35,
-        y: () => window.innerHeight * 0.35,
-        rotation: -720,
-        duration: 0.85,
-        ease: "power3.inOut",
-      }, 0);
-
-      tl.to(flyBlRef.current, {
-        x: () => window.innerWidth * 0.35,
-        y: () => -window.innerHeight * 0.35,
-        rotation: -720,
-        duration: 0.85,
-        ease: "power3.inOut",
-      }, 0);
-
-      tl.to(flyBrRef.current, {
-        x: () => -window.innerWidth * 0.35,
-        y: () => -window.innerHeight * 0.35,
-        rotation: 720,
-        duration: 0.85,
-        ease: "power3.inOut",
-      }, 0);
-
-      // --- STAGE 2: Box reveals with spring bounce & corner plus handoff (0.75s) ---
-      tl.to(boxWrapRef.current, {
-        scale: 1,
+        scale: 0.15,
         opacity: 1,
-        duration: 0.7,
-        ease: "back.out(1.5)",
-      }, 0.75);
+        borderRadius: "16px",
+      });
 
-      tl.to(
-        [
-          flyTlRef.current,
-          flyTrRef.current,
-          flyBlRef.current,
-          flyBrRef.current,
-        ],
-        {
-          opacity: 0,
-          duration: 0.2,
-          ease: "power1.out",
-        },
-        0.8
-      );
+      gsap.set(logoWrapRef.current, {
+        opacity: 0,
+      });
 
-      tl.to(
+      gsap.set(
         [
           cornerTlRef.current,
           cornerTrRef.current,
@@ -164,98 +69,166 @@ export default function TrionnLoader({ onComplete }) {
         ],
         {
           opacity: 1,
-          duration: 0.25,
-          ease: "power1.in",
-        },
-        0.85
+          scale: 1,
+          rotation: -360,
+        }
       );
 
-      // --- STAGE 3: Perimeter Stroke Draw + Counter + Taglines (0.9s -> 3.1s) ---
-      const progressObj = { value: 0 };
-      let lastSpun = { tl: false, tr: false, br: false, bl: false };
+      gsap.set([word1Ref.current, word2Ref.current, word3Ref.current], {
+        opacity: 0,
+        y: 6,
+      });
+      gsap.set([dot1Ref.current, dot2Ref.current], { opacity: 0 });
 
-      tl.to(progressObj, {
-        value: 100,
-        duration: 2.2,
-        ease: "power1.inOut",
-        onUpdate: () => {
-          const val = Math.round(progressObj.value);
-          setPercent(val);
-
-          // Update SVG stroke-dashoffset
-          if (borderRectRef.current) {
-            borderRectRef.current.style.strokeDashoffset = String(
-              1 - progressObj.value / 100
-            );
-          }
-
-          // Spin corners as stroke hits each corner
-          if (progressObj.value >= 25 && !lastSpun.tr) {
-            lastSpun.tr = true;
-            gsap.to(cornerTrRef.current, { rotation: "+=360", duration: 0.45, ease: "power2.out" });
-          }
-          if (progressObj.value >= 50 && !lastSpun.br) {
-            lastSpun.br = true;
-            gsap.to(cornerBrRef.current, { rotation: "+=360", duration: 0.45, ease: "power2.out" });
-          }
-          if (progressObj.value >= 75 && !lastSpun.bl) {
-            lastSpun.bl = true;
-            gsap.to(cornerBlRef.current, { rotation: "+=360", duration: 0.45, ease: "power2.out" });
-          }
-          if (progressObj.value >= 98 && !lastSpun.tl) {
-            lastSpun.tl = true;
-            gsap.to(cornerTlRef.current, { rotation: "+=360", duration: 0.45, ease: "power2.out" });
-          }
-        },
-      }, 0.9);
-
-      // Tagline reveals
-      tl.to(word1Ref.current, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 1.1);
-      tl.to(dot1Ref.current, { opacity: 0.6, duration: 0.3 }, 1.3);
-      tl.to(word2Ref.current, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 1.5);
-      tl.to(dot2Ref.current, { opacity: 0.6, duration: 0.3 }, 1.7);
-      tl.to(word3Ref.current, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 1.9);
-
-      // --- STAGE 4: Fade Sub-elements & Expand Box Fullscreen (3.2s -> 4.0s) ---
-      tl.to(
-        [counterRef.current, taglineRef.current],
-        {
-          opacity: 0,
-          y: -12,
-          duration: 0.35,
-          ease: "power2.in",
-        },
-        3.15
-      );
-
-      // Fade out the SVG border
       if (borderRectRef.current) {
-        tl.to(borderRectRef.current, { opacity: 0, duration: 0.25 }, 3.2);
+        borderRectRef.current.style.strokeDashoffset = "1";
       }
 
-      // Corner plus signs push outwards and fade
+      // Try playing the video
+      if (videoRef.current) {
+        videoRef.current.play().catch(() => {});
+      }
+
+      // --- 1. SMALL -> MEDIUM SIZE (0.0s -> 0.8s) ---
+      // Box and corner pluses move together from small to medium size
       tl.to(
-        cornerTlRef.current,
-        { x: -120, y: -120, opacity: 0, duration: 0.65, ease: "power3.in" },
-        3.25
-      );
-      tl.to(
-        cornerTrRef.current,
-        { x: 120, y: -120, opacity: 0, duration: 0.65, ease: "power3.in" },
-        3.25
-      );
-      tl.to(
-        cornerBlRef.current,
-        { x: -120, y: 120, opacity: 0, duration: 0.65, ease: "power3.in" },
-        3.25
-      );
-      tl.to(
-        cornerBrRef.current,
-        { x: 120, y: 120, opacity: 0, duration: 0.65, ease: "power3.in" },
-        3.25
+        boxWrapRef.current,
+        {
+          scale: 1,
+          duration: 0.8,
+          ease: "power3.out",
+        },
+        0
       );
 
-      // Expansion Wipe: Box scales up to 100vw x 100vh
+      tl.to(
+        [
+          cornerTlRef.current,
+          cornerTrRef.current,
+          cornerBlRef.current,
+          cornerBrRef.current,
+        ],
+        {
+          rotation: 0,
+          duration: 0.8,
+          ease: "power3.out",
+        },
+        0
+      );
+
+      // --- 2. BOX LINE IS MADE + LOGO APPEARS (0.8s -> 3.2s) ---
+      // Perimeter drawing from top-left, along top, down right, across bottom, up to top-left
+      const prog = { value: 0 };
+      const lastSpun = { tr: false, br: false, bl: false, tl: false };
+
+      tl.to(
+        prog,
+        {
+          value: 100,
+          duration: 2.4,
+          ease: "power1.inOut",
+          onUpdate: () => {
+            const v = Math.round(prog.value);
+            setPercent(v);
+
+            if (borderRectRef.current) {
+              borderRectRef.current.style.strokeDashoffset = String(
+                1 - prog.value / 100
+              );
+            }
+
+            // Spin corner plus as drawing line passes each corner
+            if (prog.value >= 25 && !lastSpun.tr) {
+              lastSpun.tr = true;
+              gsap.to(cornerTrRef.current, {
+                rotation: "+=360",
+                duration: 0.45,
+                ease: "power2.out",
+              });
+            }
+            if (prog.value >= 50 && !lastSpun.br) {
+              lastSpun.br = true;
+              gsap.to(cornerBrRef.current, {
+                rotation: "+=360",
+                duration: 0.45,
+                ease: "power2.out",
+              });
+            }
+            if (prog.value >= 75 && !lastSpun.bl) {
+              lastSpun.bl = true;
+              gsap.to(cornerBlRef.current, {
+                rotation: "+=360",
+                duration: 0.45,
+                ease: "power2.out",
+              });
+            }
+            if (prog.value >= 98 && !lastSpun.tl) {
+              lastSpun.tl = true;
+              gsap.to(cornerTlRef.current, {
+                rotation: "+=360",
+                duration: 0.45,
+                ease: "power2.out",
+              });
+            }
+          },
+        },
+        0.8
+      );
+
+      // Logo / video appears inside the box as the line is made
+      tl.to(
+        logoWrapRef.current,
+        {
+          opacity: 1,
+          duration: 0.7,
+          ease: "power2.out",
+        },
+        0.9
+      );
+
+      // Tagline words appear staggered
+      tl.to(word1Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.1);
+      tl.to(dot1Ref.current, { opacity: 0.7, duration: 0.25 }, 1.3);
+      tl.to(word2Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.5);
+      tl.to(dot2Ref.current, { opacity: 0.7, duration: 0.25 }, 1.7);
+      tl.to(word3Ref.current, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 1.9);
+
+      // --- 3. AND THEN BIG LIKE THIS (3.25s -> 4.1s) ---
+      // Fade tagline and bottom counter
+      tl.to(
+        [taglineRef.current, counterRef.current],
+        {
+          opacity: 0,
+          y: -10,
+          duration: 0.3,
+          ease: "power2.in",
+        },
+        3.2
+      );
+
+      // Fade out the perimeter stroke
+      if (borderRectRef.current) {
+        tl.to(borderRectRef.current, { opacity: 0, duration: 0.2 }, 3.25);
+      }
+
+      // Corner pluses fly outward as box expands and fade
+      tl.to(
+        [
+          cornerTlRef.current,
+          cornerTrRef.current,
+          cornerBlRef.current,
+          cornerBrRef.current,
+        ],
+        {
+          opacity: 0,
+          scale: 1.4,
+          duration: 0.6,
+          ease: "power3.in",
+        },
+        3.3
+      );
+
+      // Box expands from medium size to BIG (100vw x 100vh)
       tl.to(
         boxWrapRef.current,
         {
@@ -267,10 +240,10 @@ export default function TrionnLoader({ onComplete }) {
           duration: 0.85,
           ease: "power4.inOut",
         },
-        3.2
+        3.25
       );
 
-      // Turn background of the whole screen to obsidian black
+      // Screen turns to obsidian black
       tl.to(
         containerRef.current,
         {
@@ -281,15 +254,15 @@ export default function TrionnLoader({ onComplete }) {
         3.4
       );
 
-      // --- STAGE 5: Curtain Dissolve into Landing Page (4.05s -> 4.55s) ---
+      // --- 4. CURTAIN DISSOLVE INTO SITE (4.1s -> 4.55s) ---
       tl.to(
         containerRef.current,
         {
           opacity: 0,
-          duration: 0.5,
+          duration: 0.45,
           ease: "power2.inOut",
         },
-        4.05
+        4.1
       );
     }, containerRef);
 
@@ -299,115 +272,109 @@ export default function TrionnLoader({ onComplete }) {
     };
   }, [onComplete]);
 
-  // Plus crosshair SVG (Trionn design)
+  // Trionn crosshair plus SVG
   const renderPlus = () => (
     <svg
-      width="13"
-      height="13"
-      viewBox="0 0 13 13"
+      width="15"
+      height="15"
+      viewBox="0 0 15 15"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="block"
     >
-      <line x1="6.5" y1="0" x2="6.5" y2="13" stroke="#444444" strokeWidth="1.2" />
-      <line x1="13" y1="6.5" x2="0" y2="6.5" stroke="#444444" strokeWidth="1.2" />
+      <line x1="7.5" y1="0" x2="7.5" y2="15" stroke="#333333" strokeWidth="1.2" />
+      <line x1="15" y1="7.5" x2="0" y2="7.5" stroke="#333333" strokeWidth="1.2" />
     </svg>
   );
 
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[99999] bg-[#CECED4] flex flex-col items-center justify-center select-none pointer-events-auto"
+      className="fixed inset-0 z-[99999] bg-[#CECED4] flex flex-col items-center justify-center select-none pointer-events-auto overflow-hidden"
       style={{ willChange: "opacity, background-color" }}
     >
-      {/* 4 Initial Flying Plus marks positioned near screen edges */}
-      <div
-        ref={flyTlRef}
-        className="fixed top-12 left-12 z-50 pointer-events-none will-change-transform"
-      >
-        {renderPlus()}
-      </div>
-      <div
-        ref={flyTrRef}
-        className="fixed top-12 right-12 z-50 pointer-events-none will-change-transform"
-      >
-        {renderPlus()}
-      </div>
-      <div
-        ref={flyBlRef}
-        className="fixed bottom-12 left-12 z-50 pointer-events-none will-change-transform"
-      >
-        {renderPlus()}
-      </div>
-      <div
-        ref={flyBrRef}
-        className="fixed bottom-12 right-12 z-50 pointer-events-none will-change-transform"
-      >
-        {renderPlus()}
-      </div>
-
-      {/* Main Center Box Wrap (Trionn aspect ratio and dimensions) */}
+      {/* 
+        Master Center Box Wrap
+        Square aspect ratio matching Trionn (w: 300px, h: 300px)
+        Corner pluses are locked as children so they move together at all times
+      */}
       <div
         ref={boxWrapRef}
-        className="relative w-[260px] xs:w-[280px] sm:w-[320px] md:w-[360px] aspect-[4/5] max-w-[90vw] max-h-[70vh] flex items-center justify-center overflow-hidden shadow-2xl bg-[#09090D] border border-black/10"
+        className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] md:w-[340px] md:h-[340px] max-w-[90vw] max-h-[75vh] flex items-center justify-center bg-[#C8C8CE] border border-black/[0.06] shadow-xl"
         style={{
-          boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.4), 0 0 40px rgba(150, 61, 255, 0.15)",
+          boxShadow: "0 20px 50px -10px rgba(0, 0, 0, 0.25)",
+          willChange: "transform, width, height, border-radius",
         }}
       >
-        {/* User's 4K Loader Video playing smoothly */}
-        <video
-          ref={videoRef}
-          src="/loader_video.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-700 hover:scale-105"
-        />
+        {/* Inside: Logo / Video container that appears as line is drawn */}
+        <div
+          ref={logoWrapRef}
+          className="absolute inset-3 sm:inset-4 rounded-xl overflow-hidden flex items-center justify-center bg-[#09090D] shadow-inner"
+        >
+          <video
+            ref={videoRef}
+            src="/loader_video.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover object-center pointer-events-none select-none"
+          />
+        </div>
 
-        {/* Trionn SVG Perimeter Drawing Border */}
+        {/* 
+          SVG Perimeter Drawing Border
+          Starts top-left (0,0), draws across top, down right, across bottom, up to top-left
+        */}
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible"
           style={{ willChange: "stroke-dashoffset, opacity" }}
         >
           <rect
             ref={borderRectRef}
-            x="0.75"
-            y="0.75"
-            width="calc(100% - 1.5px)"
-            height="calc(100% - 1.5px)"
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
             fill="none"
-            stroke="#434343"
-            strokeWidth="1.75"
+            stroke="#222222"
+            strokeWidth="1.5"
             strokeDasharray="1"
             strokeDashoffset="1"
             pathLength="1"
-            rx="20"
+            rx="16"
           />
         </svg>
 
-        {/* 4 Corner Plus Marks attached to Box Corners */}
+        {/* 
+          4 Corner Pluses LOCKED to the box corners
+          - top-left: top-0 left-0
+          - top-right: top-0 right-0
+          - bottom-left: bottom-0 left-0
+          - bottom-right: bottom-0 right-0
+          They move and scale WITH the box, never separating!
+        */}
         <div
           ref={cornerTlRef}
-          className="absolute -top-[6.5px] -left-[6.5px] z-30 pointer-events-none"
+          className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
         >
           {renderPlus()}
         </div>
         <div
           ref={cornerTrRef}
-          className="absolute -top-[6.5px] -right-[6.5px] z-30 pointer-events-none"
+          className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
         >
           {renderPlus()}
         </div>
         <div
           ref={cornerBlRef}
-          className="absolute -bottom-[6.5px] -left-[6.5px] z-30 pointer-events-none"
+          className="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 z-30 pointer-events-none"
         >
           {renderPlus()}
         </div>
         <div
           ref={cornerBrRef}
-          className="absolute -bottom-[6.5px] -right-[6.5px] z-30 pointer-events-none"
+          className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 z-30 pointer-events-none"
         >
           {renderPlus()}
         </div>
@@ -416,19 +383,19 @@ export default function TrionnLoader({ onComplete }) {
       {/* Tagline Words Underneath (Trionn Style) */}
       <div
         ref={taglineRef}
-        className="flex items-center justify-center gap-1.5 mt-8 font-mono text-[11px] sm:text-xs tracking-[0.28em] uppercase font-bold text-[#2A2A30] z-20"
+        className="flex items-center justify-center gap-2 mt-8 font-mono text-[11px] sm:text-xs tracking-[0.25em] uppercase font-bold text-[#222226] z-20"
       >
-        <span ref={word1Ref}>INTELLIGENCE</span>
+        <span ref={word1Ref}>INSPIRE</span>
         <span ref={dot1Ref} className="text-[#666] font-normal">·</span>
-        <span ref={word2Ref}>AUTONOMY</span>
+        <span ref={word2Ref}>INNOVATE</span>
         <span ref={dot2Ref} className="text-[#666] font-normal">·</span>
-        <span ref={word3Ref}>REVENUE</span>
+        <span ref={word3Ref}>IMPACT</span>
       </div>
 
       {/* Percentage Rolling Counter (Bottom Center) */}
       <div
         ref={counterRef}
-        className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-baseline gap-1 font-mono font-bold text-sm tracking-widest text-[#333339] z-20 select-none"
+        className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-baseline gap-1 font-mono font-bold text-sm tracking-widest text-[#222226] z-20 select-none"
       >
         <span className="text-base text-[#111115]">
           {percent < 10 ? `00${percent}` : percent < 100 ? `0${percent}` : percent}
@@ -438,4 +405,3 @@ export default function TrionnLoader({ onComplete }) {
     </div>
   );
 }
-
