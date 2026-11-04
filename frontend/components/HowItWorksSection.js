@@ -157,28 +157,40 @@ export default function HowItWorksSection({ onOpenTrial }) {
   const glowOrbRef = useRef(null);
   const sectionHeaderRef = useRef(null);
 
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+  const handleCardsScroll = (e) => {
+    const container = e.currentTarget;
+    if (!container) return;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.offsetWidth * 0.82;
+    const newIndex = Math.round(scrollLeft / (cardWidth || 1));
+    setActiveCardIndex(Math.min(Math.max(newIndex, 0), 2));
+  };
+
+  const scrollToCard = (index) => {
+    const targetCard = cardRefs.current[index];
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      setActiveCardIndex(index);
+    }
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     const stage = stageRef.current;
     if (!container || !stage) return;
 
-    const ctx = gsap.context(() => {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const isDesktop = window.innerWidth >= 1024;
+    if (typeof window !== "undefined") {
+      ScrollTrigger.config({ ignoreMobileResize: true });
+    }
 
-      // Handle Reduced Motion preferences
-      if (prefersReducedMotion) {
-        if (typographyRef.current) gsap.set(typographyRef.current, { display: "none" });
-        if (cardsTrackRef.current) gsap.set(cardsTrackRef.current, { x: 0, opacity: 1 });
-        cardRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { opacity: 1, x: 0, y: 0, scale: 1 });
-        });
-        if (sectionHeaderRef.current) gsap.set(sectionHeaderRef.current, { opacity: 1, y: 0 });
-        return;
-      }
+    const ctx = gsap.context(() => {
+      const isDesktop = window.innerWidth >= 1024;
+      const isMobile = window.innerWidth < 768;
 
       // =======================================================================
-      // INITIAL 3D SCENE CONFIGURATION
+      // INITIAL 3D SCENE CONFIGURATION (Runs on all screens: phone, tab, laptop, desktop)
       // =======================================================================
       letterRefs.current.forEach((el) => {
         if (el) {
@@ -198,10 +210,9 @@ export default function HowItWorksSection({ onOpenTrial }) {
         }
       });
 
-      // Right-to-Left Carousel Track starts off-screen to the right
       if (cardsTrackRef.current) {
         gsap.set(cardsTrackRef.current, {
-          xPercent: isDesktop ? 45 : 30,
+          xPercent: isMobile ? 0 : (isDesktop ? 30 : 20),
           opacity: 0,
         });
       }
@@ -209,9 +220,10 @@ export default function HowItWorksSection({ onOpenTrial }) {
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           gsap.set(card, {
-            x: 100 + idx * 60,
+            x: isMobile ? (25 + idx * 15) : (isDesktop ? 80 + idx * 40 : 45 + idx * 25),
             opacity: 0,
-            scale: 0.9,
+            scale: 0.92,
+            force3D: true,
           });
         }
       });
@@ -227,9 +239,9 @@ export default function HowItWorksSection({ onOpenTrial }) {
       // =======================================================================
       // MASTER COORDINATED GSAP TIMELINE
       // 1. Letters shatter in 3D
-      // 2. Fullscreen typography FADES OUT (Eliminates ghost text overlap!)
-      // 3. Right-to-Left Carousel Track glides in from right to left
-      // 4. Cards fan out smoothly into final balanced layout
+      // 2. Fullscreen typography fades out cleanly
+      // 3. Carousel Track glides in
+      // 4. Cards fan out smoothly into place
       // =======================================================================
       const masterTL = gsap.timeline({
         scrollTrigger: {
@@ -244,87 +256,74 @@ export default function HowItWorksSection({ onOpenTrial }) {
         },
       });
 
-      // 1. Letters shatter outwards in 3D
+      // 1. Letters shatter outwards in 3D (scaled responsively for all screens)
+      const scaleFactor = isMobile ? 0.45 : isDesktop ? 1.0 : 0.75;
       letterRefs.current.forEach((el, idx) => {
         if (el) {
           const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
           masterTL.to(
             el,
             {
-              x: config.x * (isDesktop ? 1.2 : 0.7),
-              y: config.y * (isDesktop ? 1.2 : 0.7),
-              z: config.z,
+              x: config.x * scaleFactor,
+              y: config.y * scaleFactor,
+              z: config.z * scaleFactor,
               rotateX: config.rx,
               rotateY: config.ry,
               rotateZ: config.rz,
               scale: config.s,
               opacity: 0,
-              filter: "blur(12px)",
-              duration: 0.28,
+              filter: "blur(8px)",
+              duration: 0.35,
               ease: "power2.inOut",
             },
-            0.08 + (idx % 4) * 0.015
+            0.02 + idx * 0.012
           );
         }
       });
 
-      // 2. WIPE OUT FULLSCREEN TYPOGRAPHY (Fixes overlapping text completely!)
+      // 2. Fade out typography wrapper
       if (typographyRef.current) {
         masterTL.to(
           typographyRef.current,
           {
             opacity: 0,
-            duration: 0.20,
-            ease: "power2.out",
             pointerEvents: "none",
+            duration: 0.15,
+            ease: "power1.out",
           },
-          0.10
+          0.18
         );
       }
 
-      // 3. Persistent Section Header fades in cleanly at top
+      // Header fades in
       if (sectionHeaderRef.current) {
         masterTL.to(
           sectionHeaderRef.current,
           {
             opacity: 1,
             y: 0,
-            duration: 0.22,
-            ease: "power2.out",
+            duration: 0.25,
+            ease: "power3.out",
           },
-          0.12
+          0.14
         );
       }
 
-      if (glowOrbRef.current) {
-        masterTL.to(
-          glowOrbRef.current,
-          {
-            scale: 1.25,
-            opacity: 0.9,
-            duration: 0.30,
-            ease: "power1.out",
-          },
-          0.12
-        );
-      }
-
-      // 4. RIGHT-TO-LEFT CAROUSEL ENTRANCE:
-      // The track glides smoothly from RIGHT to LEFT into view
+      // 3. Carousel Track enters smoothly
       if (cardsTrackRef.current) {
         masterTL.to(
           cardsTrackRef.current,
           {
             xPercent: 0,
             opacity: 1,
-            duration: 0.35,
+            duration: 0.32,
             ease: "power2.out",
           },
           0.15
         );
       }
 
-      // 5. Individual cards stagger and glide from right to left into their spots
+      // 4. Staggered Card Entrance
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           masterTL.to(
@@ -333,51 +332,100 @@ export default function HowItWorksSection({ onOpenTrial }) {
               x: 0,
               opacity: 1,
               scale: 1,
-              duration: 0.32,
+              duration: 0.35,
               ease: "power3.out",
+              force3D: true,
             },
-            0.20 + idx * 0.08
+            0.18 + idx * 0.08
           );
         }
       });
 
-      // Settle and hold steady for interactive browsing
-      masterTL.to({}, { duration: 0.35 }, 0.65);
+      // Ambient glow orb intensifies
+      if (glowOrbRef.current) {
+        masterTL.to(
+          glowOrbRef.current,
+          {
+            scale: 1.3,
+            opacity: 0.7,
+            duration: 0.4,
+            ease: "power2.inOut",
+          },
+          0.15
+        );
+      }
+
+      // Hold reading state
+      masterTL.to({}, { duration: 0.4 }, 0.6);
     }, containerRef);
 
-    return () => {
-      ctx.revert();
-    };
+    return () => ctx.revert();
   }, []);
 
   return (
     <section
-      id="how-it-works"
       ref={containerRef}
+      id="how-it-works"
       className="relative w-full bg-[#050507] text-[#F5F5F7] select-none"
     >
-      {/* PINNED STAGE VIEWPORT */}
+      <style>{`
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
+      {/* ===================================================================== */}
+      {/* PINNED STAGE VIEWPORT (100dvh FOR MOBILE/SAFARI — NO CUT-OFF)          */}
+      {/* ===================================================================== */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen overflow-hidden flex flex-col justify-between pt-14 sm:pt-16 pb-4 sm:pb-5 px-4 sm:px-6 lg:px-8 bg-[#050507]"
-        style={{ perspective: "1500px" }}
+        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-16 sm:pt-20 lg:pt-22 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
+        style={{
+          minHeight: "100dvh",
+          height: "100dvh",
+          perspective: "1400px",
+        }}
       >
-        {/* Ambient Dark Canvas */}
+        {/* Ambient Center Glow */}
         <div
           ref={glowOrbRef}
-          className="hidden"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] rounded-full pointer-events-none z-0 blur-[120px] transition-opacity"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, rgba(6, 182, 212, 0.12) 50%, transparent 70%)",
+          }}
+        />
+
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-20 z-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px)
+            `,
+            backgroundSize: "60px 60px",
+          }}
         />
 
         {/* ===================================================================== */}
-        {/* FULLSCREEN TYPOGRAPHY & CHARACTER SHATTER (LAYER 30 - FADES AT 0.10s) */}
+        {/* FULLSCREEN TYPOGRAPHY: "HOW IT WORKS" (SHATTERS ON SCROLL)            */}
         {/* ===================================================================== */}
         <div
           ref={typographyRef}
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none px-4"
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none select-none px-4"
         >
-          {/* Oversized Centered "HOW IT WORKS" Typography */}
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 backdrop-blur-sm text-[10px] sm:text-xs font-mono uppercase tracking-widest text-purple-300 mb-4 sm:mb-6">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+            <span>Process & Implementation</span>
+          </div>
+
           <h1
-            className="font-headline font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl tracking-tight text-white uppercase text-center flex flex-wrap justify-center items-center gap-x-4 md:gap-x-6"
+            className="font-headline font-black text-4xl sm:text-6xl md:text-8xl lg:text-9xl tracking-tight text-white uppercase text-center flex flex-wrap justify-center items-center gap-x-2 sm:gap-x-4 md:gap-x-6"
             style={{ perspective: "1200px" }}
           >
             {/* Word: HOW */}
@@ -420,7 +468,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             </span>
           </h1>
 
-          <p className="mt-6 text-sm sm:text-base text-[#9898A6] max-w-lg text-center tracking-wide font-mono uppercase">
+          <p className="mt-4 sm:mt-6 text-xs sm:text-base text-[#9898A6] max-w-lg text-center tracking-wide font-mono uppercase">
             Scroll to reveal architecture & deployment
           </p>
         </div>
@@ -430,22 +478,26 @@ export default function HowItWorksSection({ onOpenTrial }) {
         {/* ===================================================================== */}
         <div
           ref={sectionHeaderRef}
-          className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-3"
+          className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-1 pb-1 sm:pb-2 px-2"
         >
-          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
+          <h2 className="font-headline font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
             From Raw Documents To Autonomous Sales In 5 Minutes
           </h2>
-          <p className="mt-1 text-xs sm:text-sm text-[#9898A6] max-w-2xl mx-auto hidden sm:block">
+          <p className="mt-1 text-[11px] sm:text-xs md:text-sm text-[#9898A6] max-w-2xl mx-auto">
             No machine learning engineers, vector database setups, or prompt writing required.
           </p>
         </div>
 
         {/* ===================================================================== */}
-        {/* 3 PROCESS CARDS (SHUTTERSTOCK LAYOUT: WHITE BG, 01 WATERMARK, TOP BAR, CENTER ICON, TITLE, DESC, BOTTOM SOLID BUTTON) */}
+        {/* 3 PROCESS CARDS (RESPONSIVE: HORIZONTAL SNAP ON PHONE, 3-COL ON TABLET/DESKTOP) */}
         {/* ===================================================================== */}
         <div
           ref={cardsTrackRef}
-          className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-7 items-stretch will-change-transform"
+          onScroll={handleCardsScroll}
+          className="relative z-20 max-w-7xl mx-auto w-full my-auto flex md:grid md:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-6 items-stretch will-change-transform overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 sm:px-6 md:px-0 py-2 sm:py-3"
+          style={{
+            WebkitOverflowScrolling: "touch",
+          }}
         >
           {PROCESS_CARDS.map((card, idx) => {
             const Icon = card.icon;
@@ -454,70 +506,73 @@ export default function HowItWorksSection({ onOpenTrial }) {
               <div
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
-                className="featured-card group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                className="featured-card group relative w-[82vw] max-w-[320px] shrink-0 snap-center md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
                 style={{
                   backgroundColor: "#0D0D15",
                   borderColor: card.accentColor,
-                  boxShadow: `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.8)`,
+                  boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
+                  WebkitBackfaceVisibility: "hidden",
+                  backfaceVisibility: "hidden",
+                  WebkitTransform: "translateZ(0)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 25px 60px rgba(0,0,0,0.9)`;
+                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.8)`;
+                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
                 }}
               >
                 {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
-                <div className="flex items-center justify-between w-full mb-3">
-                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
+                <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
                     {card.step}
                   </span>
                   <div
-                    className="w-12 sm:w-14 h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
+                    className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
                     style={{ backgroundColor: card.accentColor }}
                   />
                 </div>
 
                 {/* Upper Center: Prominent Illustrated Icon */}
-                <div className="my-3 sm:my-4 flex justify-center w-full">
+                <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
                   <div
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+                    className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
                     style={{
                       backgroundColor: `${card.accentColor}18`,
                       border: `1.5px solid ${card.accentColor}50`,
                       boxShadow: `0 0 25px ${card.accentColor}25`,
                     }}
                   >
-                    <Icon className="w-11 h-11 sm:w-12 sm:h-12" />
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
                   </div>
                 </div>
 
                 {/* Middle: Centered Heading & Structured Description */}
-                <div className="text-center space-y-2 mb-5 flex-1 flex flex-col justify-center">
+                <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
                   <span
-                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider block"
+                    className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
                     style={{ color: card.accentColor }}
                   >
                     {card.tagline}
                   </span>
                   <h3
                     style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
-                    className="font-extrabold text-base sm:text-lg tracking-tight uppercase"
+                    className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
                   >
                     {card.title}
                   </h3>
                   <p
                     style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
-                    className="text-xs leading-relaxed line-clamp-3 px-1 font-normal"
+                    className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
                   >
                     {card.description}
                   </p>
-                  <div className="pt-1">
+                  <div className="pt-0.5">
                     <span
                       style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
                     >
                       ✦ {card.feature}
                     </span>
@@ -525,7 +580,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 </div>
 
                 {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
-                <div className="w-full pt-2 mt-auto">
+                <div className="w-full pt-1 mt-auto">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -536,7 +591,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                         window.location.href = "/login";
                       }
                     }}
-                    className="w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-105 active:scale-[0.98]"
+                    className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-105 active:scale-[0.98]"
                     style={{
                       backgroundColor: card.accentColor,
                       color: card.buttonTextColor || "#FFFFFF",
@@ -544,7 +599,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     }}
                   >
                     <span>{card.ctaText}</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>
               </div>
@@ -552,17 +607,36 @@ export default function HowItWorksSection({ onOpenTrial }) {
           })}
         </div>
 
+        {/* Mobile Swipe Navigation Dots (visible only on small screens < md) */}
+        <div className="flex md:hidden items-center justify-center gap-2 pt-1 pb-1 z-20">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">Swipe ✦</span>
+          <div className="flex items-center gap-1.5">
+            {PROCESS_CARDS.map((c, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => scrollToCard(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  activeCardIndex === i ? "w-6" : "w-1.5 opacity-40"
+                }`}
+                style={{ backgroundColor: c.accentColor }}
+                aria-label={`Go to card ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
         {/* ===================================================================== */}
         {/* BOTTOM ACTION CTA BANNER                                              */}
         {/* ===================================================================== */}
-        <div className="relative z-10 text-center shrink-0 pt-1 pb-1">
+        <div className="relative z-10 text-center shrink-0 pt-0.5 pb-1">
           <button
             type="button"
             onClick={onOpenTrial}
-            className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3 rounded-full font-bold text-xs sm:text-sm text-white btn-primary-gradient cursor-pointer shadow-[0_0_25px_rgba(150,61,255,0.4)] hover:shadow-[0_0_35px_rgba(150,61,255,0.6)] hover:scale-105 active:scale-95 transition-all duration-300"
+            className="inline-flex items-center gap-2 px-5 sm:px-8 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm text-white btn-primary-gradient cursor-pointer shadow-[0_0_25px_rgba(150,61,255,0.4)] hover:shadow-[0_0_35px_rgba(150,61,255,0.6)] hover:scale-105 active:scale-95 transition-all duration-300"
           >
             <span>Launch Your Autonomous Assistant</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>

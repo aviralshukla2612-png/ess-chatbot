@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -103,7 +105,7 @@ const EnquiryIcon = ({ className = "w-10 h-10" }) => (
     <g filter="drop-shadow(0px 3px 6px rgba(0, 157, 255, 0.45))">
       <circle cx="44" cy="44" r="12" fill="#009DFF" />
       <circle cx="44" cy="44" r="6" stroke="#FFFFFF" strokeWidth="1.8" />
-      <circle cx="44" cy="44" r="2" fill="#FFFFFF" />
+      <circle cx="44" cy="2" r="2" fill="#FFFFFF" />
     </g>
     <circle cx="12" cy="18" r="1.5" fill="#009DFF" />
     <circle cx="53" cy="28" r="1.5" fill="#38BDF8" />
@@ -161,25 +163,36 @@ export default function BenefitsSection({ onOpenTrial }) {
   const cardsTrackRef = useRef(null);
   const cardRefs = useRef([]);
 
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+
+  const handleCardsScroll = (e) => {
+    const container = e.currentTarget;
+    if (!container) return;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.offsetWidth * 0.82;
+    const newIndex = Math.round(scrollLeft / (cardWidth || 1));
+    setActiveCardIndex(Math.min(Math.max(newIndex, 0), 2));
+  };
+
+  const scrollToCard = (index) => {
+    const targetCard = cardRefs.current[index];
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+      setActiveCardIndex(index);
+    }
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     const stage = stageRef.current;
     if (!container || !stage) return;
 
+    if (typeof window !== "undefined") {
+      ScrollTrigger.config({ ignoreMobileResize: true });
+    }
+
     const ctx = gsap.context(() => {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      if (prefersReducedMotion) {
-        if (visionRef.current) gsap.set(visionRef.current, { display: "none" });
-        if (sectionHeaderRef.current) gsap.set(sectionHeaderRef.current, { opacity: 1, y: 0 });
-        if (cardsTrackRef.current) gsap.set(cardsTrackRef.current, { opacity: 1 });
-        cardRefs.current.forEach((el) => {
-          if (el) gsap.set(el, { opacity: 1, rotateX: 0, y: 0, scale: 1 });
-        });
-        return;
-      }
-
-      // Initial visual states
+      // Initial visual states (runs on all screens: phone, iPhone, tablet, iPad, laptop, desktop)
       if (visionRef.current) {
         gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
       }
@@ -193,8 +206,8 @@ export default function BenefitsSection({ onOpenTrial }) {
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           gsap.set(card, {
-            rotateX: -55,
-            y: 40 + idx * 15,
+            rotateX: -35,
+            y: 30 + idx * 10,
             opacity: 0,
             scale: 0.95,
             transformOrigin: "center top",
@@ -291,7 +304,7 @@ export default function BenefitsSection({ onOpenTrial }) {
       id="benefits"
       className="relative w-full bg-[#050507] text-[#F5F5F7] select-none"
     >
-      {/* Scoped CSS for smooth GPU-accelerated infinite marquee loop */}
+      {/* Scoped CSS for smooth infinite marquee and hidden scrollbars */}
       <style>{`
         @keyframes benefitsMarqueeLoop {
           0% { transform: translate3d(0, 0, 0); }
@@ -303,15 +316,26 @@ export default function BenefitsSection({ onOpenTrial }) {
           animation: benefitsMarqueeLoop 30s linear infinite;
           will-change: transform;
         }
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
 
       {/* ========================================================================= */}
-      {/* PINNED STAGE VIEWPORT (PADDED BELOW NAVBAR — NO CUT-OFF, NO BLACKOUT)      */}
+      {/* PINNED STAGE VIEWPORT (100dvh FOR MOBILE/SAFARI — NO CUT-OFF, NO BLACKOUT) */}
       {/* ========================================================================= */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen min-h-[640px] max-h-screen overflow-hidden bg-[#050507] flex flex-col justify-between pt-20 sm:pt-24 pb-6 px-4 sm:px-6 lg:px-8"
-        style={{ perspective: "1500px" }}
+        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-16 sm:pt-20 lg:pt-22 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
+        style={{
+          minHeight: "100dvh",
+          height: "100dvh",
+          perspective: "1500px",
+        }}
       >
         {/* Subtle Technical Grid Background without any purple tint */}
         <div
@@ -364,7 +388,7 @@ export default function BenefitsSection({ onOpenTrial }) {
 
           {/* Bottom Vision Subtitle */}
           <div className="relative z-10 w-full flex items-center justify-between">
-            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/70">
+            <span className="font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-white/70 line-clamp-1">
               ✦ Don&apos;t let valuable conversations slip away — autonomous 24/7 sales.
             </span>
             <span className="hidden sm:inline-block font-mono text-xs tracking-widest uppercase text-white/40">
@@ -378,23 +402,28 @@ export default function BenefitsSection({ onOpenTrial }) {
         {/* ======================================================================= */}
         <div
           ref={sectionHeaderRef}
-          className="relative z-20 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-2"
+          className="relative z-20 max-w-4xl mx-auto text-center shrink-0 pt-1 pb-1 sm:pb-2 px-2"
         >
-          <h2 className="font-headline font-black text-2xl sm:text-3xl lg:text-4xl uppercase tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
+          <h2 className="font-headline font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
             Don&apos;t Let Valuable Conversations Slip Away.
           </h2>
-          <p className="mt-1.5 text-xs sm:text-sm text-[#C5CAD4] font-medium max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-1 text-[11px] sm:text-xs md:text-sm text-[#C5CAD4] font-medium max-w-2xl mx-auto leading-relaxed">
             Your website should be ready to answer, qualify, and capture enterprise interest — even when your sales team is unavailable.
           </p>
         </div>
 
         {/* ======================================================================= */}
-        {/* 3 BENEFIT CARDS (SHUTTERSTOCK LAYOUT: 01 WATERMARK, TOP BAR, CENTER ICON, TITLE, DESC, BOTTOM SOLID BUTTON) */}
+        {/* 3 BENEFIT CARDS (RESPONSIVE: HORIZONTAL SNAP ON PHONE, 3-COL ON TABLET/DESKTOP) */}
         {/* ======================================================================= */}
         <div
           ref={cardsTrackRef}
-          className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-7 items-stretch will-change-transform"
-          style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
+          onScroll={handleCardsScroll}
+          className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto flex md:grid md:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-6 items-stretch will-change-transform overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 sm:px-6 md:px-0 py-2 sm:py-3"
+          style={{
+            perspective: "1400px",
+            transformStyle: "preserve-3d",
+            WebkitOverflowScrolling: "touch",
+          }}
         >
           {BENEFIT_CARDS.map((card, idx) => {
             const Icon = card.icon;
@@ -404,70 +433,73 @@ export default function BenefitsSection({ onOpenTrial }) {
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                className="featured-card group relative w-[82vw] max-w-[320px] shrink-0 snap-center md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
                 style={{
                   backgroundColor: "#0D0D15",
                   borderColor: card.accentColor,
-                  boxShadow: `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.8)`,
+                  boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
+                  WebkitBackfaceVisibility: "hidden",
+                  backfaceVisibility: "hidden",
+                  WebkitTransform: "translateZ(0)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 25px 60px rgba(0,0,0,0.9)`;
+                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.8)`;
+                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
                 }}
               >
                 {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
-                <div className="flex items-center justify-between w-full mb-3">
-                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
+                <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
                     {card.step}
                   </span>
                   <div
-                    className="w-12 sm:w-14 h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
+                    className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
                     style={{ backgroundColor: card.accentColor }}
                   />
                 </div>
 
                 {/* Upper Center: Prominent Illustrated Icon */}
-                <div className="my-3 sm:my-4 flex justify-center w-full">
+                <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
                   <div
-                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+                    className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
                     style={{
                       backgroundColor: `${card.accentColor}18`,
                       border: `1.5px solid ${card.accentColor}50`,
                       boxShadow: `0 0 25px ${card.accentColor}25`,
                     }}
                   >
-                    <Icon className="w-11 h-11 sm:w-12 sm:h-12" />
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
                   </div>
                 </div>
 
                 {/* Middle: Centered Heading & Structured Description */}
-                <div className="text-center space-y-2 mb-5 flex-1 flex flex-col justify-center">
+                <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
                   <span
-                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider block"
+                    className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
                     style={{ color: card.accentColor }}
                   >
                     {card.tagline}
                   </span>
                   <h3
                     style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
-                    className="font-extrabold text-base sm:text-lg tracking-tight uppercase"
+                    className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
                   >
                     {card.title}
                   </h3>
                   <p
                     style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
-                    className="text-xs leading-relaxed line-clamp-3 px-1 font-normal"
+                    className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
                   >
                     {card.description}
                   </p>
-                  <div className="pt-1">
+                  <div className="pt-0.5">
                     <span
                       style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
                     >
                       ✦ {card.feature}
                     </span>
@@ -475,7 +507,7 @@ export default function BenefitsSection({ onOpenTrial }) {
                 </div>
 
                 {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
-                <div className="w-full pt-2 mt-auto">
+                <div className="w-full pt-1 mt-auto">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -488,7 +520,7 @@ export default function BenefitsSection({ onOpenTrial }) {
                         window.location.href = "/login";
                       }
                     }}
-                    className="w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-110 active:scale-[0.98]"
+                    className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-110 active:scale-[0.98]"
                     style={{
                       backgroundColor: card.accentColor,
                       color: card.buttonTextColor || "#FFFFFF",
@@ -496,7 +528,7 @@ export default function BenefitsSection({ onOpenTrial }) {
                     }}
                   >
                     <span>{card.ctaText}</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>
               </div>
@@ -504,9 +536,28 @@ export default function BenefitsSection({ onOpenTrial }) {
           })}
         </div>
 
+        {/* Mobile Swipe Navigation Dots (visible only on small screens < md) */}
+        <div className="flex md:hidden items-center justify-center gap-2 pt-1 pb-1 z-20">
+          <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">Swipe ✦</span>
+          <div className="flex items-center gap-1.5">
+            {BENEFIT_CARDS.map((c, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => scrollToCard(i)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  activeCardIndex === i ? "w-6" : "w-1.5 opacity-40"
+                }`}
+                style={{ backgroundColor: c.accentColor }}
+                aria-label={`Go to card ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+
         {/* Bottom hint banner */}
-        <div className="relative z-10 text-center shrink-0 pt-1 text-xs font-mono text-zinc-400">
-          <span> 24/7 Autonomous Sales AI · Instant Inquiry Capture</span>
+        <div className="relative z-10 text-center shrink-0 pt-0.5 pb-1 text-[11px] sm:text-xs font-mono text-zinc-400">
+          <span>✦ 24/7 Autonomous Sales AI · Instant Inquiry Capture</span>
         </div>
       </div>
     </div>
