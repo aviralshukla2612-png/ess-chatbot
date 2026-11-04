@@ -3,103 +3,113 @@ const fs = require('fs');
 const path = require('path');
 
 async function updateAllLogos() {
-  console.log('Generating crisp white-text Emperor Nexus logo assets...');
+  console.log('Generating pixel-perfect solid-white Emperor Nexus logo and favicon suite...');
 
   const rootDir = path.resolve(__dirname, '..', '..');
   const frontendPublic = path.join(rootDir, 'frontend', 'public');
   const frontendApp = path.join(rootDir, 'frontend', 'app');
   const cinematicPublic = path.join(rootDir, 'cinematic-experience', 'public');
 
-  const srcJpg = path.join(frontendPublic, 'logo.jpg');
-  if (!fs.existsSync(srcJpg)) {
-    throw new Error('logo.jpg not found in frontend/public');
+  const srcMaster = path.join(frontendPublic, 'original_master_logo.png');
+  if (!fs.existsSync(srcMaster)) {
+    throw new Error('original_master_logo.png not found');
   }
 
-  // Copy original logo.jpg to cinematic-experience/public as backup
-  fs.copyFileSync(srcJpg, path.join(cinematicPublic, 'logo.jpg'));
-
-  // 1. Load original logo.jpg
-  const { data, info } = await sharp(srcJpg).raw().toBuffer({ resolveWithObject: true });
+  // 1. Load original 1820x520 master
+  const { data, info } = await sharp(srcMaster).raw().toBuffer({ resolveWithObject: true });
   const { width, height } = info;
-  const outRgba = Buffer.alloc(width * height * 4);
+  const outRgba = Buffer.from(data);
 
+  // 2. TEXT & SEPARATOR ZONE (x >= 660):
+  // Clear any background haze outside valid text/line bounds
   for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const srcIdx = (y * width + x) * 3;
-      const dstIdx = (y * width + x) * 4;
-      const r = data[srcIdx];
-      const g = data[srcIdx + 1];
-      const b = data[srcIdx + 2];
+    for (let x = 660; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const isSeparator = (x >= 668 && x <= 682 && y >= 45 && y <= 455);
+      const isEmperor = (x >= 750 && x <= 1230 && y >= 50 && y <= 115);
+      const isNexus = (x >= 750 && x <= 1795 && y >= 150 && y <= 330);
+      const isSales = (x >= 750 && x <= 1630 && y >= 355 && y <= 420);
 
-      const maxC = Math.max(r, g, b);
-      const minC = Math.min(r, g, b);
-      const saturation = maxC - minC;
-      const brightness = (r + g + b) / 3;
-      const diffFromBg = Math.max(Math.abs(r - 247), Math.abs(g - 247), Math.abs(b - 247));
+      if (!isSeparator && !isEmperor && !isNexus && !isSales) {
+        outRgba[idx] = 0;
+        outRgba[idx + 1] = 0;
+        outRgba[idx + 2] = 0;
+        outRgba[idx + 3] = 0;
+      }
+    }
+  }
 
-      if (x < 370) {
-        // --- ROBOT MASCOT ZONE (x < 370) ---
-        if (diffFromBg < 8) {
-          outRgba[dstIdx] = 0;
-          outRgba[dstIdx + 1] = 0;
-          outRgba[dstIdx + 2] = 0;
-          outRgba[dstIdx + 3] = 0;
-        } else if (diffFromBg < 26) {
-          const alpha = Math.round(((diffFromBg - 8) / 18) * 255);
-          outRgba[dstIdx] = r;
-          outRgba[dstIdx + 1] = g;
-          outRgba[dstIdx + 2] = b;
-          outRgba[dstIdx + 3] = alpha;
-        } else {
-          outRgba[dstIdx] = r;
-          outRgba[dstIdx + 1] = g;
-          outRgba[dstIdx + 2] = b;
-          outRgba[dstIdx + 3] = 255;
+  // Inside text zones:
+  // Render EMPEROR, N, E, U, S, SALES AI ASSISTANT, and Separator in SOLID BRILLIANT WHITE (#FFFFFF)
+  // Preserve anti-aliased edge smoothing.
+  // Preserve vibrant diagonal gradient cross on the X in NEXUS.
+  for (let y = 0; y < height; y++) {
+    for (let x = 660; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      if (outRgba[idx + 3] === 0) continue;
+
+      const isX = (x >= 1155 && x <= 1375 && y >= 150 && y <= 330);
+
+      if (isX) {
+        // NEXUS X: Vibrant cyan/purple gradient
+        if (outRgba[idx + 3] < 30) {
+          outRgba[idx + 3] = 0;
         }
       } else {
-        // --- TEXT & BRAND ZONE (x >= 370) ---
-        // Check if this pixel is part of the colorful diagonal X in NEXUS
-        const isColoredX = x >= 645 && x <= 835 && y >= 85 && y <= 185 && saturation > 18;
+        const r = outRgba[idx];
+        const g = outRgba[idx + 1];
+        const b = outRgba[idx + 2];
+        const a = outRgba[idx + 3];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-        if (isColoredX) {
-          // Preserve vibrant cyan-to-purple diagonal gradient on the X
-          const alpha = diffFromBg < 26 ? Math.round(((diffFromBg - 8) / 18) * 255) : 255;
-          outRgba[dstIdx] = r;
-          outRgba[dstIdx + 1] = g;
-          outRgba[dstIdx + 2] = b;
-          outRgba[dstIdx + 3] = alpha;
+        if (lum < 40 || a < 25) {
+          outRgba[idx] = 0;
+          outRgba[idx + 1] = 0;
+          outRgba[idx + 2] = 0;
+          outRgba[idx + 3] = 0;
         } else {
-          // User requirement: "text should be white"
-          // EMPEROR, N, E, U, S in NEXUS, SALES AI ASSISTANT, and vertical line become crisp, brilliant WHITE!
-          const inkDiff = 247 - brightness;
-          if (inkDiff <= 4) {
-            outRgba[dstIdx] = 0;
-            outRgba[dstIdx + 1] = 0;
-            outRgba[dstIdx + 2] = 0;
-            outRgba[dstIdx + 3] = 0;
-          } else {
-            // Smooth anti-aliased white text
-            const alpha = Math.min(255, Math.round(((inkDiff - 4) / 14) * 255));
-            outRgba[dstIdx] = 255;
-            outRgba[dstIdx + 1] = 255;
-            outRgba[dstIdx + 2] = 255;
-            outRgba[dstIdx + 3] = alpha;
-          }
+          outRgba[idx] = 255;
+          outRgba[idx + 1] = 255;
+          outRgba[idx + 2] = 255;
+          outRgba[idx + 3] = Math.min(255, Math.round((a / 255) * 1.15 * 255));
         }
       }
     }
   }
 
-  const whiteTextLogoBuf = await sharp(outRgba, { raw: { width, height, channels: 4 } })
+  // 3. MASCOT ZONE (x < 660):
+  // Preserve the glowing cyan/purple cyber headset, mic, black visor, and smiling white eyes (^ ^).
+  // Clear any outer background shadow haze (lum < 35 outside the visor).
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < 660; x++) {
+      const idx = (y * width + x) * 4;
+      const r = outRgba[idx];
+      const g = outRgba[idx + 1];
+      const b = outRgba[idx + 2];
+      const a = outRgba[idx + 3];
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      const isInsideVisor = (x >= 200 && x <= 440 && y >= 235 && y <= 395);
+      if (!isInsideVisor && lum < 35) {
+        outRgba[idx] = 0;
+        outRgba[idx + 1] = 0;
+        outRgba[idx + 2] = 0;
+        outRgba[idx + 3] = 0;
+      }
+    }
+  }
+
+  // 4. Generate master clean logo PNG (1820 x 520)
+  const masterLogoBuf = await sharp(outRgba, { raw: { width, height, channels: 4 } })
     .png({ quality: 100 })
     .toBuffer();
 
   // Save logo.png in both public directories
-  fs.writeFileSync(path.join(frontendPublic, 'logo.png'), whiteTextLogoBuf);
-  fs.writeFileSync(path.join(cinematicPublic, 'logo.png'), whiteTextLogoBuf);
-  console.log('Saved white-text logo.png in frontend and cinematic-experience');
+  fs.writeFileSync(path.join(frontendPublic, 'logo.png'), masterLogoBuf);
+  fs.writeFileSync(path.join(cinematicPublic, 'logo.png'), masterLogoBuf);
+  console.log('Saved solid-white logo.png in frontend and cinematic-experience');
 
-  // Overwrite legacy filenames so all references display the new white text logo
+  // Overwrite legacy filenames so all references display the new solid-white logo
   const legacyNames = [
     'emperor_nexus_sales_ai_assistant.png',
     'emperor_nexus_sales_ai_assistant_original.png',
@@ -108,14 +118,15 @@ async function updateAllLogos() {
   ];
 
   for (const name of legacyNames) {
-    fs.writeFileSync(path.join(frontendPublic, name), whiteTextLogoBuf);
-    fs.writeFileSync(path.join(cinematicPublic, name), whiteTextLogoBuf);
+    fs.writeFileSync(path.join(frontendPublic, name), masterLogoBuf);
+    fs.writeFileSync(path.join(cinematicPublic, name), masterLogoBuf);
   }
   console.log('Updated all legacy logo paths');
 
-  // 2. Crop the robot mascot from this refined asset to update all favicons
+  // 5. Crop the robot mascot from this refined asset to update all favicons
+  // Mascot bounds in master: left=35, top=35, width=600, height=470
   const masterRobotBuf = await sharp(outRgba, { raw: { width, height, channels: 4 } })
-    .extract({ left: 15, top: 10, width: 320, height: 275 })
+    .extract({ left: 35, top: 35, width: 600, height: 470 })
     .resize(440, 440, {
       fit: 'contain',
       background: { r: 0, g: 0, b: 0, alpha: 0 },
@@ -254,13 +265,21 @@ async function updateAllLogos() {
   fs.writeFileSync(path.join(frontendApp, 'icon.svg'), svgContent, 'utf8');
   fs.writeFileSync(path.join(cinematicPublic, 'favicon.svg'), svgContent, 'utf8');
 
-  // Clean up any test images
-  ['test-logo-white.png', 'test-dark-preview.png', 'test-white-text.png', 'test-comp.png'].forEach((f) => {
+  // Clean up any temporary files
+  const tempFiles = [
+    'test_emperor_nexus_sales_ai_assistant.png',
+    'test_emperor_nexus_sales_ai_assistant_cropped.png',
+    'test_emperor_nexus_sales_ai_assistant_original.png',
+    'test_emperor_nexus_sales_ai_assistant_v2.png',
+    'test_clean_master.png',
+    'old_logo.png'
+  ];
+  for (const f of tempFiles) {
     const p = path.join(frontendPublic, f);
     if (fs.existsSync(p)) fs.unlinkSync(p);
-  });
+  }
 
-  console.log('All logo and favicon assets updated with brilliant white text!');
+  console.log('All Emperor Nexus logos, favicons, and icons regenerated successfully!');
 }
 
 updateAllLogos().catch((err) => {
