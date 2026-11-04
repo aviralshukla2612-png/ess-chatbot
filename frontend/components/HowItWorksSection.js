@@ -454,19 +454,26 @@ export default function HowItWorksSection({ onOpenTrial }) {
               <div
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
-                className="featured-card group relative rounded-3xl bg-white text-zinc-900 p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-zinc-200/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] will-change-transform backface-hidden"
+                className="featured-card group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                style={{
+                  backgroundColor: "#F5F5F7",
+                  borderColor: "#E2E4E9",
+                }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
                   e.currentTarget.style.boxShadow = `0 0 35px ${card.accentColor}40, 0 20px 50px rgba(0,0,0,0.6)`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(228, 228, 231, 0.8)";
+                  e.currentTarget.style.borderColor = "#E2E4E9";
                   e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5)";
                 }}
               >
                 {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
                 <div className="flex items-center justify-between w-full mb-3">
-                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-zinc-300 group-hover:text-zinc-400 transition-colors select-none">
+                  <span
+                    style={{ color: "#CBD5E1" }}
+                    className="text-3xl sm:text-4xl font-black font-mono tracking-tight select-none"
+                  >
                     {card.step}
                   </span>
                   <div
@@ -498,14 +505,23 @@ export default function HowItWorksSection({ onOpenTrial }) {
                   >
                     {card.tagline}
                   </span>
-                  <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 tracking-tight uppercase group-hover:text-black">
+                  <h3
+                    style={{ color: "#0A0A0E", WebkitTextFillColor: "#0A0A0E" }}
+                    className="font-extrabold text-base sm:text-lg tracking-tight uppercase"
+                  >
                     {card.title}
                   </h3>
-                  <p className="text-xs text-zinc-600 leading-relaxed line-clamp-3 px-1">
+                  <p
+                    style={{ color: "#475467", WebkitTextFillColor: "#475467" }}
+                    className="text-xs leading-relaxed line-clamp-3 px-1 font-medium"
+                  >
                     {card.description}
                   </p>
                   <div className="pt-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-zinc-100 border border-zinc-200 text-zinc-700">
+                    <span
+                      style={{ color: "#344054", backgroundColor: "#FFFFFF", borderColor: "#E2E4E9" }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border shadow-2xs"
+                    >
                       ✦ {card.feature}
                     </span>
                   </div>

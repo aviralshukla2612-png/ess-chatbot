@@ -53,6 +53,15 @@ body {
   -webkit-text-fill-color: #FFFFFF !important;
 }
 
+/* Specific guarantee for off-white featured cards: crisp bold dark black headings */
+.featured-card h3,
+.featured-card h3.font-headline,
+.dark .featured-card h3,
+.dark .featured-card h3.font-headline {
+  color: #0A0A0E !important;
+  -webkit-text-fill-color: #0A0A0E !important;
+}
+
 /* Scoped strictly to .dark class so light mode is pure Ivory & Charcoal */
 .dark input,
 .dark select,
