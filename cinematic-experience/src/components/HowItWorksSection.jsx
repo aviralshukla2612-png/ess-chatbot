@@ -114,7 +114,7 @@ const PROCESS_CARDS = [
     tagline: "STEP 01 · INGESTION",
     title: "Connect Knowledge Base",
     subTitle: "Instant Ingestion",
-    icon: FileText,
+    icon: KnowledgeBaseIcon,
     description: "Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.",
     feature: "Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.",
     ctaText: "Start Ingestion",
@@ -126,7 +126,7 @@ const PROCESS_CARDS = [
     tagline: "STEP 02 · PERSONA ENGINE",
     title: "Calibrate Persona Styling",
     subTitle: "Persona Engine",
-    icon: Sliders,
+    icon: PersonaEngineIcon,
     description: "Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.",
     feature: "Custom logo upload, squircle / circle buttons, and 19 launcher animations.",
     ctaText: "Calibrate Persona",
@@ -138,7 +138,7 @@ const PROCESS_CARDS = [
     tagline: "STEP 03 · LIVE EMBED",
     title: "Deploy Single Line Code",
     subTitle: "Universal Live Embed",
-    icon: Code2,
+    icon: CodeDeployIcon,
     description: "Integrate the assistant into your website using the provided script with instant anti-cache live updates.",
     feature: "Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.",
     ctaText: "Get Embed Code",
@@ -448,25 +448,22 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 ref={(el) => (cardRefs.current[idx] = el)}
                 className="featured-card group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
                 style={{
-                  backgroundColor: "#F5F5F7",
+                  backgroundColor: "#0D0D15",
                   borderColor: card.accentColor,
-                  boxShadow: `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.5)`,
+                  boxShadow: `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.8)`,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 25px 60px rgba(0,0,0,0.6)`;
+                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 25px 60px rgba(0,0,0,0.9)`;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.5)`;
+                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.8)`;
                 }}
               >
                 {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
                 <div className="flex items-center justify-between w-full mb-3">
-                  <span
-                    style={{ color: "#CBD5E1" }}
-                    className="text-3xl sm:text-4xl font-black font-mono tracking-tight select-none"
-                  >
+                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
                     {card.step}
                   </span>
                   <div
@@ -475,18 +472,17 @@ export default function HowItWorksSection({ onOpenTrial }) {
                   />
                 </div>
 
-                {/* Upper Center: Prominent Line-Art Outline Icon */}
+                {/* Upper Center: Prominent Illustrated Icon */}
                 <div className="my-3 sm:my-4 flex justify-center w-full">
                   <div
                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
                     style={{
-                      backgroundColor: `${card.accentColor}12`,
-                      border: `1.5px solid ${card.accentColor}40`,
-                      color: card.accentColor,
-                      boxShadow: `0 0 20px ${card.accentColor}20`,
+                      backgroundColor: `${card.accentColor}18`,
+                      border: `1.5px solid ${card.accentColor}50`,
+                      boxShadow: `0 0 25px ${card.accentColor}25`,
                     }}
                   >
-                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 stroke-[1.8]" />
+                    <Icon className="w-11 h-11 sm:w-12 sm:h-12" />
                   </div>
                 </div>
 
@@ -499,21 +495,21 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     {card.tagline}
                   </span>
                   <h3
-                    style={{ color: "#0A0A0E", WebkitTextFillColor: "#0A0A0E" }}
+                    style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
                     className="font-extrabold text-base sm:text-lg tracking-tight uppercase"
                   >
                     {card.title}
                   </h3>
                   <p
-                    style={{ color: "#475467", WebkitTextFillColor: "#475467" }}
-                    className="text-xs leading-relaxed line-clamp-3 px-1 font-medium"
+                    style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
+                    className="text-xs leading-relaxed line-clamp-3 px-1 font-normal"
                   >
                     {card.description}
                   </p>
                   <div className="pt-1">
                     <span
-                      style={{ color: "#344054", backgroundColor: "#FFFFFF", borderColor: "#E2E4E9" }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border shadow-2xs"
+                      style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono border"
                     >
                       ✦ {card.feature}
                     </span>
