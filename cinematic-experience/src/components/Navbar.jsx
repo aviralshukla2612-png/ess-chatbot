@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { ArrowRight, ArrowUpRight, Menu, X } from "lucide-react";
 
 export default function Navbar({ onOpenTrial }) {
   const [scrolled, setScrolled] = useState(false);
@@ -149,18 +149,17 @@ export default function Navbar({ onOpenTrial }) {
           />
         </nav>
 
-        {/* Right: Primary CTA Button */}
-        <div className="hidden sm:flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onOpenTrial}
+        {/* Right: Dashboard CTA Button linking to /login */}
+        <div className="flex items-center gap-4">
+          <a
+            href="/login"
             className="group relative inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white btn-primary-gradient cursor-pointer overflow-hidden transition-all duration-300"
           >
             <span className="relative z-10 flex items-center gap-1.5">
-              Start Free Trial
-              <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              Dashboard
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </span>
-          </button>
+          </a>
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -195,17 +194,14 @@ export default function Navbar({ onOpenTrial }) {
             );
           })}
           <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenTrial?.();
-              }}
+            <a
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
               className="w-full py-3 rounded-full text-sm font-bold text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer"
             >
-              Start Free Trial
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
+              <span>Dashboard</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
         </div>
       )}

@@ -530,7 +530,11 @@ export default function BenefitsSection({ onOpenTrial }) {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              onOpenTrial?.();
+                              if (card.ctaText === "View Live Dashboard") {
+                                window.location.href = "/login";
+                              } else {
+                                onOpenTrial?.();
+                              }
                             }}
                             className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer"
                             aria-label={card.ctaText}

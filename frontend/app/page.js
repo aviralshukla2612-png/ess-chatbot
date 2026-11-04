@@ -319,33 +319,15 @@ export default function HomePage() {
             />
           </nav>
 
-          {/* Right Action */}
-          <div className="hidden sm:flex items-center gap-4">
-            {isAuthenticated ? (
-              <Link
-                href="/dashboard"
-                className="group relative inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white btn-primary-gradient cursor-pointer overflow-hidden transition-all duration-300"
-              >
-                <span>Dashboard</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/login"
-                  className="text-xs font-bold text-[#D9D9E2] hover:text-white px-3 py-2 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  className="group relative inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white btn-primary-gradient cursor-pointer overflow-hidden transition-all duration-300"
-                >
-                  <span>Start Free Trial</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </Link>
-              </div>
-            )}
+          {/* Right Action: Dashboard Button linking to /login */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="group relative inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white btn-primary-gradient cursor-pointer overflow-hidden transition-all duration-300"
+            >
+              <span>Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
       </header>
@@ -401,7 +383,7 @@ export default function HomePage() {
 
           <div className="mt-5 sm:mt-6 flex flex-row items-center justify-center gap-3.5 w-auto">
             <Link
-              href={isAuthenticated ? "/dashboard" : "/register"}
+              href={isAuthenticated ? "/login" : "/register"}
               className="px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer group shadow-[0_8px_25px_rgba(158,96,244,0.45)]"
             >
               <span>{isAuthenticated ? "Launch Dashboard" : "Start Free Trial"}</span>
@@ -524,7 +506,7 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link
-                  href={isAuthenticated ? "/dashboard" : "/register"}
+                  href={isAuthenticated ? "/login" : "/register"}
                   className="flex-1 py-3.5 rounded-2xl font-bold text-sm text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
                   <span>{isAuthenticated ? "Go to Workspace" : "Start Free 14-Day Trial"}</span>

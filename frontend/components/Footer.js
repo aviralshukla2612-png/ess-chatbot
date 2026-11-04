@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowUpRight } from "lucide-react";
@@ -335,12 +336,12 @@ export default function Footer() {
             >
               Twitter / X
             </a>
-            <a
+            <Link
               href="/login"
-              className="text-2xl sm:text-3xl font-medium text-white/80 hover:text-white transition-all duration-200 hover:translate-x-1 flex items-center gap-2"
+              className="text-2xl sm:text-3xl font-medium text-white/80 hover:text-white transition-all duration-200 hover:translate-x-1 flex items-center gap-2 cursor-pointer"
             >
               Client Portal <ArrowUpRight className="w-5 h-5 text-white/50" />
-            </a>
+            </Link>
           </div>
         </div>
 
