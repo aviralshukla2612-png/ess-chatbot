@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -16,8 +16,6 @@ import {
   Copy,
   Check,
   Zap,
-  ChevronLeft,
-  ChevronRight,
   Headphones,
   Rocket,
   Lightbulb,
@@ -157,35 +155,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
   const glowOrbRef = useRef(null);
   const sectionHeaderRef = useRef(null);
 
-  const [activeCardIndex, setActiveCardIndex] = useState(0);
-  const touchStartX = useRef(0);
-
-  const scrollToCard = (index) => {
-    const st = ScrollTrigger.getById("how-it-works-st");
-    if (st) {
-      const targets = [0.24, 0.58, 0.88];
-      const targetY = st.start + targets[index] * (st.end - st.start);
-      window.scrollTo({ top: targetY, behavior: "smooth" });
-    }
-    setActiveCardIndex(index);
-  };
-
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const diffX = touchStartX.current - touchEndX;
-    if (Math.abs(diffX) > 40) {
-      if (diffX > 0 && activeCardIndex < 2) {
-        scrollToCard(activeCardIndex + 1);
-      } else if (diffX < 0 && activeCardIndex > 0) {
-        scrollToCard(activeCardIndex - 1);
-      }
-    }
-  };
-
   useEffect(() => {
     const container = containerRef.current;
     const stage = stageRef.current;
@@ -195,217 +164,13 @@ export default function HowItWorksSection({ onOpenTrial }) {
       ScrollTrigger.config({ ignoreMobileResize: true });
     }
 
-    const mm = gsap.matchMedia(containerRef);
-
-    // =========================================================================
-    // MOBILE TIMELINE (< 768px): Step 01 -> Step 02 -> Step 03 sequential scroll
-    // =========================================================================
-    mm.add("(max-width: 767px)", () => {
-      letterRefs.current.forEach((el) => {
-        if (el) {
-          gsap.set(el, {
-            x: 0,
-            y: 0,
-            z: 0,
-            rotateX: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px)",
-            transformOrigin: "center center",
-            force3D: true,
-          });
-        }
-      });
-
-      if (cardsTrackRef.current) {
-        gsap.set(cardsTrackRef.current, { opacity: 0, xPercent: 0 });
-      }
-
-      cardRefs.current.forEach((card, idx) => {
-        if (card) {
-          gsap.set(card, {
-            opacity: idx === 0 ? 0 : 0.4,
-            scale: 0.95,
-            y: 20,
-            force3D: true,
-          });
-        }
-      });
-
-      if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
-      }
-
-      const masterTL = gsap.timeline({
-        scrollTrigger: {
-          id: "how-it-works-st",
-          trigger: container,
-          start: "top top",
-          end: "+=1600",
-          pin: stage,
-          pinSpacing: true,
-          scrub: 0.8,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            const p = self.progress;
-            if (p < 0.44) {
-              setActiveCardIndex(0);
-            } else if (p < 0.74) {
-              setActiveCardIndex(1);
-            } else {
-              setActiveCardIndex(2);
-            }
-          },
-        },
-      });
-
-      // 1. Letters shatter in 3D
-      letterRefs.current.forEach((el, idx) => {
-        if (el) {
-          const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
-          masterTL.to(
-            el,
-            {
-              x: config.x * 0.45,
-              y: config.y * 0.45,
-              z: config.z * 0.45,
-              rotateX: config.rx,
-              rotateY: config.ry,
-              rotateZ: config.rz,
-              scale: config.s,
-              opacity: 0,
-              filter: "blur(8px)",
-              duration: 0.28,
-              ease: "power2.inOut",
-            },
-            0.02 + idx * 0.01
-          );
-        }
-      });
-
-      // 2. Fullscreen typography fades out
-      if (typographyRef.current) {
-        masterTL.to(
-          typographyRef.current,
-          {
-            opacity: 0,
-            pointerEvents: "none",
-            duration: 0.12,
-            ease: "power1.out",
-          },
-          0.12
-        );
-      }
-
-      // 3. Persistent Header appears
-      if (sectionHeaderRef.current) {
-        masterTL.to(
-          sectionHeaderRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.14,
-            ease: "power3.out",
-          },
-          0.10
-        );
-      }
-
-      // 4. Track & Step 01 enters
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            opacity: 1,
-            duration: 0.12,
-            ease: "power2.out",
-          },
-          0.12
-        );
-      }
-      if (cardRefs.current[0]) {
-        masterTL.to(
-          cardRefs.current[0],
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.14,
-            ease: "power3.out",
-          },
-          0.12
-        );
-      }
-
-      // Hold on Step 01 (0.24 to 0.38)
-
-      // 5. Slide to Step 02 (Step 02 COMES IN FRONT & CENTER)
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            xPercent: -100,
-            duration: 0.16,
-            ease: "power2.inOut",
-          },
-          0.38
-        );
-      }
-      if (cardRefs.current[1]) {
-        masterTL.to(
-          cardRefs.current[1],
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.16,
-            ease: "power3.out",
-          },
-          0.40
-        );
-      }
-
-      // Hold on Step 02 (0.54 to 0.68)
-
-      // 6. Slide to Step 03 (Step 03 COMES IN FRONT & CENTER)
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            xPercent: -200,
-            duration: 0.16,
-            ease: "power2.inOut",
-          },
-          0.68
-        );
-      }
-      if (cardRefs.current[2]) {
-        masterTL.to(
-          cardRefs.current[2],
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.16,
-            ease: "power3.out",
-          },
-          0.70
-        );
-      }
-
-      // Hold on Step 03
-      masterTL.to({}, { duration: 0.16 }, 0.84);
-    });
-
-    // =========================================================================
-    // DESKTOP & TABLET TIMELINE (>= 768px): All 3 process cards side-by-side
-    // =========================================================================
-    mm.add("(min-width: 768px)", () => {
+    const ctx = gsap.context(() => {
       const isDesktop = window.innerWidth >= 1024;
+      const isMobile = window.innerWidth < 768;
 
+      // =======================================================================
+      // INITIAL 3D SCENE CONFIGURATION (Runs on all screens: phone, tab, laptop, desktop)
+      // =======================================================================
       letterRefs.current.forEach((el) => {
         if (el) {
           gsap.set(el, {
@@ -426,7 +191,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
       if (cardsTrackRef.current) {
         gsap.set(cardsTrackRef.current, {
-          xPercent: isDesktop ? 30 : 20,
+          xPercent: isMobile ? 0 : isDesktop ? 30 : 20,
           opacity: 0,
         });
       }
@@ -434,7 +199,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           gsap.set(card, {
-            x: isDesktop ? 80 + idx * 40 : 45 + idx * 25,
+            x: isMobile ? 25 + idx * 15 : isDesktop ? 80 + idx * 40 : 45 + idx * 25,
             opacity: 0,
             scale: 0.92,
             force3D: true,
@@ -450,9 +215,15 @@ export default function HowItWorksSection({ onOpenTrial }) {
         gsap.set(glowOrbRef.current, { scale: 0.8, opacity: 0.4 });
       }
 
+      // =======================================================================
+      // MASTER COORDINATED GSAP TIMELINE
+      // 1. Letters shatter in 3D
+      // 2. Fullscreen typography fades out cleanly
+      // 3. Carousel Track glides in
+      // 4. Cards fan out smoothly into place
+      // =======================================================================
       const masterTL = gsap.timeline({
         scrollTrigger: {
-          id: "how-it-works-st",
           trigger: container,
           start: "top top",
           end: "+=1200",
@@ -464,16 +235,17 @@ export default function HowItWorksSection({ onOpenTrial }) {
         },
       });
 
-      // 1. Letters shatter in 3D
+      // 1. Letters shatter outwards in 3D (scaled responsively for all screens)
+      const scaleFactor = isMobile ? 0.45 : isDesktop ? 1.0 : 0.75;
       letterRefs.current.forEach((el, idx) => {
         if (el) {
           const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
           masterTL.to(
             el,
             {
-              x: config.x,
-              y: config.y,
-              z: config.z,
+              x: config.x * scaleFactor,
+              y: config.y * scaleFactor,
+              z: config.z * scaleFactor,
               rotateX: config.rx,
               rotateY: config.ry,
               rotateZ: config.rz,
@@ -502,7 +274,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         );
       }
 
-      // Header fades in
+      // Persistent Header fades in
       if (sectionHeaderRef.current) {
         masterTL.to(
           sectionHeaderRef.current,
@@ -530,7 +302,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         );
       }
 
-      // 4. Cards fan out smoothly into place
+      // 4. Cards fan out smoothly into place (all 3 cards come in together!)
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           masterTL.to(
@@ -564,9 +336,9 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
       // Hold reading state
       masterTL.to({}, { duration: 0.4 }, 0.6);
-    });
+    }, containerRef);
 
-    return () => mm.revert();
+    return () => ctx.revert();
   }, []);
 
   return (
@@ -696,165 +468,123 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* 3 PROCESS CARDS (SEQUENTIAL SLIDE ON PHONE, 3-COL ON TABLET/DESKTOP)    */}
+        {/* 3 PROCESS CARDS (ALL 3 CARDS COME IN TOGETHER WITH GLIDE & FAN-OUT)   */}
         {/* ===================================================================== */}
         <div
-          className="relative z-20 w-full max-w-[340px] sm:max-w-[380px] md:max-w-7xl mx-auto overflow-hidden md:overflow-visible my-auto px-2 md:px-0 py-1"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          ref={cardsTrackRef}
+          className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto flex md:grid md:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-6 items-stretch will-change-transform overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 sm:px-6 md:px-0 py-2 sm:py-3"
+          style={{
+            perspective: "1400px",
+            transformStyle: "preserve-3d",
+            WebkitOverflowScrolling: "touch",
+          }}
         >
-          <div
-            ref={cardsTrackRef}
-            className="flex w-full md:grid md:grid-cols-3 gap-0 md:gap-4 lg:gap-6 items-stretch will-change-transform"
-            style={{
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            {PROCESS_CARDS.map((card, idx) => {
-              const Icon = card.icon;
+          {PROCESS_CARDS.map((card, idx) => {
+            const Icon = card.icon;
 
-              return (
-                <div
-                  key={card.step}
-                  ref={(el) => (cardRefs.current[idx] = el)}
-                  className="featured-card group relative w-full shrink-0 flex-none md:w-auto md:shrink md:flex-initial rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
-                  style={{
-                    backgroundColor: "#0D0D15",
-                    borderColor: card.accentColor,
-                    boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
-                    WebkitBackfaceVisibility: "hidden",
-                    backfaceVisibility: "hidden",
-                    WebkitTransform: "translateZ(0)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = card.accentColor;
-                    e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = card.accentColor;
-                    e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
-                  }}
-                >
-                  {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
-                  <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
-                    <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
-                      {card.step}
-                    </span>
-                    <div
-                      className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
-                      style={{ backgroundColor: card.accentColor }}
-                    />
-                  </div>
+            return (
+              <div
+                key={card.step}
+                ref={(el) => (cardRefs.current[idx] = el)}
+                className="featured-card group relative w-[82vw] max-w-[320px] shrink-0 snap-center md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                style={{
+                  backgroundColor: "#0D0D15",
+                  borderColor: card.accentColor,
+                  boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
+                  WebkitBackfaceVisibility: "hidden",
+                  backfaceVisibility: "hidden",
+                  WebkitTransform: "translateZ(0)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = card.accentColor;
+                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = card.accentColor;
+                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
+                }}
+              >
+                {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
+                <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
+                  <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
+                    {card.step}
+                  </span>
+                  <div
+                    className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
+                    style={{ backgroundColor: card.accentColor }}
+                  />
+                </div>
 
-                  {/* Upper Center: Prominent Illustrated Icon */}
-                  <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
-                    <div
-                      className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-                      style={{
-                        backgroundColor: `${card.accentColor}18`,
-                        border: `1.5px solid ${card.accentColor}50`,
-                        boxShadow: `0 0 25px ${card.accentColor}25`,
-                      }}
-                    >
-                      <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
-                    </div>
-                  </div>
-
-                  {/* Middle: Centered Heading & Structured Description */}
-                  <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
-                    <span
-                      className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
-                      style={{ color: card.accentColor }}
-                    >
-                      {card.tagline}
-                    </span>
-                    <h3
-                      style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
-                      className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
-                    >
-                      {card.title}
-                    </h3>
-                    <p
-                      style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
-                      className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
-                    >
-                      {card.description}
-                    </p>
-                    <div className="pt-0.5">
-                      <span
-                        style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
-                      >
-                        ✦ {card.feature}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
-                  <div className="w-full pt-1 mt-auto">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onOpenTrial) {
-                          onOpenTrial();
-                        } else {
-                          window.location.href = "/login";
-                        }
-                      }}
-                      className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-105 active:scale-[0.98]"
-                      style={{
-                        backgroundColor: card.accentColor,
-                        color: card.buttonTextColor || "#FFFFFF",
-                        boxShadow: `0 4px 20px ${card.accentColor}35`,
-                      }}
-                    >
-                      <span>{card.ctaText}</span>
-                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
-                    </button>
+                {/* Upper Center: Prominent Illustrated Icon */}
+                <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
+                  <div
+                    className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+                    style={{
+                      backgroundColor: `${card.accentColor}18`,
+                      border: `1.5px solid ${card.accentColor}50`,
+                      boxShadow: `0 0 25px ${card.accentColor}25`,
+                    }}
+                  >
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
 
-        {/* Mobile Swipe / Arrow Navigation Controls (visible only on small screens < md) */}
-        <div className="flex md:hidden items-center justify-center gap-3 pt-1 pb-1 z-20">
-          <button
-            type="button"
-            onClick={() => scrollToCard(Math.max(0, activeCardIndex - 1))}
-            disabled={activeCardIndex === 0}
-            className="p-1 rounded-full text-white/50 hover:text-white disabled:opacity-20 transition-opacity cursor-pointer"
-            aria-label="Previous step"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+                {/* Middle: Centered Heading & Structured Description */}
+                <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
+                  <span
+                    className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
+                    style={{ color: card.accentColor }}
+                  >
+                    {card.tagline}
+                  </span>
+                  <h3
+                    style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
+                    className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
+                  >
+                    {card.title}
+                  </h3>
+                  <p
+                    style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
+                    className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
+                  >
+                    {card.description}
+                  </p>
+                  <div className="pt-0.5">
+                    <span
+                      style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
+                    >
+                      ✦ {card.feature}
+                    </span>
+                  </div>
+                </div>
 
-          <div className="flex items-center gap-1.5">
-            {PROCESS_CARDS.map((c, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => scrollToCard(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                  activeCardIndex === i ? "w-6" : "w-1.5 opacity-40"
-                }`}
-                style={{ backgroundColor: c.accentColor }}
-                aria-label={`Go to step ${i + 1}`}
-              />
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => scrollToCard(Math.min(2, activeCardIndex + 1))}
-            disabled={activeCardIndex === 2}
-            className="p-1 rounded-full text-white/50 hover:text-white disabled:opacity-20 transition-opacity cursor-pointer"
-            aria-label="Next step"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+                {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
+                <div className="w-full pt-1 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onOpenTrial) {
+                        onOpenTrial();
+                      } else {
+                        window.location.href = "/login";
+                      }
+                    }}
+                    className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-105 active:scale-[0.98]"
+                    style={{
+                      backgroundColor: card.accentColor,
+                      color: card.buttonTextColor || "#FFFFFF",
+                      boxShadow: `0 4px 20px ${card.accentColor}35`,
+                    }}
+                  >
+                    <span>{card.ctaText}</span>
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* ===================================================================== */}

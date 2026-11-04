@@ -1,9 +1,15 @@
+"use client";
+
+
 import React, { useEffect, useRef, useState, useMemo } from "react";
+const Link = ({ href, children, ...props }) => <a href={href} {...props}>{children}</a>;
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Sparkles, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 
-gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export const PRICING_PLANS = [
   {
@@ -147,7 +153,7 @@ function computeExplosionVectors(words, isTopLine) {
   });
 }
 
-export default function PricingSection({ onOpenTrial }) {
+export default function PricingSection({ isAuthenticated = false, onOpenTrial }) {
   const sectionRef = useRef(null);
   const stageRef = useRef(null);
   const headlineWrapperRef = useRef(null);
@@ -165,6 +171,8 @@ export default function PricingSection({ onOpenTrial }) {
   const line2Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE2, false), []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const mm = gsap.matchMedia();
 
     mm.add(
@@ -176,17 +184,6 @@ export default function PricingSection({ onOpenTrial }) {
       },
       (context) => {
         const { isDesktop, isTablet, isMobile, reduceMotion } = context.conditions;
-
-        if (reduceMotion) {
-          gsap.set(headlineWrapperRef.current, { autoAlpha: 0 });
-          circleRefs.current.forEach((el, idx) => {
-            if (el) {
-              el.style.visibility = "visible";
-              gsap.set(el, { opacity: 1, rotation: (idx - 1) * 8.5 });
-            }
-          });
-          return;
-        }
 
         // Paced scroll runway distance: reduced speed for relaxed cinematic progression
         const scrollDist = isDesktop ? "+=4200" : isTablet ? "+=3400" : "+=2600";
@@ -358,112 +355,102 @@ export default function PricingSection({ onOpenTrial }) {
           );
         }
 
-        // Mobile Cards Fade-in
-        if (!isDesktop && mobileCardsRef.current) {
-          tl.fromTo(
-            mobileCardsRef.current,
-            { opacity: 0, y: 50, scale: 0.92 },
-            { opacity: 1, y: 0, scale: 1, duration: 0.38, ease: "power2.out" },
-            0.42
-          );
-        }
-
         // Hold till end of scroll
         tl.to({}, { duration: 0.20 }, 0.80);
 
         // ============================================================
         // EXACT MADE WITH GSAP CARDS ROTATING WHEEL STEP CONTROLLER
-        // Step angle: s = 8.5deg. Cards pop in 1 by 1 with elastic bounce!
+        // Runs on all devices (phone, tablet, laptop, desktop)
+        // Step angle: s = 7.2deg (mobile) to 8.5deg (desktop).
+        // Cards pop in 1 by 1 with elastic bounce!
         // ============================================================
-        if (isDesktop) {
-          const s = 8.5;
-          let a = -1;
+        const s = isMobile ? 6.2 : isTablet ? 7.8 : 8.5;
+        let a = -1;
 
-          ScrollTrigger.create({
-            trigger: sectionRef.current,
-            start: "top top",
-            end: scrollDist,
-            onUpdate: (self) => {
-              const p = self.progress;
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: "top top",
+          end: scrollDist,
+          onUpdate: (self) => {
+            const p = self.progress;
 
-              // Before word blast clears, keep cards inactive
-              if (p < 0.36) {
-                if (a !== -1) {
-                  circleRefs.current.forEach((el) => {
-                    if (el) {
-                      el.style.visibility = "hidden";
-                      gsap.set(el, { opacity: 0 });
-                    }
-                  });
-                  if (wheelRef.current) {
-                    gsap.to(wheelRef.current, { rotation: 0, duration: 0.3, overwrite: "auto" });
+            // Before word blast clears, keep cards inactive
+            if (p < 0.36) {
+              if (a !== -1) {
+                circleRefs.current.forEach((el) => {
+                  if (el) {
+                    el.style.visibility = "hidden";
+                    gsap.set(el, { opacity: 0 });
                   }
-                  a = -1;
-                }
-                return;
-              }
-
-              // Normalize progress for the 3 cards (0.36 -> 0.84)
-              const cardProgress = Math.min(0.999, Math.max(0, (p - 0.36) / 0.48));
-              const t = Math.floor(cardProgress * 3); // 0, 1, or 2
-
-              if (t !== a && t < 3) {
-                if (t > a) {
-                  // Reveal new card(s) sequentially with elastic spring bounce
-                  for (let i = a + 1; i <= t; i++) {
-                    const circle = circleRefs.current[i];
-                    const media = cardMediaRefs.current[i];
-                    if (circle) {
-                      circle.style.visibility = "visible";
-                      gsap.set(circle, { rotation: i * s, opacity: 1 });
-                    }
-                    if (media) {
-                      gsap.from(media, {
-                        scale: 0.94,
-                        ease: "elastic.out(0.6, 0.3)",
-                        duration: 0.5,
-                        overwrite: "auto",
-                      });
-                    }
-                  }
-                } else if (t < a) {
-                  // Revert scroll: hide cards that were left behind
-                  for (let i = a; i > t; i--) {
-                    const circle = circleRefs.current[i];
-                    if (circle) {
-                      circle.style.visibility = "hidden";
-                      gsap.set(circle, { opacity: 0 });
-                    }
-                  }
-                }
-
-                // Exact Made With GSAP wheel rotation formula: -t*s + (s/2)*t
+                });
                 if (wheelRef.current) {
-                  gsap.to(wheelRef.current, {
-                    rotation: -t * s + (s / 2) * t,
-                    ease: "elastic.out(0.6, 0.3)",
-                    duration: 0.5,
-                    overwrite: "auto",
-                  });
+                  gsap.to(wheelRef.current, { rotation: 0, duration: 0.3, overwrite: "auto" });
                 }
+                a = -1;
+              }
+              return;
+            }
 
-                a = t;
-              }
-            },
-            onLeaveBack: () => {
-              a = -1;
-              circleRefs.current.forEach((el) => {
-                if (el) {
-                  el.style.visibility = "hidden";
-                  gsap.set(el, { opacity: 0 });
+            // Normalize progress for the 3 cards (0.36 -> 0.84)
+            const cardProgress = Math.min(0.999, Math.max(0, (p - 0.36) / 0.48));
+            const t = Math.floor(cardProgress * 3); // 0, 1, or 2
+
+            if (t !== a && t < 3) {
+              if (t > a) {
+                // Reveal new card(s) sequentially with elastic spring bounce
+                for (let i = a + 1; i <= t; i++) {
+                  const circle = circleRefs.current[i];
+                  const media = cardMediaRefs.current[i];
+                  if (circle) {
+                    circle.style.visibility = "visible";
+                    gsap.set(circle, { rotation: i * s, opacity: 1 });
+                  }
+                  if (media) {
+                    gsap.from(media, {
+                      scale: 0.94,
+                      ease: "elastic.out(0.6, 0.3)",
+                      duration: 0.5,
+                      overwrite: "auto",
+                    });
+                  }
                 }
-              });
-              if (wheelRef.current) {
-                gsap.set(wheelRef.current, { rotation: 0 });
+              } else if (t < a) {
+                // Revert scroll: hide cards that were left behind
+                for (let i = a; i > t; i--) {
+                  const circle = circleRefs.current[i];
+                  if (circle) {
+                    circle.style.visibility = "hidden";
+                    gsap.set(circle, { opacity: 0 });
+                  }
+                }
               }
-            },
-          });
-        }
+
+              // Exact Made With GSAP wheel rotation formula: -t*s + (s/2)*t
+              if (wheelRef.current) {
+                gsap.to(wheelRef.current, {
+                  rotation: -t * s + (s / 2) * t,
+                  ease: "elastic.out(0.6, 0.3)",
+                  duration: 0.5,
+                  overwrite: "auto",
+                });
+              }
+
+              a = t;
+            }
+          },
+          onLeaveBack: () => {
+            a = -1;
+            circleRefs.current.forEach((el) => {
+              if (el) {
+                el.style.visibility = "hidden";
+                gsap.set(el, { opacity: 0 });
+              }
+            });
+            if (wheelRef.current) {
+              gsap.set(wheelRef.current, { rotation: 0 });
+            }
+          },
+        });
       },
       sectionRef
     );
@@ -579,39 +566,19 @@ export default function PricingSection({ onOpenTrial }) {
           </p>
         </div>
 
-        {/* Mobile Plan Quick Switcher (Visible on small screens) */}
-        <div className="relative z-30 lg:hidden flex justify-center mt-2 mb-1">
-          <div className="inline-flex p-1 rounded-full bg-white/[0.05] border border-white/[0.08]">
-            {PRICING_PLANS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setActivePlan(p.id)}
-                className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
-                  activePlan === p.id
-                    ? "bg-gradient-to-r from-[#963DFF] to-[#55A9FF] text-white shadow-sm"
-                    : "text-[#9898A6]"
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* ============================================================
-            DESKTOP: EXACT MADE WITH GSAP ROTATING WHEEL
-            Center at 45vh (upper-middle, NO bottom cut-off).
+            EXACT MADE WITH GSAP ROTATING WHEEL (ALL SCREENS: PHONE, TAB, DESKTOP)
+            Center at 46vh (upper-middle, NO bottom cut-off).
             Cards emerge 1 by 1 with elastic spring bounce!
             ============================================================ */}
-        <div className="hidden lg:block absolute inset-0 z-20 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
           <div
             ref={wheelRef}
             className="absolute will-change-transform pointer-events-none"
             style={{
               width: "3675px",
               height: "3675px",
-              top: "45vh",
+              top: "46vh",
               left: "50%",
               marginLeft: "-1837.5px",
               transformOrigin: "center center",
@@ -639,43 +606,43 @@ export default function PricingSection({ onOpenTrial }) {
                 >
                   <div
                     ref={(el) => (cardMediaRefs.current[idx] = el)}
-                    className="relative w-[325px] xl:w-[340px] mx-auto will-change-transform pointer-events-auto transition-transform duration-300 hover:scale-[1.03] hover:z-50 select-text"
+                    className="relative w-[280px] sm:w-[310px] lg:w-[325px] xl:w-[340px] mx-auto will-change-transform pointer-events-auto transition-transform duration-300 hover:scale-[1.03] hover:z-50 select-text"
                     style={{
                       transform: "translateY(-50%)",
                       transformOrigin: "center center",
                     }}
                   >
                     <div
-                      className={`relative rounded-2xl p-6 lg:p-7 flex flex-col justify-between transition-all duration-300 overflow-hidden group shadow-2xl h-[415px] xl:h-[425px] ${theme.bg}`}
+                      className={`relative rounded-2xl p-4 sm:p-5 lg:p-7 flex flex-col justify-between transition-all duration-300 overflow-hidden group shadow-2xl h-[385px] sm:h-[400px] lg:h-[415px] xl:h-[425px] ${theme.bg}`}
                     >
                       {/* Oversized Signature Watermark Number */}
-                      <span className={`absolute bottom-5 right-6 text-7xl font-mono font-black ${theme.watermark} pointer-events-none select-none`}>
+                      <span className={`absolute bottom-5 right-6 text-6xl sm:text-7xl font-mono font-black ${theme.watermark} pointer-events-none select-none`}>
                         {plan.number}
                       </span>
 
                       <div className="relative z-10">
                         {/* Plan Header */}
-                        <div className="mb-3">
+                        <div className="mb-2 sm:mb-3">
                           <div className="flex items-center justify-between">
-                            <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${theme.numLabel}`}>
+                            <span className={`text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider ${theme.numLabel}`}>
                               {plan.number} / PLAN
                             </span>
                             {isAnnual && (
-                              <span className={`px-2.5 py-0.5 rounded-full ${theme.badge} text-[10px] font-bold uppercase tracking-wider shadow-sm`}>
+                              <span className={`px-2 py-0.5 rounded-full ${theme.badge} text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm`}>
                                 Recommended · Save ₹2,989
                               </span>
                             )}
                           </div>
-                          <h4 className={`font-black text-2xl tracking-tight mt-1 ${theme.name}`}>
+                          <h4 className={`font-black text-xl sm:text-2xl tracking-tight mt-1 ${theme.name}`}>
                             {plan.name}
                           </h4>
-                          <p className={`text-xs mt-0.5 ${theme.tagline}`}>{plan.tagline}</p>
+                          <p className={`text-[11px] sm:text-xs mt-0.5 ${theme.tagline}`}>{plan.tagline}</p>
                         </div>
 
                         {/* Price Block */}
-                        <div className={`mb-4 pb-4 border-b ${theme.border}`}>
+                        <div className={`mb-3 sm:mb-4 pb-3 sm:pb-4 border-b ${theme.border}`}>
                           <div className="flex items-baseline gap-1.5">
-                            <span className={`text-3xl sm:text-4xl font-black tracking-tight ${theme.price}`}>
+                            <span className={`text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight ${theme.price}`}>
                               {plan.price}
                             </span>
                             <span className={`text-xs font-bold ${theme.period}`}>
@@ -683,16 +650,16 @@ export default function PricingSection({ onOpenTrial }) {
                             </span>
                           </div>
                           {plan.savings && (
-                            <p className={`text-[11px] ${theme.savings} mt-1.5 leading-snug`}>
+                            <p className={`text-[10px] sm:text-[11px] ${theme.savings} mt-1 leading-snug`}>
                               {plan.savings}
                             </p>
                           )}
                         </div>
 
-                        {/* Feature Checklist */}
-                        <div className="space-y-2.5 mb-6">
+                        {/* Feature Checklist (Exact User Specifications) */}
+                        <div className="space-y-2 mb-4 sm:mb-6">
                           {plan.features.map((feat, fIdx) => (
-                            <div key={fIdx} className={`flex items-start gap-2.5 text-xs ${theme.feature}`}>
+                            <div key={fIdx} className={`flex items-start gap-2 text-xs ${theme.feature}`}>
                               <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.check}`} />
                               <span className="leading-tight">{feat}</span>
                             </div>
@@ -702,13 +669,13 @@ export default function PricingSection({ onOpenTrial }) {
 
                       {/* Card CTA Button (Always navigates to Login first) */}
                       <div className="relative z-10 pt-2 mt-auto">
-                        <a
+                        <Link
                           href={`/login?plan=${plan.id}`}
-                          className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn}`}
+                          className={`w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn}`}
                         >
                           <span>{plan.ctaText}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -716,86 +683,6 @@ export default function PricingSection({ onOpenTrial }) {
               );
             })}
           </div>
-        </div>
-
-        {/* TABLET & MOBILE RESPONSIVE STACK (Clean, switcher compatible) */}
-        <div
-          ref={mobileCardsRef}
-          className="lg:hidden w-full max-w-md mx-auto flex flex-col justify-center px-4 my-auto will-change-transform"
-        >
-          {PRICING_PLANS.map((plan) => {
-            const isAnnual = plan.id === "annual";
-            const isHidden = activePlan !== plan.id;
-            const theme = CARD_THEMES[plan.id] || CARD_THEMES.monthly;
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 overflow-hidden ${
-                  isHidden ? "hidden" : "flex"
-                } ${theme.bg}`}
-              >
-                {/* Oversized Signature Watermark Number */}
-                <span className={`absolute bottom-5 right-6 text-7xl font-mono font-black ${theme.watermark} pointer-events-none select-none`}>
-                  {plan.number}
-                </span>
-
-                <div className="relative z-10">
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${theme.numLabel}`}>
-                        {plan.number} / PLAN
-                      </span>
-                      {isAnnual && (
-                        <span className={`px-2 py-0.5 rounded ${theme.badge} text-[10px] font-bold uppercase tracking-wider`}>
-                          Recommended · Save ₹2,989
-                        </span>
-                      )}
-                    </div>
-                    <h4 className={`font-black text-2xl tracking-tight mt-1 ${theme.name}`}>
-                      {plan.name}
-                    </h4>
-                    <p className={`text-xs mt-0.5 ${theme.tagline}`}>{plan.tagline}</p>
-                  </div>
-
-                  <div className={`mb-4 pb-4 border-b ${theme.border}`}>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className={`text-3xl font-black tracking-tight ${theme.price}`}>
-                        {plan.price}
-                      </span>
-                      <span className={`text-xs font-bold ${theme.period}`}>
-                        {plan.period}
-                      </span>
-                    </div>
-                    {plan.savings && (
-                      <p className={`text-[11px] ${theme.savings} mt-1.5 leading-snug`}>
-                        {plan.savings}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2.5 mb-6">
-                    {plan.features.map((feat, fIdx) => (
-                      <div key={fIdx} className={`flex items-start gap-2.5 text-xs ${theme.feature}`}>
-                        <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${theme.check}`} />
-                        <span className="leading-tight">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="relative z-10 pt-2">
-                  <a
-                    href={`/login?plan=${plan.id}`}
-                    className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${theme.btn}`}
-                  >
-                    <span>{plan.ctaText}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {/* Bottom Guarantee Banner */}
