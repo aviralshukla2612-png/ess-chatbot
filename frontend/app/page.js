@@ -401,27 +401,29 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Floating Glass Pill Bar (Matches user reference: single continuous horizontal pill capsule over wave) */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto mb-3 sm:mb-5 px-4 flex justify-center shrink-0">
-          <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full bg-[#12121A]/75 backdrop-blur-xl border border-white/[0.08] shadow-[0_12px_36px_rgba(0,0,0,0.6)]">
-            {industriesHero.map((ind, idx) => {
-              const Icon = ind.icon;
-              return (
-                <React.Fragment key={ind.id}>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenExperience(ind.id)}
-                    className="group/pill inline-flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium text-[#D9D9E2] hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
-                  >
-                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D9D9E2] group-hover/pill:text-white transition-colors stroke-[1.8]" />
-                    <span className="whitespace-nowrap">{ind.label}</span>
-                  </button>
-                  {idx < industriesHero.length - 1 && (
-                    <div className="w-px h-3.5 bg-white/15 my-auto shrink-0" />
-                  )}
-                </React.Fragment>
-              );
-            })}
+        {/* Floating Glass Pill Bar (Matches user reference: single continuous horizontal pill capsule over wave, fully responsive on mobile) */}
+        <div className="relative z-10 w-full max-w-5xl mx-auto mb-3 sm:mb-5 px-3 sm:px-4 shrink-0">
+          <div className="w-full overflow-x-auto no-scrollbar scrollbar-none py-1 flex justify-start sm:justify-center items-center touch-pan-x overscroll-x-contain px-2 sm:px-0">
+            <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-2 rounded-full bg-[#12121A]/85 backdrop-blur-xl border border-white/[0.08] shadow-[0_12px_36px_rgba(0,0,0,0.6)] shrink-0 min-w-max">
+              {industriesHero.map((ind, idx) => {
+                const Icon = ind.icon;
+                return (
+                  <React.Fragment key={ind.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenExperience(ind.id)}
+                      className="group/pill inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium text-[#D9D9E2] hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D9D9E2] group-hover/pill:text-white transition-colors stroke-[1.8] shrink-0" />
+                      <span>{ind.label}</span>
+                    </button>
+                    {idx < industriesHero.length - 1 && (
+                      <div className="w-px h-3 sm:h-3.5 bg-white/15 my-auto shrink-0" />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
