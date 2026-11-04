@@ -2,6 +2,7 @@
 
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, Sparkles, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
@@ -165,8 +166,6 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
   const mobileCardsRef = useRef(null);
 
   const [activePlan, setActivePlan] = useState("annual");
-  const [loadingPlanId, setLoadingPlanId] = useState(null);
-  const [checkoutNotice, setCheckoutNotice] = useState(null);
 
   const line1Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE1, true), []);
   const line2Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE2, false), []);
@@ -487,25 +486,6 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
     };
   }, [line1Vectors, line2Vectors]);
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      if (typeof window !== "undefined" && window.Razorpay) {
-        return resolve(true);
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleSelectPlan = (plan) => {
-    if (loadingPlanId) return;
-    setLoadingPlanId(plan.id);
-    window.location.href = `/login?plan=${plan.id}`;
-  };
-
   return (
     <section
       id="pricing"
@@ -727,26 +707,15 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                         </div>
                       </div>
 
-                      {/* Card CTA Button */}
+                      {/* Card CTA Button (Always navigates to Login first) */}
                       <div className="relative z-10 pt-2 mt-auto">
-                        <button
-                          type="button"
-                          onClick={() => handleSelectPlan(plan)}
-                          disabled={loadingPlanId === plan.id}
-                          className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn} ${loadingPlanId === plan.id ? "opacity-80 cursor-wait" : ""}`}
+                        <Link
+                          href={`/login?plan=${plan.id}`}
+                          className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn}`}
                         >
-                          {loadingPlanId === plan.id ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Redirecting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>{plan.ctaText}</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </>
-                          )}
-                        </button>
+                          <span>{plan.ctaText}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -823,49 +792,18 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 </div>
 
                 <div className="relative z-10 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectPlan(plan)}
-                    disabled={loadingPlanId === plan.id}
-                    className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${theme.btn} ${loadingPlanId === plan.id ? "opacity-80 cursor-wait" : ""}`}
+                  <Link
+                    href={`/login?plan=${plan.id}`}
+                    className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${theme.btn}`}
                   >
-                    {loadingPlanId === plan.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Redirecting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{plan.ctaText}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
+                    <span>{plan.ctaText}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
             );
           })}
         </div>
-
-        {/* Checkout Notification Toast */}
-        {checkoutNotice && (
-          <div
-            className={`relative z-40 w-full max-w-xl mx-auto px-4 py-2.5 mb-2 rounded-xl text-center text-xs font-semibold backdrop-blur-md transition-all duration-300 border flex items-center justify-between gap-3 shadow-2xl ${
-              checkoutNotice.type === "success"
-                ? "bg-emerald-950/90 text-emerald-200 border-emerald-500/50"
-                : "bg-rose-950/90 text-rose-200 border-rose-500/50"
-            }`}
-          >
-            <span className="flex-1 text-left">{checkoutNotice.message}</span>
-            <button
-              type="button"
-              onClick={() => setCheckoutNotice(null)}
-              className="text-white/70 hover:text-white text-base font-bold px-1"
-            >
-              ×
-            </button>
-          </div>
-        )}
 
         {/* Bottom Guarantee Banner */}
         <div className="relative z-30 w-full max-w-5xl mx-auto flex items-center justify-between text-[10px] sm:text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold pt-1 px-2">
