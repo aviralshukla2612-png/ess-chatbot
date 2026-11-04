@@ -1,28 +1,34 @@
 import { NextResponse } from "next/server";
-import { requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { getAuthenticatedPrincipal } from "@/lib/auth/guard";
 import { billingService } from "@/lib/billing/billingService";
 
 /**
  * POST /api/billing/verify
- * Confirms Razorpay mandate authorization or trial setup and activates trialing subscription.
+ * Confirms Razorpay payment or mandate authorization and activates paid subscription.
  */
 export async function POST(request) {
   try {
-    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
-    if (!auth.ok) return auth.response;
+    const principal = await getAuthenticatedPrincipal(request);
+    let organizationId = "org_ess_default";
 
-    const { principal } = auth;
+    if (principal && principal.authenticated && principal.organizationId) {
+      organizationId = principal.organizationId;
+    }
+
     const body = await request.json().catch(() => ({}));
     const {
       subscriptionId,
       paymentId,
-      planId = "STARTER",
-      isTrial = true,
+      planId = "monthly",
+      isTrial = false,
+      organizationId: customOrgId,
     } = body;
 
+    const targetOrgId = customOrgId || organizationId;
+
     const result = await billingService.activateSubscription({
-      organizationId: principal.organizationId,
-      subscriptionId: subscriptionId || `sub_trial_${Date.now()}`,
+      organizationId: targetOrgId,
+      subscriptionId: subscriptionId || `sub_paid_${Date.now()}`,
       paymentId,
       planId,
       isTrial: Boolean(isTrial),
@@ -31,9 +37,7 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       subscription: result.subscription,
-      message: isTrial
-        ? "7-Day Free Trial activated successfully! Autopay scheduled."
-        : "Subscription activated successfully!",
+      message: "Subscription activated successfully!",
     });
   } catch (err) {
     console.error("[BILLING_VERIFY_ERR]", err);

@@ -9,6 +9,72 @@ import path from "path";
 
 // Legacy baseline plans for unit testing and fallback
 export const PLANS = {
+  MONTHLY: {
+    id: "monthly",
+    name: "Monthly",
+    description: "Starter Business Access - 1 account, 1 chatbot.",
+    priceINR: 999,
+    priceMonthly: "₹999",
+    currency: "INR",
+    interval: "monthly",
+    intervalCount: 1,
+    periodLabel: "per month",
+    trialDays: 0,
+    maxBots: 1,
+    maxMessagesPerMonth: Infinity,
+    maxKnowledgePages: 50,
+    features: [
+      "1 account",
+      "1 chatbot",
+      "Full autonomous AI access",
+    ],
+    razorpayPlanId: "plan_monthly_999",
+  },
+
+  SIX_MONTHS: {
+    id: "six-months",
+    name: "Six Months",
+    description: "Commercial Half-Year Access.",
+    priceINR: 5999,
+    priceMonthly: "₹5,999",
+    currency: "INR",
+    interval: "monthly",
+    intervalCount: 6,
+    periodLabel: "per 6 months",
+    trialDays: 0,
+    maxBots: 1,
+    maxMessagesPerMonth: Infinity,
+    maxKnowledgePages: 150,
+    features: [
+      "1 account",
+      "1 chatbot",
+      "Full autonomous AI access",
+    ],
+    razorpayPlanId: "plan_six_months_5999",
+  },
+
+  ANNUAL: {
+    id: "annual",
+    name: "Annual",
+    description: "Full Year Maximum Value.",
+    priceINR: 8999,
+    priceMonthly: "₹8,999",
+    currency: "INR",
+    interval: "yearly",
+    intervalCount: 1,
+    periodLabel: "per year",
+    trialDays: 0,
+    maxBots: 1,
+    maxMessagesPerMonth: Infinity,
+    maxKnowledgePages: 500,
+    features: [
+      "1 account",
+      "1 chatbot",
+      "Full autonomous AI access",
+    ],
+    razorpayPlanId: "plan_annual_8999",
+  },
+
   STARTER: {
     id: "STARTER",
     name: "Starter",
@@ -244,8 +310,9 @@ export function getPlan(planId = "STARTER") {
 
   const normalized = String(planId).trim();
 
-  // 1. Check legacy static baseline PLANS first (STARTER, GROWTH, ENTERPRISE)
-  const legacyMatch = PLANS[normalized.toUpperCase()];
+  // 1. Check legacy static baseline PLANS first (MONTHLY, SIX_MONTHS, ANNUAL, STARTER, GROWTH, ENTERPRISE)
+  const key = normalized.toUpperCase().replace(/-/g, "_");
+  const legacyMatch = PLANS[key] || PLANS[normalized.toUpperCase()];
   if (legacyMatch) return legacyMatch;
 
   // 2. Check dynamic plans

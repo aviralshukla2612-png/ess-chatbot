@@ -2,10 +2,9 @@
 
 
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Check, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { Check, Sparkles, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -18,6 +17,7 @@ export const PRICING_PLANS = [
     number: "01",
     tagline: "Flexible Month-to-Month Plan",
     price: "₹999",
+    priceINR: 999,
     period: "/ month",
     savings: null,
     popular: false,
@@ -35,6 +35,7 @@ export const PRICING_PLANS = [
     number: "02",
     tagline: "Commercial Half-Year Access",
     price: "₹5,999",
+    priceINR: 5999,
     period: "/ 6 months",
     savings: null,
     popular: false,
@@ -52,6 +53,7 @@ export const PRICING_PLANS = [
     number: "03",
     tagline: "Full Year Maximum Value",
     price: "₹8,999",
+    priceINR: 8999,
     period: "/ year",
     savings: "Save ₹2,989 compared with twelve monthly payments.",
     popular: true,
@@ -163,6 +165,8 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
   const mobileCardsRef = useRef(null);
 
   const [activePlan, setActivePlan] = useState("annual");
+  const [loadingPlanId, setLoadingPlanId] = useState(null);
+  const [checkoutNotice, setCheckoutNotice] = useState(null);
 
   const line1Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE1, true), []);
   const line2Vectors = useMemo(() => computeExplosionVectors(WORDS_LINE2, false), []);
@@ -483,8 +487,115 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
     };
   }, [line1Vectors, line2Vectors]);
 
-  const getCheckoutUrl = (planId) => {
-    return isAuthenticated ? `/billing?plan=${planId}` : `/login?plan=${planId}`;
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (typeof window !== "undefined" && window.Razorpay) {
+        return resolve(true);
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleSelectPlan = async (plan) => {
+    if (loadingPlanId) return;
+    setLoadingPlanId(plan.id);
+    setCheckoutNotice(null);
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Unable to load Razorpay payment gateway. Please check your internet connection.");
+      }
+
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: plan.id,
+          isTrial: false,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success || !data.checkout) {
+        throw new Error(data.error || "Failed to initialize payment checkout.");
+      }
+
+      const { checkout } = data;
+      const keyId = checkout.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_S7dlJIqMvrpcaj";
+
+      const options = {
+        key: keyId,
+        amount: Math.round((plan.priceINR || 999) * 100),
+        currency: "INR",
+        name: "Emperor Nexus AI",
+        description: `${plan.name} Access (${plan.price} ${plan.period})`,
+        order_id: checkout.orderId && !checkout.orderId.startsWith("order_mock_") ? checkout.orderId : undefined,
+        prefill: {
+          name: "",
+          email: "",
+          contact: "",
+        },
+        theme: {
+          color: plan.id === "monthly" ? "#00D98B" : (plan.id === "six-months" ? "#C653FF" : "#009DFF"),
+        },
+        handler: async function (response) {
+          setCheckoutNotice({
+            type: "success",
+            message: `🎉 Payment received! Payment ID: ${response.razorpay_payment_id}. Preparing workspace...`,
+          });
+
+          try {
+            await fetch("/api/billing/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                subscriptionId: response.razorpay_order_id || checkout.subscriptionId,
+                paymentId: response.razorpay_payment_id,
+                planId: plan.id,
+                isTrial: false,
+              }),
+            });
+          } catch (e) {
+            console.warn("[VERIFY_WARN]", e);
+          }
+
+          setTimeout(() => {
+            window.location.href = `/login?payment=success&plan=${plan.id}&payment_id=${response.razorpay_payment_id}`;
+          }, 1500);
+        },
+        modal: {
+          ondismiss: function () {
+            setLoadingPlanId(null);
+          },
+        },
+      };
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay payment gateway failed to initialize.");
+      }
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (resp) {
+        setCheckoutNotice({
+          type: "error",
+          message: resp.error?.description || "Payment was declined or cancelled.",
+        });
+        setLoadingPlanId(null);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error("[PRICING_CHECKOUT_ERR]", err);
+      setCheckoutNotice({
+        type: "error",
+        message: err.message || "Failed to launch Razorpay gateway. Please try again.",
+      });
+      setLoadingPlanId(null);
+    }
   };
 
   return (
@@ -519,7 +630,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           </div>
           <div className="hidden sm:inline-flex items-center gap-2 text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
-            <span>7-Day Free Evaluation Included</span>
+            <span>Instant Setup & Activation</span>
           </div>
         </div>
 
@@ -710,13 +821,24 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
 
                       {/* Card CTA Button */}
                       <div className="relative z-10 pt-2 mt-auto">
-                        <Link
-                          href={getCheckoutUrl(plan.id)}
-                          className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn}`}
+                        <button
+                          type="button"
+                          onClick={() => handleSelectPlan(plan)}
+                          disabled={loadingPlanId === plan.id}
+                          className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] ${theme.btn} ${loadingPlanId === plan.id ? "opacity-80 cursor-wait" : ""}`}
                         >
-                          <span>{plan.ctaText}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
+                          {loadingPlanId === plan.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Connecting Gateway...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>{plan.ctaText}</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -793,24 +915,55 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
                 </div>
 
                 <div className="relative z-10 pt-2">
-                  <Link
-                    href={getCheckoutUrl(plan.id)}
-                    className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${theme.btn}`}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPlan(plan)}
+                    disabled={loadingPlanId === plan.id}
+                    className={`w-full py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${theme.btn} ${loadingPlanId === plan.id ? "opacity-80 cursor-wait" : ""}`}
                   >
-                    <span>{plan.ctaText}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                    {loadingPlanId === plan.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Connecting Gateway...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{plan.ctaText}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
 
+        {/* Checkout Notification Toast */}
+        {checkoutNotice && (
+          <div
+            className={`relative z-40 w-full max-w-xl mx-auto px-4 py-2.5 mb-2 rounded-xl text-center text-xs font-semibold backdrop-blur-md transition-all duration-300 border flex items-center justify-between gap-3 shadow-2xl ${
+              checkoutNotice.type === "success"
+                ? "bg-emerald-950/90 text-emerald-200 border-emerald-500/50"
+                : "bg-rose-950/90 text-rose-200 border-rose-500/50"
+            }`}
+          >
+            <span className="flex-1 text-left">{checkoutNotice.message}</span>
+            <button
+              type="button"
+              onClick={() => setCheckoutNotice(null)}
+              className="text-white/70 hover:text-white text-base font-bold px-1"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Bottom Guarantee Banner */}
         <div className="relative z-30 w-full max-w-5xl mx-auto flex items-center justify-between text-[10px] sm:text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold pt-1 px-2">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Full 7-Day Free Evaluation on Every Plan</span>
+            <span>Instant AI Activation on Every Plan</span>
           </div>
           <div className="text-[#C28AFF] hidden sm:block">
             Autonomous Enterprise AI • Zero Risk

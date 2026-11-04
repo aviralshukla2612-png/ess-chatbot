@@ -442,15 +442,8 @@ export default function HomePage() {
         onOpenTrial={() => (window.location.href = "/login")}
       />
 
-      {/* 6. PRICING SECTION (Cinematic Scroll-Driven Transformation) */}
-      <PricingSection
-        isAuthenticated={isAuthenticated}
-        onOpenTrial={(planId) => {
-          window.location.href = isAuthenticated
-            ? `/billing?plan=${planId || "annual"}`
-            : `/login?plan=${planId || "annual"}`;
-        }}
-      />
+      {/* 6. PRICING SECTION (Direct Razorpay Checkout Integration) */}
+      <PricingSection isAuthenticated={isAuthenticated} />
 
       {/* 7. NOTH.IN STYLE SIGNATURE FOOTER WITH GSAP SCROLL REVEAL & ELASTIC BOUNCE */}
       <Footer />

@@ -148,18 +148,19 @@ export const billingService = {
     }
 
     // Sandbox / Test fallback (if Razorpay credentials are not yet set or API subscription creation failed)
-    const mockSubId = `sub_trial_${Date.now()}`;
+    const mockSubId = isTrial ? `sub_trial_${Date.now()}` : `sub_paid_${Date.now()}`;
     return {
       mode: "sandbox",
+      orderId: `order_mock_${Date.now()}`,
       subscriptionId: mockSubId,
-      keyId: "rzp_test_sandbox",
+      keyId: keyId || "rzp_test_sandbox",
       plan,
       isTrial,
       trialDays,
       startAt: startAt || Math.floor(Date.now() / 1000) + (7 * 24 * 3600),
-      amountToday: 0,
+      amountToday: isTrial ? 0 : plan.priceINR,
       recurringAmount: plan.priceMonthly,
-      notice: "Sandbox trial mode. Live banking mandate requires active Razorpay test/live credentials.",
+      notice: "Sandbox mode. Live payments require active Razorpay credentials.",
     };
   },
 
@@ -179,8 +180,8 @@ export const billingService = {
 
     const plan = getPlan(planId);
     const currentPeriodStart = new Date().toISOString();
-    const trialDays = isTrial ? 7 : 30;
-    const currentPeriodEnd = new Date(Date.now() + trialDays * 86400000).toISOString();
+    const durationDays = isTrial ? 7 : (plan.interval === "yearly" ? 365 : (plan.intervalCount === 6 ? 180 : 30));
+    const currentPeriodEnd = new Date(Date.now() + durationDays * 86400000).toISOString();
     const status = isTrial ? "trialing" : "active";
     const subId = subscriptionId || `sub_${Date.now()}`;
 
