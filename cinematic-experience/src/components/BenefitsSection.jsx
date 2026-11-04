@@ -18,6 +18,8 @@ import {
   Headphones,
   Rocket,
   Lightbulb,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 if (typeof window !== "undefined") {
@@ -164,21 +166,31 @@ export default function BenefitsSection({ onOpenTrial }) {
   const cardRefs = useRef([]);
 
   const [activeCardIndex, setActiveCardIndex] = useState(0);
-
-  const handleCardsScroll = (e) => {
-    const container = e.currentTarget;
-    if (!container) return;
-    const scrollLeft = container.scrollLeft;
-    const cardWidth = container.offsetWidth * 0.82;
-    const newIndex = Math.round(scrollLeft / (cardWidth || 1));
-    setActiveCardIndex(Math.min(Math.max(newIndex, 0), 2));
-  };
+  const touchStartX = useRef(0);
 
   const scrollToCard = (index) => {
-    const targetCard = cardRefs.current[index];
-    if (targetCard) {
-      targetCard.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      setActiveCardIndex(index);
+    const st = ScrollTrigger.getById("benefits-st");
+    if (st) {
+      const targets = [0.24, 0.58, 0.88];
+      const targetY = st.start + targets[index] * (st.end - st.start);
+      window.scrollTo({ top: targetY, behavior: "smooth" });
+    }
+    setActiveCardIndex(index);
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX.current - touchEndX;
+    if (Math.abs(diffX) > 40) {
+      if (diffX > 0 && activeCardIndex < 2) {
+        scrollToCard(activeCardIndex + 1);
+      } else if (diffX < 0 && activeCardIndex > 0) {
+        scrollToCard(activeCardIndex - 1);
+      }
     }
   };
 
@@ -191,8 +203,177 @@ export default function BenefitsSection({ onOpenTrial }) {
       ScrollTrigger.config({ ignoreMobileResize: true });
     }
 
-    const ctx = gsap.context(() => {
-      // Initial visual states (runs on all screens: phone, iPhone, tablet, iPad, laptop, desktop)
+    const mm = gsap.matchMedia(containerRef);
+
+    // =========================================================================
+    // MOBILE TIMELINE (< 768px): Card 01 -> Card 02 -> Card 03 sequential scroll
+    // =========================================================================
+    mm.add("(max-width: 767px)", () => {
+      if (visionRef.current) {
+        gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
+      }
+      if (sectionHeaderRef.current) {
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
+      }
+      if (cardsTrackRef.current) {
+        gsap.set(cardsTrackRef.current, { opacity: 0, xPercent: 0 });
+      }
+
+      cardRefs.current.forEach((card, idx) => {
+        if (card) {
+          gsap.set(card, {
+            opacity: idx === 0 ? 0 : 0.4,
+            scale: 0.95,
+            y: 20,
+            force3D: true,
+          });
+        }
+      });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          id: "benefits-st",
+          trigger: container,
+          start: "top top",
+          end: "+=1600",
+          pin: stage,
+          anticipatePin: 1,
+          scrub: 0.75,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const p = self.progress;
+            if (p < 0.44) {
+              setActiveCardIndex(0);
+            } else if (p < 0.74) {
+              setActiveCardIndex(1);
+            } else {
+              setActiveCardIndex(2);
+            }
+          },
+        },
+      });
+
+      // 1. Vision fades out
+      if (visionRef.current) {
+        tl.to(
+          visionRef.current,
+          {
+            opacity: 0,
+            scale: 1.06,
+            filter: "blur(6px)",
+            duration: 0.12,
+            ease: "power2.inOut",
+            pointerEvents: "none",
+          },
+          0.02
+        );
+      }
+
+      // 2. Header fades in
+      if (sectionHeaderRef.current) {
+        tl.to(
+          sectionHeaderRef.current,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.12,
+            ease: "power3.out",
+          },
+          0.08
+        );
+      }
+
+      // 3. Track & Card 01 enters
+      if (cardsTrackRef.current) {
+        tl.to(
+          cardsTrackRef.current,
+          {
+            opacity: 1,
+            duration: 0.12,
+            ease: "power2.out",
+          },
+          0.10
+        );
+      }
+      if (cardRefs.current[0]) {
+        tl.to(
+          cardRefs.current[0],
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.14,
+            ease: "power3.out",
+          },
+          0.10
+        );
+      }
+
+      // Hold on Card 01 (0.24 to 0.38)
+
+      // 4. Slide to Card 02 (Card 02 COMES IN FRONT & CENTER)
+      if (cardsTrackRef.current) {
+        tl.to(
+          cardsTrackRef.current,
+          {
+            xPercent: -100,
+            duration: 0.16,
+            ease: "power2.inOut",
+          },
+          0.38
+        );
+      }
+      if (cardRefs.current[1]) {
+        tl.to(
+          cardRefs.current[1],
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.16,
+            ease: "power3.out",
+          },
+          0.40
+        );
+      }
+
+      // Hold on Card 02 (0.54 to 0.68)
+
+      // 5. Slide to Card 03 (Card 03 COMES IN FRONT & CENTER)
+      if (cardsTrackRef.current) {
+        tl.to(
+          cardsTrackRef.current,
+          {
+            xPercent: -200,
+            duration: 0.16,
+            ease: "power2.inOut",
+          },
+          0.68
+        );
+      }
+      if (cardRefs.current[2]) {
+        tl.to(
+          cardRefs.current[2],
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.16,
+            ease: "power3.out",
+          },
+          0.70
+        );
+      }
+
+      // Hold on Card 03
+      tl.to({}, { duration: 0.16 }, 0.84);
+    });
+
+    // =========================================================================
+    // DESKTOP & TABLET TIMELINE (>= 768px): All 3 cards side-by-side in 3 cols
+    // =========================================================================
+    mm.add("(min-width: 768px)", () => {
       if (visionRef.current) {
         gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
       }
@@ -200,7 +381,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
       }
       if (cardsTrackRef.current) {
-        gsap.set(cardsTrackRef.current, { opacity: 0 });
+        gsap.set(cardsTrackRef.current, { opacity: 0, xPercent: 0 });
       }
 
       cardRefs.current.forEach((card, idx) => {
@@ -216,9 +397,9 @@ export default function BenefitsSection({ onOpenTrial }) {
         }
       });
 
-      // Master ScrollTrigger timeline with smooth scrub (ZERO blank screen!)
       const tl = gsap.timeline({
         scrollTrigger: {
+          id: "benefits-st",
           trigger: container,
           start: "top top",
           end: "+=1200",
@@ -230,7 +411,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         },
       });
 
-      // 1. Opening Vision / Marquee smoothly fades out and scales up
+      // 1. Opening Vision fades out
       if (visionRef.current) {
         tl.to(
           visionRef.current,
@@ -246,7 +427,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         );
       }
 
-      // 2. Persistent Section Header fades in below navbar
+      // 2. Persistent Section Header fades in
       if (sectionHeaderRef.current) {
         tl.to(
           sectionHeaderRef.current,
@@ -260,7 +441,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         );
       }
 
-      // 3. Cards Track fades in and 3D unfolds directly beneath the header
+      // 3. Cards Track fades in and 3D unfolds together
       if (cardsTrackRef.current) {
         tl.to(
           cardsTrackRef.current,
@@ -293,9 +474,9 @@ export default function BenefitsSection({ onOpenTrial }) {
 
       // Hold comfortable reading state
       tl.to({}, { duration: 0.4 }, 0.6);
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   return (
@@ -413,139 +594,154 @@ export default function BenefitsSection({ onOpenTrial }) {
         </div>
 
         {/* ======================================================================= */}
-        {/* 3 BENEFIT CARDS (RESPONSIVE: HORIZONTAL SNAP ON PHONE, 3-COL ON TABLET/DESKTOP) */}
+        {/* 3 BENEFIT CARDS (SEQUENTIAL SLIDE ON PHONE, 3-COL ON TABLET/DESKTOP)    */}
         {/* ======================================================================= */}
         <div
-          ref={cardsTrackRef}
-          onScroll={handleCardsScroll}
-          className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto flex md:grid md:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-6 items-stretch will-change-transform overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 sm:px-6 md:px-0 py-2 sm:py-3"
-          style={{
-            perspective: "1400px",
-            transformStyle: "preserve-3d",
-            WebkitOverflowScrolling: "touch",
-          }}
+          className="relative z-20 w-full max-w-[340px] sm:max-w-[380px] md:max-w-7xl mx-auto overflow-hidden md:overflow-visible my-auto px-2 md:px-0 py-1"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
-          {BENEFIT_CARDS.map((card, idx) => {
-            const Icon = card.icon;
+          <div
+            ref={cardsTrackRef}
+            className="key-card-list flex w-full md:grid md:grid-cols-3 gap-0 md:gap-4 lg:gap-6 items-stretch will-change-transform"
+            style={{
+              perspective: "1400px",
+              transformStyle: "preserve-3d",
+              WebkitBackfaceVisibility: "hidden",
+              backfaceVisibility: "hidden",
+            }}
+          >
+            {BENEFIT_CARDS.map((card, idx) => {
+              const Icon = card.icon;
 
-            return (
-              <div
-                key={card.step}
-                ref={(el) => (cardRefs.current[idx] = el)}
-                data-kf-card="true"
-                className="featured-card group relative w-[82vw] max-w-[320px] shrink-0 snap-center md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
-                style={{
-                  backgroundColor: "#0D0D15",
-                  borderColor: card.accentColor,
-                  boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
-                  WebkitBackfaceVisibility: "hidden",
-                  backfaceVisibility: "hidden",
-                  WebkitTransform: "translateZ(0)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
-                }}
-              >
-                {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
-                <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
-                    {card.step}
-                  </span>
-                  <div
-                    className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
-                    style={{ backgroundColor: card.accentColor }}
-                  />
-                </div>
-
-                {/* Upper Center: Prominent Illustrated Icon */}
-                <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
-                  <div
-                    className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-                    style={{
-                      backgroundColor: `${card.accentColor}18`,
-                      border: `1.5px solid ${card.accentColor}50`,
-                      boxShadow: `0 0 25px ${card.accentColor}25`,
-                    }}
-                  >
-                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
-                  </div>
-                </div>
-
-                {/* Middle: Centered Heading & Structured Description */}
-                <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
-                  <span
-                    className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
-                    style={{ color: card.accentColor }}
-                  >
-                    {card.tagline}
-                  </span>
-                  <h3
-                    style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
-                    className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
-                  >
-                    {card.title}
-                  </h3>
-                  <p
-                    style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
-                    className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
-                  >
-                    {card.description}
-                  </p>
-                  <div className="pt-0.5">
-                    <span
-                      style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
-                    >
-                      ✦ {card.feature}
+              return (
+                <div
+                  key={card.step}
+                  ref={(el) => (cardRefs.current[idx] = el)}
+                  data-kf-card="true"
+                  className="featured-card group relative w-full shrink-0 flex-none md:w-auto md:shrink md:flex-initial rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                  style={{
+                    backgroundColor: "#0D0D15",
+                    borderColor: card.accentColor,
+                    boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
+                    WebkitBackfaceVisibility: "hidden",
+                    backfaceVisibility: "hidden",
+                    WebkitTransform: "translateZ(0)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = card.accentColor;
+                    e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = card.accentColor;
+                    e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
+                  }}
+                >
+                  {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
+                  <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
+                    <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
+                      {card.step}
                     </span>
+                    <div
+                      className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
+                      style={{ backgroundColor: card.accentColor }}
+                    />
+                  </div>
+
+                  {/* Upper Center: Prominent Illustrated Icon */}
+                  <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
+                    <div
+                      className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+                      style={{
+                        backgroundColor: `${card.accentColor}18`,
+                        border: `1.5px solid ${card.accentColor}50`,
+                        boxShadow: `0 0 25px ${card.accentColor}25`,
+                      }}
+                    >
+                      <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
+                    </div>
+                  </div>
+
+                  {/* Middle: Centered Heading & Structured Description */}
+                  <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
+                    <span
+                      className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
+                      style={{ color: card.accentColor }}
+                    >
+                      {card.tagline}
+                    </span>
+                    <h3
+                      style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
+                      className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
+                    >
+                      {card.title}
+                    </h3>
+                    <p
+                      style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
+                      className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
+                    >
+                      {card.description}
+                    </p>
+                    <div className="pt-0.5">
+                      <span
+                        style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
+                      >
+                        ✦ {card.feature}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
+                  <div className="w-full pt-1 mt-auto">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (card.ctaText === "View Live Dashboard") {
+                          window.location.href = "/login";
+                        } else if (onOpenTrial) {
+                          onOpenTrial();
+                        } else {
+                          window.location.href = "/login";
+                        }
+                      }}
+                      className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-110 active:scale-[0.98]"
+                      style={{
+                        backgroundColor: card.accentColor,
+                        color: card.buttonTextColor || "#FFFFFF",
+                        boxShadow: `0 4px 20px ${card.accentColor}35`,
+                      }}
+                    >
+                      <span>{card.ctaText}</span>
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                    </button>
                   </div>
                 </div>
-
-                {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
-                <div className="w-full pt-1 mt-auto">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (card.ctaText === "View Live Dashboard") {
-                        window.location.href = "/login";
-                      } else if (onOpenTrial) {
-                        onOpenTrial();
-                      } else {
-                        window.location.href = "/login";
-                      }
-                    }}
-                    className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-110 active:scale-[0.98]"
-                    style={{
-                      backgroundColor: card.accentColor,
-                      color: card.buttonTextColor || "#FFFFFF",
-                      boxShadow: `0 4px 20px ${card.accentColor}35`,
-                    }}
-                  >
-                    <span>{card.ctaText}</span>
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
-        {/* Mobile Swipe Navigation Dots (visible only on small screens < md) */}
-        <div className="flex md:hidden items-center justify-center gap-2 pt-1 pb-1 z-20">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">Swipe ✦</span>
+        {/* Mobile Swipe / Arrow Navigation Controls (visible only on small screens < md) */}
+        <div className="flex md:hidden items-center justify-center gap-3 pt-1 pb-1 z-20">
+          <button
+            type="button"
+            onClick={() => scrollToCard(Math.max(0, activeCardIndex - 1))}
+            disabled={activeCardIndex === 0}
+            className="p-1 rounded-full text-white/50 hover:text-white disabled:opacity-20 transition-opacity cursor-pointer"
+            aria-label="Previous card"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
           <div className="flex items-center gap-1.5">
             {BENEFIT_CARDS.map((c, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => scrollToCard(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                   activeCardIndex === i ? "w-6" : "w-1.5 opacity-40"
                 }`}
                 style={{ backgroundColor: c.accentColor }}
@@ -553,6 +749,16 @@ export default function BenefitsSection({ onOpenTrial }) {
               />
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={() => scrollToCard(Math.min(2, activeCardIndex + 1))}
+            disabled={activeCardIndex === 2}
+            className="p-1 rounded-full text-white/50 hover:text-white disabled:opacity-20 transition-opacity cursor-pointer"
+            aria-label="Next card"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Bottom hint banner */}
