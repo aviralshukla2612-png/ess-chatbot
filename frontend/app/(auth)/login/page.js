@@ -191,29 +191,15 @@ export default function LoginPage() {
   }) : null;
 
   return (
-    <div className="min-h-screen bg-[#050507] text-[#F5F5F7] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 relative overflow-hidden font-sans">
-      {/* Background Ambient Lighting & Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(150,61,255,0.18),rgba(255,255,255,0))] pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-[radial-gradient(circle,rgba(85,169,255,0.12),transparent_70%)] pointer-events-none" />
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-[radial-gradient(circle,rgba(194,138,255,0.12),transparent_70%)] pointer-events-none" />
-
-      {/* Subtle Technical Grid Lines */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-
+    <div className="min-h-screen bg-black text-[#F5F5F7] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 relative font-sans">
       <div className="w-full max-w-md relative z-10 space-y-6">
-        {/* Brand Logo & Glowing Presentation */}
+        {/* Brand Logo & Presentation */}
         <div className="text-center flex flex-col items-center">
           <Link href="/" className="inline-block group focus:outline-hidden" title="Return to Emperor Nexus Home">
             <img
-              src="/emperor_nexus_sales_ai_assistant.png"
+              src="/emperor_nexus_sales_ai_assistant_original.png"
               alt="Emperor Nexus — Sales AI Assistant"
-              className="h-12 sm:h-14 w-auto object-contain filter drop-shadow-[0_0_28px_rgba(150,61,255,0.55)] transition-transform duration-300 group-hover:scale-105"
+              className="h-12 sm:h-14 w-auto object-contain filter drop-shadow-[0_0_24px_rgba(150,61,255,0.4)] transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -228,7 +214,7 @@ export default function LoginPage() {
 
         {/* Selected Plan Banner if arriving from Pricing */}
         {planMeta && (
-          <div className="p-3.5 rounded-2xl bg-[#0D0D18] border border-[#963DFF]/40 shadow-[0_0_30px_rgba(150,61,255,0.15)] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="p-3.5 rounded-2xl bg-black border border-[#963DFF]/40 shadow-[0_0_30px_rgba(150,61,255,0.15)] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-[#963DFF]/20 text-[#C28AFF] flex items-center justify-center shrink-0 border border-[#963DFF]/30">
                 <CreditCard className="w-4 h-4" />
@@ -259,10 +245,10 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Dark Luxury Card */}
-        <div className="bg-[#0B0B14]/95 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] relative">
+        {/* Deep Black Luxury Card */}
+        <div className="bg-black p-6 sm:p-8 rounded-3xl border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.95)] relative">
           {/* Segmented Switcher (Sign In vs Register) */}
-          <div className="flex p-1 rounded-2xl bg-[#06060A] border border-white/10 mb-6 relative">
+          <div className="flex p-1 rounded-2xl bg-[#0A0A0E] border border-white/10 mb-6 relative">
             <button
               type="button"
               onClick={() => {
@@ -432,7 +418,7 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/10" />
             </div>
-            <span className="relative bg-[#0B0B14] px-3 text-[11px] text-[#9898A6] uppercase tracking-wider font-semibold">
+            <span className="relative bg-black px-3 text-[11px] text-[#9898A6] uppercase tracking-wider font-semibold">
               or continue with
             </span>
           </div>
@@ -447,7 +433,7 @@ export default function LoginPage() {
                   ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}`
                   : "/api/auth/google"
               }
-              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer text-xs font-semibold text-white group"
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-white/10 bg-[#0A0A0E] hover:bg-[#121218] hover:border-white/20 transition-all cursor-pointer text-xs font-semibold text-white group"
             >
               <svg className="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
                 <path

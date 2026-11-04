@@ -14,27 +14,15 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050507] text-[#F5F5F7] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 relative overflow-hidden font-sans">
-      {/* Background Ambient Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(150,61,255,0.18),rgba(255,255,255,0))] pointer-events-none" />
-
-      {/* Subtle Technical Grid Lines */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-
+    <div className="min-h-screen bg-black text-[#F5F5F7] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 relative font-sans">
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Brand Logo */}
         <div className="text-center flex flex-col items-center">
           <Link href="/" className="inline-block group focus:outline-hidden" title="Return to Emperor Nexus Home">
             <img
-              src="/emperor_nexus_sales_ai_assistant.png"
+              src="/emperor_nexus_sales_ai_assistant_original.png"
               alt="Emperor Nexus — Sales AI Assistant"
-              className="h-12 sm:h-14 w-auto object-contain filter drop-shadow-[0_0_28px_rgba(150,61,255,0.55)] transition-transform duration-300 group-hover:scale-105"
+              className="h-12 sm:h-14 w-auto object-contain filter drop-shadow-[0_0_24px_rgba(150,61,255,0.4)] transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
@@ -45,8 +33,8 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {/* Dark Luxury Card */}
-        <div className="bg-[#0B0B14]/95 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.85)]">
+        {/* Deep Black Luxury Card */}
+        <div className="bg-black p-6 sm:p-8 rounded-3xl border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.95)]">
           {sent ? (
             <div className="text-center space-y-4">
               <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
@@ -81,7 +69,7 @@ export default function ForgotPasswordPage() {
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
                   />
                 </div>
               </div>
