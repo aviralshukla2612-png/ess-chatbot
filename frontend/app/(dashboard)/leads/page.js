@@ -25,6 +25,7 @@ import { leadsApi } from "@/lib/api/leads";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
 
 const ANSWER_LABELS = {
   is_business: "For Business",
@@ -101,6 +102,13 @@ export default function LeadsPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showClearModal, setShowClearModal] = useState(false);
   const [deleteLeadTarget, setDeleteLeadTarget] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Reset to page 1 whenever search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, botFilter, statusFilter, timeFilter]);
 
   const loadLeads = async () => {
     try {
@@ -139,11 +147,20 @@ export default function LeadsPage() {
   const contactedLeads = leads.filter((l) => l.status === "Contacted").length;
   const convertedLeads = leads.filter((l) => l.status === "Converted").length;
 
+  const totalItems = filteredLeads.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedLeads = filteredLeads.slice(startIndex, endIndex);
+
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredLeads.length) {
-      setSelectedIds([]);
+    const pageIds = paginatedLeads.map((l) => l.id);
+    const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+    if (allPageSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
     } else {
-      setSelectedIds(filteredLeads.map((l) => l.id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
     }
   };
 
@@ -427,16 +444,17 @@ export default function LeadsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-[#EFE7DC] dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
                   <th className="py-3.5 pl-5 pr-2 w-10">
                     <input
                       type="checkbox"
                       checked={
-                        filteredLeads.length > 0 &&
-                        selectedIds.length === filteredLeads.length
+                        paginatedLeads.length > 0 &&
+                        paginatedLeads.every((l) => selectedIds.includes(l.id))
                       }
                       onChange={toggleSelectAll}
                       className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
@@ -453,7 +471,7 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EFE7DC] dark:divide-slate-800 text-[#252525] dark:text-slate-300">
-                {filteredLeads.map((item) => {
+                {paginatedLeads.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
                   return (
                     <tr
@@ -533,6 +551,18 @@ export default function LeadsPage() {
               </tbody>
             </table>
           </div>
+
+            <Pagination
+              currentPage={safeCurrentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={(page) => setCurrentPage(page)}
+              onPageSizeChange={(size) => setPageSize(size)}
+              pageSizeOptions={[5, 10, 20, 50]}
+              itemLabel="leads"
+            />
+          </>
         )}
       </div>
 

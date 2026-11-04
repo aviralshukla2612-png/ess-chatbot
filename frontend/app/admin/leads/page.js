@@ -26,6 +26,7 @@ import {
 import StatusBadge from "@/components/ui/StatusBadge";
 import { leadsApi } from "@/lib/api/leads";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
 
 function stripMarkdown(text) {
   if (!text) return "";
@@ -42,6 +43,12 @@ export default function AdminLeadsPage() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
   const [confirmConfig, setConfirmConfig] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, scoreFilter, statusFilter]);
 
   const loadLeads = React.useCallback(async () => {
     setLoading(true);
@@ -160,6 +167,13 @@ export default function AdminLeadsPage() {
       return matchesSearch && matchesScore && matchesStatus;
     });
   }, [leads, search, scoreFilter, statusFilter]);
+
+  const totalItems = filteredLeads.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedLeads = filteredLeads.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6 animate-fade-in pb-16 font-sans">
@@ -361,7 +375,7 @@ export default function AdminLeadsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredLeads.map((l) => {
+                paginatedLeads.map((l) => {
                   const cleanedInquiry = stripMarkdown(l.inquiry);
                   const isRealInquiry =
                     cleanedInquiry &&
@@ -470,6 +484,17 @@ export default function AdminLeadsPage() {
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={safeCurrentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+          pageSizeOptions={[5, 10, 20, 50]}
+          itemLabel="leads"
+        />
       </div>
 
       {/* Lead Detail Slide-over Modal */}
