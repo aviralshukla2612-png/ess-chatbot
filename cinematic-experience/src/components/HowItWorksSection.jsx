@@ -214,7 +214,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       });
 
       if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: 12 });
       }
 
       if (glowOrbRef.current) {
@@ -437,7 +437,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       });
 
       if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: 12 });
       }
 
       if (glowOrbRef.current) {
@@ -583,7 +583,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       {/* ===================================================================== */}
       <div
         ref={stageRef}
-        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-16 sm:pt-20 lg:pt-22 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
+        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-24 sm:pt-26 lg:pt-28 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
         style={{
           minHeight: "100dvh",
           height: "100dvh",
@@ -617,7 +617,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         {/* ===================================================================== */}
         <div
           ref={typographyRef}
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none select-none px-4"
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none select-none px-4 pt-20 sm:pt-0"
         >
           <div className="flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 backdrop-blur-sm text-[10px] sm:text-xs font-mono uppercase tracking-widest text-purple-300 mb-4 sm:mb-6">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
@@ -678,12 +678,12 @@ export default function HowItWorksSection({ onOpenTrial }) {
         {/* ===================================================================== */}
         <div
           ref={sectionHeaderRef}
-          className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-1 pb-1 sm:pb-2 px-2"
+          className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-1 sm:pb-2 px-3"
         >
-          <h2 className="font-headline font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
+          <h2 className="font-headline font-black text-lg sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-snug sm:leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
             From Raw Documents To Autonomous Sales In 5 Minutes
           </h2>
-          <p className="mt-1 text-[11px] sm:text-xs md:text-sm text-[#9898A6] max-w-2xl mx-auto">
+          <p className="mt-1 text-[11px] sm:text-xs md:text-sm text-[#9898A6] max-w-2xl mx-auto leading-relaxed">
             No machine learning engineers, vector database setups, or prompt writing required.
           </p>
         </div>

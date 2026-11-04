@@ -474,7 +474,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
       {/* PINNED STAGE (Controlled by GSAP ScrollTrigger scrub) */}
       <div
         ref={stageRef}
-        className="relative w-full h-screen min-h-[640px] bg-[#050507] overflow-hidden flex flex-col justify-between pt-20 sm:pt-24 pb-6 px-4 sm:px-8 select-none"
+        className="relative w-full h-screen min-h-[640px] bg-[#050507] overflow-hidden flex flex-col justify-between pt-24 sm:pt-26 lg:pt-28 pb-6 px-4 sm:px-8 select-none"
       >
         {/* Technical Grid Background & Ambient Lighting */}
         <div
@@ -507,11 +507,11 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
             ============================================================ */}
         <div
           ref={headlineWrapperRef}
-          className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none px-4 text-center will-change-transform"
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none px-4 pt-16 sm:pt-0 text-center will-change-transform"
           style={{ perspective: "1200px" }}
         >
           {/* Line 1: SIMPLE PRICING. (Individual character spans) */}
-          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+          <h2 className="font-sans font-extrabold tracking-tight text-2xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
             {WORDS_LINE1.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE1[0].length;
               return (
@@ -535,7 +535,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           </h2>
 
           {/* Line 2: POWERFUL CONVERSATIONS. (Pure white without any trailing cursor) */}
-          <h2 className="font-sans font-extrabold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] mt-2 sm:mt-3 flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
+          <h2 className="font-sans font-extrabold tracking-tight text-2xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.06] uppercase drop-shadow-[0_4px_30px_rgba(0,0,0,0.9)] mt-1.5 sm:mt-3 flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
             {WORDS_LINE2.map((word, wIdx) => {
               const startIdx = wIdx === 0 ? 0 : WORDS_LINE2[0].length;
               return (

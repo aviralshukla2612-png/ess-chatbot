@@ -189,7 +189,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
       }
       if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: 12 });
       }
       if (cardsTrackRef.current) {
         gsap.set(cardsTrackRef.current, {
@@ -368,7 +368,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
       }
       if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: 12 });
       }
       if (cardsTrackRef.current) {
         gsap.set(cardsTrackRef.current, { x: 0, opacity: 0 });
@@ -501,7 +501,7 @@ export default function BenefitsSection({ onOpenTrial }) {
       {/* ========================================================================= */}
       <div
         ref={stageRef}
-        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-16 sm:pt-20 lg:pt-22 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
+        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-24 sm:pt-26 lg:pt-28 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
         style={{
           minHeight: "100dvh",
           height: "100dvh",
@@ -529,7 +529,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         {/* ======================================================================= */}
         <div
           ref={visionRef}
-          className="absolute inset-0 z-30 flex flex-col justify-between py-12 sm:py-16 px-6 sm:px-14 pointer-events-none select-none"
+          className="absolute inset-0 z-30 flex flex-col justify-between pt-24 pb-8 sm:py-16 px-6 sm:px-14 pointer-events-none select-none"
         >
           {/* Top Vision Title */}
           <div className="relative z-10 w-full flex items-center justify-between">
@@ -573,9 +573,9 @@ export default function BenefitsSection({ onOpenTrial }) {
         {/* ======================================================================= */}
         <div
           ref={sectionHeaderRef}
-          className="relative z-20 max-w-4xl mx-auto text-center shrink-0 pt-1 pb-1 sm:pb-2 px-2"
+          className="relative z-20 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-1 sm:pb-2 px-3"
         >
-          <h2 className="font-headline font-black text-xl sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
+          <h2 className="font-headline font-black text-lg sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-snug sm:leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
             Don&apos;t Let Valuable Conversations Slip Away.
           </h2>
           <p className="mt-1 text-[11px] sm:text-xs md:text-sm text-[#C5CAD4] font-medium max-w-2xl mx-auto leading-relaxed">
