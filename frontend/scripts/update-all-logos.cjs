@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 async function updateAllLogos() {
-  console.log('Processing new logo.jpg and updating all logo assets...');
+  console.log('Generating crisp white-text Emperor Nexus logo assets...');
 
   const rootDir = path.resolve(__dirname, '..', '..');
   const frontendPublic = path.join(rootDir, 'frontend', 'public');
@@ -15,11 +15,10 @@ async function updateAllLogos() {
     throw new Error('logo.jpg not found in frontend/public');
   }
 
-  // 1. Copy original logo.jpg to cinematic-experience/public
+  // Copy original logo.jpg to cinematic-experience/public as backup
   fs.copyFileSync(srcJpg, path.join(cinematicPublic, 'logo.jpg'));
-  console.log('Copied logo.jpg to cinematic-experience/public');
 
-  // 2. Generate high-quality transparent PNG logo
+  // 1. Load original logo.jpg
   const { data, info } = await sharp(srcJpg).raw().toBuffer({ resolveWithObject: true });
   const { width, height } = info;
   const outRgba = Buffer.alloc(width * height * 4);
@@ -32,39 +31,75 @@ async function updateAllLogos() {
       const g = data[srcIdx + 1];
       const b = data[srcIdx + 2];
 
-      // Measure distance from light background (#f7f7f7 = 247, 247, 247)
-      const diff = Math.max(Math.abs(r - 247), Math.abs(g - 247), Math.abs(b - 247));
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const saturation = maxC - minC;
+      const brightness = (r + g + b) / 3;
+      const diffFromBg = Math.max(Math.abs(r - 247), Math.abs(g - 247), Math.abs(b - 247));
 
-      if (diff < 8) {
-        outRgba[dstIdx] = 0;
-        outRgba[dstIdx + 1] = 0;
-        outRgba[dstIdx + 2] = 0;
-        outRgba[dstIdx + 3] = 0;
-      } else if (diff < 26) {
-        const alpha = Math.round(((diff - 8) / 18) * 255);
-        outRgba[dstIdx] = r;
-        outRgba[dstIdx + 1] = g;
-        outRgba[dstIdx + 2] = b;
-        outRgba[dstIdx + 3] = alpha;
+      if (x < 370) {
+        // --- ROBOT MASCOT ZONE (x < 370) ---
+        if (diffFromBg < 8) {
+          outRgba[dstIdx] = 0;
+          outRgba[dstIdx + 1] = 0;
+          outRgba[dstIdx + 2] = 0;
+          outRgba[dstIdx + 3] = 0;
+        } else if (diffFromBg < 26) {
+          const alpha = Math.round(((diffFromBg - 8) / 18) * 255);
+          outRgba[dstIdx] = r;
+          outRgba[dstIdx + 1] = g;
+          outRgba[dstIdx + 2] = b;
+          outRgba[dstIdx + 3] = alpha;
+        } else {
+          outRgba[dstIdx] = r;
+          outRgba[dstIdx + 1] = g;
+          outRgba[dstIdx + 2] = b;
+          outRgba[dstIdx + 3] = 255;
+        }
       } else {
-        outRgba[dstIdx] = r;
-        outRgba[dstIdx + 1] = g;
-        outRgba[dstIdx + 2] = b;
-        outRgba[dstIdx + 3] = 255;
+        // --- TEXT & BRAND ZONE (x >= 370) ---
+        // Check if this pixel is part of the colorful diagonal X in NEXUS
+        const isColoredX = x >= 645 && x <= 835 && y >= 85 && y <= 185 && saturation > 18;
+
+        if (isColoredX) {
+          // Preserve vibrant cyan-to-purple diagonal gradient on the X
+          const alpha = diffFromBg < 26 ? Math.round(((diffFromBg - 8) / 18) * 255) : 255;
+          outRgba[dstIdx] = r;
+          outRgba[dstIdx + 1] = g;
+          outRgba[dstIdx + 2] = b;
+          outRgba[dstIdx + 3] = alpha;
+        } else {
+          // User requirement: "text should be white"
+          // EMPEROR, N, E, U, S in NEXUS, SALES AI ASSISTANT, and vertical line become crisp, brilliant WHITE!
+          const inkDiff = 247 - brightness;
+          if (inkDiff <= 4) {
+            outRgba[dstIdx] = 0;
+            outRgba[dstIdx + 1] = 0;
+            outRgba[dstIdx + 2] = 0;
+            outRgba[dstIdx + 3] = 0;
+          } else {
+            // Smooth anti-aliased white text
+            const alpha = Math.min(255, Math.round(((inkDiff - 4) / 14) * 255));
+            outRgba[dstIdx] = 255;
+            outRgba[dstIdx + 1] = 255;
+            outRgba[dstIdx + 2] = 255;
+            outRgba[dstIdx + 3] = alpha;
+          }
+        }
       }
     }
   }
 
-  const transparentLogoBuf = await sharp(outRgba, { raw: { width, height, channels: 4 } })
+  const whiteTextLogoBuf = await sharp(outRgba, { raw: { width, height, channels: 4 } })
     .png({ quality: 100 })
     .toBuffer();
 
-  // Save logo.png in both public dirs
-  fs.writeFileSync(path.join(frontendPublic, 'logo.png'), transparentLogoBuf);
-  fs.writeFileSync(path.join(cinematicPublic, 'logo.png'), transparentLogoBuf);
-  console.log('Generated logo.png with transparent background');
+  // Save logo.png in both public directories
+  fs.writeFileSync(path.join(frontendPublic, 'logo.png'), whiteTextLogoBuf);
+  fs.writeFileSync(path.join(cinematicPublic, 'logo.png'), whiteTextLogoBuf);
+  console.log('Saved white-text logo.png in frontend and cinematic-experience');
 
-  // 3. Overwrite legacy logo file names so ANY cached / existing reference gets the new logo
+  // Overwrite legacy filenames so all references display the new white text logo
   const legacyNames = [
     'emperor_nexus_sales_ai_assistant.png',
     'emperor_nexus_sales_ai_assistant_original.png',
@@ -73,13 +108,12 @@ async function updateAllLogos() {
   ];
 
   for (const name of legacyNames) {
-    fs.writeFileSync(path.join(frontendPublic, name), transparentLogoBuf);
-    fs.writeFileSync(path.join(cinematicPublic, name), transparentLogoBuf);
+    fs.writeFileSync(path.join(frontendPublic, name), whiteTextLogoBuf);
+    fs.writeFileSync(path.join(cinematicPublic, name), whiteTextLogoBuf);
   }
-  console.log('Overwrote all legacy logo files with the new logo');
+  console.log('Updated all legacy logo paths');
 
-  // 4. Crop the new robot mascot to generate updated favicons and icons
-  // Robot emblem in logo.png: x: 19..329 (w: 310), y: 12..282 (h: 270)
+  // 2. Crop the robot mascot from this refined asset to update all favicons
   const masterRobotBuf = await sharp(outRgba, { raw: { width, height, channels: 4 } })
     .extract({ left: 15, top: 10, width: 320, height: 275 })
     .resize(440, 440, {
@@ -99,7 +133,7 @@ async function updateAllLogos() {
   fs.writeFileSync(path.join(frontendPublic, 'icon-512.png'), masterRobotBuf);
   fs.writeFileSync(path.join(cinematicPublic, 'icon-512.png'), masterRobotBuf);
 
-  // 5. Generate resolution suite: 16, 32, 48, 96, 192
+  // Resolution suite: 16, 32, 48, 96, 192
   const sizes = [16, 32, 48, 96, 192];
   const pngBuffers = { 512: masterRobotBuf };
   for (const s of sizes) {
@@ -118,14 +152,14 @@ async function updateAllLogos() {
     }
   }
 
-  // 6. Generate WebP icons
+  // WebP icons
   const webpBuf = await sharp(masterRobotBuf).resize(192, 192).webp({ quality: 95 }).toBuffer();
   fs.writeFileSync(path.join(frontendPublic, 'icon.webp'), webpBuf);
   fs.writeFileSync(path.join(frontendPublic, 'e-logoicon.webp'), webpBuf);
   fs.writeFileSync(path.join(frontendApp, 'icon.webp'), webpBuf);
   fs.writeFileSync(path.join(cinematicPublic, 'e-logoicon.webp'), webpBuf);
 
-  // 7. Generate multi-resolution ICO (16, 32, 48)
+  // Multi-resolution ICO (16, 32, 48)
   const icoSizes = [16, 32, 48];
   const icoPngs = [pngBuffers[16], pngBuffers[32], pngBuffers[48]];
   const headerLen = 6 + icoSizes.length * 16;
@@ -173,9 +207,8 @@ async function updateAllLogos() {
   fs.writeFileSync(path.join(frontendPublic, 'favicon.ico'), icoBuf);
   fs.writeFileSync(path.join(frontendApp, 'favicon.ico'), icoBuf);
   fs.writeFileSync(path.join(cinematicPublic, 'favicon.ico'), icoBuf);
-  console.log('Saved multi-size favicon.ico');
 
-  // 8. Generate Apple Touch Icon (180x180)
+  // Apple Touch Icon (180x180)
   const appleRobot = await sharp(masterRobotBuf).resize(140, 140).png().toBuffer();
   const appleSvgBg = Buffer.from(
     `<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
@@ -203,9 +236,8 @@ async function updateAllLogos() {
   fs.writeFileSync(path.join(frontendPublic, 'apple-touch-icon.png'), appleTouchIconBuf);
   fs.writeFileSync(path.join(frontendApp, 'apple-icon.png'), appleTouchIconBuf);
   fs.writeFileSync(path.join(cinematicPublic, 'apple-touch-icon.png'), appleTouchIconBuf);
-  console.log('Saved apple-touch-icon.png');
 
-  // 9. Generate SVG favicon
+  // SVG favicon
   const masterBase64 = masterRobotBuf.toString('base64');
   const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
@@ -221,14 +253,14 @@ async function updateAllLogos() {
   fs.writeFileSync(path.join(frontendPublic, 'favicon.svg'), svgContent, 'utf8');
   fs.writeFileSync(path.join(frontendApp, 'icon.svg'), svgContent, 'utf8');
   fs.writeFileSync(path.join(cinematicPublic, 'favicon.svg'), svgContent, 'utf8');
-  console.log('Saved favicon.svg in frontend and cinematic-experience');
 
-  // Clean up temporary file
-  if (fs.existsSync(path.join(frontendPublic, 'logo-transparent.png'))) {
-    fs.unlinkSync(path.join(frontendPublic, 'logo-transparent.png'));
-  }
+  // Clean up any test images
+  ['test-logo-white.png', 'test-dark-preview.png', 'test-white-text.png', 'test-comp.png'].forEach((f) => {
+    const p = path.join(frontendPublic, f);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  });
 
-  console.log('All logo and favicon assets updated successfully!');
+  console.log('All logo and favicon assets updated with brilliant white text!');
 }
 
 updateAllLogos().catch((err) => {
