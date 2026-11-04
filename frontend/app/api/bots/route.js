@@ -10,13 +10,15 @@ import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
 import { billingService } from "@/lib/billing/billingService";
 import { generateKnowledgeMarkdown } from "@/lib/wizard/industryTemplates";
 
-// Helper to normalize phone numbers safely without changing meaning
+// Helper to normalize and validate phone numbers safely
 function normalizePhoneNumber(raw) {
   if (!raw || typeof raw !== "string") return null;
   const trimmed = raw.trim();
   if (!trimmed) return null;
-  const digitCount = (trimmed.match(/\d/g) || []).length;
-  if (digitCount < 7) return null;
+  if (!/^[+]?[0-9\s\-()]+$/.test(trimmed)) return null;
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length < 7 || digits.length > 15) return null;
+  if (/^(\d)\1+$/.test(digits)) return null;
   return trimmed;
 }
 
@@ -113,7 +115,19 @@ export async function POST(request) {
 
     // Normalize and validate contact details
     if (body.phoneNumber || body.phone) {
-      body.phoneNumber = normalizePhoneNumber(body.phoneNumber || body.phone);
+      const rawPhone = body.phoneNumber || body.phone;
+      const normalized = normalizePhoneNumber(rawPhone);
+      if (!normalized) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Please enter a valid phone number (between 7 and 15 digits; repeating numbers like 111111 are not valid).",
+            code: "INVALID_PHONE_NUMBER",
+          },
+          { status: 400 }
+        );
+      }
+      body.phoneNumber = normalized;
     }
     if (body.company && typeof body.company === "string") {
       body.company = body.company.trim();

@@ -24,31 +24,97 @@ export default function Step02BusinessInfo({
 }) {
   const [errors, setErrors] = useState({});
 
+  const validatePhone = (raw) => {
+    if (!raw || !raw.trim()) {
+      return "Phone or WhatsApp number is required.";
+    }
+    const trimmed = raw.trim();
+    if (!/^[+]?[0-9\s\-()]+$/.test(trimmed)) {
+      return "Please enter a valid phone number (digits, spaces, hyphens, and + only).";
+    }
+    const digits = trimmed.replace(/\D/g, "");
+    if (digits.length < 7 || digits.length > 15) {
+      return "Phone number must contain between 7 and 15 digits.";
+    }
+    if (/^(\d)\1+$/.test(digits)) {
+      return "Please enter a realistic phone number (repeated digits like 1111111111 are not valid).";
+    }
+    if (("01234567890123456789".includes(digits) || "98765432109876543210".includes(digits)) && digits.length >= 7) {
+      return "Please enter a realistic phone number (sequential digits are not valid).";
+    }
+    return null;
+  };
+
   const validate = () => {
     const errs = {};
     if (!businessDetails.businessName?.trim()) {
       errs.businessName = "Business name is required.";
+    } else if (businessDetails.businessName.trim().length < 2) {
+      errs.businessName = "Business name must be at least 2 characters.";
     }
+
     if (!businessDetails.description?.trim()) {
       errs.description = "Business description is required.";
+    } else if (businessDetails.description.trim().length < 15) {
+      errs.description = "Please provide at least 15 characters describing your business.";
     }
+
+    if (businessDetails.websiteUrl?.trim()) {
+      const url = businessDetails.websiteUrl.trim();
+      const urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/;
+      if (!urlPattern.test(url)) {
+        errs.websiteUrl = "Please enter a valid website URL (e.g. https://example.com).";
+      }
+    }
+
     if (!businessDetails.businessEmail?.trim()) {
       errs.businessEmail = "Contact email address is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(businessDetails.businessEmail.trim())) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(businessDetails.businessEmail.trim())) {
       errs.businessEmail = "Please enter a valid email address.";
     }
-    if (!businessDetails.phoneNumber?.trim()) {
-      errs.phoneNumber = "Phone or WhatsApp number is required.";
+
+    const phoneErr = validatePhone(businessDetails.phoneNumber);
+    if (phoneErr) {
+      errs.phoneNumber = phoneErr;
     }
+
     if (!businessDetails.businessAddress?.trim()) {
       errs.businessAddress = "Business physical address or city/state is required.";
+    } else if (businessDetails.businessAddress.trim().length < 4) {
+      errs.businessAddress = "Please enter a valid physical address or location.";
     }
+
     if (!businessDetails.workingDaysHours?.trim()) {
       errs.workingDaysHours = "Operating days and hours are required.";
+    } else if (businessDetails.workingDaysHours.trim().length < 4) {
+      errs.workingDaysHours = "Please specify operating days and timings (e.g. Mon-Sat 9AM-7PM).";
     }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const handlePhoneChange = (e) => {
+    let val = e.target.value.replace(/[^0-9+\s\-()]/g, "");
+    if (val.length > 18) val = val.slice(0, 18);
+    update("phoneNumber", val);
+
+    const digits = val.replace(/\D/g, "");
+    if (digits.length >= 4 && /^(\d)\1+$/.test(digits)) {
+      setErrors((prev) => ({
+        ...prev,
+        phoneNumber: "Repeated digits (e.g. 111111) are not a valid phone number.",
+      }));
+    } else if (errors.phoneNumber) {
+      setErrors((prev) => ({ ...prev, phoneNumber: null }));
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    const err = validatePhone(businessDetails.phoneNumber);
+    if (err) {
+      setErrors((prev) => ({ ...prev, phoneNumber: err }));
+    }
   };
 
   const handleContinue = () => {
@@ -172,8 +238,18 @@ export default function Step02BusinessInfo({
               value={businessDetails.websiteUrl || ""}
               onChange={(e) => update("websiteUrl", e.target.value)}
               placeholder="https://example.com"
-              className="w-full px-4 py-3 rounded-xl bg-[#0B0B10] border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] transition-all"
+              className={`w-full px-4 py-3 rounded-xl bg-[#0B0B10] border text-white placeholder-white/30 text-xs focus:outline-none transition-all ${
+                errors.websiteUrl
+                  ? "border-rose-500 ring-1 ring-rose-500"
+                  : "border-white/10 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF]"
+              }`}
             />
+            {errors.websiteUrl && (
+              <p className="text-[11px] text-rose-400 flex items-center gap-1 mt-1 animate-in fade-in">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{errors.websiteUrl}</span>
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -213,8 +289,10 @@ export default function Step02BusinessInfo({
             </label>
             <input
               type="tel"
+              maxLength={18}
               value={businessDetails.phoneNumber || ""}
-              onChange={(e) => update("phoneNumber", e.target.value)}
+              onChange={handlePhoneChange}
+              onBlur={handlePhoneBlur}
               placeholder="+91 98765 43210"
               className={`w-full px-4 py-3 rounded-xl bg-[#0B0B10] border text-white placeholder-white/30 text-xs focus:outline-none transition-all ${
                 errors.phoneNumber
