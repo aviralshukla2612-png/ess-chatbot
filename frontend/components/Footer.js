@@ -301,7 +301,7 @@ export default function Footer() {
             {/* Pill CTA Buttons identical to noth.in */}
             <div className="flex flex-wrap items-center gap-4 pt-1">
               <a
-                href="/register"
+                href="mailto:contact@vardaansmartsolutions.com?subject=Book%20a%20Call%20-%20Emperor%20Nexus"
                 className="group inline-flex items-center gap-4 px-6 sm:px-7 py-3 sm:py-3.5 rounded-full border border-white/30 text-xs sm:text-sm font-semibold uppercase tracking-widest text-white hover:border-white hover:bg-white hover:text-black transition-all duration-300"
               >
                 <span>Book a call</span>

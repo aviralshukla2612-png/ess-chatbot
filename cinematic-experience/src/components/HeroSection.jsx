@@ -192,13 +192,13 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
           ref={ctaRef}
           className="mt-5 sm:mt-6 flex flex-row items-center justify-center gap-3.5 w-auto"
         >
-          {/* Primary CTA: Start Free Trial matching user screenshot */}
+          {/* Primary CTA: Get Started */}
           <button
             type="button"
             onClick={onOpenTrial}
             className="px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer group shadow-[0_8px_25px_rgba(158,96,244,0.45)]"
           >
-            <span>Start Free Trial</span>
+            <span>Get Started</span>
             <span className="text-lg leading-none transition-transform duration-200 group-hover:translate-x-1">→</span>
           </button>
 

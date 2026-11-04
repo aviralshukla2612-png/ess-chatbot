@@ -242,11 +242,10 @@ export default function HomePage() {
 
       {/* 1. TOP HEADER / NAVIGATION */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
             ? "bg-[#050507]/85 backdrop-blur-xl border-b border-white/[0.08] shadow-[0_10px_30px_rgba(0,0,0,0.8)]"
             : "bg-transparent border-b border-white/[0.04]"
-        }`}
+          }`}
       >
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           {/* Brand Logo - 100% Full Vibrant Color */}
@@ -290,9 +289,8 @@ export default function HomePage() {
                       window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
                     }
                   }}
-                  className={`relative py-1 text-sm font-medium transition-colors cursor-pointer select-none ${
-                    isActive || isHovered ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
-                  }`}
+                  className={`relative py-1 text-sm font-medium transition-colors cursor-pointer select-none ${isActive || isHovered ? "text-white font-semibold" : "text-[#D9D9E2] hover:text-white"
+                    }`}
                 >
                   <span>{nav.label}</span>
                 </a>
@@ -383,10 +381,10 @@ export default function HomePage() {
 
           <div className="mt-5 sm:mt-6 flex flex-row items-center justify-center gap-3.5 w-auto">
             <Link
-              href={isAuthenticated ? "/login" : "/register"}
+              href="/login"
               className="px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer group shadow-[0_8px_25px_rgba(158,96,244,0.45)]"
             >
-              <span>{isAuthenticated ? "Launch Dashboard" : "Start Free Trial"}</span>
+              <span>{isAuthenticated ? "Launch Dashboard" : "Get Started"}</span>
               <span className="text-lg leading-none transition-transform duration-200 group-hover:translate-x-1">→</span>
             </Link>
 
@@ -431,17 +429,17 @@ export default function HomePage() {
       {/* 3. SCROLL-PINNED MOSAIC INDUSTRIES SECTION */}
       <IndustriesSection
         onOpenExperience={handleOpenExperience}
-        onOpenTrial={() => (window.location.href = "/register")}
+        onOpenTrial={() => (window.location.href = "/login")}
       />
 
       {/* 4. DRAMATIC SHATTER TRANSITION + THREE-CARD REVEAL BENEFITS */}
       <BenefitsSection
-        onOpenTrial={() => (window.location.href = "/register")}
+        onOpenTrial={() => (window.location.href = "/login")}
       />
 
       {/* 5. AWWWARDS-LEVEL SHATTER TRANSITION + THREE-CARD REVEAL HOW IT WORKS */}
       <HowItWorksSection
-        onOpenTrial={() => (window.location.href = "/register")}
+        onOpenTrial={() => (window.location.href = "/login")}
       />
 
       {/* 6. PRICING SECTION (Cinematic Scroll-Driven Transformation) */}
@@ -450,7 +448,7 @@ export default function HomePage() {
         onOpenTrial={(planId) => {
           window.location.href = isAuthenticated
             ? `/billing?plan=${planId || "annual"}`
-            : `/register?plan=${planId || "annual"}`;
+            : `/login?plan=${planId || "annual"}`;
         }}
       />
 
@@ -506,10 +504,10 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link
-                  href={isAuthenticated ? "/login" : "/register"}
+                  href="/login"
                   className="flex-1 py-3.5 rounded-2xl font-bold text-sm text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>{isAuthenticated ? "Go to Workspace" : "Start Free 14-Day Trial"}</span>
+                  <span>{isAuthenticated ? "Go to Workspace" : "Get Started"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <button

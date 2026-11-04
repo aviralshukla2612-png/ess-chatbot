@@ -58,8 +58,8 @@ export default function App() {
   };
 
   const handleOpenTrial = () => {
-    // Navigate to registration or login
-    window.location.href = "/register";
+    // Navigate to login
+    window.location.href = "/login";
   };
 
   return (

@@ -22,6 +22,11 @@ function decodeEdgeSession(token) {
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
+  // 0. Redirect /register to /login (self-registration disabled)
+  if (pathname === "/register" || pathname.startsWith("/register/")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   // 1. Skip public assets and public endpoints
   if (
     pathname.startsWith("/_next") ||
@@ -34,7 +39,6 @@ export function middleware(request) {
     pathname.startsWith("/api/billing/webhook") ||
     pathname === "/" ||
     pathname === "/login" ||
-    pathname === "/register" ||
     pathname === "/forgot-password" ||
     pathname.startsWith("/preview")
   ) {

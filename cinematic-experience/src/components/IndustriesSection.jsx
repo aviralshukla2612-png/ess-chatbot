@@ -722,21 +722,6 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
               Create a customized assistant around your business information, so visitors can explore what you offer and get relevant answers to their questions.
             </p>
           </div>
-
-          {/* AND THEN BUTTON AT THE END (Fully visible in viewport) */}
-          <div
-            ref={btnRef}
-            className="mt-4 sm:mt-5 flex justify-center will-change-transform"
-          >
-            <button
-              type="button"
-              onClick={() => (onOpenTrial ? onOpenTrial() : (window.location.href = "/register"))}
-              className="px-7 sm:px-9 py-2.5 sm:py-3 rounded-full font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] via-[#7B42F6] to-[#55A9FF] hover:opacity-95 hover:shadow-[0_0_32px_rgba(150,61,255,0.6)] transition-all duration-300 inline-flex items-center gap-2 cursor-pointer shadow-xl hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider"
-            >
-              <span>Start Free Trial</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
     </section>

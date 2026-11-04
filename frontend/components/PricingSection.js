@@ -25,9 +25,9 @@ export const PRICING_PLANS = [
     features: [
       "1 account",
       "1 chatbot",
-      "7-day free trial",
+      "Full autonomous AI access",
     ],
-    ctaText: "Start 7-Day Free Trial",
+    ctaText: "Get Started",
   },
   {
     id: "six-months",
@@ -42,9 +42,9 @@ export const PRICING_PLANS = [
     features: [
       "1 account",
       "1 chatbot",
-      "7-day free trial",
+      "Full autonomous AI access",
     ],
-    ctaText: "Start 7-Day Free Trial",
+    ctaText: "Get Started",
   },
   {
     id: "annual",
@@ -59,9 +59,9 @@ export const PRICING_PLANS = [
     features: [
       "1 account",
       "1 chatbot",
-      "7-day free trial",
+      "Full autonomous AI access",
     ],
-    ctaText: "Start 7-Day Free Trial",
+    ctaText: "Get Started",
   },
 ];
 
@@ -484,7 +484,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
   }, [line1Vectors, line2Vectors]);
 
   const getCheckoutUrl = (planId) => {
-    return isAuthenticated ? `/billing?plan=${planId}` : `/register?plan=${planId}`;
+    return isAuthenticated ? `/billing?plan=${planId}` : `/login?plan=${planId}`;
   };
 
   return (

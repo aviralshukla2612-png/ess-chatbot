@@ -250,12 +250,10 @@ export default function LoginPage() {
               />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
-              {activeTab === "login" ? "Welcome back" : "Create your workspace"}
+              Welcome back
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              {activeTab === "login"
-                ? "Sign in to access your AI assistant dashboard"
-                : "Join now to build custom chatbots for your business"}
+              Sign in to access your AI assistant dashboard
             </p>
           </div>
 
@@ -269,37 +267,6 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-            {activeTab === "register" && (
-              <>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Full name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Jane Doe"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:bg-white outline-hidden focus:border-indigo-600 text-xs text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Company / Organization Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="Acme Innovations"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:bg-white outline-hidden focus:border-indigo-600 text-xs text-slate-900 placeholder:text-slate-400 font-medium shadow-2xs"
-                  />
-                </div>
-              </>
-            )}
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
@@ -423,37 +390,8 @@ export default function LoginPage() {
             </>
           )}
 
-          <div className="text-center pt-1 text-xs text-slate-600">
-            {activeTab === "login" ? (
-              <>
-                Don't have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("register");
-                    if (email === "admin@company.com") {
-                      setEmail("");
-                      setPassword("");
-                    }
-                    setErrorMessage("");
-                  }}
-                  className="text-indigo-600 font-semibold hover:underline cursor-pointer"
-                >
-                  Create account
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("login")}
-                  className="text-indigo-600 font-semibold hover:underline cursor-pointer"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
+          <div className="text-center pt-1 text-xs text-slate-500">
+            <span>Need workspace access? Contact your administrator.</span>
           </div>
 
           <div className="text-center pt-3 border-t border-slate-100 flex items-center justify-center">
