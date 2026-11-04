@@ -237,7 +237,7 @@ export default function BillingPage() {
           email: currentUser?.email || "",
         },
         theme: {
-          color: "#4f46e5",
+          color: "#963DFF",
         },
         modal: {
           ondismiss: function () {
@@ -277,10 +277,10 @@ export default function BillingPage() {
       if (targetPackage) {
         setTimeout(() => {
           handleExtendPlan(targetPackage);
-        }, 500);
+        }, 400);
       }
     }
-  }, [billingData]);
+  }, []);
 
   const planName =
     billingData?.subscription?.plan?.name ||

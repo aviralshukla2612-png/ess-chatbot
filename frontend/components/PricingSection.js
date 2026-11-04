@@ -503,11 +503,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
   const handleSelectPlan = (plan) => {
     if (loadingPlanId) return;
     setLoadingPlanId(plan.id);
-    if (isAuthenticated) {
-      window.location.href = `/billing?plan=${plan.id}&checkout=true`;
-    } else {
-      window.location.href = `/login?plan=${plan.id}`;
-    }
+    window.location.href = `/login?plan=${plan.id}`;
   };
 
   return (

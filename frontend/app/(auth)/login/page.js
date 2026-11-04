@@ -15,7 +15,6 @@ import {
   ShieldAlert,
   Building,
   User,
-  LayoutDashboard,
   Globe,
   ArrowLeft,
   Zap,
@@ -80,35 +79,6 @@ export default function LoginPage() {
       }
     }
   }, []);
-
-  const handleDirectDemoLogin = async (targetRole = "ORG_ADMIN") => {
-    setLoading(true);
-    setErrorMessage("");
-    try {
-      const isSuper = targetRole === "superadmin" || String(targetRole).includes("super");
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: isSuper ? "admin@emperorsmartsolutions.com" : "admin@company.com",
-          password: "AdminAccessPassword2026!",
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Demo authentication failed");
-      }
-      if (selectedPlan) {
-        window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}&checkout=true`);
-        return;
-      }
-      const destination = isSuper ? "/admin" : (redirectPath || "/dashboard");
-      window.location.replace(destination);
-    } catch (err) {
-      setErrorMessage(err.message || "Demo login failed.");
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -455,22 +425,6 @@ export default function LoginPage() {
               </svg>
               <span>Continue with Google</span>
             </a>
-
-            {/* Quick Demo Access Button */}
-            <button
-              type="button"
-              onClick={() => handleDirectDemoLogin("ORG_ADMIN")}
-              disabled={loading}
-              className="w-full flex items-center justify-between py-2.5 px-3.5 rounded-xl border border-indigo-500/25 bg-indigo-950/30 hover:bg-indigo-900/40 hover:border-indigo-500/40 transition-all text-xs text-[#D1D1DB] group cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                </div>
-                <span className="font-semibold text-white">Explore Instant Workspace Demo</span>
-              </div>
-              <span className="text-[10px] text-indigo-300 font-mono">1-Click &rarr;</span>
-            </button>
           </div>
 
           {/* Bottom Switch Link */}
