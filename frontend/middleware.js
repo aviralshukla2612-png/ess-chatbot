@@ -30,7 +30,9 @@ export function middleware(request) {
   // 1. Skip public assets and public endpoints
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon.ico") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/icon") ||
+    pathname.startsWith("/apple-") ||
     pathname.startsWith("/widget.js") ||
     pathname.startsWith("/api/public") ||
     pathname.startsWith("/api/auth") ||
