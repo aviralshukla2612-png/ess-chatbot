@@ -170,21 +170,21 @@ export default function DashboardPage() {
       </div>
 
       {/* 8 Top KPI Cards (Grid of 4 x 2) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs hover:shadow-xs transition-shadow"
+            className="bg-white dark:bg-[#0D0D0D] rounded-xl p-3 sm:p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs hover:shadow-xs transition-shadow min-w-0"
           >
-            <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400 block truncate">
+            <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-neutral-400 block truncate">
               {kpi.title}
             </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-xl sm:text-2xl font-bold text-[#252525] dark:text-white">
+            <div className="mt-1.5 sm:mt-2 flex items-baseline justify-between gap-1">
+              <span className="text-lg sm:text-2xl font-bold text-[#252525] dark:text-white truncate">
                 {kpi.value}
               </span>
               <span
-                className={`text-[11px] font-semibold flex items-center ${
+                className={`text-[10px] sm:text-[11px] font-semibold flex items-center shrink-0 ${
                   kpi.pos ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                 }`}
               >
@@ -201,17 +201,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
         {/* Conversations Over Time (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between min-w-0 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4">
             <div>
               <h3 className="font-bold text-sm text-[#252525] dark:text-white">
                 Conversations Over Time
               </h3>
             </div>
 
-            <div className="flex items-center gap-1 bg-[#FAF9F6] dark:bg-[#1A1A1A] p-0.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-neutral-300">
+            <div className="flex items-center gap-1 bg-[#FAF9F6] dark:bg-[#1A1A1A] p-0.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-neutral-300 self-start sm:self-auto">
               {["daily", "weekly", "monthly"].map((t) => (
                 <button
                   key={t}
@@ -226,7 +226,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="h-60 w-full">
+          <div className="h-52 sm:h-60 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={timeseriesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -258,7 +258,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Questions by Bot (1 col) */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between min-w-0 overflow-hidden">
           <h3 className="font-bold text-sm text-[#252525] dark:text-white mb-2">
             Questions by Bot
           </h3>
@@ -290,11 +290,11 @@ export default function DashboardPage() {
           <div className="space-y-1.5 pt-2 border-t border-[#EFE7DC] dark:border-neutral-800 text-xs">
             {botDonutData.map((b, i) => (
               <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: b.color }} />
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: b.color }} />
                   <span className="text-slate-600 dark:text-neutral-400 truncate max-w-[140px]">{b.name}</span>
                 </div>
-                <span className="font-semibold text-[#252525] dark:text-white">{b.value > 0 ? `${Math.round(b.value)}%` : "0%"}</span>
+                <span className="font-semibold text-[#252525] dark:text-white shrink-0 ml-2">{b.value > 0 ? `${Math.round(b.value)}%` : "0%"}</span>
               </div>
             ))}
           </div>
@@ -302,9 +302,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
         {/* Recent Conversations */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Recent Conversations
@@ -323,20 +323,20 @@ export default function DashboardPage() {
               </div>
             ) : (
               conversations.slice(0, 4).map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] transition-colors">
-                  <div className="flex items-center gap-3 overflow-hidden">
+                <div key={c.id} className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] transition-colors gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden min-w-0 flex-1">
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1A1A1A] text-[#252525] dark:text-neutral-200 font-bold text-xs flex items-center justify-center shrink-0">
                       {c.visitorName?.charAt(0) || "U"}
                     </div>
-                    <div className="truncate">
+                    <div className="truncate min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{c.visitorName}</p>
                       <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate">{c.lastMessage}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0 text-right">
-                    <span className="text-[10px] text-slate-400">{c.startedAt || "Recently"}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-right">
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap">{c.startedAt || "Recently"}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
                       {c.status}
                     </span>
                   </div>
@@ -347,7 +347,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs">
+        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-sm text-[#252525] dark:text-white">
               Recent Leads
@@ -366,20 +366,20 @@ export default function DashboardPage() {
               </div>
             ) : (
               leads.slice(0, 4).map((l) => (
-                <div key={l.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 transition-colors">
-                  <div className="flex items-center gap-3 overflow-hidden">
+                <div key={l.id} className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 transition-colors gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden min-w-0 flex-1">
                     <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#252525] dark:text-slate-200 font-bold text-xs flex items-center justify-center shrink-0">
                       {l.name?.charAt(0) || "L"}
                     </div>
-                    <div className="truncate">
+                    <div className="truncate min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{l.name}</p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{l.email || l.phone}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0 text-right">
-                    <span className="text-[10px] text-slate-400">{l.created}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-right">
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap">{l.created}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 whitespace-nowrap">
                       {l.score || "High"}
                     </span>
                   </div>

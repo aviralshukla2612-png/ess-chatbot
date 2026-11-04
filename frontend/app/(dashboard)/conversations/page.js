@@ -314,7 +314,12 @@ export default function ConversationsPage() {
       {/* 3-Column Inbox Panel */}
       <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 shadow-sm overflow-hidden flex flex-col lg:flex-row h-[760px]">
         {/* COLUMN 1: Conversation List */}
-        <div className="w-full lg:w-72 xl:w-84 border-r border-[#EFE7DC] dark:border-neutral-800 flex flex-col shrink-0 bg-[#FAF9F6] dark:bg-[#0A0A0A]">
+        <div
+          className={cn(
+            "w-full lg:w-72 xl:w-84 border-r border-[#EFE7DC] dark:border-neutral-800 flex flex-col shrink-0 bg-[#FAF9F6] dark:bg-[#0A0A0A]",
+            selectedId && "hidden lg:flex"
+          )}
+        >
           <div className="p-4 border-b border-[#EFE7DC] dark:border-neutral-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -473,14 +478,23 @@ export default function ConversationsPage() {
         <div
           className={cn(
             "flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0A0A0A]",
+            !selectedId && "hidden lg:flex",
             showClientDetails && "border-r border-[#EFE7DC] dark:border-neutral-800"
           )}
         >
           {currentChat ? (
             <>
               {/* Top Chat Header */}
-              <div className="p-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#0E0E0E] shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
+              <div className="p-3 sm:p-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#0E0E0E] shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="lg:hidden p-1.5 -ml-1 text-slate-500 hover:text-[#252525] dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-[#EFE7DC]/50 dark:hover:bg-neutral-800 cursor-pointer shrink-0"
+                    title="Back to conversation list"
+                  >
+                    <ArrowRight className="w-4 h-4 rotate-180" />
+                  </button>
                   <div className="w-9 h-9 rounded-xl bg-white border border-[#EFE7DC] text-[#B68A55] dark:bg-[#161616] dark:border-neutral-800 dark:text-[#B68A55] font-bold text-xs flex items-center justify-center shadow-xs shrink-0">
                     {!currentVisitor.isGeneric && currentVisitor.initials ? (
                       <span>{currentVisitor.initials}</span>
@@ -614,7 +628,7 @@ export default function ConversationsPage() {
         {/* COLUMN 3: Client & Conversation Metadata (Closed by default) */}
         {showClientDetails && (
           <div
-            className="w-full lg:w-72 xl:w-80 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] border-l border-[#EFE7DC] dark:border-neutral-800 space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs animate-in fade-in slide-in-from-right-4 duration-200"
+            className="fixed lg:relative inset-0 lg:inset-auto z-40 lg:z-auto w-full lg:w-72 xl:w-80 p-5 bg-[#FAF9F6] dark:bg-[#0A0A0A] border-l border-[#EFE7DC] dark:border-neutral-800 space-y-6 overflow-y-auto no-scrollbar shrink-0 text-xs animate-in fade-in slide-in-from-right-4 duration-200"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {/* Header with Close X Button */}

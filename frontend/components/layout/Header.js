@@ -106,12 +106,12 @@ export default function Header({ onToggleSidebar }) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-8 bg-[#FAF9F6]/90 dark:bg-[#0A0A0A]/95 backdrop-blur-md border-b border-[#EFE7DC] dark:border-neutral-800 transition-colors duration-200">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-3 sm:px-4 lg:px-8 bg-[#FAF9F6]/90 dark:bg-[#0A0A0A]/95 backdrop-blur-md border-b border-[#EFE7DC] dark:border-neutral-800 transition-colors duration-200">
       {/* Left section: mobile hamburger & search */}
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 text-[#252525] dark:text-neutral-300 hover:bg-[#EFE7DC]/60 dark:hover:bg-neutral-800 rounded-xl"
+          className="lg:hidden p-2 text-[#252525] dark:text-neutral-300 hover:bg-[#EFE7DC]/60 dark:hover:bg-neutral-800 rounded-xl shrink-0 cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -127,7 +127,7 @@ export default function Header({ onToggleSidebar }) {
       </div>
 
       {/* Right section: actions & notifications */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Light / Dark Mode Toggle */}
         <button
           type="button"
@@ -169,7 +169,7 @@ export default function Header({ onToggleSidebar }) {
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-[#0D0D0D] rounded-2xl shadow-2xl border border-[#EFE7DC] dark:border-neutral-800 p-4 z-50 animate-fade-in">
+            <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-96 max-w-sm bg-white dark:bg-[#0D0D0D] rounded-2xl shadow-2xl border border-[#EFE7DC] dark:border-neutral-800 p-4 z-50 animate-fade-in">
               <div className="flex items-center justify-between pb-3 border-b border-[#EFE7DC] dark:border-neutral-800">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-sm text-[#252525] dark:text-white">

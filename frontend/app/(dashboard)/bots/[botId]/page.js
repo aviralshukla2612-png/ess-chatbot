@@ -146,27 +146,27 @@ function BotDetailContent() {
     <div className="space-y-8 animate-fade-in pb-16 font-sans min-w-0 max-w-full overflow-hidden">
       {/* Bot Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Link
             href="/bots"
-            className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-xs"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-xs shrink-0"
             style={{ backgroundColor: `${bot.primaryColor || "#4f46e5"}20` }}
           >
             {bot.avatar || "🤖"}
           </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white truncate">
                 {bot.name}
               </h1>
               <StatusBadge status={bot.status} />
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">
               {bot.description}
             </p>
           </div>

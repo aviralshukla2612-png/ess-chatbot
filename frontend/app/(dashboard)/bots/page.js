@@ -229,8 +229,8 @@ export default function BotsPage() {
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-4 text-xs font-semibold border-b sm:border-b-0 border-[#EFE7DC] dark:border-slate-800 pb-2 sm:pb-0 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs font-semibold border-b sm:border-b-0 border-[#EFE7DC] dark:border-slate-800 pb-2 sm:pb-0 w-full sm:w-auto overflow-x-auto no-scrollbar whitespace-nowrap">
           {[
             { id: "All", label: `All Bots (${bots.length})` },
             { id: "Active", label: `Active (${activeCount})` },
@@ -240,7 +240,7 @@ export default function BotsPage() {
             <button
               key={tab.id}
               onClick={() => setFilterTab(tab.id)}
-              className={`pb-1 transition-colors relative cursor-pointer ${
+              className={`pb-1 transition-colors relative cursor-pointer shrink-0 ${
                 filterTab === tab.id
                   ? "text-[#B68A55] border-b-2 border-[#B68A55] dark:text-indigo-400 dark:border-indigo-500 font-bold"
                   : "text-slate-500 hover:text-[#252525] dark:text-slate-400 dark:hover:text-white"
@@ -251,8 +251,8 @@ export default function BotsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-60">
+        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-60 min-w-0">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -354,31 +354,29 @@ export default function BotsPage() {
               </div>
 
               {/* Middle row: 3 metrics + Last active */}
-              <div className="flex flex-wrap items-center justify-between gap-4 py-2 border-t border-[#EFE7DC] dark:border-slate-800/80 text-xs">
-                <div className="flex items-center gap-8">
-                  <div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight">
-                      {bot.conversationsCount || 0}
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Conversations</span>
-                  </div>
-                  <div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight">
-                      {bot.questionsCount || 0}
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Questions</span>
-                  </div>
-                  <div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight">
-                      {bot.leadsCount || 0}
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Leads</span>
-                  </div>
+              <div className="grid grid-cols-4 gap-2 sm:flex sm:items-center sm:justify-between sm:gap-6 py-2.5 border-t border-[#EFE7DC] dark:border-slate-800/80 text-xs">
+                <div className="min-w-0">
+                  <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight truncate">
+                    {bot.conversationsCount || 0}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Conversations</span>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight truncate">
+                    {bot.questionsCount || 0}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Questions</span>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight truncate">
+                    {bot.leadsCount || 0}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Leads</span>
                 </div>
 
-                <div className="text-right text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Last active</span>
-                  <span className="font-semibold text-[#252525] dark:text-slate-200 block">
+                <div className="text-right sm:text-right min-w-0">
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Last active</span>
+                  <span className="font-semibold text-[10px] sm:text-[11px] text-[#252525] dark:text-slate-200 block truncate">
                     {bot.lastActive || "Just now"}
                   </span>
                 </div>
@@ -387,101 +385,101 @@ export default function BotsPage() {
               {/* Bottom row: Clean Organized Action Buttons */}
               <div className="pt-3 border-t border-[#EFE7DC] dark:border-neutral-800 space-y-2.5 text-xs">
                 {/* Main Action Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/bots/${bot.id}`}
-                      className="px-3.5 py-1.5 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shadow-[#B68A55]/20"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open</span>
-                    </Link>
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2">
+                  <Link
+                    href={`/bots/${bot.id}`}
+                    className="px-3.5 py-2 sm:py-1.5 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shadow-[#B68A55]/20 text-center"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Open</span>
+                  </Link>
 
-                    {/* Prominent Redesign & Launcher Button */}
-                    <button
-                      type="button"
-                      onClick={() => setRedesignModalBot(bot)}
-                      className="px-3.5 py-1.5 rounded-xl border border-[#B68A55]/50 bg-[#B68A55]/15 hover:bg-[#B68A55]/25 text-[#B68A55] font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                      title="Customize chat button circle shape, logo, colors, and styling"
-                    >
-                      <Palette className="w-3.5 h-3.5 text-[#B68A55]" />
-                      <span>Redesign & Launcher 🎨</span>
-                    </button>
+                  {/* Prominent Redesign & Launcher Button */}
+                  <button
+                    type="button"
+                    onClick={() => setRedesignModalBot(bot)}
+                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-[#B68A55]/50 bg-[#B68A55]/15 hover:bg-[#B68A55]/25 text-[#B68A55] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
+                    title="Customize chat button circle shape, logo, colors, and styling"
+                  >
+                    <Palette className="w-3.5 h-3.5 shrink-0 text-[#B68A55]" />
+                    <span className="truncate">Redesign 🎨</span>
+                  </button>
 
-                    {/* Direct Live Website Deploy Button */}
-                    <button
-                      type="button"
-                      onClick={() => setDeployWebsiteBot(bot)}
-                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shadow-emerald-600/20"
-                      title="Configure and open live website with chatbot active"
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>Live Website Deploy 🚀</span>
-                    </button>
+                  {/* Direct Live Website Deploy Button */}
+                  <button
+                    type="button"
+                    onClick={() => setDeployWebsiteBot(bot)}
+                    className="px-3.5 py-2 sm:py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shadow-emerald-600/20 text-center"
+                    title="Configure and open live website with chatbot active"
+                  >
+                    <Globe className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Live Deploy 🚀</span>
+                  </button>
 
-                    {/* Instant Deploy / Embed Code Modal Trigger */}
-                    <button
-                      type="button"
-                      onClick={() => setDeployModalBot(bot)}
-                      className="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                    >
-                      <Share2 className="w-3.5 h-3.5 text-[#B68A55] dark:text-[#B68A55]" />
-                      <span>Embed Code</span>
-                    </button>
+                  {/* Instant Deploy / Embed Code Modal Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setDeployModalBot(bot)}
+                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
+                  >
+                    <Share2 className="w-3.5 h-3.5 shrink-0 text-[#B68A55] dark:text-[#B68A55]" />
+                    <span className="truncate">Embed Code</span>
+                  </button>
 
-                    <Link
-                      href={`/bots/${bot.id}`}
-                      className="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Play className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Test</span>
-                    </Link>
+                  <Link
+                    href={`/bots/${bot.id}`}
+                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <Play className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                    <span className="truncate">Test</span>
+                  </Link>
 
-                    <Link
-                      href="/analytics"
-                      className="px-3.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <BarChart2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Analytics</span>
-                    </Link>
-                  </div>
+                  <Link
+                    href="/analytics"
+                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  >
+                    <BarChart2 className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                    <span className="truncate">Analytics</span>
+                  </Link>
 
                   {/* Explicit Direct Delete Button */}
                   <button
                     type="button"
                     onClick={(e) => handleDeleteBot(bot.id, e)}
-                    className="px-3.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 hover:border-rose-300 dark:hover:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ml-auto"
+                    className="col-span-2 sm:col-span-1 sm:ml-auto px-3.5 py-2 sm:py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 hover:border-rose-300 dark:hover:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
                     title="Permanently delete this bot"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-                    <span>Delete Bot</span>
+                    <Trash2 className="w-3.5 h-3.5 shrink-0 text-rose-500 dark:text-rose-400" />
+                    <span className="truncate">Delete Bot</span>
                   </button>
                 </div>
 
                 {/* Sub-row: Setup & Knowledge Inputs */}
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-neutral-200/50 dark:border-neutral-800/60">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mr-1">
+                <div className="pt-2 border-t border-neutral-200/50 dark:border-neutral-800/60 flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                     Setup & Knowledge:
                   </span>
-                  {/* Mandatory Company Profile Intake Form Button */}
-                  <Link
-                    href={`/bots/${bot.id}?tab=company-profile`}
-                    className="px-3 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                    title="Complete mandatory Company Profile Intake & Business Hours form"
-                  >
-                    <Building2 className="w-3.5 h-3.5 text-[#B68A55]" />
-                    <span>Company Profile Intake 🏢</span>
-                  </Link>
+                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+                    {/* Mandatory Company Profile Intake Form Button */}
+                    <Link
+                      href={`/bots/${bot.id}?tab=company-profile`}
+                      className="px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
+                      title="Complete mandatory Company Profile Intake & Business Hours form"
+                    >
+                      <Building2 className="w-3.5 h-3.5 shrink-0 text-[#B68A55]" />
+                      <span className="truncate">Company Profile</span>
+                    </Link>
 
-                  {/* Direct Add Information / Knowledge Button */}
-                  <Link
-                    href={`/bots/${bot.id}?tab=knowledge`}
-                    className="px-3 py-1 rounded-lg bg-[#B68A55]/15 hover:bg-[#B68A55]/25 border border-[#B68A55]/40 text-[#B68A55] font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                    title="Add website URLs, documents, Q&A pairs, or training information"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>+ Add Information 📚</span>
-                  </Link>
+                    {/* Direct Add Information / Knowledge Button */}
+                    <Link
+                      href={`/bots/${bot.id}?tab=knowledge`}
+                      className="px-3 py-1.5 rounded-lg bg-[#B68A55]/15 hover:bg-[#B68A55]/25 border border-[#B68A55]/40 text-[#B68A55] font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
+                      title="Add website URLs, documents, Q&A pairs, or training information"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">+ Knowledge</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -491,13 +489,13 @@ export default function BotsPage() {
 
       {/* INSTANT DEPLOY MODAL */}
       {deployModalBot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl max-w-2xl w-full border border-[#EFE7DC] dark:border-neutral-800 shadow-2xl overflow-hidden space-y-0 text-[#252525] dark:text-white animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl max-w-2xl w-full border border-[#EFE7DC] dark:border-neutral-800 shadow-2xl overflow-hidden space-y-0 text-[#252525] dark:text-white animate-scale-in max-h-[92vh] flex flex-col">
             {/* Modal Header */}
-            <div className="p-6 pb-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#121212]">
+            <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#121212] shrink-0">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-xs"
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-xs shrink-0"
                   style={{
                     backgroundColor: `${deployModalBot.primaryColor || "#B68A55"}20`,
                     color: deployModalBot.primaryColor || "#B68A55",
@@ -505,16 +503,16 @@ export default function BotsPage() {
                 >
                   {deployModalBot.avatar || "🤖"}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-[#252525] dark:text-white">
-                      Deploy "{deployModalBot.name}" on Your Website
+                    <h3 className="text-sm sm:text-base font-bold text-[#252525] dark:text-white truncate">
+                      Deploy "{deployModalBot.name}"
                     </h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
                       Ready
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate sm:whitespace-normal">
                     Copy the embed code snippet below and paste it into any website HTML.
                   </p>
                 </div>
@@ -522,14 +520,14 @@ export default function BotsPage() {
 
               <button
                 onClick={() => setDeployModalBot(null)}
-                className="p-2 text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-5 text-xs">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 text-xs overflow-y-auto flex-1">
               {/* Embed Code Snippet Card */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 border-b border-[#EFE7DC] dark:border-slate-800 pb-2.5">
