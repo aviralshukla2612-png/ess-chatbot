@@ -406,19 +406,19 @@ export default function BenefitsSection({ onOpenTrial }) {
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-3xl bg-[#0B0B14] hover:bg-[#10101E] text-white p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-white/10 hover:border-white/20 will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.7)]"
+                className="featured-card group relative rounded-3xl bg-white text-zinc-900 p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-zinc-200/80 will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 35px ${card.accentColor}30, 0 20px 50px rgba(0,0,0,0.7)`;
+                  e.currentTarget.style.boxShadow = `0 0 35px ${card.accentColor}40, 0 20px 50px rgba(0,0,0,0.6)`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                  e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.7)";
+                  e.currentTarget.style.borderColor = "rgba(228, 228, 231, 0.8)";
+                  e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5)";
                 }}
               >
                 {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
                 <div className="flex items-center justify-between w-full mb-3">
-                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
+                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-zinc-300 group-hover:text-zinc-400 transition-colors select-none">
                     {card.step}
                   </span>
                   <div
@@ -432,10 +432,10 @@ export default function BenefitsSection({ onOpenTrial }) {
                   <div
                     className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
                     style={{
-                      backgroundColor: `${card.accentColor}15`,
-                      border: `1.5px solid ${card.accentColor}50`,
+                      backgroundColor: `${card.accentColor}12`,
+                      border: `1.5px solid ${card.accentColor}40`,
                       color: card.accentColor,
-                      boxShadow: `0 0 25px ${card.accentColor}25`,
+                      boxShadow: `0 0 20px ${card.accentColor}20`,
                     }}
                   >
                     <Icon className="w-8 h-8 sm:w-10 sm:h-10 stroke-[1.8]" />
@@ -450,14 +450,14 @@ export default function BenefitsSection({ onOpenTrial }) {
                   >
                     {card.tagline}
                   </span>
-                  <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight uppercase group-hover:text-white">
+                  <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 tracking-tight uppercase group-hover:text-black">
                     {card.title}
                   </h3>
-                  <p className="text-xs text-[#9898A6] leading-relaxed line-clamp-3 px-1">
+                  <p className="text-xs text-zinc-600 leading-relaxed line-clamp-3 px-1">
                     {card.description}
                   </p>
                   <div className="pt-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-white/[0.04] border border-white/10 text-white/80">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-zinc-100 border border-zinc-200 text-zinc-700">
                       ✦ {card.feature}
                     </span>
                   </div>

@@ -105,63 +105,42 @@ const CodeDeployIcon = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
-// 3 Process Cards matching Option 1 Deep Jewel Tint Reference
+// 3 Process Cards matching Shutterstock Numbered Card Architecture
 const PROCESS_CARDS = [
   {
     step: "01",
-    tagline: "Step 01 · Ingestion",
+    accentColor: "#8B5CF6",
+    buttonTextColor: "#FFFFFF",
+    tagline: "STEP 01 · INGESTION",
     title: "Connect Knowledge Base",
     subTitle: "Instant Ingestion",
-    icon: KnowledgeBaseIcon,
-    topBg: "bg-[#140C26]",
-    borderColor: "border-[#8B5CF6]/35",
-    taglineColor: "#C4B5FD",
-    iconContainerBg: "bg-[#21133F] border border-[#8B5CF6]/40",
-    tags: ["PDF · DOCX", "URL SYNC"],
+    icon: FileText,
     description: "Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.",
     feature: "Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.",
-    waveColor: "#8B5CF6",
-    gradient: "from-[#8B5CF6] via-[#9333EA] to-[#7E22CE]",
-    shadow: "shadow-[0_20px_50px_rgba(139,92,246,0.30)] hover:shadow-[0_25px_65px_rgba(139,92,246,0.50)]",
-    footerLeft: "Ingestion Engine",
     ctaText: "Start Ingestion",
   },
   {
     step: "02",
-    tagline: "Step 02 · Persona Engine",
+    accentColor: "#FF5E3A",
+    buttonTextColor: "#FFFFFF",
+    tagline: "STEP 02 · PERSONA ENGINE",
     title: "Calibrate Persona Styling",
     subTitle: "Persona Engine",
-    icon: PersonaEngineIcon,
-    topBg: "bg-[#220E07]",
-    borderColor: "border-[#FF5E3A]/35",
-    taglineColor: "#FDBA74",
-    iconContainerBg: "bg-[#38160B] border border-[#FF5E3A]/40",
-    tags: ["BRAND VOICE", "19 MOTIONS"],
+    icon: Sliders,
     description: "Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.",
-    feature: "Custom logo upload, squircle / circle / pill buttons, and 19 launcher animations.",
-    waveColor: "#FF5E3A",
-    gradient: "from-[#FF5E3A] via-[#F97316] to-[#EA580C]",
-    shadow: "shadow-[0_20px_50px_rgba(255,94,58,0.30)] hover:shadow-[0_25px_65px_rgba(255,94,58,0.50)]",
-    footerLeft: "Persona Engine",
+    feature: "Custom logo upload, squircle / circle buttons, and 19 launcher animations.",
     ctaText: "Calibrate Persona",
   },
   {
     step: "03",
-    tagline: "Step 03 · Live Embed",
+    accentColor: "#06B6D4",
+    buttonTextColor: "#FFFFFF",
+    tagline: "STEP 03 · LIVE EMBED",
     title: "Deploy Single Line Code",
     subTitle: "Universal Live Embed",
-    icon: CodeDeployIcon,
-    topBg: "bg-[#051724]",
-    borderColor: "border-[#06B6D4]/35",
-    taglineColor: "#67E8F9",
-    iconContainerBg: "bg-[#082B42] border border-[#06B6D4]/40",
-    tags: ["ONE-LINE", "ZERO CONFIG"],
+    icon: Code2,
     description: "Integrate the assistant into your website using the provided script with instant anti-cache live updates.",
     feature: "Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.",
-    waveColor: "#06B6D4",
-    gradient: "from-[#06B6D4] via-[#0EA5E9] to-[#0284C7]",
-    shadow: "shadow-[0_20px_50px_rgba(6,182,212,0.30)] hover:shadow-[0_25px_65px_rgba(6,182,212,0.50)]",
-    footerLeft: "Edge Deploy",
     ctaText: "Get Embed Code",
   },
 ];
@@ -175,7 +154,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
   const cardsTrackRef = useRef(null);
   const glowOrbRef = useRef(null);
   const sectionHeaderRef = useRef(null);
-  const [activeCardIndex, setActiveCardIndex] = useState(1); // Default middle card
 
   useEffect(() => {
     const container = containerRef.current;
@@ -455,152 +433,98 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* RIGHT-TO-LEFT CAROUSEL TRACK (DRIBBBLE WAVE CARDS WITH LIQUID DIVIDER) */}
+        {/* 3 PROCESS CARDS (SHUTTERSTOCK LAYOUT: WHITE BG, 01 WATERMARK, TOP BAR, CENTER ICON, TITLE, DESC, BOTTOM SOLID BUTTON) */}
         {/* ===================================================================== */}
         <div
           ref={cardsTrackRef}
-          onMouseLeave={() => setActiveCardIndex(1)}
           className="relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-7 items-stretch will-change-transform"
         >
           {PROCESS_CARDS.map((card, idx) => {
             const Icon = card.icon;
-            const isExpanded = activeCardIndex === idx;
 
             return (
               <div
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
-                onMouseEnter={() => setActiveCardIndex(idx)}
-                onClick={() => setActiveCardIndex(idx)}
-                className={`group relative rounded-3xl ${card.topBg} text-white overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border ${card.borderColor} shadow-[0_20px_50px_rgba(0,0,0,0.6)] ${card.shadow}`}
+                className="featured-card group relative rounded-3xl bg-white text-zinc-900 p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-zinc-200/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] will-change-transform backface-hidden"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = card.accentColor;
+                  e.currentTarget.style.boxShadow = `0 0 35px ${card.accentColor}40, 0 20px 50px rgba(0,0,0,0.6)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(228, 228, 231, 0.8)";
+                  e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5)";
+                }}
               >
-                {/* TOP SECTION: Deep jewel tone with glowing white typography */}
-                <div className="card-wave-top relative z-10 px-5 pt-4 pb-1 flex flex-col items-center text-center transition-all duration-300">
-                  {/* Icon Container with subtle halo and decorative sparkle dots */}
-                  <div className="relative flex items-center justify-center">
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${card.iconContainerBg} flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105`}>
-                      <Icon className="w-9 h-9 sm:w-10 sm:h-10" />
-                    </div>
-                    {/* Decorative sparkle dots around icon matched to card accent */}
-                    <span
-                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm animate-pulse"
-                      style={{ backgroundColor: card.waveColor }}
-                    />
-                    <span
-                      className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full opacity-70"
-                      style={{ backgroundColor: card.waveColor }}
-                    />
-                  </div>
+                {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
+                <div className="flex items-center justify-between w-full mb-3">
+                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-zinc-300 group-hover:text-zinc-400 transition-colors select-none">
+                    {card.step}
+                  </span>
+                  <div
+                    className="w-12 sm:w-14 h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
+                    style={{ backgroundColor: card.accentColor }}
+                  />
+                </div>
 
-                  {/* Title & Step Tag */}
-                  <h3
-                    style={{ color: "#FFFFFF" }}
-                    className="!text-white text-white font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-md"
+                {/* Upper Center: Prominent Line-Art Outline Icon */}
+                <div className="my-3 sm:my-4 flex justify-center w-full">
+                  <div
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+                    style={{
+                      backgroundColor: `${card.accentColor}12`,
+                      border: `1.5px solid ${card.accentColor}40`,
+                      color: card.accentColor,
+                      boxShadow: `0 0 20px ${card.accentColor}20`,
+                    }}
                   >
-                    {card.title}
-                  </h3>
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 stroke-[1.8]" />
+                  </div>
+                </div>
+
+                {/* Middle: Centered Heading & Structured Description */}
+                <div className="text-center space-y-2 mb-5 flex-1 flex flex-col justify-center">
                   <span
-                    style={{ color: card.taglineColor }}
-                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
+                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider block"
+                    style={{ color: card.accentColor }}
                   >
                     {card.tagline}
                   </span>
+                  <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 tracking-tight uppercase group-hover:text-black">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs text-zinc-600 leading-relaxed line-clamp-3 px-1">
+                    {card.description}
+                  </p>
+                  <div className="pt-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-zinc-100 border border-zinc-200 text-zinc-700">
+                      ✦ {card.feature}
+                    </span>
+                  </div>
                 </div>
 
-                {/* DYNAMIC WAVE FILL LAYER: Expands smoothly on hover/active */}
-                <div
-                  className={`absolute inset-x-0 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${
-                    isExpanded ? "h-[62%] sm:h-[64%]" : "h-[38%] sm:h-[40%]"
-                  }`}
-                >
-                  {/* Liquid Organic Wave SVG Divider */}
-                  <div className="relative w-full h-8 sm:h-10 -mt-7 sm:-mt-9 pointer-events-none shrink-0 overflow-visible">
-                    {/* Back Wave (translucent) */}
-                    <svg
-                      viewBox="0 0 500 80"
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full opacity-35"
-                      style={{ color: card.waveColor }}
-                    >
-                      <path
-                        d="M0,50 Q140,15 280,50 T500,50 L500,80 L0,80 Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    {/* Front Wave (solid, seamless into body) */}
-                    <svg
-                      viewBox="0 0 500 80"
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full"
-                      style={{ color: card.waveColor }}
-                    >
-                      <path
-                        d="M0,35 Q125,70 250,35 T500,35 L500,80 L0,80 Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Wave Gradient Body */}
-                  <div
-                    className={`flex-1 w-full bg-gradient-to-b ${card.gradient} px-6 pb-6 pt-2 text-white flex flex-col justify-between overflow-hidden`}
+                {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
+                <div className="w-full pt-2 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onOpenTrial) {
+                        onOpenTrial();
+                      } else {
+                        window.location.href = "/login";
+                      }
+                    }}
+                    className="w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-105 active:scale-[0.98]"
+                    style={{
+                      backgroundColor: card.accentColor,
+                      color: card.buttonTextColor || "#FFFFFF",
+                      boxShadow: `0 4px 20px ${card.accentColor}35`,
+                    }}
                   >
-                    {isExpanded ? (
-                      /* EXPANDED CONTENT (Matching Card 2 in reference image) */
-                      <div className="flex flex-col h-full justify-between">
-                        <div>
-                          <h4 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight">
-                            {card.subTitle}
-                          </h4>
-                          <p className="mt-2 text-xs sm:text-[13px] text-white/95 leading-relaxed font-normal">
-                            {card.description}
-                          </p>
-                          <p className="mt-2.5 text-[11px] font-mono text-white/90 bg-black/20 p-2 rounded-lg border border-white/15">
-                            ✦ {card.feature}
-                          </p>
-                        </div>
-
-                        {/* Bottom Action Arrow Button (exact match to screenshot) */}
-                        <div className="pt-3 mt-auto flex items-center justify-between border-t border-white/20">
-                          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-white/90">
-                            {card.footerLeft}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenTrial?.();
-                            }}
-                            className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer"
-                            aria-label={card.ctaText}
-                          >
-                            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* RESTING CONTENT (Matching Card 1 & 3 in reference image) */
-                      <div className="flex flex-col h-full justify-between">
-                        <div className="my-auto flex items-center justify-center gap-6 text-xs sm:text-sm font-black tracking-wider uppercase text-white">
-                          {card.tags.map((tag, tIdx) => (
-                            <span
-                              key={tIdx}
-                              className="border-b-2 border-white/50 pb-0.5 tracking-widest drop-shadow-sm"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] font-mono text-white/75 pt-2 border-t border-white/20">
-                          <span>{card.footerLeft}</span>
-                          <span className="flex items-center gap-1 font-bold text-white hover:underline">
-                            Explore →
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <span>{card.ctaText}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
                 </div>
               </div>
             );
