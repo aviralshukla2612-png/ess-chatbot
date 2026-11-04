@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { botsStore } from "@/lib/db/botsStore";
 import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { validateProhibitedContent } from "@/lib/security/contentModeration";
 
 export async function GET(request, { params }) {
   try {
@@ -76,6 +77,29 @@ export async function PUT(request, { params }) {
     if (body.launcherMarginRight !== undefined) body.launcherMarginRight = Number(body.launcherMarginRight) || 0;
     if (body.launcherMarginLeft !== undefined) body.launcherMarginLeft = Number(body.launcherMarginLeft) || 0;
     if (body.launcherMarginTop !== undefined) body.launcherMarginTop = Number(body.launcherMarginTop) || 0;
+
+    // Strict Acceptable Use Policy: Permanent Ban on Gambling, Betting, and Adult Content
+    const contentCheck = validateProhibitedContent({
+      name: body.name,
+      company: body.company,
+      description: body.description,
+      systemPrompt: body.systemPrompt,
+      instructions: body.instructions,
+      welcomeMessage: body.welcomeMessage,
+      websiteUrl: body.websiteUrl,
+      allowedDomains: body.allowedDomains,
+    });
+    if (!contentCheck.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: contentCheck.error,
+          code: "PROHIBITED_CATEGORY_VIOLATION",
+          category: contentCheck.violation,
+        },
+        { status: 400 }
+      );
+    }
 
     const bot = botsStore.upsertBot({ ...existingBot, ...body, id: botId, organizationId: targetOrgId }, targetOrgId);
     return NextResponse.json({ success: true, bot });

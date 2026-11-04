@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateUrlForSSRF } from "@/lib/security/ssrf";
+import { validateProhibitedContent } from "@/lib/security/contentModeration";
 import { websitesDb } from "@/lib/db/websites";
 import { botsStore } from "@/lib/db/botsStore";
 import { n8nClient } from "@/lib/n8n/client";
@@ -72,6 +73,24 @@ export async function POST(request, { params }) {
     if (!ssrfCheck.valid) {
       return NextResponse.json(
         { success: false, error: ssrfCheck.error },
+        { status: 400 }
+      );
+    }
+
+    // 1.5 Strict Acceptable Use Policy: Permanent Ban on Gambling & Adult Domains
+    const contentCheck = validateProhibitedContent({
+      url: ssrfCheck.normalizedUrl,
+      hostname: ssrfCheck.hostname,
+      name: name || "",
+    });
+    if (!contentCheck.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: contentCheck.error,
+          code: "PROHIBITED_CATEGORY_VIOLATION",
+          category: contentCheck.violation,
+        },
         { status: 400 }
       );
     }

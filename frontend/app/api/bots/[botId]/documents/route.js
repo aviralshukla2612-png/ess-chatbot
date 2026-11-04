@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { documentsStore } from "@/lib/db/documentsStore";
 import { botsStore } from "@/lib/db/botsStore";
 import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { validateProhibitedContent } from "@/lib/security/contentModeration";
 
 export async function OPTIONS() {
   const res = new NextResponse(null, { status: 204 });
@@ -117,6 +118,21 @@ export async function POST(request, { params }) {
       if (!content || !content.trim()) {
         return NextResponse.json({ success: false, error: "Document content cannot be empty" }, { status: 400 });
       }
+
+      // Strict Acceptable Use Policy: Permanent Ban on Gambling & Adult Documents
+      const contentCheck = validateProhibitedContent({ name, content });
+      if (!contentCheck.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: contentCheck.error,
+            code: "PROHIBITED_CATEGORY_VIOLATION",
+            category: contentCheck.violation,
+          },
+          { status: 400 }
+        );
+      }
+
       const doc = documentsStore.addDocument({
         id,
         botId: bot.id,
@@ -148,6 +164,20 @@ export async function POST(request, { params }) {
     if (!textContent || !textContent.trim()) {
       return NextResponse.json(
         { success: false, error: "Could not read text content from document. Please provide text or PDF content." },
+        { status: 400 }
+      );
+    }
+
+    // Strict Acceptable Use Policy: Permanent Ban on Gambling & Adult Documents
+    const contentCheck = validateProhibitedContent({ name: fileName, content: textContent });
+    if (!contentCheck.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: contentCheck.error,
+          code: "PROHIBITED_CATEGORY_VIOLATION",
+          category: contentCheck.violation,
+        },
         { status: 400 }
       );
     }

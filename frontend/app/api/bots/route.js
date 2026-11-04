@@ -3,6 +3,7 @@ import { botsStore } from "@/lib/db/botsStore";
 import { websitesDb } from "@/lib/db/websites";
 import { n8nClient } from "@/lib/n8n/client";
 import { validateUrlForSSRF } from "@/lib/security/ssrf";
+import { validateProhibitedContent } from "@/lib/security/contentModeration";
 import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
 import { billingService } from "@/lib/billing/billingService";
 
@@ -83,6 +84,29 @@ export async function POST(request) {
 
     // Enforce tenant boundary: bot belongs to caller's organizationId
     body.organizationId = principal.organizationId;
+
+    // Strict Acceptable Use Policy: Permanent Ban on Gambling, Betting, and Adult Content
+    const contentCheck = validateProhibitedContent({
+      name: body.name,
+      company: body.company,
+      description: body.description,
+      systemPrompt: body.systemPrompt,
+      instructions: body.instructions,
+      welcomeMessage: body.welcomeMessage,
+      websiteUrl: body.websiteUrl,
+      allowedDomains: body.allowedDomains,
+    });
+    if (!contentCheck.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: contentCheck.error,
+          code: "PROHIBITED_CATEGORY_VIOLATION",
+          category: contentCheck.violation,
+        },
+        { status: 400 }
+      );
+    }
 
     // Normalize and validate contact details
     if (body.phoneNumber || body.phone) {
