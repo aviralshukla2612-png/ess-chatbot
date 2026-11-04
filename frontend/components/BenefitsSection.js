@@ -406,18 +406,19 @@ export default function BenefitsSection({ onOpenTrial }) {
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
                 data-kf-card="true"
-                className="featured-card group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                className="featured-card group relative rounded-3xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
                 style={{
                   backgroundColor: "#F5F5F7",
-                  borderColor: "#E2E4E9",
+                  borderColor: card.accentColor,
+                  boxShadow: `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.5)`,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 35px ${card.accentColor}40, 0 20px 50px rgba(0,0,0,0.6)`;
+                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 25px 60px rgba(0,0,0,0.6)`;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#E2E4E9";
-                  e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5)";
+                  e.currentTarget.style.borderColor = card.accentColor;
+                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 20px 50px rgba(0,0,0,0.5)`;
                 }}
               >
                 {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
