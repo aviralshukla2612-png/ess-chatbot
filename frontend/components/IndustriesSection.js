@@ -589,9 +589,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-[#963DFF] text-[7px] sm:text-[8px] font-extrabold text-white uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <Sparkles className="w-2 h-2 text-[#55A9FF]" />
-                        <span>AI Sales</span>
+                      <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-[#963DFF] text-[7px] sm:text-[8px] font-extrabold text-white uppercase tracking-wider shadow-sm">
+                        AI Sales
                       </span>
                     </div>
 
