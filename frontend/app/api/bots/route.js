@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { botsStore } from "@/lib/db/botsStore";
+import { documentsStore } from "@/lib/db/documentsStore";
+import { queryDb } from "@/lib/db/dbPool";
 import { websitesDb } from "@/lib/db/websites";
 import { n8nClient } from "@/lib/n8n/client";
 import { validateUrlForSSRF } from "@/lib/security/ssrf";
 import { validateProhibitedContent } from "@/lib/security/contentModeration";
 import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
 import { billingService } from "@/lib/billing/billingService";
+import { generateKnowledgeMarkdown } from "@/lib/wizard/industryTemplates";
 
 // Helper to normalize phone numbers safely without changing meaning
 function normalizePhoneNumber(raw) {
@@ -128,6 +131,68 @@ export async function POST(request) {
     }
 
     const bot = botsStore.upsertBot(body, principal.organizationId);
+
+    // 1. Synthesize and Ingest Approved Business Knowledge Profile into RAG store
+    if (body.knowledgeMarkdown || body.questionnaireAnswers || body.industry) {
+      try {
+        const profileContent =
+          body.knowledgeMarkdown ||
+          generateKnowledgeMarkdown({
+            industry: body.industry,
+            commonDetails: body.businessDetails || {
+              businessName: body.company || bot.name,
+              description: body.description,
+              websiteUrl: body.websiteUrl,
+              phoneNumber: body.phoneNumber,
+            },
+            questionnaireAnswers: body.questionnaireAnswers || {},
+            assistantConfig: body.assistantConfig || {},
+          });
+
+        const companyName = body.businessDetails?.businessName || body.company || bot.name || "Business";
+        documentsStore.addDocument({
+          id: `doc_profile_${bot.id}`,
+          botId: bot.id,
+          name: `${companyName} - Approved Knowledge Profile.md`,
+          type: "Company Profile",
+          content: profileContent,
+        });
+
+        // Persist BotQuestionnaire metadata
+        queryDb(
+          `INSERT INTO "BotQuestionnaire" ("id", "botId", "organizationId", "industry", "answers", "completionStatus")
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT ("id") DO UPDATE SET "answers" = EXCLUDED."answers", "updatedAt" = CURRENT_TIMESTAMP;`,
+          [
+            `bq_${bot.id}`,
+            bot.id,
+            principal.organizationId,
+            body.industry || "other",
+            JSON.stringify(body.questionnaireAnswers || {}),
+            "completed",
+          ]
+        ).catch(() => {});
+      } catch (err) {
+        console.warn("[BOT_KNOWLEDGE_INGEST_WARN]", err.message);
+      }
+    }
+
+    // 2. Ingest any user-uploaded files
+    if (Array.isArray(body.documents) && body.documents.length > 0) {
+      for (const doc of body.documents) {
+        if (doc.name && doc.content) {
+          try {
+            documentsStore.addDocument({
+              id: doc.id || `doc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+              botId: bot.id,
+              name: doc.name,
+              type: doc.type || "Document",
+              content: doc.content,
+            });
+          } catch (e) {}
+        }
+      }
+    }
 
     // If websiteUrl was provided, automatically register the website source and trigger crawler
     if (validatedBaseUrl) {
