@@ -25,3 +25,4 @@ CREATE TABLE IF NOT EXISTS "BotQuestionnaire" (
 CREATE INDEX IF NOT EXISTS idx_bot_industry ON "Bot" ("industry");
 CREATE INDEX IF NOT EXISTS idx_bot_questionnaire_bot ON "BotQuestionnaire" ("botId");
 CREATE INDEX IF NOT EXISTS idx_bot_questionnaire_org ON "BotQuestionnaire" ("organizationId");
+

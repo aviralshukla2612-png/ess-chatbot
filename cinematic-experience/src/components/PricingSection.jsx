@@ -493,104 +493,13 @@ export default function PricingSection({ onOpenTrial }) {
     });
   };
 
-  const handleSelectPlan = async (plan) => {
+  const handleSelectPlan = (plan) => {
     if (loadingPlanId) return;
     setLoadingPlanId(plan.id);
-    setCheckoutNotice(null);
-
-    try {
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error("Unable to load Razorpay payment gateway. Please check your connection.");
-      }
-
-      let checkout = null;
-      try {
-        const res = await fetch("/api/billing/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            planId: plan.id,
-            isTrial: false,
-          }),
-        });
-        const data = await res.json();
-        if (data.success && data.checkout) {
-          checkout = data.checkout;
-        }
-      } catch (err) {
-        console.warn("[CHECKOUT_API_OFFLINE]", err.message);
-      }
-
-      const keyId = checkout?.keyId || "rzp_test_S7dlJIqMvrpcaj";
-
-      const options = {
-        key: keyId,
-        amount: Math.round((plan.priceINR || 999) * 100),
-        currency: "INR",
-        name: "Emperor Nexus AI",
-        description: `${plan.name} Access (${plan.price} ${plan.period})`,
-        order_id: checkout?.orderId && !checkout.orderId.startsWith("order_mock_") ? checkout.orderId : undefined,
-        prefill: {
-          name: "",
-          email: "",
-          contact: "",
-        },
-        theme: {
-          color: plan.id === "monthly" ? "#00D98B" : (plan.id === "six-months" ? "#C653FF" : "#009DFF"),
-        },
-        handler: async function (response) {
-          setCheckoutNotice({
-            type: "success",
-            message: `🎉 Payment received! Payment ID: ${response.razorpay_payment_id}. Preparing workspace...`,
-          });
-
-          try {
-            await fetch("/api/billing/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                subscriptionId: response.razorpay_order_id || checkout?.subscriptionId,
-                paymentId: response.razorpay_payment_id,
-                planId: plan.id,
-                isTrial: false,
-              }),
-            });
-          } catch (e) {
-            console.warn("[VERIFY_WARN]", e);
-          }
-
-          setTimeout(() => {
-            window.location.href = `/login?payment=success&plan=${plan.id}&payment_id=${response.razorpay_payment_id}`;
-          }, 1500);
-        },
-        modal: {
-          ondismiss: function () {
-            setLoadingPlanId(null);
-          },
-        },
-      };
-
-      if (!window.Razorpay) {
-        throw new Error("Razorpay payment gateway failed to initialize.");
-      }
-
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (resp) {
-        setCheckoutNotice({
-          type: "error",
-          message: resp.error?.description || "Payment was declined or cancelled.",
-        });
-        setLoadingPlanId(null);
-      });
-      rzp.open();
-    } catch (err) {
-      console.error("[PRICING_CHECKOUT_ERR]", err);
-      setCheckoutNotice({
-        type: "error",
-        message: err.message || "Failed to launch Razorpay gateway. Please try again.",
-      });
-      setLoadingPlanId(null);
+    if (isAuthenticated) {
+      window.location.href = `/billing?plan=${plan.id}&checkout=true`;
+    } else {
+      window.location.href = `/login?plan=${plan.id}`;
     }
   };
 
@@ -827,7 +736,7 @@ export default function PricingSection({ onOpenTrial }) {
                           {loadingPlanId === plan.id ? (
                             <>
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              <span>Connecting Gateway...</span>
+                              <span>Redirecting...</span>
                             </>
                           ) : (
                             <>
@@ -921,7 +830,7 @@ export default function PricingSection({ onOpenTrial }) {
                     {loadingPlanId === plan.id ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Connecting Gateway...</span>
+                        <span>Redirecting...</span>
                       </>
                     ) : (
                       <>

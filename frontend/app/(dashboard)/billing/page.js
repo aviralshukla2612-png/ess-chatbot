@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -37,6 +38,73 @@ export default function BillingPage() {
   const [extensionSuccessMsg, setExtensionSuccessMsg] = useState("");
   const [extensionError, setExtensionError] = useState("");
   const extensionSectionRef = useRef(null);
+  const autoCheckoutTriggered = useRef(false);
+
+  const extensionPackages = [
+    {
+      id: "monthly",
+      name: "Monthly Plan",
+      badge: "Flexible",
+      badgeColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30",
+      duration: "+30 Days Access",
+      price: "₹999",
+      equivalent: "₹999 / month",
+      periodLabel: "1 month",
+      description: "Flexible Month-to-Month Plan with full autonomous AI assistant access.",
+      features: [
+        "1 account",
+        "1 chatbot",
+        "Full autonomous AI access",
+        "Unlimited Messages & Inquiries",
+        "50 Website Knowledge Pages",
+        "Lead Capture & CRM Export",
+      ],
+      isPopular: false,
+      cta: "Activate Monthly (₹999)",
+    },
+    {
+      id: "six-months",
+      name: "Six Months Plan",
+      badge: "Commercial Half-Year",
+      badgeColor: "bg-[#963DFF]/15 text-[#963DFF] border-[#963DFF]/30 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30",
+      duration: "+180 Days Access (6 Months)",
+      price: "₹5,999",
+      equivalent: "₹999 / month",
+      periodLabel: "6 months",
+      description: "Lock in uninterrupted AI customer engagement for half a year.",
+      features: [
+        "1 account",
+        "1 chatbot",
+        "Full autonomous AI access",
+        "Unlimited Messages & Inquiries",
+        "150 Website Knowledge Pages",
+        "WhatsApp Cloud API Integration",
+      ],
+      isPopular: false,
+      cta: "Activate 6 Months (₹5,999)",
+    },
+    {
+      id: "annual",
+      name: "Annual VIP Plan",
+      badge: "RECOMMENDED • SAVE ₹2,989",
+      badgeColor: "bg-sky-500/10 text-sky-600 border-sky-500/20 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30",
+      duration: "+365 Days Access (12 Months)",
+      price: "₹8,999",
+      equivalent: "₹749 / month",
+      periodLabel: "12 months",
+      description: "Full Year Maximum Value. Save ₹2,989 compared with twelve monthly payments.",
+      features: [
+        "1 account",
+        "1 chatbot",
+        "Full autonomous AI access",
+        "Save ₹2,989 vs monthly payments",
+        "500 Knowledge Pages & PDFs",
+        "Priority VIP setup assistance",
+      ],
+      isPopular: true,
+      cta: "Activate Annual VIP (₹8,999) 👑",
+    },
+  ];
 
   const loadBilling = () => {
     setLoading(true);
@@ -190,71 +258,29 @@ export default function BillingPage() {
     }
   };
 
-  const extensionPackages = [
-    {
-      id: "PLAN_STARTER_MONTHLY",
-      name: "1 Month Renewal",
-      badge: "Standard",
-      badgeColor: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-500/30",
-      duration: "+30 Days Access",
-      price: "₹2,500",
-      equivalent: "₹2,500 / month",
-      periodLabel: "1 month",
-      description: "Extend your active assistant deployment by 1 billing month.",
-      features: [
-        "1 AI Sales Bot Active",
-        "Unlimited Messages & Inquiries",
-        "50 Website Knowledge Pages",
-        "Lead Capture & Export",
-      ],
-      isPopular: false,
-      cta: "Extend +1 Month",
-    },
-    {
-      id: "PLAN_PRO_6MONTHS",
-      name: "Pro (6 Months Pass)",
-      badge: "MOST POPULAR • SAVE 66% 🔥",
-      badgeColor: "bg-[#B68A55]/15 text-[#B68A55] border-[#B68A55]/30 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30",
-      duration: "+180 Days Access (6 Months)",
-      price: "₹5,000",
-      originalPrice: "₹15,000",
-      equivalent: "₹833 / month",
-      periodLabel: "6 months",
-      description: "Lock in uninterrupted AI customer engagement and save ₹10,000 upfront.",
-      features: [
-        "1 AI Sales Bot (Strict Limit)",
-        "Unlimited Messages & Token Inquiries",
-        "150 Website Knowledge Pages",
-        "WhatsApp Cloud API Integration",
-        "Priority AI Inference Queue",
-        "Best Value: Save 66%",
-      ],
-      isPopular: true,
-      cta: "Extend +6 Months Pass 🚀",
-    },
-    {
-      id: "PLAN_ENTERPRISE_ANNUAL",
-      name: "Annual VIP Pass",
-      badge: "MAX SAVINGS • 1 YEAR VIP 👑",
-      badgeColor: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30",
-      duration: "+365 Days Access (12 Months)",
-      price: "₹9,999",
-      originalPrice: "₹30,000",
-      equivalent: "₹833 / month",
-      periodLabel: "12 months",
-      description: "Complete full-year coverage with top priority support and maximum knowledge crawl capacity.",
-      features: [
-        "1 Full Year (12 Months Continuous Access)",
-        "Unlimited Messages & Inquiries",
-        "500 Knowledge Pages & PDFs",
-        "WhatsApp Cloud API Gateway",
-        "Dedicated Account Setup Assistance",
-        "Save over ₹20,000 Annually",
-      ],
-      isPopular: false,
-      cta: "Extend +1 Year VIP 👑",
-    },
-  ];
+  useEffect(() => {
+    if (typeof window === "undefined" || autoCheckoutTriggered.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get("plan");
+    const checkoutParam = params.get("checkout");
+
+    if (checkoutParam === "true" && planParam) {
+      autoCheckoutTriggered.current = true;
+      const targetPackage = extensionPackages.find(
+        (p) =>
+          p.id.toLowerCase() === planParam.toLowerCase() ||
+          (planParam.includes("month") && !planParam.includes("six") && p.id === "monthly") ||
+          (planParam.includes("six") && p.id === "six-months") ||
+          (planParam.includes("annual") && p.id === "annual")
+      ) || extensionPackages[0];
+
+      if (targetPackage) {
+        setTimeout(() => {
+          handleExtendPlan(targetPackage);
+        }, 500);
+      }
+    }
+  }, [billingData]);
 
   const planName =
     billingData?.subscription?.plan?.name ||

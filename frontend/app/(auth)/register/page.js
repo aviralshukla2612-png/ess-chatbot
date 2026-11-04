@@ -7,7 +7,13 @@ export default function RegisterPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/login");
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("tab", "register");
+      router.replace(`/login?${params.toString()}`);
+    } else {
+      router.replace("/login?tab=register");
+    }
   }, [router]);
 
   return (

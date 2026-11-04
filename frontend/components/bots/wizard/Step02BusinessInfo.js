@@ -330,3 +330,4 @@ export default function Step02BusinessInfo({
     </div>
   );
 }
+

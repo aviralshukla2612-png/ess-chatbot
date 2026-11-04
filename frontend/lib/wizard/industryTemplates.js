@@ -883,3 +883,4 @@ export function generateIndustrySystemPrompt({ industry, commonDetails = {}, que
 
   return prompt;
 }
+
