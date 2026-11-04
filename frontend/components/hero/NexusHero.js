@@ -92,7 +92,7 @@ export default function NexusHero() {
           {/* Brand Logo & Wordmark */}
           <Link href="/" className="flex items-center group">
             <img
-              src="/emperor_nexus_sales_ai_assistant.png"
+              src="/logo.png"
               alt="Emperor Nexus — Sales AI Assistant"
               className="h-9 sm:h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
             />

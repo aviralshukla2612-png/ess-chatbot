@@ -533,7 +533,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
 
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, launcherLogoUrl: "/emperor_nexus_sales_ai_assistant.png" })}
+                      onClick={() => setFormData({ ...formData, launcherLogoUrl: "/logo.png" })}
                       className="px-3 py-2 text-xs font-bold bg-[#B68A55]/15 text-[#B68A55] rounded-xl border border-[#B68A55]/30 hover:bg-[#B68A55]/25 transition-colors cursor-pointer"
                     >
                       Use Emperor Nexus Logo

@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center flex flex-col items-center">
           <Link href="/" className="inline-block group focus:outline-hidden" title="Return to Emperor Nexus Home">
             <img
-              src="/emperor_nexus_sales_ai_assistant_original.png"
+              src="/logo.png"
               alt="Emperor Nexus — Sales AI Assistant"
               className="h-12 sm:h-14 w-auto object-contain filter drop-shadow-[0_0_24px_rgba(150,61,255,0.4)] transition-transform duration-300 group-hover:scale-105"
             />

@@ -287,7 +287,7 @@ export default function Footer() {
             {/* Emperor Nexus Logo: B&W by default, color on hover */}
             <div className="group relative inline-flex items-center cursor-pointer">
               <img
-                src="/emperor_nexus_sales_ai_assistant_original.png"
+                src="/logo.png"
                 alt="Emperor Nexus — Sales AI Assistant"
                 className="h-10 sm:h-11 w-auto object-contain filter grayscale contrast-125 opacity-70 transition-all duration-300 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 group-hover:drop-shadow-[0_0_20px_rgba(150,61,255,0.45)] cursor-pointer"
               />

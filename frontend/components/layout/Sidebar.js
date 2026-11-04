@@ -136,7 +136,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
           <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center">
               <img
-                src="/emperor_nexus_sales_ai_assistant.png"
+                src="/logo.png"
                 alt="Emperor Nexus"
                 className="h-8 sm:h-9 w-auto max-w-[170px] object-contain"
               />
