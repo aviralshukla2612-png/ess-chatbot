@@ -164,13 +164,20 @@ export default function HowItWorksSection({ onOpenTrial }) {
       ScrollTrigger.config({ ignoreMobileResize: true });
     }
 
-    const ctx = gsap.context(() => {
-      const isDesktop = window.innerWidth >= 1024;
-      const isMobile = window.innerWidth < 768;
+    const mm = gsap.matchMedia(containerRef);
 
-      // =======================================================================
-      // INITIAL 3D SCENE CONFIGURATION (Runs on all screens: phone, tab, laptop, desktop)
-      // =======================================================================
+    // =========================================================================
+    // MOBILE (< 768px): Seamless Scroll-Driven Card Advancement
+    // Letters shatter -> Header enters -> Card 01 -> Card 02 -> Card 03
+    // All 3 cards come into view sequentially driven by vertical scroll!
+    // =========================================================================
+    mm.add("(max-width: 767px)", () => {
+      const cardWidth = cardRefs.current[0]?.offsetWidth || Math.min(window.innerWidth * 0.85, 320);
+      const gap = 16;
+      const shift = cardWidth + gap;
+      const initialOffset = Math.max(0, (window.innerWidth - cardWidth) / 2);
+
+      // Initial visual states
       letterRefs.current.forEach((el) => {
         if (el) {
           gsap.set(el, {
@@ -191,7 +198,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
       if (cardsTrackRef.current) {
         gsap.set(cardsTrackRef.current, {
-          xPercent: isMobile ? 0 : isDesktop ? 30 : 20,
+          x: initialOffset,
           opacity: 0,
         });
       }
@@ -199,7 +206,229 @@ export default function HowItWorksSection({ onOpenTrial }) {
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           gsap.set(card, {
-            x: isMobile ? 25 + idx * 15 : isDesktop ? 80 + idx * 40 : 45 + idx * 25,
+            opacity: idx === 0 ? 0 : 0.45,
+            scale: idx === 0 ? 0.95 : 0.92,
+            force3D: true,
+          });
+        }
+      });
+
+      if (sectionHeaderRef.current) {
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -15 });
+      }
+
+      if (glowOrbRef.current) {
+        gsap.set(glowOrbRef.current, { scale: 0.8, opacity: 0.4 });
+      }
+
+      const masterTL = gsap.timeline({
+        scrollTrigger: {
+          trigger: container,
+          start: "top top",
+          end: "+=2200",
+          pin: stage,
+          pinSpacing: true,
+          scrub: 0.85,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // 1. Letters shatter outwards in 3D
+      letterRefs.current.forEach((el, idx) => {
+        if (el) {
+          const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
+          masterTL.to(
+            el,
+            {
+              x: config.x * 0.45,
+              y: config.y * 0.45,
+              z: config.z * 0.45,
+              rotateX: config.rx,
+              rotateY: config.ry,
+              rotateZ: config.rz,
+              scale: config.s,
+              opacity: 0,
+              filter: "blur(8px)",
+              duration: 0.20,
+              ease: "power2.inOut",
+            },
+            0.02 + idx * 0.008
+          );
+        }
+      });
+
+      // 2. Fullscreen typography fades out
+      if (typographyRef.current) {
+        masterTL.to(
+          typographyRef.current,
+          {
+            opacity: 0,
+            pointerEvents: "none",
+            duration: 0.12,
+            ease: "power1.out",
+          },
+          0.10
+        );
+      }
+
+      // 3. Persistent Header appears
+      if (sectionHeaderRef.current) {
+        masterTL.to(
+          sectionHeaderRef.current,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.14,
+            ease: "power3.out",
+          },
+          0.10
+        );
+      }
+
+      // 4. Cards Track & Card 01 enters
+      if (cardsTrackRef.current) {
+        masterTL.to(
+          cardsTrackRef.current,
+          {
+            opacity: 1,
+            duration: 0.12,
+            ease: "power2.out",
+          },
+          0.12
+        );
+      }
+      if (cardRefs.current[0]) {
+        masterTL.to(
+          cardRefs.current[0],
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.14,
+            ease: "power3.out",
+          },
+          0.12
+        );
+      }
+
+      // Hold on Card 01 (0.24 to 0.36)
+
+      // 5. Scroll smoothly to Card 02 (Card 02 COMES TO CENTER!)
+      if (cardsTrackRef.current) {
+        masterTL.to(
+          cardsTrackRef.current,
+          {
+            x: initialOffset - shift,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.36
+        );
+      }
+      if (cardRefs.current[0]) {
+        masterTL.to(
+          cardRefs.current[0],
+          {
+            opacity: 0.45,
+            scale: 0.92,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.36
+        );
+      }
+      if (cardRefs.current[1]) {
+        masterTL.to(
+          cardRefs.current[1],
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.22,
+            ease: "power3.out",
+          },
+          0.38
+        );
+      }
+
+      // Hold on Card 02 (0.58 to 0.70)
+
+      // 6. Scroll smoothly to Card 03 (Card 03 COMES TO CENTER!)
+      if (cardsTrackRef.current) {
+        masterTL.to(
+          cardsTrackRef.current,
+          {
+            x: initialOffset - 2 * shift,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.70
+        );
+      }
+      if (cardRefs.current[1]) {
+        masterTL.to(
+          cardRefs.current[1],
+          {
+            opacity: 0.45,
+            scale: 0.92,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.70
+        );
+      }
+      if (cardRefs.current[2]) {
+        masterTL.to(
+          cardRefs.current[2],
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.22,
+            ease: "power3.out",
+          },
+          0.72
+        );
+      }
+
+      // Hold on Card 03 before unpinning
+      masterTL.to({}, { duration: 0.16 }, 0.92);
+    });
+
+    // =========================================================================
+    // DESKTOP & TABLET TIMELINE (>= 768px): All 3 process cards side-by-side
+    // =========================================================================
+    mm.add("(min-width: 768px)", () => {
+      const isDesktop = window.innerWidth >= 1024;
+
+      letterRefs.current.forEach((el) => {
+        if (el) {
+          gsap.set(el, {
+            x: 0,
+            y: 0,
+            z: 0,
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            scale: 1,
+            opacity: 1,
+            filter: "blur(0px)",
+            transformOrigin: "center center",
+            force3D: true,
+          });
+        }
+      });
+
+      if (cardsTrackRef.current) {
+        gsap.set(cardsTrackRef.current, {
+          x: 0,
+          xPercent: isDesktop ? 30 : 20,
+          opacity: 0,
+        });
+      }
+
+      cardRefs.current.forEach((card, idx) => {
+        if (card) {
+          gsap.set(card, {
+            x: isDesktop ? 80 + idx * 40 : 45 + idx * 25,
             opacity: 0,
             scale: 0.92,
             force3D: true,
@@ -215,13 +444,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
         gsap.set(glowOrbRef.current, { scale: 0.8, opacity: 0.4 });
       }
 
-      // =======================================================================
-      // MASTER COORDINATED GSAP TIMELINE
-      // 1. Letters shatter in 3D
-      // 2. Fullscreen typography fades out cleanly
-      // 3. Carousel Track glides in
-      // 4. Cards fan out smoothly into place
-      // =======================================================================
       const masterTL = gsap.timeline({
         scrollTrigger: {
           trigger: container,
@@ -235,17 +457,16 @@ export default function HowItWorksSection({ onOpenTrial }) {
         },
       });
 
-      // 1. Letters shatter outwards in 3D (scaled responsively for all screens)
-      const scaleFactor = isMobile ? 0.45 : isDesktop ? 1.0 : 0.75;
+      // 1. Letters shatter in 3D
       letterRefs.current.forEach((el, idx) => {
         if (el) {
           const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
           masterTL.to(
             el,
             {
-              x: config.x * scaleFactor,
-              y: config.y * scaleFactor,
-              z: config.z * scaleFactor,
+              x: config.x,
+              y: config.y,
+              z: config.z,
               rotateX: config.rx,
               rotateY: config.ry,
               rotateZ: config.rz,
@@ -302,7 +523,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         );
       }
 
-      // 4. Cards fan out smoothly into place (all 3 cards come in together!)
+      // 4. Cards fan out smoothly into place
       cardRefs.current.forEach((card, idx) => {
         if (card) {
           masterTL.to(
@@ -336,9 +557,9 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
       // Hold reading state
       masterTL.to({}, { duration: 0.4 }, 0.6);
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   return (
@@ -468,42 +689,42 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* 3 PROCESS CARDS (ALL 3 CARDS COME IN TOGETHER WITH GLIDE & FAN-OUT)   */}
+        {/* 3 PROCESS CARDS (RESPONSIVE SCROLL-DRIVEN SLIDE ON PHONE, 3-COL ON DESKTOP) */}
         {/* ===================================================================== */}
-        <div
-          ref={cardsTrackRef}
-          className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto flex md:grid md:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-6 items-stretch will-change-transform overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 sm:px-6 md:px-0 py-2 sm:py-3"
-          style={{
-            perspective: "1400px",
-            transformStyle: "preserve-3d",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          {PROCESS_CARDS.map((card, idx) => {
-            const Icon = card.icon;
+        <div className="relative z-20 max-w-7xl mx-auto w-full my-auto overflow-hidden md:overflow-visible py-2 sm:py-3">
+          <div
+            ref={cardsTrackRef}
+            className="flex md:grid md:grid-cols-3 gap-4 lg:gap-6 items-stretch will-change-transform"
+            style={{
+              perspective: "1400px",
+              transformStyle: "preserve-3d",
+            }}
+          >
+            {PROCESS_CARDS.map((card, idx) => {
+              const Icon = card.icon;
 
-            return (
-              <div
-                key={card.step}
-                ref={(el) => (cardRefs.current[idx] = el)}
-                className="featured-card group relative w-[82vw] max-w-[320px] shrink-0 snap-center md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
-                style={{
-                  backgroundColor: "#0D0D15",
-                  borderColor: card.accentColor,
-                  boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
-                  WebkitBackfaceVisibility: "hidden",
-                  backfaceVisibility: "hidden",
-                  WebkitTransform: "translateZ(0)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
-                }}
-              >
+              return (
+                <div
+                  key={card.step}
+                  ref={(el) => (cardRefs.current[idx] = el)}
+                  className="featured-card group relative w-[85vw] max-w-[320px] shrink-0 md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                  style={{
+                    backgroundColor: "#0D0D15",
+                    borderColor: card.accentColor,
+                    boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
+                    WebkitBackfaceVisibility: "hidden",
+                    backfaceVisibility: "hidden",
+                    WebkitTransform: "translateZ(0)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = card.accentColor;
+                    e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = card.accentColor;
+                    e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
+                  }}
+                >
                 {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
                 <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
                   <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
@@ -585,6 +806,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* ===================================================================== */}

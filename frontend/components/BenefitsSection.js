@@ -172,8 +172,19 @@ export default function BenefitsSection({ onOpenTrial }) {
       ScrollTrigger.config({ ignoreMobileResize: true });
     }
 
-    const ctx = gsap.context(() => {
-      // Initial visual states (runs on all screens: phone, iPhone, tablet, iPad, laptop, desktop)
+    const mm = gsap.matchMedia(containerRef);
+
+    // =========================================================================
+    // MOBILE (< 768px): Seamless Scroll-Driven Card Advancement
+    // Vision fades -> Header enters -> Card 01 -> Card 02 -> Card 03
+    // All 3 cards come into view sequentially driven by vertical scroll!
+    // =========================================================================
+    mm.add("(max-width: 767px)", () => {
+      const cardWidth = cardRefs.current[0]?.offsetWidth || Math.min(window.innerWidth * 0.85, 320);
+      const gap = 16;
+      const shift = cardWidth + gap;
+      const initialOffset = Math.max(0, (window.innerWidth - cardWidth) / 2);
+
       if (visionRef.current) {
         gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
       }
@@ -181,7 +192,186 @@ export default function BenefitsSection({ onOpenTrial }) {
         gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
       }
       if (cardsTrackRef.current) {
-        gsap.set(cardsTrackRef.current, { opacity: 0 });
+        gsap.set(cardsTrackRef.current, {
+          x: initialOffset,
+          opacity: 0,
+        });
+      }
+
+      cardRefs.current.forEach((card, idx) => {
+        if (card) {
+          gsap.set(card, {
+            opacity: idx === 0 ? 0 : 0.45,
+            scale: idx === 0 ? 0.95 : 0.92,
+            rotateX: 0,
+            y: 0,
+            force3D: true,
+          });
+        }
+      });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: container,
+          start: "top top",
+          end: "+=2200",
+          pin: stage,
+          anticipatePin: 1,
+          scrub: 0.85,
+          pinSpacing: true,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // 1. Opening Vision / Marquee smoothly fades out and scales up
+      if (visionRef.current) {
+        tl.to(
+          visionRef.current,
+          {
+            opacity: 0,
+            scale: 1.08,
+            filter: "blur(8px)",
+            duration: 0.20,
+            ease: "power2.inOut",
+            pointerEvents: "none",
+          },
+          0.04
+        );
+      }
+
+      // 2. Persistent Section Header fades in below navbar
+      if (sectionHeaderRef.current) {
+        tl.to(
+          sectionHeaderRef.current,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.14,
+            ease: "power3.out",
+          },
+          0.10
+        );
+      }
+
+      // 3. Cards Track & Card 01 enters
+      if (cardsTrackRef.current) {
+        tl.to(
+          cardsTrackRef.current,
+          {
+            opacity: 1,
+            duration: 0.12,
+            ease: "power2.out",
+          },
+          0.12
+        );
+      }
+      if (cardRefs.current[0]) {
+        tl.to(
+          cardRefs.current[0],
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.14,
+            ease: "power3.out",
+          },
+          0.12
+        );
+      }
+
+      // Hold on Card 01 (0.24 to 0.36)
+
+      // 4. Scroll smoothly to Card 02 (Card 02 COMES TO CENTER!)
+      if (cardsTrackRef.current) {
+        tl.to(
+          cardsTrackRef.current,
+          {
+            x: initialOffset - shift,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.36
+        );
+      }
+      if (cardRefs.current[0]) {
+        tl.to(
+          cardRefs.current[0],
+          {
+            opacity: 0.45,
+            scale: 0.92,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.36
+        );
+      }
+      if (cardRefs.current[1]) {
+        tl.to(
+          cardRefs.current[1],
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.22,
+            ease: "power3.out",
+          },
+          0.38
+        );
+      }
+
+      // Hold on Card 02 (0.58 to 0.70)
+
+      // 5. Scroll smoothly to Card 03 (Card 03 COMES TO CENTER!)
+      if (cardsTrackRef.current) {
+        tl.to(
+          cardsTrackRef.current,
+          {
+            x: initialOffset - 2 * shift,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.70
+        );
+      }
+      if (cardRefs.current[1]) {
+        tl.to(
+          cardRefs.current[1],
+          {
+            opacity: 0.45,
+            scale: 0.92,
+            duration: 0.22,
+            ease: "power2.inOut",
+          },
+          0.70
+        );
+      }
+      if (cardRefs.current[2]) {
+        tl.to(
+          cardRefs.current[2],
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.22,
+            ease: "power3.out",
+          },
+          0.72
+        );
+      }
+
+      // Hold on Card 03 before unpinning
+      tl.to({}, { duration: 0.16 }, 0.92);
+    });
+
+    // =========================================================================
+    // DESKTOP & TABLET TIMELINE (>= 768px): All 3 cards side-by-side in 3 columns
+    // =========================================================================
+    mm.add("(min-width: 768px)", () => {
+      if (visionRef.current) {
+        gsap.set(visionRef.current, { opacity: 1, scale: 1, filter: "blur(0px)" });
+      }
+      if (sectionHeaderRef.current) {
+        gsap.set(sectionHeaderRef.current, { opacity: 0, y: -20 });
+      }
+      if (cardsTrackRef.current) {
+        gsap.set(cardsTrackRef.current, { x: 0, opacity: 0 });
       }
 
       cardRefs.current.forEach((card, idx) => {
@@ -197,7 +387,6 @@ export default function BenefitsSection({ onOpenTrial }) {
         }
       });
 
-      // Master ScrollTrigger timeline with smooth scrub
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
@@ -275,9 +464,9 @@ export default function BenefitsSection({ onOpenTrial }) {
 
       // Hold comfortable reading state
       tl.to({}, { duration: 0.4 }, 0.6);
-    }, containerRef);
+    });
 
-    return () => ctx.revert();
+    return () => mm.revert();
   }, []);
 
   return (
@@ -395,43 +584,43 @@ export default function BenefitsSection({ onOpenTrial }) {
         </div>
 
         {/* ======================================================================= */}
-        {/* 3 BENEFIT CARDS (ALL 3 CARDS COME IN TOGETHER WITH 3D UNFOLD ANIMATION) */}
+        {/* 3 BENEFIT CARDS (RESPONSIVE SCROLL-DRIVEN SLIDE ON PHONE, 3-COL ON DESKTOP) */}
         {/* ======================================================================= */}
-        <div
-          ref={cardsTrackRef}
-          className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto flex md:grid md:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-6 items-stretch will-change-transform overflow-x-auto md:overflow-visible snap-x snap-mandatory scrollbar-none px-4 sm:px-6 md:px-0 py-2 sm:py-3"
-          style={{
-            perspective: "1400px",
-            transformStyle: "preserve-3d",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          {BENEFIT_CARDS.map((card, idx) => {
-            const Icon = card.icon;
+        <div className="relative z-20 max-w-7xl mx-auto w-full my-auto overflow-hidden md:overflow-visible py-2 sm:py-3">
+          <div
+            ref={cardsTrackRef}
+            className="flex md:grid md:grid-cols-3 gap-4 lg:gap-6 items-stretch will-change-transform"
+            style={{
+              perspective: "1400px",
+              transformStyle: "preserve-3d",
+            }}
+          >
+            {BENEFIT_CARDS.map((card, idx) => {
+              const Icon = card.icon;
 
-            return (
-              <div
-                key={card.step}
-                ref={(el) => (cardRefs.current[idx] = el)}
-                data-kf-card="true"
-                className="featured-card group relative w-[82vw] max-w-[320px] shrink-0 snap-center md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
-                style={{
-                  backgroundColor: "#0D0D15",
-                  borderColor: card.accentColor,
-                  boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
-                  WebkitBackfaceVisibility: "hidden",
-                  backfaceVisibility: "hidden",
-                  WebkitTransform: "translateZ(0)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = card.accentColor;
-                  e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
-                }}
-              >
+              return (
+                <div
+                  key={card.step}
+                  ref={(el) => (cardRefs.current[idx] = el)}
+                  data-kf-card="true"
+                  className="featured-card group relative w-[85vw] max-w-[320px] shrink-0 md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                  style={{
+                    backgroundColor: "#0D0D15",
+                    borderColor: card.accentColor,
+                    boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
+                    WebkitBackfaceVisibility: "hidden",
+                    backfaceVisibility: "hidden",
+                    WebkitTransform: "translateZ(0)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = card.accentColor;
+                    e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = card.accentColor;
+                    e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
+                  }}
+                >
                 {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
                 <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
                   <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
@@ -515,6 +704,7 @@ export default function BenefitsSection({ onOpenTrial }) {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Bottom hint banner */}
