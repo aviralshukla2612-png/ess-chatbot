@@ -110,66 +110,45 @@ const EnquiryIcon = ({ className = "w-10 h-10" }) => (
   </svg>
 );
 
-// 3 Benefit Cards matching Option 1 Deep Jewel Tint Reference
+// 3 Benefit Cards matching Shutterstock Numbered Card Architecture
 const BENEFIT_CARDS = [
   {
     step: "01",
-    tagline: "Card 01 · 24/7 Availability",
+    accentColor: "#00D98B",
+    buttonTextColor: "#000000",
+    tagline: "CARD 01 · 24/7 AVAILABILITY",
     title: "Customer Engagement",
     subTitle: "Always-On Conversations",
     kicker: "NEVER MISS AN ENQUIRY",
-    icon: EngagementIcon,
-    topBg: "bg-[#02281D]",
-    borderColor: "border-[#00D98B]/35",
-    taglineColor: "#6EE7B7",
-    iconContainerBg: "bg-[#043828] border border-[#00D98B]/40",
-    tags: ["ALWAYS-ON", "24/7 LIVE"],
-    description: "Answer customer questions instantly using your approved business information, even outside working hours.",
-    feature: "Visitor is guided towards making an enquiry with instant lead capture.",
-    waveColor: "#00D98B",
-    gradient: "from-[#00D98B] via-[#059669] to-[#003D2B]",
-    shadow: "shadow-[0_20px_50px_rgba(0,217,139,0.30)] hover:shadow-[0_25px_65px_rgba(0,217,139,0.50)]",
-    footerLeft: "24/7 AI Assistance",
+    icon: Headphones,
+    description: "Answer customer questions instantly using your approved business information, even outside working hours. Guide visitors towards qualified leads.",
+    feature: "24/7 autonomous engagement & lead capture",
     ctaText: "Explore Engagement",
   },
   {
     step: "02",
-    tagline: "Card 02 · Smart Automation",
+    accentColor: "#C653FF",
+    buttonTextColor: "#FFFFFF",
+    tagline: "CARD 02 · SMART AUTOMATION",
     title: "Intelligent Automation",
     subTitle: "Less Manual Work",
     kicker: "LET AI HANDLE REPETITIVE QUESTIONS",
-    icon: AutomationIcon,
-    topBg: "bg-[#1E042A]",
-    borderColor: "border-[#C653FF]/35",
-    taglineColor: "#E9D5FF",
-    iconContainerBg: "bg-[#330847] border border-[#C653FF]/40",
-    tags: ["ZERO REPETITION", "AI GROUNDED"],
-    description: "Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business information.",
-    feature: "Business knowledge interface grounded in approved information only.",
-    waveColor: "#C653FF",
-    gradient: "from-[#C653FF] via-[#9333EA] to-[#310044]",
-    shadow: "shadow-[0_20px_50px_rgba(198,83,255,0.30)] hover:shadow-[0_25px_65px_rgba(198,83,255,0.50)]",
-    footerLeft: "More Time For Team",
+    icon: Cpu,
+    description: "Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business details.",
+    feature: "Grounded in approved business knowledge only",
     ctaText: "Automate Repetitive Work",
   },
   {
     step: "03",
-    tagline: "Card 03 · Business Insights",
+    accentColor: "#009DFF",
+    buttonTextColor: "#FFFFFF",
+    tagline: "CARD 03 · BUSINESS INSIGHTS",
     title: "Enquiry Visibility",
     subTitle: "Turn Chats Into Opportunities",
     kicker: "STAY CONNECTED TO CUSTOMER INTEREST",
-    icon: EnquiryIcon,
-    topBg: "bg-[#011D3D]",
-    borderColor: "border-[#009DFF]/35",
-    taglineColor: "#BAE6FD",
-    iconContainerBg: "bg-[#032B59] border border-[#009DFF]/40",
-    tags: ["HOT LEADS", "INSTANT SYNC"],
-    description: "View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for.",
-    feature: "Customer interest and conversation details logged directly into CRM.",
-    waveColor: "#009DFF",
-    gradient: "from-[#009DFF] via-[#0284C7] to-[#002653]",
-    shadow: "shadow-[0_20px_50px_rgba(0,157,255,0.30)] hover:shadow-[0_25px_65px_rgba(0,157,255,0.50)]",
-    footerLeft: "Conversations & Enquiries",
+    icon: TrendingUp,
+    description: "View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for in real-time.",
+    feature: "Direct CRM sync & instant opportunity logging",
     ctaText: "View Live Dashboard",
   },
 ];
@@ -181,7 +160,6 @@ export default function BenefitsSection({ onOpenTrial }) {
   const sectionHeaderRef = useRef(null);
   const cardsTrackRef = useRef(null);
   const cardRefs = useRef([]);
-  const [activeCardIndex, setActiveCardIndex] = useState(1);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -411,161 +389,102 @@ export default function BenefitsSection({ onOpenTrial }) {
         </div>
 
         {/* ======================================================================= */}
-        {/* THE 3 CARDS MATCHING DRIBBBLE WAVE CARD DESIGN (WITH EXPANDABLE LIQUID DIVIDER) */}
+        {/* 3 BENEFIT CARDS (SHUTTERSTOCK LAYOUT: 01 WATERMARK, TOP BAR, CENTER ICON, TITLE, DESC, BOTTOM SOLID BUTTON) */}
         {/* ======================================================================= */}
         <div
           ref={cardsTrackRef}
-          onMouseLeave={() => setActiveCardIndex(1)}
           className="key-card-list relative z-20 max-w-7xl mx-auto w-full my-auto grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-7 items-stretch will-change-transform"
           style={{ perspective: "1400px", transformStyle: "preserve-3d" }}
         >
           {BENEFIT_CARDS.map((card, idx) => {
             const Icon = card.icon;
-            const isExpanded = activeCardIndex === idx;
 
             return (
               <div
                 key={card.step}
                 ref={(el) => (cardRefs.current[idx] = el)}
                 data-kf-card="true"
-                onMouseEnter={() => setActiveCardIndex(idx)}
-                onClick={() => setActiveCardIndex(idx)}
-                className={`featured-card group relative rounded-3xl ${card.topBg} text-white overflow-hidden h-[370px] sm:h-[390px] lg:h-[405px] flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border ${card.borderColor} will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)] ${card.shadow}`}
+                className="featured-card group relative rounded-3xl bg-[#0B0B14] hover:bg-[#10101E] text-white p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border border-white/10 hover:border-white/20 will-change-transform backface-hidden shadow-[0_20px_50px_rgba(0,0,0,0.7)]"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = card.accentColor;
+                  e.currentTarget.style.boxShadow = `0 0 35px ${card.accentColor}30, 0 20px 50px rgba(0,0,0,0.7)`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
+                  e.currentTarget.style.boxShadow = "0 20px 50px rgba(0,0,0,0.7)";
+                }}
               >
-                {/* TOP SECTION: Deep jewel tone with glowing white typography */}
-                <div className="card-wave-top relative z-10 px-5 pt-4 pb-1 flex flex-col items-center text-center transition-all duration-300">
-                  {/* Icon Container with subtle halo and decorative sparkle dots */}
-                  <div className="relative flex items-center justify-center">
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${card.iconContainerBg} flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105`}>
-                      <Icon className="w-9 h-9 sm:w-10 sm:h-10" />
-                    </div>
-                    {/* Decorative sparkle dots around icon matched to card accent */}
-                    <span
-                      className="absolute -top-1 -right-2 w-2 h-2 rounded-full shadow-sm animate-pulse"
-                      style={{ backgroundColor: card.waveColor }}
-                    />
-                    <span
-                      className="absolute -bottom-1 -left-2 w-1.5 h-1.5 rounded-full opacity-70"
-                      style={{ backgroundColor: card.waveColor }}
-                    />
-                  </div>
+                {/* Top Row: Watermark Number (left) + Horizontal Accent Bar (right) */}
+                <div className="flex items-center justify-between w-full mb-3">
+                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
+                    {card.step}
+                  </span>
+                  <div
+                    className="w-12 sm:w-14 h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
+                    style={{ backgroundColor: card.accentColor }}
+                  />
+                </div>
 
-                  {/* Title & Tagline */}
-                  <h3
-                    style={{ color: "#FFFFFF" }}
-                    className="!text-white text-white font-headline font-black text-lg sm:text-xl tracking-tight uppercase mt-2 leading-tight drop-shadow-md"
+                {/* Upper Center: Prominent Line-Art Outline Icon */}
+                <div className="my-3 sm:my-4 flex justify-center w-full">
+                  <div
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+                    style={{
+                      backgroundColor: `${card.accentColor}15`,
+                      border: `1.5px solid ${card.accentColor}50`,
+                      color: card.accentColor,
+                      boxShadow: `0 0 25px ${card.accentColor}25`,
+                    }}
                   >
-                    {card.title}
-                  </h3>
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 stroke-[1.8]" />
+                  </div>
+                </div>
+
+                {/* Middle: Centered Heading & Structured Description */}
+                <div className="text-center space-y-2 mb-5 flex-1 flex flex-col justify-center">
                   <span
-                    style={{ color: card.taglineColor }}
-                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider mt-0.5"
+                    className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider block"
+                    style={{ color: card.accentColor }}
                   >
                     {card.tagline}
                   </span>
+                  <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight uppercase group-hover:text-white">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs text-[#9898A6] leading-relaxed line-clamp-3 px-1">
+                    {card.description}
+                  </p>
+                  <div className="pt-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-white/[0.04] border border-white/10 text-white/80">
+                      ✦ {card.feature}
+                    </span>
+                  </div>
                 </div>
 
-                {/* DYNAMIC WAVE FILL LAYER: Expands smoothly on hover/active */}
-                <div
-                  className={`absolute inset-x-0 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] flex flex-col ${
-                    isExpanded ? "h-[62%] sm:h-[64%]" : "h-[38%] sm:h-[40%]"
-                  }`}
-                >
-                  {/* Liquid Organic Wave SVG Divider */}
-                  <div className="relative w-full h-8 sm:h-10 -mt-7 sm:-mt-9 pointer-events-none shrink-0 overflow-visible">
-                    {/* Back Wave (translucent) */}
-                    <svg
-                      viewBox="0 0 500 80"
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full opacity-35"
-                      style={{ color: card.waveColor }}
-                    >
-                      <path
-                        d="M0,50 Q140,15 280,50 T500,50 L500,80 L0,80 Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    {/* Front Wave (solid, seamless into body) */}
-                    <svg
-                      viewBox="0 0 500 80"
-                      preserveAspectRatio="none"
-                      className="absolute inset-0 w-full h-full"
-                      style={{ color: card.waveColor }}
-                    >
-                      <path
-                        d="M0,35 Q125,70 250,35 T500,35 L500,80 L0,80 Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Wave Gradient Body */}
-                  <div
-                    className={`flex-1 w-full bg-gradient-to-b ${card.gradient} px-6 pb-6 pt-2 text-white flex flex-col justify-between overflow-hidden`}
+                {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
+                <div className="w-full pt-2 mt-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (card.ctaText === "View Live Dashboard") {
+                        window.location.href = "/login";
+                      } else if (onOpenTrial) {
+                        onOpenTrial();
+                      } else {
+                        window.location.href = "/login";
+                      }
+                    }}
+                    className="w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-110 active:scale-[0.98]"
+                    style={{
+                      backgroundColor: card.accentColor,
+                      color: card.buttonTextColor || "#FFFFFF",
+                      boxShadow: `0 4px 20px ${card.accentColor}35`,
+                    }}
                   >
-                    {isExpanded ? (
-                      /* EXPANDED CONTENT (Matching Card 2 in reference image) */
-                      <div className="flex flex-col h-full justify-between">
-                        <div>
-                          <span className="text-[10px] font-mono font-black text-white/80 uppercase tracking-widest block">
-                            {card.kicker}
-                          </span>
-                          <h4 className="font-headline font-black text-lg sm:text-xl text-white uppercase tracking-tight mt-0.5">
-                            {card.subTitle}
-                          </h4>
-                          <p className="mt-2 text-xs sm:text-[13px] text-white/95 leading-relaxed font-normal">
-                            {card.description}
-                          </p>
-                          <p className="mt-2.5 text-[11px] font-mono text-white/90 bg-black/20 p-2 rounded-lg border border-white/15">
-                            ✦ {card.feature}
-                          </p>
-                        </div>
-
-                        {/* Bottom Action Arrow Button (exact match to screenshot) */}
-                        <div className="pt-3 mt-auto flex items-center justify-between border-t border-white/20">
-                          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-white/90">
-                            {card.footerLeft}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (card.ctaText === "View Live Dashboard") {
-                                window.location.href = "/login";
-                              } else {
-                                onOpenTrial?.();
-                              }
-                            }}
-                            className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer"
-                            aria-label={card.ctaText}
-                          >
-                            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* RESTING CONTENT (Matching Card 1 & 3 in reference image) */
-                      <div className="flex flex-col h-full justify-between">
-                        <div className="my-auto flex items-center justify-center gap-6 text-xs sm:text-sm font-black tracking-wider uppercase text-white">
-                          {card.tags.map((tag, tIdx) => (
-                            <span
-                              key={tIdx}
-                              className="border-b-2 border-white/50 pb-0.5 tracking-widest drop-shadow-sm"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] font-mono text-white/75 pt-2 border-t border-white/20">
-                          <span>{card.footerLeft}</span>
-                          <span className="flex items-center gap-1 font-bold text-white hover:underline">
-                            Explore →
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <span>{card.ctaText}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </button>
                 </div>
               </div>
             );
