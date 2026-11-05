@@ -68,9 +68,12 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
   };
 
   const handlePillMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
     hoverTimeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
-    }, 180);
+    }, 350);
   };
 
   const handleCardMouseEnter = () => {
@@ -95,18 +98,11 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
         setActiveDropdown(null);
       }
     };
-    const handleScroll = () => {
-      if (window.scrollY > 120) {
-        setActiveDropdown(null);
-      }
-    };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("scroll", handleScroll);
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
@@ -480,7 +476,7 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
             <div
               onMouseEnter={handleCardMouseEnter}
               onMouseLeave={handleCardMouseLeave}
-              className="absolute top-[calc(100%+8px)] z-50 origin-top animate-curtain-drop pointer-events-auto"
+              className="absolute top-[calc(100%+8px)] z-50 origin-top animate-curtain-drop pointer-events-auto before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']"
               style={{
                 left: `${dropdownPos.left}px`,
                 width: `${dropdownPos.width}px`,
