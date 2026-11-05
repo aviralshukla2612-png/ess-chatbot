@@ -293,15 +293,6 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Left: Editorial Text Block */}
             <div className="w-full lg:w-[46%] text-left pl-2 sm:pl-4 lg:pl-6">
-              {/* Section label: Space Mono */}
-              <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                <span className="font-space-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
-                  01 —
-                </span>
-                <span className="text-xs font-space-mono font-bold tracking-widest uppercase text-[#00D98B]">
-                  CUSTOMER ENGAGEMENT
-                </span>
-              </div>
               {/* Heading: Playfair Display */}
               <h3 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal text-white uppercase leading-[1.18]">
                 NEVER MISS A{" "}
@@ -343,15 +334,6 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Right: Editorial Text Block */}
             <div className="w-full lg:w-[46%] text-left lg:text-right pr-2 sm:pr-4 lg:pr-6">
-              {/* Section label: Space Mono */}
-              <div className="flex items-center lg:justify-end gap-2 mb-1.5 sm:mb-2">
-                <span className="font-space-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
-                  02 —
-                </span>
-                <span className="text-xs font-space-mono font-bold tracking-widest uppercase text-[#C28AFF]">
-                  INTELLIGENT AUTOMATION
-                </span>
-              </div>
               {/* Heading: Playfair Display */}
               <h3 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal text-white uppercase leading-[1.18]">
                 LESS REPETITION.{" "}
@@ -393,15 +375,6 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Left: Editorial Text Block */}
             <div className="w-full lg:w-[46%] text-left pl-2 sm:pl-4 lg:pl-6">
-              {/* Section label: Space Mono */}
-              <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                <span className="font-space-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
-                  03 —
-                </span>
-                <span className="text-xs font-space-mono font-bold tracking-widest uppercase text-[#55A9FF]">
-                  ENQUIRY VISIBILITY
-                </span>
-              </div>
               {/* Heading: Playfair Display */}
               <h3 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal text-white uppercase leading-[1.18]">
                 SEE WHAT YOUR{" "}
