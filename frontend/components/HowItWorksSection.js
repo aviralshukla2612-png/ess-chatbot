@@ -251,6 +251,20 @@ export default function HowItWorksSection({ onOpenTrial }) {
       id="how-it-works"
       className="relative w-full min-h-[100dvh] lg:h-[100dvh] lg:max-h-[100dvh] bg-[#050509] text-[#F5F5F7] overflow-hidden select-none flex flex-col justify-between pt-16 sm:pt-18 lg:pt-12 pb-3 sm:pb-4 px-3 sm:px-6 lg:px-8"
     >
+      <style>{`
+        @keyframes laserTravel {
+          from {
+            stroke-dashoffset: 40;
+          }
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+        .animate-laser-flow {
+          animation: laserTravel 1.5s linear infinite;
+        }
+      `}</style>
+
       {/* ======================================================================= */}
       {/* 1. CONTINUOUS AMBIENT BACKGROUND WITH BG3.PNG                           */}
       {/* ======================================================================= */}
@@ -295,99 +309,156 @@ export default function HowItWorksSection({ onOpenTrial }) {
         </div>
 
         {/* ===================================================================== */}
-        {/* 3. THREE CONNECTED VISUAL STAGES (PURPLE → ORANGE → CYAN)             */}
+        {/* 3. THREE CONNECTED VISUAL STAGES WITH EQUATOR-ALIGNED FLOWING BEAMS   */}
         {/* ===================================================================== */}
         <div className="relative w-full flex-1 flex flex-col justify-center my-auto">
           {/* ------------------------------------------------------------------- */}
-          {/* FLOWING CURVED ENERGY BEAMS WITH FLOATING ( → ) ARROW NODES         */}
+          {/* UNIFIED FULL-WIDTH EQUATOR-ALIGNED FLOWING ENERGY BEAMS (y=77.5px)  */}
           {/* ------------------------------------------------------------------- */}
-          <div className="hidden lg:block absolute inset-0 pointer-events-none z-20 overflow-visible">
-            {/* Beam 1: Between Sphere 1 and Sphere 2 */}
-            <div className="absolute top-[65px] left-[26%] w-[16%] h-[50px]">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 180 50" fill="none">
-                <defs>
-                  <linearGradient id="beam1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#963DFF" stopOpacity="0.9" />
-                    <stop offset="60%" stopColor="#C28AFF" stopOpacity="1" />
-                    <stop offset="100%" stopColor="#FF713D" stopOpacity="0.9" />
-                  </linearGradient>
-                  <filter id="beamGlow1" x="-20%" y="-40%" width="140%" height="180%">
-                    <feGaussianBlur stdDeviation="3" result="glow" />
-                    <feMerge>
-                      <feMergeNode in="glow" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                {/* Glowing underlay path */}
-                <path
-                  d="M 10,25 C 60,5 110,45 170,25"
-                  stroke="url(#beam1Grad)"
-                  strokeWidth="2.5"
-                  filter="url(#beamGlow1)"
-                  className="opacity-60"
-                />
-                {/* Animated foreground beam */}
-                <path
-                  ref={beam1Ref}
-                  d="M 10,25 C 60,5 110,45 170,25"
-                  stroke="url(#beam1Grad)"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                />
-              </svg>
+          <div className="hidden lg:block absolute inset-x-0 top-0 h-[155px] pointer-events-none z-20 overflow-visible">
+            <svg
+              className="w-full h-full overflow-visible"
+              viewBox="0 0 1200 155"
+              fill="none"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                {/* Beam 1 Gradient: Purple -> Magenta -> Orange */}
+                <linearGradient id="beam1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#963DFF" stopOpacity="0.9" />
+                  <stop offset="50%" stopColor="#C28AFF" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#FF713D" stopOpacity="0.9" />
+                </linearGradient>
 
-              {/* Floating Arrow Node 1: Purple Circular Button */}
-              <div
-                ref={arrowNode1Ref}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#160B29] border border-[#963DFF] shadow-[0_0_15px_rgba(150,61,255,0.7)] flex items-center justify-center text-white pointer-events-auto cursor-pointer will-change-transform"
-              >
-                <ArrowRight className="w-3.5 h-3.5 text-[#C28AFF]" />
-              </div>
+                {/* Beam 2 Gradient: Orange -> Magenta -> Cyan */}
+                <linearGradient id="beam2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#FF713D" stopOpacity="0.9" />
+                  <stop offset="50%" stopColor="#C28AFF" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#22C8F2" stopOpacity="0.9" />
+                </linearGradient>
+
+                <filter id="beamGlow" x="-20%" y="-40%" width="140%" height="180%">
+                  <feGaussianBlur stdDeviation="3.5" result="glow" />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+
+                <filter id="cometGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="4" result="glow" />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* ----------------- BEAM 1 (Sphere 1 -> Sphere 2) ----------------- */}
+              {/* Glowing Underlay S-Curve */}
+              <path
+                d="M 278,77.5 C 330,62 370,92 400,77.5 C 430,62 470,92 522,77.5"
+                stroke="url(#beam1Grad)"
+                strokeWidth="3.5"
+                filter="url(#beamGlow)"
+                className="opacity-50"
+              />
+
+              {/* GSAP Reveal Path */}
+              <path
+                ref={beam1Ref}
+                d="M 278,77.5 C 330,62 370,92 400,77.5 C 430,62 470,92 522,77.5"
+                stroke="url(#beam1Grad)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+
+              {/* Continuous Flowing Laser Energy Stream */}
+              <path
+                d="M 278,77.5 C 330,62 370,92 400,77.5 C 430,62 470,92 522,77.5"
+                stroke="#FFFFFF"
+                strokeWidth="2"
+                strokeDasharray="8 12"
+                className="animate-laser-flow opacity-80"
+              />
+
+              {/* Traveling Glowing Comet Pulse along Beam 1 */}
+              <circle r="3.5" fill="#FFFFFF" filter="url(#cometGlow)">
+                <animateMotion
+                  path="M 278,77.5 C 330,62 370,92 400,77.5 C 430,62 470,92 522,77.5"
+                  dur="2.2s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+              <circle r="7" fill="#C28AFF" opacity="0.65" filter="url(#cometGlow)">
+                <animateMotion
+                  path="M 278,77.5 C 330,62 370,92 400,77.5 C 430,62 470,92 522,77.5"
+                  dur="2.2s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+
+              {/* ----------------- BEAM 2 (Sphere 2 -> Sphere 3) ----------------- */}
+              {/* Glowing Underlay S-Curve */}
+              <path
+                d="M 678,77.5 C 730,62 770,92 800,77.5 C 830,62 870,92 922,77.5"
+                stroke="url(#beam2Grad)"
+                strokeWidth="3.5"
+                filter="url(#beamGlow)"
+                className="opacity-50"
+              />
+
+              {/* GSAP Reveal Path */}
+              <path
+                ref={beam2Ref}
+                d="M 678,77.5 C 730,62 770,92 800,77.5 C 830,62 870,92 922,77.5"
+                stroke="url(#beam2Grad)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+
+              {/* Continuous Flowing Laser Energy Stream */}
+              <path
+                d="M 678,77.5 C 730,62 770,92 800,77.5 C 830,62 870,92 922,77.5"
+                stroke="#FFFFFF"
+                strokeWidth="2"
+                strokeDasharray="8 12"
+                className="animate-laser-flow opacity-80"
+              />
+
+              {/* Traveling Glowing Comet Pulse along Beam 2 */}
+              <circle r="3.5" fill="#FFFFFF" filter="url(#cometGlow)">
+                <animateMotion
+                  path="M 678,77.5 C 730,62 770,92 800,77.5 C 830,62 870,92 922,77.5"
+                  dur="2.2s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+              <circle r="7" fill="#22C8F2" opacity="0.65" filter="url(#cometGlow)">
+                <animateMotion
+                  path="M 678,77.5 C 730,62 770,92 800,77.5 C 830,62 870,92 922,77.5"
+                  dur="2.2s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            </svg>
+
+            {/* Floating Arrow Node 1 (Center at 33.33%, y=77.5px) */}
+            <div
+              ref={arrowNode1Ref}
+              className="absolute left-[33.33%] top-[77.5px] -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#160B29] border border-[#963DFF] shadow-[0_0_20px_rgba(150,61,255,0.85)] flex items-center justify-center text-white pointer-events-auto cursor-pointer will-change-transform z-30 group"
+            >
+              <span className="absolute inset-0 rounded-full bg-[#963DFF]/30 animate-ping pointer-events-none" />
+              <ArrowRight className="w-4 h-4 text-[#C28AFF] transition-transform group-hover:translate-x-0.5" />
             </div>
 
-            {/* Beam 2: Between Sphere 2 and Sphere 3 */}
-            <div className="absolute top-[65px] right-[26%] w-[16%] h-[50px]">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 180 50" fill="none">
-                <defs>
-                  <linearGradient id="beam2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#FF713D" stopOpacity="0.9" />
-                    <stop offset="50%" stopColor="#C28AFF" stopOpacity="1" />
-                    <stop offset="100%" stopColor="#22C8F2" stopOpacity="0.9" />
-                  </linearGradient>
-                  <filter id="beamGlow2" x="-20%" y="-40%" width="140%" height="180%">
-                    <feGaussianBlur stdDeviation="3" result="glow" />
-                    <feMerge>
-                      <feMergeNode in="glow" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                {/* Glowing underlay path */}
-                <path
-                  d="M 10,25 C 60,45 110,5 170,25"
-                  stroke="url(#beam2Grad)"
-                  strokeWidth="2.5"
-                  filter="url(#beamGlow2)"
-                  className="opacity-60"
-                />
-                {/* Animated foreground beam */}
-                <path
-                  ref={beam2Ref}
-                  d="M 10,25 C 60,45 110,5 170,25"
-                  stroke="url(#beam2Grad)"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                />
-              </svg>
-
-              {/* Floating Arrow Node 2: Magenta/Purple Circular Button */}
-              <div
-                ref={arrowNode2Ref}
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#1E0D28] border border-[#C28AFF] shadow-[0_0_15px_rgba(194,138,255,0.7)] flex items-center justify-center text-white pointer-events-auto cursor-pointer will-change-transform"
-              >
-                <ArrowRight className="w-3.5 h-3.5 text-[#C28AFF]" />
-              </div>
+            {/* Floating Arrow Node 2 (Center at 66.66%, y=77.5px) */}
+            <div
+              ref={arrowNode2Ref}
+              className="absolute left-[66.66%] top-[77.5px] -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#1E0D28] border border-[#C28AFF] shadow-[0_0_20px_rgba(194,138,255,0.85)] flex items-center justify-center text-white pointer-events-auto cursor-pointer will-change-transform z-30 group"
+            >
+              <span className="absolute inset-0 rounded-full bg-[#C28AFF]/30 animate-ping pointer-events-none" />
+              <ArrowRight className="w-4 h-4 text-[#C28AFF] transition-transform group-hover:translate-x-0.5" />
             </div>
           </div>
 
