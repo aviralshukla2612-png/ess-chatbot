@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Sparkles } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -16,8 +15,9 @@ const STAGES = [
     title: "Connect Your Business Knowledge",
     description:
       "Provide your business information, brochures, pricing details, FAQs, documents, or website content.",
+    image: "/img1.png",
     accent: "#963DFF",
-    glowColor: "rgba(150, 61, 255, 0.22)",
+    glowColor: "rgba(150, 61, 255, 0.45)",
   },
   {
     number: "02",
@@ -25,8 +25,9 @@ const STAGES = [
     title: "Shape Your Assistant",
     description:
       "Configure your assistant's personality, welcome message, brand appearance, and launcher settings.",
+    image: "/image2.png",
     accent: "#C28AFF",
-    glowColor: "rgba(194, 138, 255, 0.20)",
+    glowColor: "rgba(194, 138, 255, 0.45)",
   },
   {
     number: "03",
@@ -34,8 +35,9 @@ const STAGES = [
     title: "Bring Your Assistant to Your Website",
     description:
       "Integrate your configured assistant into your website using the provided embed code.",
+    image: "/img3.png",
     accent: "#55A9FF",
-    glowColor: "rgba(85, 169, 255, 0.22)",
+    glowColor: "rgba(85, 169, 255, 0.45)",
   },
 ];
 
@@ -216,100 +218,52 @@ export default function HowItWorksSection({ onOpenTrial }) {
           </div>
 
           {/* ================================================================= */}
-          {/* RIGHT COLUMN: LARGE VISUAL PRESENTATION STAGE                      */}
+          {/* RIGHT COLUMN: ONLY GLOWING IMAGE STAGE                             */}
           {/* ================================================================= */}
           <div className="lg:col-span-7 w-full flex items-center justify-center">
-            <div className="relative w-full h-[420px] sm:h-[460px] lg:h-[490px] xl:h-[510px] rounded-[24px] sm:rounded-[32px] bg-[#0B0B10]/95 border border-white/[0.08] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85)] overflow-hidden backdrop-blur-2xl flex items-center justify-center select-none">
-              {/* Atmospheric Radial Stage Lighting */}
-              <div
-                className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-                style={{
-                  background: `radial-gradient(circle at 50% 50%, ${STAGES[activeStage].glowColor} 0%, transparent 70%)`,
-                }}
-              />
+            <div className="relative w-full min-h-[280px] sm:min-h-[340px] md:min-h-[380px] lg:min-h-[420px] flex items-center justify-center select-none">
+              {STAGES.map((st, idx) => {
+                const isVisualActive = activeStage === idx;
+                return (
+                  <div
+                    key={idx}
+                    className={`w-full flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      isVisualActive
+                        ? "relative opacity-100 translate-y-0 scale-100 pointer-events-auto"
+                        : "absolute inset-0 opacity-0 translate-y-4 scale-95 pointer-events-none"
+                    }`}
+                  >
+                    <div className="relative w-full max-w-[560px] sm:max-w-[620px] lg:max-w-[660px] group mx-auto">
+                      {/* Atmospheric Ambient Halo Glow */}
+                      <div
+                        className="absolute -inset-1 sm:-inset-2 rounded-[22px] sm:rounded-[28px] opacity-75 blur-xl sm:blur-2xl transition-all duration-700 pointer-events-none group-hover:opacity-100"
+                        style={{
+                          background: `radial-gradient(circle at 50% 50%, ${st.accent} 0%, rgba(150, 61, 255, 0.35) 60%, transparent 100%)`,
+                        }}
+                      />
 
-              {/* Stage Breadcrumb Bar */}
-              <div className="absolute top-4 sm:top-5 inset-x-4 sm:inset-x-6 flex items-center justify-between z-30 pointer-events-none">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full animate-pulse"
-                    style={{ backgroundColor: STAGES[activeStage].accent }}
-                  />
-                  <span className="font-space-mono text-[10px] sm:text-[11px] font-bold tracking-widest text-[#9898A6] uppercase">
-                    {STAGES[activeStage].badge}
-                  </span>
-                </div>
-                <div className="hidden sm:inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-space-mono text-[#9898A6]/70">
-                  <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
-                  <span>EMPEROR NEXUS RUNTIME</span>
-                </div>
-              </div>
-
-              {/* --------------------------------------------------------------- */}
-              {/* VISUAL 01: INGESTION (img1.png)                                */}
-              {/* --------------------------------------------------------------- */}
-              <div
-                className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeStage === 0
-                    ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-                    : "opacity-0 translate-y-5 scale-95 pointer-events-none"
-                }`}
-              >
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Subtle Ambient Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[#963DFF]/25 via-[#55A9FF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
-                  <img
-                    src="/img1.png"
-                    alt="Connect Your Business Knowledge"
-                    className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
-                    loading="eager"
-                  />
-                </div>
-              </div>
-
-              {/* --------------------------------------------------------------- */}
-              {/* VISUAL 02: PERSONA ENGINE (image2.png)                         */}
-              {/* --------------------------------------------------------------- */}
-              <div
-                className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeStage === 1
-                    ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-                    : "opacity-0 translate-y-5 scale-95 pointer-events-none"
-                }`}
-              >
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Subtle Ambient Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[#C28AFF]/25 via-[#963DFF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
-                  <img
-                    src="/image2.png"
-                    alt="Shape Your Assistant"
-                    className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
-                    loading="eager"
-                  />
-                </div>
-              </div>
-
-              {/* --------------------------------------------------------------- */}
-              {/* VISUAL 03: LIVE EMBED (img3.png)                               */}
-              {/* --------------------------------------------------------------- */}
-              <div
-                className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                  activeStage === 2
-                    ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-                    : "opacity-0 translate-y-5 scale-95 pointer-events-none"
-                }`}
-              >
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Subtle Ambient Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[#55A9FF]/25 via-[#963DFF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
-                  <img
-                    src="/img3.png"
-                    alt="Bring Your Assistant to Your Website"
-                    className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
-                    loading="eager"
-                  />
-                </div>
-              </div>
+                      {/* Glowing Gradient Border Frame */}
+                      <div
+                        className="relative rounded-[20px] sm:rounded-[26px] p-[1.5px] sm:p-[2px] transition-all duration-500"
+                        style={{
+                          background: `linear-gradient(135deg, ${st.accent} 0%, rgba(255, 255, 255, 0.45) 50%, ${st.accent} 100%)`,
+                          boxShadow: `0 0 35px -5px ${st.accent}80, 0 0 15px 0px ${st.accent}50, inset 0 0 15px -2px ${st.accent}40`,
+                        }}
+                      >
+                        {/* Inner Image Container */}
+                        <div className="relative rounded-[18px] sm:rounded-[24px] overflow-hidden bg-[#050507]">
+                          <img
+                            src={st.image}
+                            alt={st.title}
+                            className="w-full h-auto object-contain block drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
+                            loading="eager"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
