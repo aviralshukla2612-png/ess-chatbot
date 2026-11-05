@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 const Link = ({ href, children, ...props }) => <a href={href} {...props}>{children}</a>;
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Check, Sparkles, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { Check, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -490,16 +490,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           }}
         />
 
-        {/* Top Eyebrow Badge */}
-        <div className="relative z-30 w-full max-w-7xl mx-auto flex items-center justify-between">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-semibold uppercase tracking-wider text-[#C28AFF]">
-            <span>/ TRANSPARENT PRICING</span>
-          </div>
-          <div className="hidden sm:inline-flex items-center gap-2 text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
-            <span>Instant Setup & Activation</span>
-          </div>
-        </div>
+
 
         {/* ============================================================
             PHASE 1 & 2: MASSIVE EDITORIAL TYPOGRAPHY WITH TYPING EFFECT
