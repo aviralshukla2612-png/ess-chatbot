@@ -12,6 +12,7 @@ import {
   ChevronDown,
   X,
   Sparkles,
+  Bot,
 } from "lucide-react";
 import gsap from "gsap";
 
@@ -25,7 +26,7 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
   const ambientLightRef = useRef(null);
   const pillBarRef = useRef(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [dropdownPos, setDropdownPos] = useState({ left: 0, arrowLeft: 20, width: 360 });
+  const [dropdownPos, setDropdownPos] = useState({ left: 0, arrowLeft: 20, width: 460 });
   const hoverTimeoutRef = useRef(null);
   const buttonRefs = useRef({});
 
@@ -37,7 +38,7 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
       const wRect = wrapper.getBoundingClientRect();
 
       const btnCenter = bRect.left + bRect.width / 2 - wRect.left;
-      const cardWidth = Math.min(360, wRect.width - 24);
+      const cardWidth = Math.min(460, wRect.width - 24);
 
       const targetLeft = btnCenter - cardWidth / 2;
       const minLeft = 12;
@@ -206,61 +207,85 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
     "real-estate": {
       id: "real-estate",
       wizardIndustry: "real-estate",
-      title: "Real Estate Assistant",
+      title: "Real Estate Sales Copilot",
+      eyebrow: "Property & Leasing AI",
       color: "#C28AFF",
-      shortDesc: "Answers unit layout & pricing questions, shares floor plans, and schedules private VIP viewings into your CRM.",
-      badges: ["Property PDF Grounded", "VIP Tour Booking"],
-      ctaText: "Deploy",
+      chatSnippet: {
+        user: "Are 3BHK units with sea view available?",
+        bot: "Yes! 2 luxury units on 18th floor starting at ₹1.4 Cr. Want to schedule a private VIP viewing?",
+      },
+      metrics: ["⚡ < 0.4s Fast Reply", "📄 PDF Floorplan Grounded", "📅 Instant Site Visits"],
+      ctaText: "Deploy Copilot",
       ctaLink: "/login?industry=real-estate",
     },
     healthcare: {
       id: "healthcare",
       wizardIndustry: "clinic",
-      title: "Healthcare Intake Assistant",
+      title: "Clinical Intake & Triage Assistant",
+      eyebrow: "Healthcare & Patient Care",
       color: "#55A9FF",
-      shortDesc: "24/7 patient intake, verified medical FAQs, insurance network eligibility checks, and doctor consultation bookings.",
-      badges: ["Clinical Intake Routing", "Insurance Network Check"],
-      ctaText: "Deploy",
+      chatSnippet: {
+        user: "Do you accept HDFC Ergo insurance for OPD?",
+        bot: "Yes, cashless coverage applies for OPD & diagnostics. Dr. Sharma has open slots today at 4 PM.",
+      },
+      metrics: ["⚡ 24/7 Patient Triage", "🛡️ Verified Medical FAQs", "📅 Doctor OPD Booking"],
+      ctaText: "Deploy Assistant",
       ctaLink: "/login?industry=clinic",
     },
     education: {
       id: "education",
       wizardIndustry: "education",
-      title: "Admissions Counselor",
+      title: "Admissions & Campus Counselor",
+      eyebrow: "Academia & EdTech AI",
       color: "#C28AFF",
-      shortDesc: "Guides prospective students on degree prerequisites, tuition fees, scholarship criteria, and captures enrollment leads.",
-      badges: ["Prospectus Ingestion", "Student Lead Capture"],
-      ctaText: "Deploy",
+      chatSnippet: {
+        user: "What are the eligibility criteria for MBA Fall 2026?",
+        bot: "50%+ graduation score & CAT/GMAT score. Merit scholarships up to 40% are currently open.",
+      },
+      metrics: ["⚡ Instant Lead Scoring", "📚 Prospectus Grounded", "🎓 99.8% Accuracy"],
+      ctaText: "Deploy Counselor",
       ctaLink: "/login?industry=education",
     },
     hospitality: {
       id: "hospitality",
       wizardIndustry: "hotel",
-      title: "Guest Concierge",
+      title: "24/7 Guest Concierge AI",
+      eyebrow: "Hospitality & Resorts",
       color: "#FF713D",
-      shortDesc: "Handles 24/7 suite reservations, dining menus, local itineraries, and bespoke guest inquiries with zero delay.",
-      badges: ["Direct Suite Booking", "24/7 Digital Concierge"],
-      ctaText: "Deploy",
+      chatSnippet: {
+        user: "Can I book a pool villa with late checkout?",
+        bot: "Pool villa suite is available for ₹8,500/night with complimentary 2 PM late checkout confirmed.",
+      },
+      metrics: ["⚡ Direct Suite Booking", "🍽️ Dining & Itinerary", "🛎️ Zero Wait Time"],
+      ctaText: "Deploy Concierge",
       ctaLink: "/login?industry=hotel",
     },
     retail: {
       id: "retail",
       wizardIndustry: "retail-ecommerce",
-      title: "Shopping Assistant",
+      title: "Autonomous Shopping Assistant",
+      eyebrow: "E-Commerce & D2C Brands",
       color: "#22C8F2",
-      shortDesc: "Recommends products from your catalog, tracks live orders, and resolves returns with zero wait times.",
-      badges: ["Live Order Tracking", "Product Recommendations"],
-      ctaText: "Deploy",
+      chatSnippet: {
+        user: "Where is my order #NX-8821? Can I exchange size?",
+        bot: "Out for delivery by 6 PM today! Instant 7-day exchange is supported with 1-click.",
+      },
+      metrics: ["⚡ Live Order Tracking", "🛍️ Catalog Recommendations", "📦 Instant Returns"],
+      ctaText: "Deploy Shopping AI",
       ctaLink: "/login?industry=retail-ecommerce",
     },
     "and-more": {
       id: "and-more",
       wizardIndustry: "other",
-      title: "Custom AI for Any Site",
+      title: "Custom Enterprise AI Agent",
+      eyebrow: "Universal Knowledge Engine",
       color: "#A494F4",
-      shortDesc: "Upload company PDFs, Word docs, or website URLs to deploy an autonomous sales assistant in 5 minutes.",
-      badges: ["1-Line Universal Embed", "99.8% Grounded Accuracy"],
-      ctaText: "Build Now",
+      chatSnippet: {
+        user: "How quickly can we ingest company docs?",
+        bot: "Upload PDFs, DOCX, or live website URL. Your custom grounded bot is ready to embed in 5 minutes.",
+      },
+      metrics: ["⚡ 1-Line Web Embed", "📄 Multimodal Document Sync", "🔒 Anti-Hallucination"],
+      ctaText: "Build Custom AI",
       ctaLink: "/login?industry=other",
     },
   };
@@ -431,20 +456,26 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
             <div
               onMouseEnter={handleCardMouseEnter}
               onMouseLeave={handleCardMouseLeave}
-              className="absolute top-[calc(100%+6px)] z-50 origin-top animate-curtain-drop pointer-events-auto"
+              className="absolute top-[calc(100%+8px)] z-50 origin-top animate-curtain-drop pointer-events-auto"
               style={{
                 left: `${dropdownPos.left}px`,
                 width: `${dropdownPos.width}px`,
               }}
             >
-              <div className="relative w-full bg-[#0E0E18]/95 backdrop-blur-2xl border border-white/[0.14] rounded-2xl p-3 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_25px_rgba(150,61,255,0.2)] text-white">
-                {/* Top curtain notch / arrow pointing directly to the hovered word */}
+              <div className="relative w-full bg-[#0A0A12]/95 backdrop-blur-3xl border border-white/[0.14] rounded-2xl p-3.5 sm:p-4 shadow-[0_24px_60px_rgba(0,0,0,0.95),0_0_35px_rgba(150,61,255,0.2)] text-white overflow-hidden">
+                {/* Ambient dynamic radial mesh glow behind icon */}
                 <div
-                  className="absolute -top-1.5 w-3 h-3 rotate-45 bg-[#0E0E18] border-t border-l border-white/[0.14]"
+                  className="absolute -top-16 -left-16 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 transition-all duration-500"
+                  style={{ backgroundColor: indData.color }}
+                />
+
+                {/* Top pointer notch pointing directly to the hovered word */}
+                <div
+                  className="absolute -top-1.5 w-3 h-3 rotate-45 bg-[#0A0A12] border-t border-l border-white/[0.14]"
                   style={{ left: `${dropdownPos.arrowLeft - 6}px` }}
                 />
 
-                {/* Top curtain accent glow line */}
+                {/* Top illuminated border accent */}
                 <div
                   className="absolute top-0 inset-x-0 h-[2px] opacity-90 rounded-t-2xl"
                   style={{
@@ -452,70 +483,124 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
                   }}
                 />
 
+                {/* 1. Top Header: Icon + Eyebrow + Title + Close Button */}
                 <div className="relative z-10 flex items-start justify-between gap-3">
-                  {/* Left: Icon + Title + Short Info */}
-                  <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 shadow-md"
                       style={{
-                        backgroundColor: `${indData.color}20`,
-                        border: `1px solid ${indData.color}50`,
+                        backgroundColor: `${indData.color}18`,
+                        border: `1.5px solid ${indData.color}50`,
+                        boxShadow: `0 0 16px ${indData.color}25`,
                       }}
                     >
-                      <ActiveIcon className="w-3.5 h-3.5" style={{ color: indData.color }} />
+                      <ActiveIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" style={{ color: indData.color }} />
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-xs sm:text-sm text-white truncate">
-                          {indData.title}
-                        </h4>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
+                          style={{ backgroundColor: indData.color }}
+                        />
+                        <span
+                          className="text-[9.5px] sm:text-[10px] font-mono tracking-wider font-semibold uppercase truncate"
+                          style={{ color: indData.color }}
+                        >
+                          {indData.eyebrow}
+                        </span>
                       </div>
-
-                      <p className="mt-0.5 text-[11px] sm:text-xs text-[#C5C5D2] leading-snug line-clamp-2">
-                        {indData.shortDesc}
-                      </p>
-
-                      {/* 2 Micro Badges */}
-                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                        {indData.badges.map((badge, bIdx) => (
-                          <span
-                            key={bIdx}
-                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-medium bg-white/[0.04] border border-white/[0.08] text-[#D9D9E2]"
-                          >
-                            {badge}
-                          </span>
-                        ))}
-                      </div>
+                      <h4 className="font-bold text-xs sm:text-sm text-white truncate leading-tight mt-0.5">
+                        {indData.title}
+                      </h4>
                     </div>
                   </div>
 
-                  {/* Right: Close + CTA Button */}
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setActiveDropdown(null)}
-                      className="w-5 h-5 rounded-full border border-white/10 bg-white/5 hover:bg-white/15 flex items-center justify-center text-[#9898A6] hover:text-white transition-colors cursor-pointer"
-                      aria-label="Close"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDropdown(null)}
+                    className="w-5 h-5 rounded-full border border-white/10 bg-white/5 hover:bg-white/15 flex items-center justify-center text-[#9898A6] hover:text-white transition-colors cursor-pointer shrink-0"
+                    aria-label="Close"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const wizardId = indData.wizardIndustry || indData.id;
-                        try {
-                          localStorage.setItem("nexus_selected_industry", wizardId);
-                        } catch (e) {}
-                        window.location.href = `/login?industry=${wizardId}&redirect=${encodeURIComponent(`/bots/create?industry=${wizardId}`)}`;
-                      }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white btn-primary-gradient cursor-pointer shadow-sm hover:scale-105 active:scale-95 transition-all whitespace-nowrap mt-auto"
-                    >
-                      <span>{indData.ctaText}</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                {/* 2. Interactive Live Conversation Snippet (The "Show, Don't Just Tell" Preview) */}
+                <div className="relative z-10 mt-2.5 rounded-xl bg-black/50 border border-white/[0.07] p-2.5 space-y-2">
+                  {/* User Question */}
+                  <div className="flex items-start gap-1.5 justify-end">
+                    <div className="max-w-[88%] rounded-xl rounded-tr-xs px-2.5 py-1 bg-white/[0.08] border border-white/[0.08] text-[10.5px] text-[#E0E0EA] leading-snug">
+                      <span className="text-[8.5px] font-mono uppercase text-[#8E8E9B] block font-semibold mb-0.5">
+                        Visitor
+                      </span>
+                      "{indData.chatSnippet.user}"
+                    </div>
                   </div>
+
+                  {/* Bot Answer */}
+                  <div className="flex items-start gap-1.5">
+                    <div
+                      className="w-4.5 h-4.5 rounded-md flex items-center justify-center shrink-0 mt-0.5"
+                      style={{
+                        backgroundColor: `${indData.color}25`,
+                        border: `1px solid ${indData.color}60`,
+                      }}
+                    >
+                      <Bot className="w-2.5 h-2.5" style={{ color: indData.color }} />
+                    </div>
+                    <div
+                      className="max-w-[88%] rounded-xl rounded-tl-xs px-2.5 py-1 text-[10.5px] leading-snug border"
+                      style={{
+                        backgroundColor: `${indData.color}10`,
+                        borderColor: `${indData.color}35`,
+                        color: "#F5F5F7",
+                      }}
+                    >
+                      <span
+                        className="text-[8.5px] font-mono uppercase font-bold block mb-0.5"
+                        style={{ color: indData.color }}
+                      >
+                        Nexus AI Copilot
+                      </span>
+                      "{indData.chatSnippet.bot}"
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Key Capability Micro-Metrics Badges */}
+                <div className="relative z-10 mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  {indData.metrics.map((metric, mIdx) => (
+                    <span
+                      key={mIdx}
+                      className="inline-flex items-center px-2 py-0.5 rounded-md text-[9.5px] font-medium bg-white/[0.04] border border-white/[0.09] text-[#D9D9E2]"
+                    >
+                      {metric}
+                    </span>
+                  ))}
+                </div>
+
+                {/* 4. Bottom Action Bar: 1-Line Info + Glowing Deploy CTA */}
+                <div className="relative z-10 mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between gap-3">
+                  <span className="text-[10.5px] text-[#9898A6] flex items-center gap-1.5 truncate">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C28AFF] shrink-0" />
+                    <span className="truncate">Trained on your files in 5 mins</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const wizardId = indData.wizardIndustry || indData.id;
+                      try {
+                        localStorage.setItem("nexus_selected_industry", wizardId);
+                      } catch (e) {}
+                      window.location.href = `/login?industry=${wizardId}&redirect=${encodeURIComponent(`/bots/create?industry=${wizardId}`)}`;
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-bold text-white btn-primary-gradient cursor-pointer shadow-[0_4px_16px_rgba(150,61,255,0.4)] hover:shadow-[0_6px_22px_rgba(150,61,255,0.6)] hover:scale-105 active:scale-95 transition-all whitespace-nowrap shrink-0"
+                  >
+                    <span>{indData.ctaText}</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </div>
