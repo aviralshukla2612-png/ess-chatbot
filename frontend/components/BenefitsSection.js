@@ -256,17 +256,17 @@ export default function BenefitsSection({ onOpenTrial }) {
           ref={headerRef}
           className="text-center max-w-3xl mx-auto shrink-0 mb-2 sm:mb-3 will-change-transform"
         >
-          {/* Eyebrow */}
+          {/* Eyebrow (Section label: Space Mono) */}
           <div className="inline-flex items-center gap-2 mb-1.5 sm:mb-2">
             <span className="w-5 sm:w-8 h-px bg-white/20" />
-            <span className="text-[11px] sm:text-xs font-mono font-bold tracking-[0.25em] uppercase text-[#9898A6]">
+            <span className="text-[11px] sm:text-xs font-space-mono font-bold tracking-[0.25em] uppercase text-[#9898A6]">
               EMPEROR NEXUS
             </span>
             <span className="w-5 sm:w-8 h-px bg-white/20" />
           </div>
 
-          {/* Main Headline */}
-          <h2 className="font-sans font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.2rem] tracking-tight uppercase leading-tight text-white">
+          {/* Main Headline (Heading: Playfair Display) */}
+          <h2 className="font-playfair font-bold text-2xl sm:text-3xl md:text-4xl lg:text-[2.5rem] tracking-normal uppercase leading-tight text-white">
             DON&apos;T LET VALUABLE{" "}
             <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#C28AFF] drop-shadow-[0_0_20px_rgba(150,61,255,0.4)]">
               CONVERSATIONS
@@ -274,8 +274,8 @@ export default function BenefitsSection({ onOpenTrial }) {
             SLIP AWAY.
           </h2>
 
-          {/* Supporting Description */}
-          <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-[#9898A6] max-w-xl mx-auto leading-relaxed font-normal">
+          {/* Supporting Description (Body: Inter) */}
+          <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-[#9898A6] max-w-xl mx-auto leading-relaxed font-inter font-normal">
             Your website should be ready to answer, qualify, and capture enterprise interest — even when your sales team is unavailable.
           </p>
         </div>
@@ -293,21 +293,24 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Left: Editorial Text Block */}
             <div className="w-full lg:w-[46%] text-left pl-2 sm:pl-4 lg:pl-6">
+              {/* Section label: Space Mono */}
               <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                <span className="font-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
+                <span className="font-space-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
                   01 —
                 </span>
-                <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#00D98B]">
+                <span className="text-xs font-space-mono font-bold tracking-widest uppercase text-[#00D98B]">
                   CUSTOMER ENGAGEMENT
                 </span>
               </div>
-              <h3 className="font-sans font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-tight text-white uppercase leading-[1.15]">
+              {/* Heading: Playfair Display */}
+              <h3 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal text-white uppercase leading-[1.18]">
                 NEVER MISS A{" "}
                 <span className="text-[#00D98B] drop-shadow-[0_0_20px_rgba(0,217,139,0.4)]">
                   CONVERSATION.
                 </span>
               </h3>
-              <p className="mt-2.5 sm:mt-3 text-sm sm:text-[15px] lg:text-base text-[#9898A6] max-w-md leading-relaxed font-normal">
+              {/* Body: Inter */}
+              <p className="mt-2.5 sm:mt-3 text-sm sm:text-[15px] lg:text-base text-[#9898A6] max-w-md leading-relaxed font-inter font-normal">
                 Answer customer questions instantly using your approved business information, even outside working hours.
               </p>
             </div>
@@ -343,21 +346,24 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Right: Editorial Text Block */}
             <div className="w-full lg:w-[46%] text-left lg:text-right pr-2 sm:pr-4 lg:pr-6">
+              {/* Section label: Space Mono */}
               <div className="flex items-center lg:justify-end gap-2 mb-1.5 sm:mb-2">
-                <span className="font-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
+                <span className="font-space-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
                   02 —
                 </span>
-                <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#C28AFF]">
+                <span className="text-xs font-space-mono font-bold tracking-widest uppercase text-[#C28AFF]">
                   INTELLIGENT AUTOMATION
                 </span>
               </div>
-              <h3 className="font-sans font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-tight text-white uppercase leading-[1.15]">
+              {/* Heading: Playfair Display */}
+              <h3 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal text-white uppercase leading-[1.18]">
                 LESS REPETITION.{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#A855F7] to-[#963DFF] drop-shadow-[0_0_20px_rgba(150,61,255,0.45)]">
                   MORE FOCUS.
                 </span>
               </h3>
-              <p className="mt-2.5 sm:mt-3 text-sm sm:text-[15px] lg:text-base text-[#9898A6] max-w-md lg:ml-auto leading-relaxed font-normal">
+              {/* Body: Inter */}
+              <p className="mt-2.5 sm:mt-3 text-sm sm:text-[15px] lg:text-base text-[#9898A6] max-w-md lg:ml-auto leading-relaxed font-inter font-normal">
                 Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business details.
               </p>
             </div>
@@ -393,21 +399,24 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Left: Editorial Text Block */}
             <div className="w-full lg:w-[46%] text-left pl-2 sm:pl-4 lg:pl-6">
+              {/* Section label: Space Mono */}
               <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                <span className="font-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
+                <span className="font-space-mono text-xs font-bold tracking-widest text-[#9898A6]/80">
                   03 —
                 </span>
-                <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#55A9FF]">
+                <span className="text-xs font-space-mono font-bold tracking-widest uppercase text-[#55A9FF]">
                   ENQUIRY VISIBILITY
                 </span>
               </div>
-              <h3 className="font-sans font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-tight text-white uppercase leading-[1.15]">
+              {/* Heading: Playfair Display */}
+              <h3 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal text-white uppercase leading-[1.18]">
                 SEE WHAT YOUR{" "}
                 <span className="text-[#55A9FF] drop-shadow-[0_0_20px_rgba(85,169,255,0.45)]">
                   CUSTOMERS NEED.
                 </span>
               </h3>
-              <p className="mt-2.5 sm:mt-3 text-sm sm:text-[15px] lg:text-base text-[#9898A6] max-w-md leading-relaxed font-normal">
+              {/* Body: Inter */}
+              <p className="mt-2.5 sm:mt-3 text-sm sm:text-[15px] lg:text-base text-[#9898A6] max-w-md leading-relaxed font-inter font-normal">
                 View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for in real-time.
               </p>
             </div>
