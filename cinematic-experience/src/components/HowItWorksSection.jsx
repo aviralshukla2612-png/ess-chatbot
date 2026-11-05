@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Code2, Sparkles, Lock } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -290,88 +290,24 @@ export default function HowItWorksSection({ onOpenTrial }) {
               </div>
 
               {/* --------------------------------------------------------------- */}
-              {/* VISUAL 03: LIVE EMBED (Active Assistant on Live Website)         */}
+              {/* VISUAL 03: LIVE EMBED (img3.png)                               */}
               {/* --------------------------------------------------------------- */}
               <div
-                className={`absolute inset-0 p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   activeStage === 2
                     ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
                     : "opacity-0 translate-y-5 scale-95 pointer-events-none"
                 }`}
               >
-                {/* Realistic Browser Window Frame */}
-                <div className="relative w-full max-w-[460px] h-[270px] sm:h-[290px] rounded-2xl bg-[#050507] border border-white/15 shadow-2xl overflow-hidden flex flex-col">
-                  {/* Browser Chrome Header */}
-                  <div className="h-7 sm:h-8 bg-[#12121A] border-b border-white/10 px-3 flex items-center gap-2 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#FF5F56]" />
-                      <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#FFBD2E]" />
-                      <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-[#27C93F]" />
-                    </div>
-                    {/* URL Bar */}
-                    <div className="flex-1 mx-2 h-4 sm:h-5 bg-[#050507] rounded-md border border-white/10 px-2 flex items-center gap-1.5">
-                      <Lock className="w-2.5 h-2.5 text-[#55A9FF]" />
-                      <span className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] truncate">
-                        https://yourcompany.com
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Browser Page Body Mockup */}
-                  <div className="relative flex-1 p-3.5 bg-gradient-to-b from-[#0B0B10] to-[#050507] overflow-hidden flex flex-col justify-between">
-                    {/* Website Hero Outline */}
-                    <div className="space-y-1.5 opacity-60">
-                      <div className="w-20 h-2 bg-white/20 rounded" />
-                      <div className="w-40 h-3 bg-gradient-to-r from-white/30 to-white/10 rounded" />
-                      <div className="w-28 h-1.5 bg-white/15 rounded" />
-                    </div>
-
-                    {/* Live Assistant Widget in Bottom-Right */}
-                    <div className="self-end flex flex-col items-end gap-1.5 relative z-20">
-                      {/* Greeting Bubble */}
-                      <div className="p-2 sm:p-2.5 rounded-xl bg-[#12121A] border border-white/15 shadow-xl max-w-[200px]">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[9px] sm:text-[10px] font-space-mono font-bold text-white">Emperor Nexus AI</span>
-                        </div>
-                        <p className="text-[10px] font-inter text-[#D9D9E2] leading-tight">
-                          &ldquo;VIP demo scheduled for Thursday 2 PM. Confirmation sent!&rdquo;
-                        </p>
-                      </div>
-
-                      {/* Official Mascot Avatar Launcher Button */}
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-space-mono text-[9px] border border-emerald-500/20">
-                          24/7 Live
-                        </span>
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#963DFF] to-[#55A9FF] p-[2px] shadow-lg hover:scale-105 transition-transform cursor-pointer">
-                          <div className="w-full h-full bg-[#050507] rounded-2xl flex items-center justify-center overflow-hidden">
-                            <img
-                              src="/icon-512.png"
-                              alt="Live Assistant"
-                              className="w-6 h-6 object-contain"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Floating Embed Code Pill */}
-                <div className="absolute top-5 left-4 sm:left-7 z-30 p-2 sm:p-2.5 rounded-xl bg-[#12121A]/95 border border-white/15 shadow-2xl backdrop-blur-xl flex items-center gap-2 max-w-[320px]">
-                  <div className="w-6 h-6 rounded-lg bg-[#55A9FF]/20 text-[#55A9FF] flex items-center justify-center shrink-0">
-                    <Code2 className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="overflow-hidden">
-                    <div className="text-[10px] sm:text-[11px] font-inter font-bold text-white flex items-center gap-1.5">
-                      <span>1-Line Script Integration</span>
-                      <span className="text-[8px] sm:text-[9px] font-space-mono text-emerald-400">Zero Dependencies</span>
-                    </div>
-                    <code className="text-[9px] sm:text-[10px] font-space-mono text-[#55A9FF] block truncate mt-0.5">
-                      &lt;script src=&quot;https://nexus.ai/widget.js&quot;&gt;&lt;/script&gt;
-                    </code>
-                  </div>
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {/* Subtle Ambient Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[#55A9FF]/25 via-[#963DFF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
+                  <img
+                    src="/img3.png"
+                    alt="Bring Your Assistant to Your Website"
+                    className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
+                    loading="eager"
+                  />
                 </div>
               </div>
             </div>
