@@ -3,21 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import {
-  FileText,
-  Globe,
-  SlidersHorizontal,
-  MessageSquare,
-  Palette,
-  LayoutGrid,
-  Code2,
-  CheckCircle2,
-  Sparkles,
-  ArrowRight,
-  Lock,
-  Bot,
-  Zap,
-} from "lucide-react";
+import { Code2, Sparkles, Lock } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -260,223 +246,46 @@ export default function HowItWorksSection({ onOpenTrial }) {
               </div>
 
               {/* --------------------------------------------------------------- */}
-              {/* VISUAL 01: INGESTION (Converging Business Knowledge to Mascot)   */}
+              {/* VISUAL 01: INGESTION (img1.png)                                */}
               {/* --------------------------------------------------------------- */}
               <div
-                className={`absolute inset-0 p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   activeStage === 0
                     ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
                     : "opacity-0 translate-y-5 scale-95 pointer-events-none"
                 }`}
               >
-                {/* SVG Energy Convergence Beams */}
-                <svg
-                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
-                  viewBox="0 0 600 450"
-                  fill="none"
-                >
-                  <defs>
-                    <linearGradient id="beam1" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#963DFF" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#55A9FF" stopOpacity="0.2" />
-                    </linearGradient>
-                    <linearGradient id="beam2" x1="100%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#55A9FF" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#963DFF" stopOpacity="0.2" />
-                    </linearGradient>
-                  </defs>
-                  {/* Energy Arcs converging into center (300, 225) */}
-                  <path
-                    d="M 140 100 Q 200 150 280 210"
-                    stroke="url(#beam1)"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                    className="animate-[dash_15s_linear_infinite]"
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {/* Subtle Ambient Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[#963DFF]/25 via-[#55A9FF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
+                  <img
+                    src="/img1.png"
+                    alt="Connect Your Business Knowledge"
+                    className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
+                    loading="eager"
                   />
-                  <path
-                    d="M 460 100 Q 400 150 320 210"
-                    stroke="url(#beam2)"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                    className="animate-[dash_15s_linear_infinite]"
-                  />
-                  <path
-                    d="M 140 330 Q 200 280 280 240"
-                    stroke="url(#beam1)"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                    className="animate-[dash_15s_linear_infinite]"
-                  />
-                  <path
-                    d="M 460 330 Q 400 280 320 240"
-                    stroke="url(#beam2)"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                    className="animate-[dash_15s_linear_infinite]"
-                  />
-                </svg>
-
-                {/* Central Subject: Official Emperor Nexus Robot Mascot */}
-                <div className="relative z-20 flex flex-col items-center">
-                  <div className="relative flex items-center justify-center">
-                    <div className="absolute w-32 h-32 rounded-full border border-[#963DFF]/25 animate-ping opacity-25" />
-                    <div className="absolute w-28 h-28 rounded-full bg-gradient-to-tr from-[#963DFF]/30 to-[#55A9FF]/30 blur-[28px]" />
-                    <img
-                      src="/icon-512.png"
-                      alt="Emperor Nexus Autonomous AI"
-                      className="relative z-20 w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-[0_10px_30px_rgba(150,61,255,0.5)]"
-                    />
-                  </div>
-                  <div className="mt-3 px-3 py-0.5 rounded-full bg-[#12121A]/95 border border-white/10 backdrop-blur-md shadow-lg">
-                    <span className="font-space-mono text-[10px] sm:text-[11px] font-bold text-[#C28AFF] tracking-wider uppercase">
-                      KNOWLEDGE EMBEDDING ENGINE
-                    </span>
-                  </div>
-                </div>
-
-                {/* Converging Knowledge Badges (Positioned cleanly inside bounds) */}
-                {/* 1. PDF Card (Top Left) */}
-                <div className="absolute top-14 left-4 sm:left-7 z-20 flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md hover:scale-105 transition-transform">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
-                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-inter font-bold text-white leading-none">Catalog.pdf</div>
-                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] mt-0.5">14 pages • Grounded</div>
-                  </div>
-                </div>
-
-                {/* 2. DOCX Card (Top Right) */}
-                <div className="absolute top-14 right-4 sm:right-7 z-20 flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md hover:scale-105 transition-transform">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-inter font-bold text-white leading-none">Pricing_Tiers.docx</div>
-                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] mt-0.5">Verified Knowledge</div>
-                  </div>
-                </div>
-
-                {/* 3. URL Crawler Card (Bottom Left) */}
-                <div className="absolute bottom-8 sm:bottom-10 left-4 sm:left-7 z-20 flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md hover:scale-105 transition-transform">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                    <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-inter font-bold text-white leading-none">yourbrand.com/faq</div>
-                    <div className="text-[9px] sm:text-[10px] font-space-mono text-emerald-400/90 mt-0.5 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      Live Crawler Active
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Text / CSV Card (Bottom Right) */}
-                <div className="absolute bottom-8 sm:bottom-10 right-4 sm:right-7 z-20 flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md hover:scale-105 transition-transform">
-                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-                    <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-inter font-bold text-white leading-none">Services_FAQs.txt</div>
-                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] mt-0.5">Vectorized in 5m</div>
-                  </div>
                 </div>
               </div>
 
               {/* --------------------------------------------------------------- */}
-              {/* VISUAL 02: PERSONA ENGINE (Calibrating Identity & Personality)  */}
+              {/* VISUAL 02: PERSONA ENGINE (img2.png)                           */}
               {/* --------------------------------------------------------------- */}
               <div
-                className={`absolute inset-0 p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   activeStage === 1
                     ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
                     : "opacity-0 translate-y-5 scale-95 pointer-events-none"
                 }`}
               >
-                {/* Central Subject: Official Emperor Nexus Robot Mascot */}
-                <div className="relative z-20 flex flex-col items-center">
-                  <div className="relative flex items-center justify-center">
-                    <div className="absolute w-32 h-32 rounded-full border border-[#C28AFF]/30 animate-pulse" />
-                    <div className="absolute w-28 h-28 rounded-full bg-gradient-to-tr from-[#963DFF]/35 to-[#F59E0B]/20 blur-[28px]" />
-                    <img
-                      src="/icon-512.png"
-                      alt="Emperor Nexus Persona Calibration"
-                      className="relative z-20 w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-[0_10px_30px_rgba(194,138,255,0.5)]"
-                    />
-                  </div>
-                  <div className="mt-3 px-3 py-0.5 rounded-full bg-[#12121A]/95 border border-white/10 backdrop-blur-md shadow-lg">
-                    <span className="font-space-mono text-[10px] sm:text-[11px] font-bold text-[#F59E0B] tracking-wider uppercase">
-                      AUTONOMOUS SALES PERSONA
-                    </span>
-                  </div>
-                </div>
-
-                {/* Calibration Control Elements */}
-                {/* 1. Personality Sliders (Top Left) */}
-                <div className="absolute top-14 left-4 sm:left-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md max-w-[170px] sm:max-w-[190px]">
-                  <div className="flex items-center gap-1.5 text-xs font-inter font-bold text-white mb-1.5">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#C28AFF]" />
-                    <span>Tone & Demeanor</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div>
-                      <div className="flex justify-between text-[9px] sm:text-[10px] text-[#9898A6] font-space-mono">
-                        <span>Consultative</span>
-                        <span className="text-white">95%</span>
-                      </div>
-                      <div className="w-full h-1 bg-white/10 rounded-full mt-0.5 overflow-hidden">
-                        <div className="w-[95%] h-full bg-[#C28AFF] rounded-full" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[9px] sm:text-[10px] text-[#9898A6] font-space-mono">
-                        <span>Persuasive</span>
-                        <span className="text-white">88%</span>
-                      </div>
-                      <div className="w-full h-1 bg-white/10 rounded-full mt-0.5 overflow-hidden">
-                        <div className="w-[88%] h-full bg-[#F59E0B] rounded-full" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Welcome Message (Top Right) */}
-                <div className="absolute top-14 right-4 sm:right-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md max-w-[180px] sm:max-w-[210px]">
-                  <div className="flex items-center gap-1.5 text-xs font-inter font-bold text-white mb-1">
-                    <MessageSquare className="w-3.5 h-3.5 text-[#F59E0B]" />
-                    <span>Welcome Greeting</span>
-                  </div>
-                  <p className="text-[10px] sm:text-[11px] font-inter text-[#D9D9E2] italic leading-tight">
-                    &ldquo;Hi! Looking for our custom enterprise package?&rdquo;
-                  </p>
-                  <span className="inline-block mt-1 text-[9px] font-space-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                    Active Opening
-                  </span>
-                </div>
-
-                {/* 3. Brand Theme & Colors (Bottom Left) */}
-                <div className="absolute bottom-8 sm:bottom-10 left-4 sm:left-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md">
-                  <div className="flex items-center gap-1.5 text-xs font-inter font-bold text-white mb-1.5">
-                    <Palette className="w-3.5 h-3.5 text-[#963DFF]" />
-                    <span>Brand Styling</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#963DFF] border border-white/20 shadow-sm" />
-                    <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#55A9FF] border border-white/20 shadow-sm" />
-                    <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#050507] border border-white/40 shadow-sm" />
-                    <span className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] ml-1">Deep Velvet</span>
-                  </div>
-                </div>
-
-                {/* 4. Launcher Preview (Bottom Right) */}
-                <div className="absolute bottom-8 sm:bottom-10 right-4 sm:right-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md flex items-center gap-2.5">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-[#963DFF] to-[#C28AFF] flex items-center justify-center shadow-lg">
-                    <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-inter font-bold text-white">Launcher Widget</div>
-                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6]">Squircle • Pulse</div>
-                  </div>
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {/* Subtle Ambient Glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[#C28AFF]/25 via-[#963DFF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
+                  <img
+                    src="/img2.png"
+                    alt="Shape Your Assistant"
+                    className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
+                    loading="eager"
+                  />
                 </div>
               </div>
 
