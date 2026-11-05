@@ -198,24 +198,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
                       }`}
                     />
 
-                    {/* Stage Label & Number */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`font-space-mono text-xs font-bold tracking-widest transition-colors duration-300 ${
-                          isActive ? "text-[#C28AFF]" : "text-[#9898A6]/60"
-                        }`}
-                      >
-                        {st.number} —
-                      </span>
-                      <span
-                        className={`font-space-mono text-xs font-bold tracking-widest uppercase transition-colors duration-300 ${
-                          isActive ? "text-white" : "text-[#9898A6]/70"
-                        }`}
-                      >
-                        {st.badge}
-                      </span>
-                    </div>
-
                     {/* Stage Title */}
                     <h3
                       className={`font-playfair font-bold text-base sm:text-lg lg:text-[1.28rem] tracking-normal transition-colors duration-300 ${
@@ -252,11 +234,6 @@ export default function HowItWorksSection({ onOpenTrial }) {
           {/* ================================================================= */}
           <div className="lg:col-span-7 w-full flex items-center justify-center">
             <div className="relative w-full h-[420px] sm:h-[460px] lg:h-[490px] xl:h-[510px] rounded-[24px] sm:rounded-[32px] bg-[#0B0B10]/95 border border-white/[0.08] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85)] overflow-hidden backdrop-blur-2xl flex items-center justify-center select-none">
-              {/* Technical Ghost Typographic Watermark */}
-              <span className="absolute -top-3 right-4 sm:right-6 font-space-mono font-black text-[120px] sm:text-[160px] lg:text-[190px] leading-none text-white/[0.025] select-none pointer-events-none transition-all duration-700">
-                0{activeStage + 1}
-              </span>
-
               {/* Atmospheric Radial Stage Lighting */}
               <div
                 className="absolute inset-0 pointer-events-none transition-opacity duration-700"
@@ -273,7 +250,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     style={{ backgroundColor: STAGES[activeStage].accent }}
                   />
                   <span className="font-space-mono text-[10px] sm:text-[11px] font-bold tracking-widest text-[#9898A6] uppercase">
-                    STAGE 0{activeStage + 1} • {STAGES[activeStage].badge}
+                    {STAGES[activeStage].badge}
                   </span>
                 </div>
                 <div className="hidden sm:inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-space-mono text-[#9898A6]/70">
