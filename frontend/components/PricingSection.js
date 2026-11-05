@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Check, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
+import { Check, ArrowRight, Loader2 } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -676,16 +676,7 @@ export default function PricingSection({ isAuthenticated = false, onOpenTrial })
           </div>
         </div>
 
-        {/* Bottom Guarantee Banner */}
-        <div className="relative z-30 w-full max-w-5xl mx-auto flex items-center justify-between text-[10px] sm:text-[11px] text-[#9898A6]/70 uppercase tracking-wider font-semibold pt-1 px-2">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Instant AI Activation on Every Plan</span>
-          </div>
-          <div className="text-[#C28AFF] hidden sm:block">
-            Autonomous Enterprise AI • Zero Risk
-          </div>
-        </div>
+
       </div>
     </section>
   );
