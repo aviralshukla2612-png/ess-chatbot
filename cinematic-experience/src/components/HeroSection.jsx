@@ -15,6 +15,11 @@ import {
   Bot,
 } from "lucide-react";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectIndustry }) {
   const heroRef = useRef(null);
@@ -90,16 +95,33 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
         setActiveDropdown(null);
       }
     };
+    const handleScroll = () => {
+      if (window.scrollY > 120) {
+        setActiveDropdown(null);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScroll);
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
     };
   }, []);
+
+  // Synchronize ScrollTrigger after dropdown expand/collapse animation completes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (typeof window !== "undefined") {
+        ScrollTrigger.refresh();
+      }
+    }, 520);
+    return () => clearTimeout(timer);
+  }, [activeDropdown]);
 
   // GSAP Entrance Choreography
   useEffect(() => {
@@ -303,7 +325,9 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
     <section
       id="home"
       ref={heroRef}
-      className="relative min-h-[100dvh] w-full flex flex-col justify-between items-center pt-20 pb-6 px-4 sm:px-6 md:px-8 bg-[#050507] overflow-visible"
+      className={`relative min-h-[100dvh] w-full flex flex-col justify-between items-center pt-20 pb-6 px-4 sm:px-6 md:px-8 bg-[#050507] overflow-visible transition-[margin-bottom] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[margin-bottom] ${
+        activeDropdown ? "mb-[310px] sm:mb-[265px]" : "mb-0"
+      }`}
     >
       {/* 1. Underlying Metallic Wave Background (User provided bg.png) - Clean with seamless black blend */}
       <div

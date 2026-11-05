@@ -119,16 +119,33 @@ export default function HomePage() {
         setActiveDropdown(null);
       }
     };
+    const handleScroll = () => {
+      if (window.scrollY > 120) {
+        setActiveDropdown(null);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScroll);
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
     };
   }, []);
+
+  // Synchronize ScrollTrigger after dropdown expand/collapse animation completes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (typeof window !== "undefined") {
+        ScrollTrigger.refresh();
+      }
+    }, 520);
+    return () => clearTimeout(timer);
+  }, [activeDropdown]);
 
   useEffect(() => {
     const updateIndicator = () => {
@@ -494,7 +511,9 @@ export default function HomePage() {
       {/* 2. HERO SECTION */}
       <section
         id="home"
-        className="relative min-h-[100dvh] w-full flex flex-col justify-between items-center pt-20 pb-6 px-4 sm:px-6 md:px-8 bg-[#050507] overflow-visible"
+        className={`relative min-h-[100dvh] w-full flex flex-col justify-between items-center pt-20 pb-6 px-4 sm:px-6 md:px-8 bg-[#050507] overflow-visible transition-[margin-bottom] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[margin-bottom] ${
+          activeDropdown ? "mb-[310px] sm:mb-[265px]" : "mb-0"
+        }`}
       >
         {/* User's Exact Clean Background - Pure bg.png with seamless black blend */}
         <div
