@@ -268,7 +268,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
               </div>
 
               {/* --------------------------------------------------------------- */}
-              {/* VISUAL 02: PERSONA ENGINE (img2.png)                           */}
+              {/* VISUAL 02: PERSONA ENGINE (image2.png)                         */}
               {/* --------------------------------------------------------------- */}
               <div
                 className={`absolute inset-0 p-3 sm:p-5 lg:p-6 pt-14 sm:pt-16 flex items-center justify-center transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -281,7 +281,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                   {/* Subtle Ambient Glow */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-[#C28AFF]/25 via-[#963DFF]/15 to-transparent blur-[65px] rounded-full scale-90 pointer-events-none" />
                   <img
-                    src="/img2.png"
+                    src="/image2.png"
                     alt="Shape Your Assistant"
                     className="relative z-10 max-w-full max-h-full object-contain rounded-xl sm:rounded-2xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)] transition-transform duration-500 hover:scale-[1.01]"
                     loading="eager"
