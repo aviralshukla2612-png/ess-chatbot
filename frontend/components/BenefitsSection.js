@@ -9,7 +9,6 @@ import {
   BarChart3,
   Check,
   ArrowRight,
-  TrendingUp,
   Link2,
 } from "lucide-react";
 
@@ -675,17 +674,11 @@ export default function BenefitsSection({ onOpenTrial }) {
                       </div>
                     </div>
 
-                    {/* Right: 3 Dots + Pill Badge */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <div className="flex items-center gap-1 text-white/30 px-1 py-0.5">
-                        <span className="w-1 h-1 rounded-full bg-white/40" />
-                        <span className="w-1 h-1 rounded-full bg-white/40" />
-                        <span className="w-1 h-1 rounded-full bg-white/40" />
-                      </div>
-                      <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-[#06281E]/90 border border-[#00D98B]/40 text-[#00D98B] text-[10px] sm:text-[11px] font-semibold shadow-[0_0_12px_rgba(0,217,139,0.2)]">
-                        <TrendingUp className="w-3.5 h-3.5" />
-                        <span>+42% This Week</span>
-                      </div>
+                    {/* Right: 3 Dots Menu */}
+                    <div className="flex items-center gap-1 text-white/30 px-1 py-0.5 shrink-0">
+                      <span className="w-1 h-1 rounded-full bg-white/40" />
+                      <span className="w-1 h-1 rounded-full bg-white/40" />
+                      <span className="w-1 h-1 rounded-full bg-white/40" />
                     </div>
                   </div>
 
