@@ -498,11 +498,7 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
-                          style={{ backgroundColor: indData.color }}
-                        />
+                      <div className="flex items-center">
                         <span
                           className="text-[9.5px] sm:text-[10px] font-mono tracking-wider font-semibold uppercase truncate"
                           style={{ color: indData.color }}
@@ -582,9 +578,8 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
 
                 {/* 4. Bottom Action Bar: 1-Line Info + Glowing Deploy CTA */}
                 <div className="relative z-10 mt-3 pt-2.5 border-t border-white/[0.08] flex items-center justify-between gap-3">
-                  <span className="text-[10.5px] text-[#9898A6] flex items-center gap-1.5 truncate">
-                    <Sparkles className="w-3.5 h-3.5 text-[#C28AFF] shrink-0" />
-                    <span className="truncate">Trained on your files in 5 mins</span>
+                  <span className="text-[10.5px] text-[#9898A6] truncate">
+                    Trained on your files in 5 mins
                   </span>
 
                   <button
