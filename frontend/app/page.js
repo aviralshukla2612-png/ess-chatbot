@@ -169,128 +169,56 @@ export default function HomePage() {
   const HERO_INDUSTRY_DATA = {
     "real-estate": {
       id: "real-estate",
-      title: "Real Estate & Luxury Developments",
-      badge: "24/7 Property Concierge",
-      role: "Autonomous Property Sales & Tour Booking Assistant",
+      title: "Real Estate Assistant",
       color: "#C28AFF",
-      description:
-        "Upload brochures, floor plans, pricing sheets & FAQs. Nexus answers unit layout queries, quotes pricing, qualifies buyer intent, and books VIP site viewings directly into your CRM.",
-      sampleQueries: [
-        "What are the floor plans & starting price for 3BHK penthouses?",
-        "Can I schedule a private site walkthrough this Saturday?",
-        "What are the flexible developer payment plans available?",
-      ],
-      highlights: [
-        "Grounded on Property PDFs & Layouts",
-        "VIP Viewing Schedule Booking",
-        "Instant CRM Lead Scoring",
-      ],
-      ctaText: "Deploy for Real Estate",
+      shortDesc: "Answers unit layout & pricing questions, shares floor plans, and schedules private VIP viewings into your CRM.",
+      badges: ["✦ Property PDF Grounded", "✦ VIP Tour Booking"],
+      ctaText: "Deploy",
       ctaLink: "/login?industry=real-estate",
     },
     healthcare: {
       id: "healthcare",
-      title: "Clinics & Specialized Medical Practices",
-      badge: "Clinical Intake & Navigation",
-      role: "24/7 Patient Intake & Specialist Routing Assistant",
+      title: "Healthcare Intake Assistant",
       color: "#55A9FF",
-      description:
-        "Train Nexus on medical specialties, doctor schedules, accepted insurance, and clinical FAQs. Nexus provides 24/7 patient guidance, verifies insurance eligibility, and schedules doctor consultations.",
-      sampleQueries: [
-        "Are cardiology diagnostics covered under private insurance?",
-        "How soon can I schedule an MRI consultation?",
-        "What are the prerequisites for outpatient elective surgery?",
-      ],
-      highlights: [
-        "Verified Medical FAQs & Specialty Routing",
-        "Insurance Network Eligibility Check",
-        "Priority Appointment Scheduling",
-      ],
-      ctaText: "Deploy for Healthcare",
+      shortDesc: "24/7 patient intake, verified medical FAQs, insurance network eligibility checks, and doctor consultation bookings.",
+      badges: ["✦ Clinical Intake Routing", "✦ Insurance Network Check"],
+      ctaText: "Deploy",
       ctaLink: "/login?industry=healthcare",
     },
     education: {
       id: "education",
-      title: "Universities & Academic Institutions",
-      badge: "Admissions & Counseling",
-      role: "24/7 Admissions Guidance & Student Enrollment Assistant",
+      title: "Admissions Counselor",
       color: "#C28AFF",
-      description:
-        "Ingest degree prospectuses, fee structures, prerequisites, and scholarship criteria. Nexus guides prospective applicants through degree choices, calculates eligibility, and captures student leads.",
-      sampleQueries: [
-        "What are the application deadlines and tuition for Fall 2026?",
-        "Are merit-based scholarships available for my course?",
-        "Can I transfer postgraduate credits from an accredited college?",
-      ],
-      highlights: [
-        "Prospectus & Academic Handbook Ingestion",
-        "Automated Fee & Scholarship Calculator",
-        "High-Intent Student Enrollment Capture",
-      ],
-      ctaText: "Deploy for Education",
+      shortDesc: "Guides prospective students on degree prerequisites, tuition fees, scholarship criteria, and captures enrollment leads.",
+      badges: ["✦ Prospectus Ingestion", "✦ Student Lead Capture"],
+      ctaText: "Deploy",
       ctaLink: "/login?industry=education",
     },
     hospitality: {
       id: "hospitality",
-      title: "Luxury Resorts, Hotels & Dining",
-      badge: "Direct Suite & Table Booking",
-      role: "24/7 Digital Concierge & Reservation Engine",
+      title: "Guest Concierge",
       color: "#FF713D",
-      description:
-        "Connect room categories, dining menus, spa packages, and amenities. Nexus assists travelers 24/7 with room recommendations, restaurant table reservations, and special event bookings.",
-      sampleQueries: [
-        "Can we reserve an overwater pool villa with late checkout?",
-        "What dining options and vegan tasting menus are available?",
-        "Are airport chauffeur and spa packages included?",
-      ],
-      highlights: [
-        "24/7 Room & Amenity Instant Discovery",
-        "Direct Dining & Event Reservation Capture",
-        "Multilingual Guest Concierge",
-      ],
-      ctaText: "Deploy for Hospitality",
+      shortDesc: "Handles 24/7 suite reservations, dining menus, local itineraries, and bespoke guest inquiries with zero delay.",
+      badges: ["✦ Direct Suite Booking", "✦ 24/7 Digital Concierge"],
+      ctaText: "Deploy",
       ctaLink: "/login?industry=hospitality",
     },
     retail: {
       id: "retail",
-      title: "E-Commerce & Omnichannel Retail Brands",
-      badge: "Personal Shopper & Support",
-      role: "Autonomous Shopping Assistant & Order Support Agent",
+      title: "Shopping Assistant",
       color: "#22C8F2",
-      description:
-        "Sync product catalogs, sizing charts, inventory, and return policies. Nexus guides online shoppers, recommends matching products, looks up real-time shipping status, and handles returns automatically.",
-      sampleQueries: [
-        "Where is my expedited shipment and when will it arrive?",
-        "Can you recommend a premium gift under $100 for a runner?",
-        "What is your exchange policy for international orders?",
-      ],
-      highlights: [
-        "Real-Time Order Tracking & Sizing Guide",
-        "Catalog-Grounded Product Recommendations",
-        "Automated Return & Exchange Support",
-      ],
-      ctaText: "Deploy for Retail",
+      shortDesc: "Recommends products from your catalog, tracks live orders, and resolves returns with zero wait times.",
+      badges: ["✦ Live Order Tracking", "✦ Product Recommendations"],
+      ctaText: "Deploy",
       ctaLink: "/login?industry=retail",
     },
     "and-more": {
       id: "and-more",
-      title: "Universal AI Assistant for Any Business",
-      badge: "Universal 1-Line Embed",
-      role: "Autonomous Enterprise Sales & Support AI",
+      title: "Custom AI for Any Site",
       color: "#A494F4",
-      description:
-        "Upload any business PDFs, Word docs, CSVs, or enter your website URL. In under 5 minutes, Nexus learns your business with zero hallucinations and embeds on WordPress, Shopify, Webflow, or custom sites.",
-      sampleQueries: [
-        "How do I embed Nexus on my website with 1 line of code?",
-        "Can I customize the assistant avatar, colors, and welcome message?",
-        "Does Nexus synchronize with live website updates automatically?",
-      ],
-      highlights: [
-        "5-Minute Setup with Zero Coding Required",
-        "Universal Single-Line Script Embed",
-        "Connects to PDF, DOCX, TXT, CSV & Live URLs",
-      ],
-      ctaText: "Build Your Assistant",
+      shortDesc: "Upload company PDFs, Word docs, or website URLs to deploy an autonomous sales assistant in 5 minutes.",
+      badges: ["✦ 1-Line Universal Embed", "✦ 99.8% Grounded Accuracy"],
+      ctaText: "Build Now",
       ctaLink: "/login",
     },
   };
@@ -482,7 +410,7 @@ export default function HomePage() {
       {/* 2. HERO SECTION */}
       <section
         id="home"
-        className="relative h-screen min-h-[600px] max-h-screen w-full flex flex-col justify-between items-center pt-20 pb-4 px-4 sm:px-6 md:px-8 overflow-hidden bg-[#050507]"
+        className="relative min-h-[100dvh] w-full flex flex-col justify-between items-center pt-20 pb-6 px-4 sm:px-6 md:px-8 bg-[#050507] overflow-visible"
       >
         {/* User's Exact Clean Background - Pure bg.png with seamless black blend */}
         <div
@@ -550,128 +478,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Floating Glass Pill Bar with Dropdown Effect */}
-        <div ref={pillBarRef} className="relative z-30 w-full max-w-5xl mx-auto mb-3 sm:mb-5 px-3 sm:px-4 shrink-0">
-          {/* =================================================================== */}
-          {/* THE DROPDOWN PANEL (Smooth slide-down dropdown effect above pill)   */}
-          {/* =================================================================== */}
-          {activeDropdown && HERO_INDUSTRY_DATA[activeDropdown] && (() => {
-            const indData = HERO_INDUSTRY_DATA[activeDropdown];
-            const activeIndObj = industriesHero.find((i) => i.id === activeDropdown);
-            const ActiveIcon = activeIndObj ? activeIndObj.icon : Building2;
-
-            return (
-              <div
-                className="absolute bottom-full mb-3 left-3 right-3 sm:left-4 sm:right-4 max-w-3xl mx-auto z-40 animate-dropdown-slide-down origin-bottom"
-              >
-                <div className="relative bg-[#0E0E18]/95 backdrop-blur-2xl border border-white/[0.14] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[0_24px_80px_rgba(0,0,0,0.9),0_0_40px_rgba(150,61,255,0.2)] text-white overflow-hidden">
-                  {/* Top neon glow accent line */}
-                  <div
-                    className="absolute top-0 inset-x-0 h-[2px] opacity-80"
-                    style={{
-                      backgroundImage: `linear-gradient(to right, transparent, ${indData.color}, transparent)`,
-                    }}
-                  />
-
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                        style={{
-                          backgroundColor: `${indData.color}25`,
-                          border: `1px solid ${indData.color}60`,
-                          boxShadow: `0 0 15px ${indData.color}35`,
-                        }}
-                      >
-                        <ActiveIcon className="w-4 h-4" style={{ color: indData.color }} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-bold text-sm sm:text-base text-white">
-                            {indData.title}
-                          </h4>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            <span>Nexus AI Live</span>
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#9898A6]">
-                          {indData.role}
-                        </p>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setActiveDropdown(null)}
-                      className="w-7 h-7 rounded-full border border-white/10 bg-white/5 hover:bg-white/15 flex items-center justify-center text-[#9898A6] hover:text-white transition-colors cursor-pointer shrink-0"
-                      aria-label="Close"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {/* Body: Site-specific Capability */}
-                  <p className="mt-2.5 text-xs sm:text-[13px] text-[#D9D9E2] leading-relaxed">
-                    {indData.description}
-                  </p>
-
-                  {/* Live Customer Questions Solved by Nexus */}
-                  <div className="mt-3">
-                    <div className="text-[10px] uppercase tracking-wider font-semibold text-[#9898A6] mb-1.5 flex items-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-[#C28AFF]" />
-                      <span>Live Website Questions Handled Autonomously:</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {indData.sampleQueries.map((query, qIdx) => (
-                        <div
-                          key={qIdx}
-                          className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-[#C5C5D2] flex items-start gap-1.5 font-mono"
-                        >
-                          <span className="text-[#C28AFF] font-bold">›</span>
-                          <span className="line-clamp-1">{query}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Core Value Badges */}
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {indData.highlights.map((h, hIdx) => (
-                      <span
-                        key={hIdx}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] sm:text-[11px] font-medium bg-white/[0.03] border border-white/[0.08] text-[#D9D9E2]"
-                      >
-                        <span>{h}</span>
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Footer Actions */}
-                  <div className="mt-3.5 pt-2.5 border-t border-white/[0.08] flex items-center justify-between gap-2 flex-wrap">
-                    <a
-                      href="#industries"
-                      onClick={() => setActiveDropdown(null)}
-                      className="text-xs text-[#9898A6] hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>Explore all industries deep-dive</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </a>
-
-                    <Link
-                      href={isAuthenticated ? "/bots/create" : indData.ctaLink}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white btn-primary-gradient cursor-pointer shadow-md hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <span>{isAuthenticated ? "Create Assistant" : indData.ctaText}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
+        {/* Floating Glass Pill Bar with Down-Side Curtain Card */}
+        <div ref={pillBarRef} className="relative z-30 w-full max-w-5xl mx-auto mb-2 sm:mb-4 px-3 sm:px-4 shrink-0 flex flex-col items-center">
           {/* Pill Capsule */}
           <div className="w-full overflow-x-auto no-scrollbar scrollbar-none py-1 flex justify-start sm:justify-center items-center touch-pan-x overscroll-x-contain px-2 sm:px-0">
             <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-2 rounded-full bg-[#12121A]/85 backdrop-blur-xl border border-white/[0.08] shadow-[0_12px_36px_rgba(0,0,0,0.6)] shrink-0 min-w-max">
@@ -709,6 +517,92 @@ export default function HomePage() {
               })}
             </div>
           </div>
+
+          {/* =================================================================== */}
+          {/* DOWN-SIDE CURTAIN CARD (Short, little information, curtain effect)  */}
+          {/* =================================================================== */}
+          {activeDropdown && HERO_INDUSTRY_DATA[activeDropdown] && (() => {
+            const indData = HERO_INDUSTRY_DATA[activeDropdown];
+            const activeIndObj = industriesHero.find((i) => i.id === activeDropdown);
+            const ActiveIcon = activeIndObj ? activeIndObj.icon : Building2;
+
+            return (
+              <div className="w-full max-w-xl mx-auto mt-2 sm:mt-2.5 origin-top animate-curtain-down overflow-hidden">
+                <div className="relative w-full bg-[#0E0E18]/95 backdrop-blur-2xl border border-white/[0.12] rounded-2xl p-3 sm:p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(150,61,255,0.15)] text-white">
+                  {/* Top curtain accent trim */}
+                  <div
+                    className="absolute top-0 inset-x-0 h-[2px] opacity-90"
+                    style={{
+                      backgroundImage: `linear-gradient(to right, transparent, ${indData.color}, transparent)`,
+                    }}
+                  />
+
+                  <div className="flex items-start justify-between gap-3">
+                    {/* Left: Icon + Title + 1 Line Short Info */}
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                        style={{
+                          backgroundColor: `${indData.color}20`,
+                          border: `1px solid ${indData.color}50`,
+                        }}
+                      >
+                        <ActiveIcon className="w-3.5 h-3.5" style={{ color: indData.color }} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-xs sm:text-sm text-white truncate">
+                            {indData.title}
+                          </h4>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        </div>
+
+                        <p className="mt-0.5 text-[11px] sm:text-xs text-[#C5C5D2] leading-snug line-clamp-2">
+                          {indData.shortDesc}
+                        </p>
+
+                        {/* 2 Micro Badges */}
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                          {indData.badges.map((badge, bIdx) => (
+                            <span
+                              key={bIdx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-medium bg-white/[0.04] border border-white/[0.08] text-[#D9D9E2]"
+                            >
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Close + CTA Button */}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setActiveDropdown(null)}
+                        className="w-5 h-5 rounded-full border border-white/10 bg-white/5 hover:bg-white/15 flex items-center justify-center text-[#9898A6] hover:text-white transition-colors cursor-pointer"
+                        aria-label="Close"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+
+                      <Link
+                        href={isAuthenticated ? "/bots/create" : indData.ctaLink}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white btn-primary-gradient cursor-pointer shadow-sm hover:scale-105 active:scale-95 transition-all whitespace-nowrap mt-auto"
+                      >
+                        <span>{indData.ctaText}</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 
