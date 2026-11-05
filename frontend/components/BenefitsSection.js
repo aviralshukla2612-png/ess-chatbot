@@ -302,25 +302,25 @@ export default function BenefitsSection({ onOpenTrial }) {
           className="text-center max-w-3xl mx-auto shrink-0 mb-3 sm:mb-4 will-change-transform"
         >
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 mb-1.5 sm:mb-2">
+          <div className="inline-flex items-center gap-2 mb-2 sm:mb-2.5">
             <span className="w-5 sm:w-8 h-px bg-white/20" />
-            <span className="text-[10px] sm:text-xs font-mono font-bold tracking-[0.25em] uppercase text-[#9898A6]">
+            <span className="text-xs sm:text-sm font-mono font-bold tracking-[0.25em] uppercase text-[#9898A6]">
               EMPEROR NEXUS
             </span>
             <span className="w-5 sm:w-8 h-px bg-white/20" />
           </div>
 
           {/* Main Headline */}
-          <h2 className="font-sans font-black text-xl sm:text-2xl md:text-3xl lg:text-[2.25rem] tracking-tight uppercase leading-[1.1] text-white">
+          <h2 className="font-display font-extrabold text-2xl sm:text-3xl md:text-4xl lg:text-[2.65rem] tracking-tight uppercase leading-[1.1] text-white">
             DON&apos;T LET VALUABLE{" "}
-            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#C28AFF] drop-shadow-[0_0_20px_rgba(150,61,255,0.45)]">
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#C28AFF] drop-shadow-[0_0_24px_rgba(150,61,255,0.45)]">
               CONVERSATIONS
             </span>{" "}
             SLIP AWAY.
           </h2>
 
           {/* Supporting Description */}
-          <p className="mt-1.5 sm:mt-2 text-xs sm:text-[13px] md:text-sm text-[#9898A6] max-w-xl mx-auto leading-relaxed font-normal">
+          <p className="mt-2.5 sm:mt-3 text-sm sm:text-base md:text-lg text-[#C5C5D2] max-w-2xl mx-auto leading-relaxed font-normal">
             Your website should be ready to answer, qualify, and capture enterprise interest — even when your sales team is unavailable.
           </p>
         </div>
@@ -338,21 +338,21 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Left: Editorial Text Block */}
             <div className="w-full lg:w-[42%] text-left pl-2 sm:pl-4 lg:pl-6">
-              <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                <span className="font-mono text-xs sm:text-sm font-bold tracking-wider text-[#9898A6]">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <span className="font-mono text-xs sm:text-sm font-bold tracking-widest text-[#9898A6]/80">
                   01 —
                 </span>
-                <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase text-[#00D98B]">
+                <span className="text-xs sm:text-sm font-mono font-bold tracking-widest uppercase text-[#00D98B]">
                   CUSTOMER ENGAGEMENT
                 </span>
               </div>
-              <h3 className="font-sans font-black text-xl sm:text-2xl lg:text-3xl tracking-tight text-white uppercase leading-tight">
+              <h3 className="font-display font-extrabold text-2xl sm:text-4xl md:text-5xl lg:text-[2.85rem] xl:text-[3.25rem] tracking-tight text-white uppercase leading-[1.08]">
                 NEVER MISS A{" "}
-                <span className="text-[#00D98B] drop-shadow-[0_0_20px_rgba(0,217,139,0.35)]">
+                <span className="text-[#00D98B] drop-shadow-[0_0_24px_rgba(0,217,139,0.45)]">
                   CONVERSATION.
                 </span>
               </h3>
-              <p className="mt-2 text-xs sm:text-sm text-[#9898A6] max-w-md leading-relaxed font-normal">
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg lg:text-xl text-[#C5C5D2] max-w-lg leading-relaxed font-normal">
                 Answer customer questions instantly using your approved business information, even outside working hours.
               </p>
             </div>
@@ -437,21 +437,21 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Right: Editorial Text Block */}
             <div className="w-full lg:w-[42%] text-left lg:text-right pr-2 sm:pr-4 lg:pr-6">
-              <div className="flex items-center lg:justify-end gap-2 mb-1.5 sm:mb-2">
-                <span className="font-mono text-xs sm:text-sm font-bold tracking-wider text-[#9898A6]">
+              <div className="flex items-center lg:justify-end gap-2 mb-2 sm:mb-3">
+                <span className="font-mono text-xs sm:text-sm font-bold tracking-widest text-[#9898A6]/80">
                   02 —
                 </span>
-                <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase text-[#C28AFF]">
+                <span className="text-xs sm:text-sm font-mono font-bold tracking-widest uppercase text-[#C28AFF]">
                   INTELLIGENT AUTOMATION
                 </span>
               </div>
-              <h3 className="font-sans font-black text-xl sm:text-2xl lg:text-3xl tracking-tight text-white uppercase leading-tight">
+              <h3 className="font-display font-extrabold text-2xl sm:text-4xl md:text-5xl lg:text-[2.85rem] xl:text-[3.25rem] tracking-tight text-white uppercase leading-[1.08]">
                 LESS REPETITION.{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] to-[#963DFF] drop-shadow-[0_0_20px_rgba(150,61,255,0.35)]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#A855F7] to-[#963DFF] drop-shadow-[0_0_25px_rgba(150,61,255,0.45)]">
                   MORE FOCUS.
                 </span>
               </h3>
-              <p className="mt-2 text-xs sm:text-sm text-[#9898A6] max-w-md lg:ml-auto leading-relaxed font-normal">
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg lg:text-xl text-[#C5C5D2] max-w-lg lg:ml-auto leading-relaxed font-normal">
                 Reduce repetitive customer interactions by allowing your assistant to answer questions about services, pricing, packages and business details.
               </p>
             </div>
@@ -561,21 +561,21 @@ export default function BenefitsSection({ onOpenTrial }) {
           >
             {/* Left: Editorial Text Block */}
             <div className="w-full lg:w-[42%] text-left pl-2 sm:pl-4 lg:pl-6">
-              <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                <span className="font-mono text-xs sm:text-sm font-bold tracking-wider text-[#9898A6]">
+              <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                <span className="font-mono text-xs sm:text-sm font-bold tracking-widest text-[#9898A6]/80">
                   03 —
                 </span>
-                <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider uppercase text-[#55A9FF]">
+                <span className="text-xs sm:text-sm font-mono font-bold tracking-widest uppercase text-[#55A9FF]">
                   ENQUIRY VISIBILITY
                 </span>
               </div>
-              <h3 className="font-sans font-black text-xl sm:text-2xl lg:text-3xl tracking-tight text-white uppercase leading-tight">
+              <h3 className="font-display font-extrabold text-2xl sm:text-4xl md:text-5xl lg:text-[2.85rem] xl:text-[3.25rem] tracking-tight text-white uppercase leading-[1.08]">
                 SEE WHAT YOUR{" "}
-                <span className="text-[#55A9FF] drop-shadow-[0_0_20px_rgba(85,169,255,0.35)]">
+                <span className="text-[#55A9FF] drop-shadow-[0_0_25px_rgba(85,169,255,0.45)]">
                   CUSTOMERS NEED.
                 </span>
               </h3>
-              <p className="mt-2 text-xs sm:text-sm text-[#9898A6] max-w-md leading-relaxed font-normal">
+              <p className="mt-3 sm:mt-4 text-base sm:text-lg lg:text-xl text-[#C5C5D2] max-w-lg leading-relaxed font-normal">
                 View customer conversations and enquiries through your business panel, helping your team understand what visitors are looking for in real-time.
               </p>
             </div>

@@ -79,12 +79,12 @@ export default function LoginPage() {
         setSelectedIndustry(ind);
         try {
           localStorage.setItem("nexus_selected_industry", ind);
-        } catch (e) {}
+        } catch (e) { }
       } else {
         try {
           const stored = localStorage.getItem("nexus_selected_industry");
           if (stored) setSelectedIndustry(stored);
-        } catch (e) {}
+        } catch (e) { }
       }
       const tab = params.get("tab");
       if (tab === "register") {
@@ -137,7 +137,7 @@ export default function LoginPage() {
       if (!password) throw new Error("Password is required");
 
       const isPlatformAdmin = email.trim().toLowerCase() === "admin@emperorsmartsolutions.com";
-      
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -242,11 +242,10 @@ export default function LoginPage() {
                 setActiveTab("login");
                 setErrorMessage("");
               }}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === "login"
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === "login"
                   ? "bg-[#963DFF] text-white shadow-[0_0_20px_rgba(150,61,255,0.45)]"
                   : "text-[#9898A6] hover:text-white"
-              }`}
+                }`}
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Sign In</span>
@@ -257,11 +256,10 @@ export default function LoginPage() {
                 setActiveTab("register");
                 setErrorMessage("");
               }}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === "register"
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === "register"
                   ? "bg-[#963DFF] text-white shadow-[0_0_20px_rgba(150,61,255,0.45)]"
                   : "text-[#9898A6] hover:text-white"
-              }`}
+                }`}
             >
               <User className="w-3.5 h-3.5" />
               <span>Register</span>
@@ -393,8 +391,8 @@ export default function LoginPage() {
                     ? "Creating Workspace..."
                     : "Signing In..."
                   : activeTab === "register"
-                  ? "Create Organization & Continue"
-                  : "Sign In to Workspace"}
+                    ? "Create Organization & Continue"
+                    : "Sign In to Workspace"}
               </span>
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -417,8 +415,8 @@ export default function LoginPage() {
                 selectedPlan
                   ? `/api/auth/google?redirect=${encodeURIComponent(`/billing?plan=${selectedPlan}&checkout=true`)}`
                   : redirectPath
-                  ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}`
-                  : "/api/auth/google"
+                    ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}`
+                    : "/api/auth/google"
               }
               className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-white/10 bg-[#0A0A0E] hover:bg-[#121218] hover:border-white/20 transition-all cursor-pointer text-xs font-semibold text-white group"
             >

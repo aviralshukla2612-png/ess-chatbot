@@ -24,7 +24,7 @@
 body {
   background: #050507 !important;
   color: #F5F5F7 !important;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -224,6 +224,7 @@ body::-webkit-scrollbar {
   --gradient-nexus-primary: linear-gradient(135deg, #963DFF 0%, #7928CA 45%, #55A9FF 100%);
   --font-bebas: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
   --font-syne: 'Syne', sans-serif;
+  --font-jakarta: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .font-headline {
@@ -233,6 +234,11 @@ body::-webkit-scrollbar {
 
 .font-display {
   font-family: var(--font-syne);
+}
+
+.font-sans,
+.font-body {
+  font-family: var(--font-jakarta);
 }
 
 .nexus-grid-overlay {
