@@ -156,20 +156,20 @@ export default function HowItWorksSection({ onOpenTrial }) {
             <div className="mb-4 sm:mb-6">
               <div className="inline-flex items-center gap-2 mb-2 sm:mb-2.5">
                 <span className="w-5 h-px bg-white/20" />
-                <span className="text-[11px] font-mono font-bold tracking-[0.25em] uppercase text-[#963DFF]">
+                <span className="text-[11px] font-space-mono font-bold tracking-[0.25em] uppercase text-[#963DFF]">
                   PROCESS
                 </span>
                 <span className="w-5 h-px bg-white/20" />
               </div>
 
-              <h2 className="font-sans font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-tight uppercase leading-[1.14] text-white">
+              <h2 className="font-playfair font-bold text-xl sm:text-2xl md:text-3xl lg:text-[2.1rem] xl:text-[2.35rem] tracking-normal uppercase leading-[1.14] text-white">
                 FROM RAW DOCUMENTS TO{" "}
                 <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#55A9FF] drop-shadow-[0_0_20px_rgba(150,61,255,0.4)]">
                   AUTONOMOUS SALES
                 </span>{" "}
                 IN 5 MINUTES.
               </h2>
-              <p className="mt-2 text-xs sm:text-[13px] text-[#9898A6] leading-relaxed font-normal max-w-md">
+              <p className="mt-2 text-xs sm:text-[13px] text-[#9898A6] leading-relaxed font-inter font-normal max-w-md">
                 No machine learning engineers, vector database setups, or prompt writing required.
               </p>
             </div>
@@ -201,14 +201,14 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     {/* Stage Label & Number */}
                     <div className="flex items-center gap-2 mb-1">
                       <span
-                        className={`font-mono text-xs font-bold tracking-widest transition-colors duration-300 ${
+                        className={`font-space-mono text-xs font-bold tracking-widest transition-colors duration-300 ${
                           isActive ? "text-[#C28AFF]" : "text-[#9898A6]/60"
                         }`}
                       >
                         {st.number} —
                       </span>
                       <span
-                        className={`font-mono text-xs font-bold tracking-widest uppercase transition-colors duration-300 ${
+                        className={`font-space-mono text-xs font-bold tracking-widest uppercase transition-colors duration-300 ${
                           isActive ? "text-white" : "text-[#9898A6]/70"
                         }`}
                       >
@@ -218,7 +218,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
                     {/* Stage Title */}
                     <h3
-                      className={`font-sans font-bold text-sm sm:text-base lg:text-lg tracking-tight transition-colors duration-300 ${
+                      className={`font-playfair font-bold text-base sm:text-lg lg:text-[1.28rem] tracking-normal transition-colors duration-300 ${
                         isActive
                           ? "text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.25)]"
                           : "text-[#9898A6] group-hover:text-white"
@@ -236,7 +236,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                       }`}
                     >
                       <div className="overflow-hidden">
-                        <p className="text-xs text-[#9898A6] leading-relaxed font-normal">
+                        <p className="text-xs text-[#9898A6] leading-relaxed font-inter font-normal">
                           {st.description}
                         </p>
                       </div>
@@ -253,7 +253,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
           <div className="lg:col-span-7 w-full flex items-center justify-center">
             <div className="relative w-full h-[420px] sm:h-[460px] lg:h-[490px] xl:h-[510px] rounded-[24px] sm:rounded-[32px] bg-[#0B0B10]/95 border border-white/[0.08] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.85)] overflow-hidden backdrop-blur-2xl flex items-center justify-center select-none">
               {/* Technical Ghost Typographic Watermark */}
-              <span className="absolute -top-3 right-4 sm:right-6 font-mono font-black text-[120px] sm:text-[160px] lg:text-[190px] leading-none text-white/[0.025] select-none pointer-events-none transition-all duration-700">
+              <span className="absolute -top-3 right-4 sm:right-6 font-space-mono font-black text-[120px] sm:text-[160px] lg:text-[190px] leading-none text-white/[0.025] select-none pointer-events-none transition-all duration-700">
                 0{activeStage + 1}
               </span>
 
@@ -272,11 +272,11 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     className="w-1.5 h-1.5 rounded-full animate-pulse"
                     style={{ backgroundColor: STAGES[activeStage].accent }}
                   />
-                  <span className="font-mono text-[10px] sm:text-[11px] font-bold tracking-widest text-[#9898A6] uppercase">
+                  <span className="font-space-mono text-[10px] sm:text-[11px] font-bold tracking-widest text-[#9898A6] uppercase">
                     STAGE 0{activeStage + 1} • {STAGES[activeStage].badge}
                   </span>
                 </div>
-                <div className="hidden sm:inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono text-[#9898A6]/70">
+                <div className="hidden sm:inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-space-mono text-[#9898A6]/70">
                   <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
                   <span>EMPEROR NEXUS RUNTIME</span>
                 </div>
@@ -351,7 +351,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     />
                   </div>
                   <div className="mt-3 px-3 py-0.5 rounded-full bg-[#12121A]/95 border border-white/10 backdrop-blur-md shadow-lg">
-                    <span className="font-mono text-[10px] sm:text-[11px] font-bold text-[#C28AFF] tracking-wider uppercase">
+                    <span className="font-space-mono text-[10px] sm:text-[11px] font-bold text-[#C28AFF] tracking-wider uppercase">
                       KNOWLEDGE EMBEDDING ENGINE
                     </span>
                   </div>
@@ -364,8 +364,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white leading-none">Catalog.pdf</div>
-                    <div className="text-[9px] sm:text-[10px] font-mono text-[#9898A6] mt-0.5">14 pages • Grounded</div>
+                    <div className="text-xs font-inter font-bold text-white leading-none">Catalog.pdf</div>
+                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] mt-0.5">14 pages • Grounded</div>
                   </div>
                 </div>
 
@@ -375,8 +375,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white leading-none">Pricing_Tiers.docx</div>
-                    <div className="text-[9px] sm:text-[10px] font-mono text-[#9898A6] mt-0.5">Verified Knowledge</div>
+                    <div className="text-xs font-inter font-bold text-white leading-none">Pricing_Tiers.docx</div>
+                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] mt-0.5">Verified Knowledge</div>
                   </div>
                 </div>
 
@@ -386,8 +386,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white leading-none">yourbrand.com/faq</div>
-                    <div className="text-[9px] sm:text-[10px] font-mono text-emerald-400/90 mt-0.5 flex items-center gap-1">
+                    <div className="text-xs font-inter font-bold text-white leading-none">yourbrand.com/faq</div>
+                    <div className="text-[9px] sm:text-[10px] font-space-mono text-emerald-400/90 mt-0.5 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       Live Crawler Active
                     </div>
@@ -400,8 +400,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white leading-none">Services_FAQs.txt</div>
-                    <div className="text-[9px] sm:text-[10px] font-mono text-[#9898A6] mt-0.5">Vectorized in 5m</div>
+                    <div className="text-xs font-inter font-bold text-white leading-none">Services_FAQs.txt</div>
+                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] mt-0.5">Vectorized in 5m</div>
                   </div>
                 </div>
               </div>
@@ -428,7 +428,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     />
                   </div>
                   <div className="mt-3 px-3 py-0.5 rounded-full bg-[#12121A]/95 border border-white/10 backdrop-blur-md shadow-lg">
-                    <span className="font-mono text-[10px] sm:text-[11px] font-bold text-[#F59E0B] tracking-wider uppercase">
+                    <span className="font-space-mono text-[10px] sm:text-[11px] font-bold text-[#F59E0B] tracking-wider uppercase">
                       AUTONOMOUS SALES PERSONA
                     </span>
                   </div>
@@ -437,13 +437,13 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 {/* Calibration Control Elements */}
                 {/* 1. Personality Sliders (Top Left) */}
                 <div className="absolute top-14 left-4 sm:left-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md max-w-[170px] sm:max-w-[190px]">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white mb-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-inter font-bold text-white mb-1.5">
                     <SlidersHorizontal className="w-3.5 h-3.5 text-[#C28AFF]" />
                     <span>Tone & Demeanor</span>
                   </div>
                   <div className="space-y-1">
                     <div>
-                      <div className="flex justify-between text-[9px] sm:text-[10px] text-[#9898A6] font-mono">
+                      <div className="flex justify-between text-[9px] sm:text-[10px] text-[#9898A6] font-space-mono">
                         <span>Consultative</span>
                         <span className="text-white">95%</span>
                       </div>
@@ -452,7 +452,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                       </div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-[9px] sm:text-[10px] text-[#9898A6] font-mono">
+                      <div className="flex justify-between text-[9px] sm:text-[10px] text-[#9898A6] font-space-mono">
                         <span>Persuasive</span>
                         <span className="text-white">88%</span>
                       </div>
@@ -465,21 +465,21 @@ export default function HowItWorksSection({ onOpenTrial }) {
 
                 {/* 2. Welcome Message (Top Right) */}
                 <div className="absolute top-14 right-4 sm:right-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md max-w-[180px] sm:max-w-[210px]">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white mb-1">
+                  <div className="flex items-center gap-1.5 text-xs font-inter font-bold text-white mb-1">
                     <MessageSquare className="w-3.5 h-3.5 text-[#F59E0B]" />
                     <span>Welcome Greeting</span>
                   </div>
-                  <p className="text-[10px] sm:text-[11px] text-[#D9D9E2] italic leading-tight">
+                  <p className="text-[10px] sm:text-[11px] font-inter text-[#D9D9E2] italic leading-tight">
                     &ldquo;Hi! Looking for our custom enterprise package?&rdquo;
                   </p>
-                  <span className="inline-block mt-1 text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                  <span className="inline-block mt-1 text-[9px] font-space-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
                     Active Opening
                   </span>
                 </div>
 
                 {/* 3. Brand Theme & Colors (Bottom Left) */}
                 <div className="absolute bottom-8 sm:bottom-10 left-4 sm:left-7 z-20 p-2.5 sm:p-3 rounded-xl bg-[#12121A]/95 border border-white/10 shadow-xl backdrop-blur-md">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white mb-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-inter font-bold text-white mb-1.5">
                     <Palette className="w-3.5 h-3.5 text-[#963DFF]" />
                     <span>Brand Styling</span>
                   </div>
@@ -487,7 +487,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#963DFF] border border-white/20 shadow-sm" />
                     <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#55A9FF] border border-white/20 shadow-sm" />
                     <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-[#050507] border border-white/40 shadow-sm" />
-                    <span className="text-[9px] sm:text-[10px] font-mono text-[#9898A6] ml-1">Deep Velvet</span>
+                    <span className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] ml-1">Deep Velvet</span>
                   </div>
                 </div>
 
@@ -497,8 +497,8 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">Launcher Widget</div>
-                    <div className="text-[9px] sm:text-[10px] font-mono text-[#9898A6]">Squircle • Pulse</div>
+                    <div className="text-xs font-inter font-bold text-white">Launcher Widget</div>
+                    <div className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6]">Squircle • Pulse</div>
                   </div>
                 </div>
               </div>
@@ -525,7 +525,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     {/* URL Bar */}
                     <div className="flex-1 mx-2 h-4 sm:h-5 bg-[#050507] rounded-md border border-white/10 px-2 flex items-center gap-1.5">
                       <Lock className="w-2.5 h-2.5 text-[#55A9FF]" />
-                      <span className="text-[9px] sm:text-[10px] font-mono text-[#9898A6] truncate">
+                      <span className="text-[9px] sm:text-[10px] font-space-mono text-[#9898A6] truncate">
                         https://yourcompany.com
                       </span>
                     </div>
@@ -546,16 +546,16 @@ export default function HowItWorksSection({ onOpenTrial }) {
                       <div className="p-2 sm:p-2.5 rounded-xl bg-[#12121A] border border-white/15 shadow-xl max-w-[200px]">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[9px] sm:text-[10px] font-mono font-bold text-white">Emperor Nexus AI</span>
+                          <span className="text-[9px] sm:text-[10px] font-space-mono font-bold text-white">Emperor Nexus AI</span>
                         </div>
-                        <p className="text-[10px] text-[#D9D9E2] leading-tight">
+                        <p className="text-[10px] font-inter text-[#D9D9E2] leading-tight">
                           &ldquo;VIP demo scheduled for Thursday 2 PM. Confirmation sent!&rdquo;
                         </p>
                       </div>
 
                       {/* Official Mascot Avatar Launcher Button */}
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono text-[9px] border border-emerald-500/20">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-space-mono text-[9px] border border-emerald-500/20">
                           24/7 Live
                         </span>
                         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-[#963DFF] to-[#55A9FF] p-[2px] shadow-lg hover:scale-105 transition-transform cursor-pointer">
@@ -578,11 +578,11 @@ export default function HowItWorksSection({ onOpenTrial }) {
                     <Code2 className="w-3.5 h-3.5" />
                   </div>
                   <div className="overflow-hidden">
-                    <div className="text-[10px] sm:text-[11px] font-bold text-white flex items-center gap-1.5">
+                    <div className="text-[10px] sm:text-[11px] font-inter font-bold text-white flex items-center gap-1.5">
                       <span>1-Line Script Integration</span>
-                      <span className="text-[8px] sm:text-[9px] font-mono text-emerald-400">Zero Dependencies</span>
+                      <span className="text-[8px] sm:text-[9px] font-space-mono text-emerald-400">Zero Dependencies</span>
                     </div>
-                    <code className="text-[9px] sm:text-[10px] font-mono text-[#55A9FF] block truncate mt-0.5">
+                    <code className="text-[9px] sm:text-[10px] font-space-mono text-[#55A9FF] block truncate mt-0.5">
                       &lt;script src=&quot;https://nexus.ai/widget.js&quot;&gt;&lt;/script&gt;
                     </code>
                   </div>
