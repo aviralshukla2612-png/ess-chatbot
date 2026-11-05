@@ -315,22 +315,19 @@ export default function BenefitsSection({ onOpenTrial }) {
               </p>
             </div>
 
-            {/* Right: Floating Visual 1 (bg 4 - Only Image) */}
+            {/* Right: Floating Visual 1 (bg4 - Only Image) */}
             <div className="w-full lg:w-[54%] flex justify-center lg:justify-start">
               <div
                 ref={b1CardRef}
                 onClick={onOpenTrial}
-                className="relative w-full max-w-[480px] sm:max-w-[540px] lg:max-w-[580px] cursor-pointer group select-none transition-transform duration-500 hover:scale-[1.03]"
-                style={{
-                  transform: "perspective(1200px) rotateY(4deg) rotateX(2deg)",
-                }}
+                className="relative w-full max-w-[480px] sm:max-w-[540px] lg:max-w-[580px] cursor-pointer group select-none transition-transform duration-500 hover:scale-[1.02]"
               >
                 {/* Ambient glow behind mascot */}
-                <div className="absolute inset-0 bg-[#00D98B]/15 blur-[80px] rounded-full scale-75 pointer-events-none group-hover:scale-90 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#6366F1]/20 via-[#963DFF]/15 to-[#00D98B]/15 blur-[85px] rounded-full scale-80 pointer-events-none group-hover:scale-95 transition-transform duration-700" />
                 <img
                   src="/bg4.png"
                   alt="Emperor Nexus Autonomous AI Customer Engagement"
-                  className="relative z-10 w-full h-auto object-contain rounded-2xl sm:rounded-3xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)]"
+                  className="relative z-10 w-full h-auto object-contain rounded-2xl sm:rounded-3xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)] [mask-image:radial-gradient(ellipse_at_center,black_75%,transparent_100%)] [-webkit-mask-image:radial-gradient(ellipse_at_center,black_75%,transparent_100%)]"
                   loading="eager"
                 />
               </div>
@@ -373,17 +370,14 @@ export default function BenefitsSection({ onOpenTrial }) {
               <div
                 ref={b2CardRef}
                 onClick={onOpenTrial}
-                className="relative w-full max-w-[480px] sm:max-w-[540px] lg:max-w-[580px] cursor-pointer group select-none transition-transform duration-500 hover:scale-[1.03]"
-                style={{
-                  transform: "perspective(1200px) rotateY(-4deg) rotateX(2deg)",
-                }}
+                className="relative w-full max-w-[480px] sm:max-w-[540px] lg:max-w-[580px] cursor-pointer group select-none transition-transform duration-500 hover:scale-[1.02]"
               >
                 {/* Ambient glow behind mascot */}
-                <div className="absolute inset-0 bg-[#963DFF]/20 blur-[80px] rounded-full scale-75 pointer-events-none group-hover:scale-90 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#963DFF]/25 via-[#A855F7]/20 to-[#C28AFF]/15 blur-[85px] rounded-full scale-80 pointer-events-none group-hover:scale-95 transition-transform duration-700" />
                 <img
                   src="/bg5.png"
                   alt="Emperor Nexus Intelligent Knowledge Automation"
-                  className="relative z-10 w-full h-auto object-contain rounded-2xl sm:rounded-3xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)]"
+                  className="relative z-10 w-full h-auto object-contain rounded-2xl sm:rounded-3xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)] [mask-image:radial-gradient(ellipse_at_center,black_75%,transparent_100%)] [-webkit-mask-image:radial-gradient(ellipse_at_center,black_75%,transparent_100%)]"
                   loading="eager"
                 />
               </div>
@@ -426,17 +420,14 @@ export default function BenefitsSection({ onOpenTrial }) {
               <div
                 ref={b3CardRef}
                 onClick={onOpenTrial}
-                className="relative w-full max-w-[480px] sm:max-w-[540px] lg:max-w-[580px] cursor-pointer group select-none transition-transform duration-500 hover:scale-[1.03]"
-                style={{
-                  transform: "perspective(1200px) rotateX(2deg)",
-                }}
+                className="relative w-full max-w-[480px] sm:max-w-[540px] lg:max-w-[580px] cursor-pointer group select-none transition-transform duration-500 hover:scale-[1.02]"
               >
                 {/* Ambient glow behind mascot */}
-                <div className="absolute inset-0 bg-[#38BDF8]/20 blur-[80px] rounded-full scale-75 pointer-events-none group-hover:scale-90 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#38BDF8]/25 via-[#55A9FF]/20 to-[#963DFF]/15 blur-[85px] rounded-full scale-80 pointer-events-none group-hover:scale-95 transition-transform duration-700" />
                 <img
                   src="/bg6.png"
                   alt="Emperor Nexus Enquiry Visibility & Analytics"
-                  className="relative z-10 w-full h-auto object-contain rounded-2xl sm:rounded-3xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)]"
+                  className="relative z-10 w-full h-auto object-contain rounded-2xl sm:rounded-3xl drop-shadow-[0_20px_45px_rgba(0,0,0,0.85)] [mask-image:radial-gradient(ellipse_at_center,black_75%,transparent_100%)] [-webkit-mask-image:radial-gradient(ellipse_at_center,black_75%,transparent_100%)]"
                   loading="eager"
                 />
               </div>
