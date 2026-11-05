@@ -4,7 +4,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
-import ExperienceModal from "./components/ExperienceModal";
 import IndustriesSection from "./components/IndustriesSection";
 import BenefitsSection from "./components/BenefitsSection";
 import HowItWorksSection from "./components/HowItWorksSection";
@@ -103,14 +102,6 @@ export default function App() {
 
       {/* 7. Footer */}
       <Footer />
-
-      {/* 8. Interactive Experience Studio Modal */}
-      <ExperienceModal
-        key={selectedIndustry + (experienceModalOpen ? "_open" : "_closed")}
-        isOpen={experienceModalOpen}
-        onClose={() => setExperienceModalOpen(false)}
-        selectedIndustry={selectedIndustry}
-      />
     </div>
   );
 }
