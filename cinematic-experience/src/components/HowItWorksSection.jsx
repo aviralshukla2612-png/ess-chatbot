@@ -441,27 +441,26 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 className="relative w-44 h-44 sm:w-48 sm:h-48 md:w-52 md:h-52 lg:w-[195px] lg:h-[195px] xl:w-[210px] xl:h-[210px] mb-2 sm:mb-2.5 flex items-center justify-center shrink-0"
               >
                 {/* Floor Energy Pedestal Disc */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-36 sm:w-44 h-6 pointer-events-none">
-                  <div className="w-full h-full rounded-[100%] bg-gradient-to-r from-transparent via-[#963DFF]/85 to-transparent blur-[7px]" />
-                  <div className="absolute inset-x-2 top-0.5 h-3.5 rounded-[100%] border-2 border-[#C28AFF] shadow-[0_0_18px_#C28AFF]" />
+                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-36 sm:w-44 h-5 pointer-events-none">
+                  <div className="w-full h-full rounded-[100%] bg-[#963DFF]/20" />
+                  <div className="absolute inset-x-2 top-0.5 h-3.5 rounded-[100%] border border-[#C28AFF]/80 shadow-[0_0_14px_#C28AFF]" />
                 </div>
 
-                {/* 3D Glass Energy Sphere Body */}
+                {/* 3D Glassmorphism Sphere Body */}
                 <div
-                  className="w-full h-full rounded-full border border-[#C28AFF]/60 relative flex items-center justify-center overflow-hidden"
+                  className="w-full h-full rounded-full border border-white/20 border-t-white/60 border-b-[#963DFF]/40 relative flex items-center justify-center overflow-hidden backdrop-blur-md"
                   style={{
                     background:
-                      "radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.45) 0%, rgba(194, 138, 255, 0.35) 20%, rgba(150, 61, 255, 0.15) 50%, rgba(10, 4, 22, 0.85) 80%, rgba(150, 61, 255, 0.6) 100%)",
+                      "linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(194, 138, 255, 0.09) 30%, rgba(150, 61, 255, 0.03) 70%, rgba(150, 61, 255, 0.12) 100%)",
                     boxShadow:
-                      "0 0 55px rgba(150, 61, 255, 0.5), inset 0 0 35px rgba(194, 138, 255, 0.4), inset 0 0 65px rgba(150, 61, 255, 0.25)",
+                      "inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.65), inset 0 -3px 14px 0 rgba(150, 61, 255, 0.35), 0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 25px rgba(150, 61, 255, 0.3)",
                   }}
                 >
                   {/* Glossy Top Glass Specular Arc Reflection */}
-                  <div className="absolute top-1 inset-x-5 h-1/3 rounded-t-full bg-gradient-to-b from-white/45 via-white/10 to-transparent blur-[1px] pointer-events-none z-30" />
+                  <div className="absolute top-1 inset-x-5 h-1/3 rounded-t-full bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none z-30" />
 
-                  {/* Internal ambient radial glow & bottom pool */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#963DFF]/20 to-[#C28AFF]/25 pointer-events-none" />
-                  <div className="absolute bottom-0 inset-x-0 h-1/2 rounded-b-full bg-gradient-to-t from-[#963DFF]/40 via-transparent to-transparent pointer-events-none" />
+                  {/* Subtle Glass Rim Highlights */}
+                  <div className="absolute -bottom-1 inset-x-8 h-1/4 rounded-full bg-gradient-to-t from-[#C28AFF]/25 to-transparent pointer-events-none" />
 
                   {/* 3D Floating Document Cards Inside Sphere */}
                   <div ref={docs1Ref} className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
@@ -578,27 +577,26 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 className="relative w-44 h-44 sm:w-48 sm:h-48 md:w-52 md:h-52 lg:w-[195px] lg:h-[195px] xl:w-[210px] xl:h-[210px] mb-2 sm:mb-2.5 flex items-center justify-center shrink-0"
               >
                 {/* Floor Energy Pedestal Disc */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-36 sm:w-44 h-6 pointer-events-none">
-                  <div className="w-full h-full rounded-[100%] bg-gradient-to-r from-transparent via-[#FF713D]/85 to-transparent blur-[7px]" />
-                  <div className="absolute inset-x-2 top-0.5 h-3.5 rounded-[100%] border-2 border-[#FFA07A] shadow-[0_0_18px_#FF713D]" />
+                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-36 sm:w-44 h-5 pointer-events-none">
+                  <div className="w-full h-full rounded-[100%] bg-[#FF713D]/20" />
+                  <div className="absolute inset-x-2 top-0.5 h-3.5 rounded-[100%] border border-[#FFA07A]/80 shadow-[0_0_14px_#FF713D]" />
                 </div>
 
-                {/* 3D Glass Energy Sphere Body */}
+                {/* 3D Glassmorphism Sphere Body */}
                 <div
-                  className="w-full h-full rounded-full border border-[#FFA07A]/60 relative flex items-center justify-center overflow-hidden"
+                  className="w-full h-full rounded-full border border-white/20 border-t-white/60 border-b-[#FF713D]/40 relative flex items-center justify-center overflow-hidden backdrop-blur-md"
                   style={{
                     background:
-                      "radial-gradient(circle at 35% 25%, rgba(255, 240, 225, 0.45) 0%, rgba(255, 170, 120, 0.35) 20%, rgba(255, 113, 61, 0.15) 50%, rgba(24, 10, 4, 0.85) 80%, rgba(255, 113, 61, 0.6) 100%)",
+                      "linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 170, 120, 0.09) 30%, rgba(255, 113, 61, 0.03) 70%, rgba(255, 113, 61, 0.12) 100%)",
                     boxShadow:
-                      "0 0 55px rgba(255, 113, 61, 0.5), inset 0 0 35px rgba(255, 180, 130, 0.4), inset 0 0 65px rgba(255, 113, 61, 0.25)",
+                      "inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.65), inset 0 -3px 14px 0 rgba(255, 113, 61, 0.35), 0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 113, 61, 0.3)",
                   }}
                 >
                   {/* Glossy Top Glass Specular Arc Reflection */}
-                  <div className="absolute top-1 inset-x-5 h-1/3 rounded-t-full bg-gradient-to-b from-white/45 via-white/10 to-transparent blur-[1px] pointer-events-none z-30" />
+                  <div className="absolute top-1 inset-x-5 h-1/3 rounded-t-full bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none z-30" />
 
-                  {/* Internal ambient radial glow & bottom pool */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#FF713D]/20 to-[#FFA07A]/25 pointer-events-none" />
-                  <div className="absolute bottom-0 inset-x-0 h-1/2 rounded-b-full bg-gradient-to-t from-[#FF713D]/40 via-transparent to-transparent pointer-events-none" />
+                  {/* Subtle Glass Rim Highlights */}
+                  <div className="absolute -bottom-1 inset-x-8 h-1/4 rounded-full bg-gradient-to-t from-[#FFA07A]/25 to-transparent pointer-events-none" />
 
                   {/* Inside: Friendly Robot Avatar + 4 Stacked Configuration Pills */}
                   <div className="relative z-10 w-full h-full flex items-center justify-center px-1 pointer-events-none">
@@ -710,27 +708,26 @@ export default function HowItWorksSection({ onOpenTrial }) {
                 className="relative w-44 h-44 sm:w-48 sm:h-48 md:w-52 md:h-52 lg:w-[195px] lg:h-[195px] xl:w-[210px] xl:h-[210px] mb-2 sm:mb-2.5 flex items-center justify-center shrink-0"
               >
                 {/* Floor Energy Pedestal Disc */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-36 sm:w-44 h-6 pointer-events-none">
-                  <div className="w-full h-full rounded-[100%] bg-gradient-to-r from-transparent via-[#22C8F2]/85 to-transparent blur-[7px]" />
-                  <div className="absolute inset-x-2 top-0.5 h-3.5 rounded-[100%] border-2 border-[#7AE5FF] shadow-[0_0_18px_#22C8F2]" />
+                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-36 sm:w-44 h-5 pointer-events-none">
+                  <div className="w-full h-full rounded-[100%] bg-[#22C8F2]/20" />
+                  <div className="absolute inset-x-2 top-0.5 h-3.5 rounded-[100%] border border-[#7AE5FF]/80 shadow-[0_0_14px_#22C8F2]" />
                 </div>
 
-                {/* 3D Glass Energy Sphere Body */}
+                {/* 3D Glassmorphism Sphere Body */}
                 <div
-                  className="w-full h-full rounded-full border border-[#7AE5FF]/60 relative flex items-center justify-center overflow-hidden"
+                  className="w-full h-full rounded-full border border-white/20 border-t-white/60 border-b-[#22C8F2]/40 relative flex items-center justify-center overflow-hidden backdrop-blur-md"
                   style={{
                     background:
-                      "radial-gradient(circle at 35% 25%, rgba(220, 250, 255, 0.45) 0%, rgba(122, 229, 255, 0.35) 20%, rgba(34, 200, 242, 0.15) 50%, rgba(4, 18, 30, 0.85) 80%, rgba(34, 200, 242, 0.6) 100%)",
+                      "linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(122, 229, 255, 0.09) 30%, rgba(34, 200, 242, 0.03) 70%, rgba(34, 200, 242, 0.12) 100%)",
                     boxShadow:
-                      "0 0 55px rgba(34, 200, 242, 0.5), inset 0 0 35px rgba(122, 229, 255, 0.4), inset 0 0 65px rgba(34, 200, 242, 0.25)",
+                      "inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.65), inset 0 -3px 14px 0 rgba(34, 200, 242, 0.35), 0 8px 32px 0 rgba(0, 0, 0, 0.4), 0 0 25px rgba(34, 200, 242, 0.3)",
                   }}
                 >
                   {/* Glossy Top Glass Specular Arc Reflection */}
-                  <div className="absolute top-1 inset-x-5 h-1/3 rounded-t-full bg-gradient-to-b from-white/45 via-white/10 to-transparent blur-[1px] pointer-events-none z-30" />
+                  <div className="absolute top-1 inset-x-5 h-1/3 rounded-t-full bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none z-30" />
 
-                  {/* Internal ambient radial glow & bottom pool */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#22C8F2]/20 to-[#80EAFF]/25 pointer-events-none" />
-                  <div className="absolute bottom-0 inset-x-0 h-1/2 rounded-b-full bg-gradient-to-t from-[#22C8F2]/40 via-transparent to-transparent pointer-events-none" />
+                  {/* Subtle Glass Rim Highlights */}
+                  <div className="absolute -bottom-1 inset-x-8 h-1/4 rounded-full bg-gradient-to-t from-[#7AE5FF]/25 to-transparent pointer-events-none" />
 
                   {/* Inside: 3D Floating Browser Window + Cyan Pointer Cursor */}
                   <div className="relative z-10 w-full h-full flex items-center justify-center pointer-events-none">
