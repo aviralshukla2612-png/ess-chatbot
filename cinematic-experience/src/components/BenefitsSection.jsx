@@ -40,11 +40,6 @@ export default function BenefitsSection({ onOpenTrial }) {
   const b3LeadsRef = useRef(null);
   const b3BadgeRef = useRef(null);
 
-  // Step Indicators (Bottom)
-  const indicator1Ref = useRef(null);
-  const indicator2Ref = useRef(null);
-  const indicator3Ref = useRef(null);
-
   useEffect(() => {
     const container = containerRef.current;
     const stage = stageRef.current;
@@ -110,32 +105,6 @@ export default function BenefitsSection({ onOpenTrial }) {
       }
       if (b3LeadsRef.current) {
         gsap.set(b3LeadsRef.current.children, { autoAlpha: 0, x: 15 });
-      }
-
-      // Step indicators initial styling
-      if (indicator1Ref.current) {
-        gsap.set(indicator1Ref.current, {
-          borderColor: "#00D98B",
-          backgroundColor: "rgba(0, 217, 139, 0.18)",
-          color: "#00D98B",
-          opacity: 1,
-        });
-      }
-      if (indicator2Ref.current) {
-        gsap.set(indicator2Ref.current, {
-          borderColor: "rgba(255, 255, 255, 0.1)",
-          backgroundColor: "rgba(255, 255, 255, 0.03)",
-          color: "rgba(255, 255, 255, 0.4)",
-          opacity: 0.6,
-        });
-      }
-      if (indicator3Ref.current) {
-        gsap.set(indicator3Ref.current, {
-          borderColor: "rgba(255, 255, 255, 0.1)",
-          backgroundColor: "rgba(255, 255, 255, 0.03)",
-          color: "rgba(255, 255, 255, 0.4)",
-          opacity: 0.6,
-        });
       }
 
       // Master Scroll-Driven Timeline
@@ -222,34 +191,6 @@ export default function BenefitsSection({ onOpenTrial }) {
         tl.set(scene1Ref.current, { display: "none", pointerEvents: "none" }, 0.44);
       }
 
-      // Indicator 1 fades, Indicator 2 illuminates
-      if (indicator1Ref.current) {
-        tl.to(
-          indicator1Ref.current,
-          {
-            borderColor: "rgba(255, 255, 255, 0.1)",
-            backgroundColor: "rgba(255, 255, 255, 0.03)",
-            color: "rgba(255, 255, 255, 0.4)",
-            opacity: 0.6,
-            duration: 0.08,
-          },
-          0.36
-        );
-      }
-      if (indicator2Ref.current) {
-        tl.to(
-          indicator2Ref.current,
-          {
-            borderColor: "#963DFF",
-            backgroundColor: "rgba(150, 61, 255, 0.22)",
-            color: "#C28AFF",
-            opacity: 1,
-            duration: 0.08,
-          },
-          0.38
-        );
-      }
-
       // -----------------------------------------------------------------------
       // PHASE 3: SCENE 2 (INTELLIGENT AUTOMATION - PURPLE) (0.38 -> 0.68)
       // -----------------------------------------------------------------------
@@ -294,34 +235,6 @@ export default function BenefitsSection({ onOpenTrial }) {
           0.64
         );
         tl.set(scene2Ref.current, { display: "none", pointerEvents: "none" }, 0.74);
-      }
-
-      // Indicator 2 fades, Indicator 3 illuminates
-      if (indicator2Ref.current) {
-        tl.to(
-          indicator2Ref.current,
-          {
-            borderColor: "rgba(255, 255, 255, 0.1)",
-            backgroundColor: "rgba(255, 255, 255, 0.03)",
-            color: "rgba(255, 255, 255, 0.4)",
-            opacity: 0.6,
-            duration: 0.08,
-          },
-          0.66
-        );
-      }
-      if (indicator3Ref.current) {
-        tl.to(
-          indicator3Ref.current,
-          {
-            borderColor: "#55A9FF",
-            backgroundColor: "rgba(85, 169, 255, 0.22)",
-            color: "#55A9FF",
-            opacity: 1,
-            duration: 0.08,
-          },
-          0.68
-        );
       }
 
       // -----------------------------------------------------------------------
@@ -901,35 +814,6 @@ export default function BenefitsSection({ onOpenTrial }) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* ===================================================================== */}
-        {/* BOTTOM STEP INDICATORS (ILLUMINATE AS USER SCROLLS THROUGH SCENES)    */}
-        {/* ===================================================================== */}
-        <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 shrink-0 pt-2 pb-1">
-          <div
-            ref={indicator1Ref}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-mono font-bold transition-all duration-300"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-            <span>01 Engagement</span>
-          </div>
-
-          <div
-            ref={indicator2Ref}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-mono font-bold transition-all duration-300"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-            <span>02 Automation</span>
-          </div>
-
-          <div
-            ref={indicator3Ref}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-mono font-bold transition-all duration-300"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-            <span>03 Visibility</span>
           </div>
         </div>
       </div>
