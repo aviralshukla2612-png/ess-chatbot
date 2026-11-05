@@ -234,7 +234,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top top",
-            end: isDesktop ? "+=2600" : "+=1800",
+            end: isDesktop ? "+=1700" : "+=1200",
             pin: stageRef.current,
             pinSpacing: true,
             scrub: 0.8,
@@ -363,8 +363,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           );
         }
 
-        // Buffer hold: (0.75 -> 1.00) Complete stability for reading and interacting
-        tl.to({}, { duration: 0.25 }, 0.75);
+        // Compact buffer hold before smooth release into Benefits
+        tl.to({}, { duration: 0.05 }, 0.85);
       },
       sectionRef
     );

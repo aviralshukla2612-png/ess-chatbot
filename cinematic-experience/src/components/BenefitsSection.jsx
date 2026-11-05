@@ -55,23 +55,23 @@ export default function BenefitsSection({ onOpenTrial }) {
     // Each benefit takes the prime, full-viewport center stage with zero clipping!
     // =========================================================================
     mm.add("(min-width: 1024px)", () => {
-      // Set initial positions
-      if (headerRef.current) gsap.set(headerRef.current, { autoAlpha: 0, y: 20 });
-      if (bgWaveRef.current) gsap.set(bgWaveRef.current, { opacity: 0.45, scale: 0.98 });
+      // Set initial positions: Header, wave, and Scene 1 are FULLY VISIBLE by default!
+      if (headerRef.current) gsap.set(headerRef.current, { autoAlpha: 1, y: 0 });
+      if (bgWaveRef.current) gsap.set(bgWaveRef.current, { opacity: 0.75, scale: 1 });
 
-      // Scene 1: Starts visible in center stage
+      // Scene 1: Starts visible in center stage immediately
       if (scene1Ref.current) {
         gsap.set(scene1Ref.current, {
-          autoAlpha: 0,
-          y: 40,
-          scale: 0.96,
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
           display: "flex",
           pointerEvents: "auto",
         });
       }
-      if (b1Msg1Ref.current) gsap.set(b1Msg1Ref.current, { autoAlpha: 0, x: 20 });
-      if (b1Msg2Ref.current) gsap.set(b1Msg2Ref.current, { autoAlpha: 0, x: -20 });
-      if (b1BadgeRef.current) gsap.set(b1BadgeRef.current, { scale: 0, autoAlpha: 0 });
+      if (b1Msg1Ref.current) gsap.set(b1Msg1Ref.current, { autoAlpha: 1, x: 0 });
+      if (b1Msg2Ref.current) gsap.set(b1Msg2Ref.current, { autoAlpha: 1, x: 0 });
+      if (b1BadgeRef.current) gsap.set(b1BadgeRef.current, { scale: 1, autoAlpha: 1 });
 
       // Scene 2: Hidden initially
       if (scene2Ref.current) {
@@ -111,7 +111,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         scrollTrigger: {
           trigger: container,
           start: "top top",
-          end: "+=2800",
+          end: "+=2200",
           pin: stage,
           anticipatePin: 1,
           scrub: 0.85,
@@ -121,59 +121,11 @@ export default function BenefitsSection({ onOpenTrial }) {
       });
 
       // -----------------------------------------------------------------------
-      // PHASE 1: SECTION INTRO (0.00 -> 0.14)
+      // PHASE 1: SCENE 1 IS ALREADY ACTIVE & VISIBLE (0.00 -> 0.28)
       // -----------------------------------------------------------------------
-      if (headerRef.current) {
-        tl.to(
-          headerRef.current,
-          { autoAlpha: 1, y: 0, duration: 0.12, ease: "power3.out" },
-          0.02
-        );
-      }
-      if (bgWaveRef.current) {
-        tl.to(
-          bgWaveRef.current,
-          { opacity: 0.85, scale: 1, duration: 0.15, ease: "power2.out" },
-          0.02
-        );
-      }
 
       // -----------------------------------------------------------------------
-      // PHASE 2: SCENE 1 (CUSTOMER ENGAGEMENT - EMERALD GREEN) (0.08 -> 0.36)
-      // -----------------------------------------------------------------------
-      if (scene1Ref.current) {
-        tl.to(
-          scene1Ref.current,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.16, ease: "power3.out" },
-          0.08
-        );
-      }
-      if (b1BadgeRef.current) {
-        tl.to(
-          b1BadgeRef.current,
-          { scale: 1, autoAlpha: 1, duration: 0.12, ease: "back.out(1.7)" },
-          0.12
-        );
-      }
-      if (b1Msg1Ref.current) {
-        tl.to(
-          b1Msg1Ref.current,
-          { autoAlpha: 1, x: 0, duration: 0.12, ease: "power2.out" },
-          0.14
-        );
-      }
-      if (b1Msg2Ref.current) {
-        tl.to(
-          b1Msg2Ref.current,
-          { autoAlpha: 1, x: 0, duration: 0.14, ease: "power2.out" },
-          0.20
-        );
-      }
-
-      // Hold Scene 1 for comfortable reading (0.24 -> 0.34)
-
-      // -----------------------------------------------------------------------
-      // TRANSITION 1 -> 2: SCENE 1 EXITS, SCENE 2 ENTERS CENTER (0.34 -> 0.44)
+      // TRANSITION 1 -> 2: SCENE 1 EXITS, SCENE 2 ENTERS CENTER (0.28 -> 0.38)
       // -----------------------------------------------------------------------
       if (scene1Ref.current) {
         tl.to(
@@ -185,41 +137,39 @@ export default function BenefitsSection({ onOpenTrial }) {
             duration: 0.10,
             ease: "power2.inOut",
           },
-          0.34
+          0.28
         );
-        tl.set(scene1Ref.current, { display: "none", pointerEvents: "none" }, 0.44);
+        tl.set(scene1Ref.current, { display: "none", pointerEvents: "none" }, 0.38);
       }
 
       // -----------------------------------------------------------------------
-      // PHASE 3: SCENE 2 (INTELLIGENT AUTOMATION - PURPLE) (0.38 -> 0.68)
+      // PHASE 2: SCENE 2 (INTELLIGENT AUTOMATION - PURPLE) (0.34 -> 0.62)
       // -----------------------------------------------------------------------
       if (scene2Ref.current) {
-        tl.set(scene2Ref.current, { display: "flex", pointerEvents: "auto" }, 0.36);
+        tl.set(scene2Ref.current, { display: "flex", pointerEvents: "auto" }, 0.32);
         tl.to(
           scene2Ref.current,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.16, ease: "power3.out" },
-          0.38
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.14, ease: "power3.out" },
+          0.34
         );
       }
       if (b2BadgeRef.current) {
         tl.to(
           b2BadgeRef.current,
-          { scale: 1, autoAlpha: 1, duration: 0.12, ease: "back.out(1.7)" },
-          0.42
+          { scale: 1, autoAlpha: 1, duration: 0.10, ease: "back.out(1.7)" },
+          0.38
         );
       }
       if (b2ItemsRef.current) {
         tl.to(
           b2ItemsRef.current.children,
-          { autoAlpha: 1, y: 0, duration: 0.12, stagger: 0.04, ease: "power2.out" },
-          0.44
+          { autoAlpha: 1, y: 0, duration: 0.10, stagger: 0.03, ease: "power2.out" },
+          0.40
         );
       }
 
-      // Hold Scene 2 for comfortable reading (0.50 -> 0.64)
-
       // -----------------------------------------------------------------------
-      // TRANSITION 2 -> 3: SCENE 2 EXITS, SCENE 3 ENTERS CENTER (0.64 -> 0.74)
+      // TRANSITION 2 -> 3: SCENE 2 EXITS, SCENE 3 ENTERS (0.60 -> 0.70)
       // -----------------------------------------------------------------------
       if (scene2Ref.current) {
         tl.to(
@@ -231,46 +181,46 @@ export default function BenefitsSection({ onOpenTrial }) {
             duration: 0.10,
             ease: "power2.inOut",
           },
-          0.64
+          0.60
         );
-        tl.set(scene2Ref.current, { display: "none", pointerEvents: "none" }, 0.74);
+        tl.set(scene2Ref.current, { display: "none", pointerEvents: "none" }, 0.70);
       }
 
       // -----------------------------------------------------------------------
-      // PHASE 4: SCENE 3 (ENQUIRY VISIBILITY - ELECTRIC BLUE) (0.68 -> 0.96)
+      // PHASE 3: SCENE 3 (ENQUIRY VISIBILITY - ELECTRIC BLUE) (0.66 -> 0.95)
       // -----------------------------------------------------------------------
       if (scene3Ref.current) {
-        tl.set(scene3Ref.current, { display: "flex", pointerEvents: "auto" }, 0.66);
+        tl.set(scene3Ref.current, { display: "flex", pointerEvents: "auto" }, 0.64);
         tl.to(
           scene3Ref.current,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.16, ease: "power3.out" },
-          0.68
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.14, ease: "power3.out" },
+          0.66
         );
       }
       if (b3BadgeRef.current) {
         tl.to(
           b3BadgeRef.current,
-          { scale: 1, autoAlpha: 1, duration: 0.12, ease: "back.out(1.7)" },
-          0.72
+          { scale: 1, autoAlpha: 1, duration: 0.10, ease: "back.out(1.7)" },
+          0.70
         );
       }
       if (b3BarsRef.current) {
         tl.to(
           b3BarsRef.current.children,
-          { scaleY: 1, duration: 0.14, stagger: 0.025, ease: "power2.out" },
-          0.74
+          { scaleY: 1, duration: 0.12, stagger: 0.02, ease: "power2.out" },
+          0.72
         );
       }
       if (b3LeadsRef.current) {
         tl.to(
           b3LeadsRef.current.children,
-          { autoAlpha: 1, x: 0, duration: 0.12, stagger: 0.04, ease: "power2.out" },
-          0.78
+          { autoAlpha: 1, x: 0, duration: 0.10, stagger: 0.03, ease: "power2.out" },
+          0.75
         );
       }
 
-      // Hold Scene 3 before release (0.84 -> 0.96)
-      tl.to({}, { duration: 0.08 }, 0.92);
+      // Brief hold Scene 3 before release
+      tl.to({}, { duration: 0.05 }, 0.90);
     });
 
     // =========================================================================

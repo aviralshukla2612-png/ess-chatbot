@@ -73,7 +73,10 @@ export default function Navbar({ onOpenTrial }) {
     setMobileMenuOpen(false);
     const target = document.querySelector(item.href);
     if (target) {
-      const isPinnedSection = item.href === "#benefits" || item.href === "#how-it-works";
+      const isPinnedSection =
+        item.href === "#industries" ||
+        item.href === "#benefits" ||
+        item.href === "#how-it-works";
       const topOffset = isPinnedSection
         ? target.getBoundingClientRect().top + window.scrollY
         : target.getBoundingClientRect().top + window.scrollY - 70;

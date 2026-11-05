@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -13,7 +15,9 @@ import {
   Sparkles,
 } from "lucide-react";
 
-gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export const INDUSTRIES = [
   {
@@ -173,6 +177,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
   // Stage 3: SMALL (settles beside Line 1 of the headline)
   // Layout: Line 1 text -> Video -> Line 2 text -> Paragraph down side -> Button at the end
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const mm = gsap.matchMedia();
 
     mm.add(
@@ -228,7 +234,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top top",
-            end: isDesktop ? "+=2600" : "+=1800",
+            end: isDesktop ? "+=1700" : "+=1200",
             pin: stageRef.current,
             pinSpacing: true,
             scrub: 0.8,
@@ -357,8 +363,8 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
           );
         }
 
-        // Buffer hold: (0.75 -> 1.00) Complete stability for reading and interacting
-        tl.to({}, { duration: 0.25 }, 0.75);
+        // Compact buffer hold before smooth release into Benefits
+        tl.to({}, { duration: 0.05 }, 0.85);
       },
       sectionRef
     );
@@ -417,7 +423,7 @@ export default function IndustriesSection({ onOpenExperience, onOpenTrial }) {
             - Line 1: Text Whole 1 Line + Video Collage
             - Line 2: 2 Line Text
             - Down Side: Text Paragraph
-            - At the End: Button (Fully visible, not clipped)
+            - At the End: Button (Fully visible in viewport)
             ============================================================ */}
         <div className="relative z-10 w-full max-w-6xl mx-auto my-auto flex flex-col items-center text-center px-2 sm:px-4">
           {/* OVERSIZED EDITORIAL HEADLINE WITH INLINE VIDEO COLLAGE */}
