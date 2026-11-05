@@ -43,11 +43,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
   const browser3Ref = useRef(null);
   const cursor3Ref = useRef(null);
 
-  // Bottom Timeline Nodes & Line
-  const bottomLineRef = useRef(null);
-  const bNode1Ref = useRef(null);
-  const bNode2Ref = useRef(null);
-  const bNode3Ref = useRef(null);
+
 
   useEffect(() => {
     const container = containerRef.current;
@@ -81,11 +77,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
       if (arrowNode1Ref.current) gsap.set(arrowNode1Ref.current, { scale: 0, autoAlpha: 0 });
       if (arrowNode2Ref.current) gsap.set(arrowNode2Ref.current, { scale: 0, autoAlpha: 0 });
 
-      if (bottomLineRef.current) gsap.set(bottomLineRef.current, { strokeDashoffset: 1000, strokeDasharray: 1000 });
-      const bNodes = [bNode1Ref.current, bNode2Ref.current, bNode3Ref.current];
-      bNodes.forEach((bn) => {
-        if (bn) gsap.set(bn, { scale: 0, autoAlpha: 0 });
-      });
+
 
       // Master Coordinated Timeline
       const tl = gsap.timeline({
@@ -136,15 +128,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
         tl.to(stage3Ref.current, { autoAlpha: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.85);
       }
 
-      // 7. Bottom timeline reveals
-      if (bottomLineRef.current) {
-        tl.to(bottomLineRef.current, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut" }, 0.75);
-      }
-      bNodes.forEach((bn, idx) => {
-        if (bn) {
-          tl.to(bn, { scale: 1, autoAlpha: 1, duration: 0.3, ease: "back.out(1.8)" }, 0.8 + idx * 0.12);
-        }
-      });
+
 
       // Ambient Floating Micro-Animations
       if (docs1Ref.current) {
@@ -829,54 +813,7 @@ export default function HowItWorksSection({ onOpenTrial }) {
             </div>
           </div>
 
-          {/* =================================================================== */}
-          {/* 4. THE BOTTOM TIMELINE BEAM (COMPACT)                               */}
-          {/* =================================================================== */}
-          <div className="hidden lg:block relative mt-3 sm:mt-4 max-w-2xl mx-auto shrink-0 pointer-events-none">
-            <svg
-              className="w-full h-6 overflow-visible"
-              viewBox="0 0 600 24"
-              fill="none"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="bottomLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#963DFF" />
-                  <stop offset="50%" stopColor="#FF713D" />
-                  <stop offset="100%" stopColor="#22C8F2" />
-                </linearGradient>
-              </defs>
 
-              {/* Connecting line */}
-              <line
-                ref={bottomLineRef}
-                x1="30"
-                y1="12"
-                x2="570"
-                y2="12"
-                stroke="url(#bottomLineGrad)"
-                strokeWidth="1.75"
-              />
-
-              {/* Node 1: Purple */}
-              <g ref={bNode1Ref} transform="translate(30, 12)">
-                <circle cx="0" cy="0" r="7" fill="#180D2E" stroke="#963DFF" strokeWidth="2" />
-                <circle cx="0" cy="0" r="3" fill="#C28AFF" />
-              </g>
-
-              {/* Node 2: Orange */}
-              <g ref={bNode2Ref} transform="translate(300, 12)">
-                <circle cx="0" cy="0" r="7" fill="#1A0A04" stroke="#FF713D" strokeWidth="2" />
-                <circle cx="0" cy="0" r="3" fill="#FFA07A" />
-              </g>
-
-              {/* Node 3: Cyan */}
-              <g ref={bNode3Ref} transform="translate(570, 12)">
-                <circle cx="0" cy="0" r="7" fill="#081822" stroke="#22C8F2" strokeWidth="2" />
-                <circle cx="0" cy="0" r="3" fill="#7AE5FF" />
-              </g>
-            </svg>
-          </div>
         </div>
       </div>
     </section>
