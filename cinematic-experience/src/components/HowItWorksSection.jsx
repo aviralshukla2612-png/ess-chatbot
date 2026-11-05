@@ -5,160 +5,45 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   FileText,
-  Sliders,
-  Code2,
-  Sparkles,
-  ArrowRight,
-  CheckCircle2,
-  Upload,
   Globe,
-  Bot,
-  Copy,
+  Code2,
   Check,
-  Zap,
-  Headphones,
-  Rocket,
-  Lightbulb,
+  ArrowRight,
+  Sparkles,
+  MessageSquare,
+  Palette,
+  Sliders,
+  Layers,
 } from "lucide-react";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-// "HOW IT WORKS" letters split for character-by-character shatter
-const HEADLINE_LETTERS = [
-  { char: "H", x: -280, y: -200, z: 280, rx: 45, ry: -60, rz: -35, s: 2.0 },
-  { char: "O", x: -160, y: -260, z: 180, rx: -50, ry: 40, rz: 55, s: 1.8 },
-  { char: "W", x: -60, y: 220, z: 350, rx: 65, ry: -30, rz: -40, s: 2.2 },
-  { char: " ", isSpace: true },
-  { char: "I", x: 40, y: -220, z: 240, rx: -40, ry: 50, rz: 30, s: 1.8 },
-  { char: "T", x: 120, y: 220, z: 300, rx: 55, ry: -45, rz: -30, s: 1.9 },
-  { char: " ", isSpace: true },
-  { char: "W", x: -220, y: 200, z: 260, rx: -35, ry: 65, rz: 45, s: 2.1 },
-  { char: "O", x: 160, y: -200, z: 180, rx: 50, ry: -50, rz: -20, s: 1.7 },
-  { char: "R", x: 260, y: 160, z: 340, rx: -60, ry: 35, rz: 50, s: 2.0 },
-  { char: "K", x: 340, y: -150, z: 190, rx: 40, ry: -60, rz: -50, s: 2.2 },
-  { char: "S", x: 400, y: 220, z: 280, rx: -70, ry: 55, rz: 40, s: 1.9 },
-];
-
-// Bespoke Illustrated SVG Icons matching Dribbble reference style
-const KnowledgeBaseIcon = ({ className = "w-10 h-10" }) => (
-  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="32" cy="32" r="24" fill="#8B5CF6" fillOpacity="0.12" />
-    <rect x="22" y="10" width="26" height="34" rx="4" fill="#DDD6FE" stroke="#8B5CF6" strokeWidth="2" strokeDasharray="3 3" />
-    <rect x="14" y="16" width="28" height="36" rx="4" fill="#FFFFFF" stroke="#8B5CF6" strokeWidth="2.5" />
-    <line x1="20" y1="24" x2="36" y2="24" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" />
-    <line x1="20" y1="30" x2="32" y2="30" stroke="#C4B5FD" strokeWidth="2" strokeLinecap="round" />
-    <line x1="20" y1="36" x2="28" y2="36" stroke="#C4B5FD" strokeWidth="2" strokeLinecap="round" />
-    <g filter="drop-shadow(0px 3px 6px rgba(139, 92, 246, 0.45))">
-      <circle cx="42" cy="42" r="13" fill="#8B5CF6" />
-      <path d="M42 35 L42 48" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M37 40 L42 35 L47 40" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    <circle cx="12" cy="14" r="1.5" fill="#8B5CF6" />
-    <circle cx="52" cy="18" r="1.5" fill="#A78BFA" />
-  </svg>
-);
-
-const PersonaEngineIcon = ({ className = "w-10 h-10" }) => (
-  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="32" cy="32" r="24" fill="#FF5E3A" fillOpacity="0.12" />
-    <line x1="32" y1="11" x2="32" y2="17" stroke="#FF5E3A" strokeWidth="2.5" strokeLinecap="round" />
-    <circle cx="32" cy="9" r="3" fill="#FF5E3A" />
-    <rect x="15" y="17" width="34" height="28" rx="8" fill="#FFFFFF" stroke="#FF5E3A" strokeWidth="2.5" />
-    <rect x="20" y="23" width="24" height="15" rx="5" fill="#FFF7ED" stroke="#F97316" strokeWidth="1.5" />
-    <circle cx="26" cy="30" r="2.5" fill="#FF5E3A" />
-    <circle cx="38" cy="30" r="2.5" fill="#FF5E3A" />
-    <path d="M29 34 Q32 36 35 34" stroke="#FF5E3A" strokeWidth="1.5" strokeLinecap="round" />
-    <g filter="drop-shadow(0px 3px 6px rgba(255, 94, 58, 0.45))">
-      <circle cx="44" cy="44" r="12" fill="#FF5E3A" />
-      <line x1="39" y1="41" x2="49" y2="41" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="42" cy="41" r="2" fill="#FFFFFF" />
-      <line x1="39" y1="47" x2="49" y2="47" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="46" cy="47" r="2" fill="#FFFFFF" />
-    </g>
-    <circle cx="10" cy="28" r="1.5" fill="#FF5E3A" />
-    <circle cx="53" cy="16" r="1.5" fill="#F97316" />
-  </svg>
-);
-
-const CodeDeployIcon = ({ className = "w-10 h-10" }) => (
-  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="32" cy="32" r="24" fill="#06B6D4" fillOpacity="0.12" />
-    <path d="M23 41 L14 50 L20 44 L16 54 L27 45 Z" fill="#F59E0B" />
-    <path d="M21 43 L17 49 L24 45 Z" fill="#EF4444" />
-    <line x1="12" y1="36" x2="8" y2="40" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
-    <line x1="32" y1="56" x2="28" y2="60" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
-    <g transform="rotate(45 34 30)">
-      <path d="M24 38 L18 44 L25 46 Z" fill="#0284C7" />
-      <path d="M44 38 L50 44 L43 46 Z" fill="#0284C7" />
-      <path d="M34 10 C26 22 26 38 26 44 L42 44 C42 38 42 22 34 10 Z" fill="#FFFFFF" stroke="#06B6D4" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M34 10 C30 16 28 20 28 22 L40 22 C40 20 38 16 34 10 Z" fill="#06B6D4" />
-      <circle cx="34" cy="30" r="5" fill="#E0F2FE" stroke="#06B6D4" strokeWidth="1.5" />
-      <path d="M32 28.5 L30.5 30 L32 31.5" stroke="#0284C7" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M36 28.5 L37.5 30 L36 31.5" stroke="#0284C7" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    </g>
-    <g filter="drop-shadow(0px 3px 6px rgba(6, 182, 212, 0.45))">
-      <circle cx="46" cy="46" r="11" fill="#06B6D4" />
-      <path d="M42 46 L40 46 M44 43 L42 49 M48 46 L50 46" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
-    </g>
-  </svg>
-);
-
-// 3 Process Cards matching Shutterstock Numbered Card Architecture
-const PROCESS_CARDS = [
-  {
-    step: "01",
-    accentColor: "#8B5CF6",
-    buttonTextColor: "#FFFFFF",
-    tagline: "STEP 01 · INGESTION",
-    title: "Connect Knowledge Base",
-    subTitle: "Instant Ingestion",
-    icon: KnowledgeBaseIcon,
-    description: "Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.",
-    feature: "Supports PDF, DOCX, TXT, CSV, and live URL crawler synchronization.",
-    ctaText: "Start Ingestion",
-  },
-  {
-    step: "02",
-    accentColor: "#FF5E3A",
-    buttonTextColor: "#FFFFFF",
-    tagline: "STEP 02 · PERSONA ENGINE",
-    title: "Calibrate Persona Styling",
-    subTitle: "Persona Engine",
-    icon: PersonaEngineIcon,
-    description: "Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.",
-    feature: "Custom logo upload, squircle / circle buttons, and 19 launcher animations.",
-    ctaText: "Calibrate Persona",
-  },
-  {
-    step: "03",
-    accentColor: "#06B6D4",
-    buttonTextColor: "#FFFFFF",
-    tagline: "STEP 03 · LIVE EMBED",
-    title: "Deploy Single Line Code",
-    subTitle: "Universal Live Embed",
-    icon: CodeDeployIcon,
-    description: "Integrate the assistant into your website using the provided script with instant anti-cache live updates.",
-    feature: "Zero dependencies, anti-cache instant updates, and mobile-optimized viewport.",
-    ctaText: "Get Embed Code",
-  },
-];
-
 export default function HowItWorksSection({ onOpenTrial }) {
   const containerRef = useRef(null);
-  const stageRef = useRef(null);
-  const typographyRef = useRef(null);
-  const letterRefs = useRef([]);
-  const cardRefs = useRef([]);
-  const cardsTrackRef = useRef(null);
-  const glowOrbRef = useRef(null);
-  const sectionHeaderRef = useRef(null);
+  const headerRef = useRef(null);
+  const energyLineRef = useRef(null);
+  const energyPulseRef = useRef(null);
+
+  // Stage 1 Refs (Ingestion - Purple)
+  const stage1Ref = useRef(null);
+  const sphere1Ref = useRef(null);
+  const docs1Ref = useRef(null);
+
+  // Stage 2 Refs (Persona Engine - Orange)
+  const stage2Ref = useRef(null);
+  const sphere2Ref = useRef(null);
+  const pills2Ref = useRef(null);
+
+  // Stage 3 Refs (Live Embed - Cyan)
+  const stage3Ref = useRef(null);
+  const sphere3Ref = useRef(null);
+  const embed3Ref = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
-    const stage = stageRef.current;
-    if (!container || !stage) return;
+    if (!container) return;
 
     if (typeof window !== "undefined") {
       ScrollTrigger.config({ ignoreMobileResize: true });
@@ -167,659 +52,637 @@ export default function HowItWorksSection({ onOpenTrial }) {
     const mm = gsap.matchMedia(containerRef);
 
     // =========================================================================
-    // MOBILE (< 768px): Seamless Scroll-Driven Card Advancement
-    // Letters shatter -> Header enters -> Card 01 -> Card 02 -> Card 03
-    // All 3 cards come into view sequentially driven by vertical scroll!
+    // DESKTOP & LARGE SCREENS (>= 1024px): Connected 3-Stage Composition
     // =========================================================================
-    mm.add("(max-width: 767px)", () => {
-      const cardWidth = cardRefs.current[0]?.offsetWidth || Math.min(window.innerWidth * 0.85, 320);
-      const gap = 16;
-      const shift = cardWidth + gap;
-      const initialOffset = Math.max(0, (window.innerWidth - cardWidth) / 2);
+    mm.add("(min-width: 1024px)", () => {
+      // 1. Set initial states
+      if (headerRef.current) gsap.set(headerRef.current, { autoAlpha: 0, y: 30 });
 
-      // Initial visual states
-      letterRefs.current.forEach((el) => {
-        if (el) {
-          gsap.set(el, {
-            x: 0,
-            y: 0,
-            z: 0,
-            rotateX: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px)",
-            transformOrigin: "center center",
-            force3D: true,
-          });
-        }
+      const stages = [stage1Ref.current, stage2Ref.current, stage3Ref.current];
+      stages.forEach((st) => {
+        if (st) gsap.set(st, { autoAlpha: 0, y: 40 });
       });
 
-      if (cardsTrackRef.current) {
-        gsap.set(cardsTrackRef.current, {
-          x: initialOffset,
-          opacity: 0,
-        });
-      }
-
-      cardRefs.current.forEach((card, idx) => {
-        if (card) {
-          gsap.set(card, {
-            opacity: idx === 0 ? 0 : 0.45,
-            scale: idx === 0 ? 0.95 : 0.92,
-            force3D: true,
-          });
-        }
+      const spheres = [sphere1Ref.current, sphere2Ref.current, sphere3Ref.current];
+      spheres.forEach((sp) => {
+        if (sp) gsap.set(sp, { scale: 0.88, autoAlpha: 0 });
       });
 
-      if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: 12 });
+      if (energyLineRef.current) {
+        gsap.set(energyLineRef.current, { strokeDashoffset: 1200, strokeDasharray: 1200 });
       }
 
-      if (glowOrbRef.current) {
-        gsap.set(glowOrbRef.current, { scale: 0.8, opacity: 0.4 });
-      }
-
-      const masterTL = gsap.timeline({
+      // 2. Coordinated Scroll-Driven Timeline
+      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
-          start: "top top",
-          end: "+=2200",
-          pin: stage,
-          pinSpacing: true,
-          scrub: 0.85,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
+          start: "top 75%",
+          end: "bottom 85%",
+          toggleActions: "play none none reverse",
         },
       });
 
-      // 1. Letters shatter outwards in 3D
-      letterRefs.current.forEach((el, idx) => {
-        if (el) {
-          const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
-          masterTL.to(
-            el,
-            {
-              x: config.x * 0.45,
-              y: config.y * 0.45,
-              z: config.z * 0.45,
-              rotateX: config.rx,
-              rotateY: config.ry,
-              rotateZ: config.rz,
-              scale: config.s,
-              opacity: 0,
-              filter: "blur(8px)",
-              duration: 0.20,
-              ease: "power2.inOut",
-            },
-            0.02 + idx * 0.008
-          );
-        }
-      });
+      // Header reveal
+      if (headerRef.current) {
+        tl.to(headerRef.current, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0);
+      }
 
-      // 2. Fullscreen typography fades out
-      if (typographyRef.current) {
-        masterTL.to(
-          typographyRef.current,
-          {
-            opacity: 0,
-            pointerEvents: "none",
-            duration: 0.12,
-            ease: "power1.out",
-          },
-          0.10
+      // Draw horizontal energy line connecting all 3 spheres
+      if (energyLineRef.current) {
+        tl.to(
+          energyLineRef.current,
+          { strokeDashoffset: 0, duration: 1.4, ease: "power2.inOut" },
+          0.2
         );
       }
 
-      // 3. Persistent Header appears
-      if (sectionHeaderRef.current) {
-        masterTL.to(
-          sectionHeaderRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.14,
-            ease: "power3.out",
-          },
-          0.10
+      // Reveal Stage 1 (Purple - Ingestion)
+      if (stage1Ref.current && sphere1Ref.current) {
+        tl.to(
+          sphere1Ref.current,
+          { scale: 1, autoAlpha: 1, duration: 0.8, ease: "back.out(1.4)" },
+          0.3
         );
+        tl.to(stage1Ref.current, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.4);
       }
 
-      // 4. Cards Track & Card 01 enters
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            opacity: 1,
-            duration: 0.12,
-            ease: "power2.out",
-          },
-          0.12
+      // Reveal Stage 2 (Orange - Persona Engine)
+      if (stage2Ref.current && sphere2Ref.current) {
+        tl.to(
+          sphere2Ref.current,
+          { scale: 1, autoAlpha: 1, duration: 0.8, ease: "back.out(1.4)" },
+          0.6
         );
-      }
-      if (cardRefs.current[0]) {
-        masterTL.to(
-          cardRefs.current[0],
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.14,
-            ease: "power3.out",
-          },
-          0.12
-        );
+        tl.to(stage2Ref.current, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.7);
       }
 
-      // Hold on Card 01 (0.24 to 0.36)
-
-      // 5. Scroll smoothly to Card 02 (Card 02 COMES TO CENTER!)
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            x: initialOffset - shift,
-            duration: 0.22,
-            ease: "power2.inOut",
-          },
-          0.36
+      // Reveal Stage 3 (Cyan - Live Embed)
+      if (stage3Ref.current && sphere3Ref.current) {
+        tl.to(
+          sphere3Ref.current,
+          { scale: 1, autoAlpha: 1, duration: 0.8, ease: "back.out(1.4)" },
+          0.9
         );
-      }
-      if (cardRefs.current[0]) {
-        masterTL.to(
-          cardRefs.current[0],
-          {
-            opacity: 0.45,
-            scale: 0.92,
-            duration: 0.22,
-            ease: "power2.inOut",
-          },
-          0.36
-        );
-      }
-      if (cardRefs.current[1]) {
-        masterTL.to(
-          cardRefs.current[1],
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.22,
-            ease: "power3.out",
-          },
-          0.38
-        );
+        tl.to(stage3Ref.current, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power3.out" }, 1.0);
       }
 
-      // Hold on Card 02 (0.58 to 0.70)
-
-      // 6. Scroll smoothly to Card 03 (Card 03 COMES TO CENTER!)
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            x: initialOffset - 2 * shift,
-            duration: 0.22,
-            ease: "power2.inOut",
-          },
-          0.70
-        );
-      }
-      if (cardRefs.current[1]) {
-        masterTL.to(
-          cardRefs.current[1],
-          {
-            opacity: 0.45,
-            scale: 0.92,
-            duration: 0.22,
-            ease: "power2.inOut",
-          },
-          0.70
-        );
-      }
-      if (cardRefs.current[2]) {
-        masterTL.to(
-          cardRefs.current[2],
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.22,
-            ease: "power3.out",
-          },
-          0.72
-        );
+      // Floating ambient animations inside spheres
+      if (docs1Ref.current) {
+        gsap.to(docs1Ref.current.children, {
+          y: "-=6",
+          rotation: "+=2",
+          duration: 2.8,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          stagger: 0.35,
+        });
       }
 
-      // Hold on Card 03 before unpinning
-      masterTL.to({}, { duration: 0.16 }, 0.92);
+      if (pills2Ref.current) {
+        gsap.to(pills2Ref.current.children, {
+          y: "-=5",
+          duration: 2.5,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          stagger: 0.4,
+        });
+      }
+
+      if (embed3Ref.current) {
+        gsap.to(embed3Ref.current, {
+          y: "-=6",
+          rotateX: 4,
+          rotateY: -3,
+          duration: 3.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
     });
 
     // =========================================================================
-    // DESKTOP & TABLET TIMELINE (>= 768px): All 3 process cards side-by-side
+    // MOBILE & TABLET (< 1024px): Sequential Vertical Flow
     // =========================================================================
-    mm.add("(min-width: 768px)", () => {
-      const isDesktop = window.innerWidth >= 1024;
+    mm.add("(max-width: 1023px)", () => {
+      const items = [
+        headerRef.current,
+        stage1Ref.current,
+        stage2Ref.current,
+        stage3Ref.current,
+      ];
 
-      letterRefs.current.forEach((el) => {
-        if (el) {
-          gsap.set(el, {
-            x: 0,
-            y: 0,
-            z: 0,
-            rotateX: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px)",
-            transformOrigin: "center center",
-            force3D: true,
-          });
-        }
-      });
-
-      if (cardsTrackRef.current) {
-        gsap.set(cardsTrackRef.current, {
-          x: 0,
-          xPercent: isDesktop ? 30 : 20,
-          opacity: 0,
-        });
-      }
-
-      cardRefs.current.forEach((card, idx) => {
-        if (card) {
-          gsap.set(card, {
-            x: isDesktop ? 80 + idx * 40 : 45 + idx * 25,
-            opacity: 0,
-            scale: 0.92,
-            force3D: true,
-          });
-        }
-      });
-
-      if (sectionHeaderRef.current) {
-        gsap.set(sectionHeaderRef.current, { opacity: 0, y: 12 });
-      }
-
-      if (glowOrbRef.current) {
-        gsap.set(glowOrbRef.current, { scale: 0.8, opacity: 0.4 });
-      }
-
-      const masterTL = gsap.timeline({
-        scrollTrigger: {
-          trigger: container,
-          start: "top top",
-          end: "+=1200",
-          pin: stage,
-          pinSpacing: true,
-          scrub: 0.8,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      // 1. Letters shatter in 3D
-      letterRefs.current.forEach((el, idx) => {
-        if (el) {
-          const config = HEADLINE_LETTERS[idx] || { x: 0, y: 0, z: 200, rx: 0, ry: 0, rz: 0, s: 2 };
-          masterTL.to(
-            el,
+      items.forEach((item) => {
+        if (item) {
+          gsap.fromTo(
+            item,
+            { autoAlpha: 0, y: 35 },
             {
-              x: config.x,
-              y: config.y,
-              z: config.z,
-              rotateX: config.rx,
-              rotateY: config.ry,
-              rotateZ: config.rz,
-              scale: config.s,
-              opacity: 0,
-              filter: "blur(8px)",
-              duration: 0.35,
-              ease: "power2.inOut",
-            },
-            0.02 + idx * 0.012
-          );
-        }
-      });
-
-      // 2. Fullscreen typography fades out
-      if (typographyRef.current) {
-        masterTL.to(
-          typographyRef.current,
-          {
-            opacity: 0,
-            pointerEvents: "none",
-            duration: 0.15,
-            ease: "power1.out",
-          },
-          0.18
-        );
-      }
-
-      // Persistent Header fades in
-      if (sectionHeaderRef.current) {
-        masterTL.to(
-          sectionHeaderRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.25,
-            ease: "power3.out",
-          },
-          0.14
-        );
-      }
-
-      // 3. Carousel Track glides in
-      if (cardsTrackRef.current) {
-        masterTL.to(
-          cardsTrackRef.current,
-          {
-            xPercent: 0,
-            opacity: 1,
-            duration: 0.32,
-            ease: "power2.out",
-          },
-          0.15
-        );
-      }
-
-      // 4. Cards fan out smoothly into place
-      cardRefs.current.forEach((card, idx) => {
-        if (card) {
-          masterTL.to(
-            card,
-            {
-              x: 0,
-              opacity: 1,
-              scale: 1,
-              duration: 0.35,
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.75,
               ease: "power3.out",
-              force3D: true,
-            },
-            0.18 + idx * 0.08
+              scrollTrigger: {
+                trigger: item,
+                start: "top 85%",
+                toggleActions: "play none none reverse",
+              },
+            }
           );
         }
       });
-
-      // Ambient glow orb intensifies
-      if (glowOrbRef.current) {
-        masterTL.to(
-          glowOrbRef.current,
-          {
-            scale: 1.3,
-            opacity: 0.7,
-            duration: 0.4,
-            ease: "power2.inOut",
-          },
-          0.15
-        );
-      }
-
-      // Hold reading state
-      masterTL.to({}, { duration: 0.4 }, 0.6);
     });
 
     return () => mm.revert();
   }, []);
 
+  const handleAction = () => {
+    if (onOpenTrial) {
+      onOpenTrial();
+    } else {
+      window.location.href = "/login";
+    }
+  };
+
   return (
     <section
       ref={containerRef}
       id="how-it-works"
-      className="relative w-full bg-[#050507] text-[#F5F5F7] select-none"
+      className="relative w-full bg-[#050509] text-[#F5F5F7] overflow-hidden select-none py-16 sm:py-24 lg:py-28"
     >
-      <style>{`
-        .scrollbar-none::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-none {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
-
-      {/* ===================================================================== */}
-      {/* PINNED STAGE VIEWPORT (100dvh FOR MOBILE/SAFARI — NO CUT-OFF)          */}
-      {/* ===================================================================== */}
-      <div
-        ref={stageRef}
-        className="relative w-full overflow-hidden bg-[#050507] flex flex-col justify-between pt-24 sm:pt-26 lg:pt-28 pb-4 sm:pb-6 px-3 sm:px-6 lg:px-8"
-        style={{
-          minHeight: "100dvh",
-          height: "100dvh",
-          perspective: "1400px",
-        }}
-      >
-        {/* Ambient Center Glow */}
-        <div
-          ref={glowOrbRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] rounded-full pointer-events-none z-0 blur-[120px] transition-opacity"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, rgba(6, 182, 212, 0.12) 50%, transparent 70%)",
-          }}
+      {/* ======================================================================= */}
+      {/* 1. AMBIENT BACKGROUND WITH BG3.PNG GRAPHIC                              */}
+      {/* ======================================================================= */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* User-supplied bg3.png ambient wave artwork */}
+        <img
+          src="/bg3.png"
+          alt=""
+          role="presentation"
+          className="absolute inset-0 w-full h-full object-cover object-center mix-blend-screen opacity-65 will-change-transform"
         />
 
-        {/* Subtle grid pattern */}
-        <div
-          className="absolute inset-0 pointer-events-none opacity-20 z-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px)
-            `,
-            backgroundSize: "60px 60px",
-          }}
-        />
+        {/* Ambient colored lighting glows matching the 3 stages */}
+        {/* Purple glow on left */}
+        <div className="absolute top-[35%] left-[8%] w-[420px] h-[340px] rounded-full bg-[#963DFF]/15 blur-[130px] pointer-events-none" />
+        {/* Orange glow in center */}
+        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 w-[340px] h-[300px] rounded-full bg-[#FF713D]/10 blur-[120px] pointer-events-none" />
+        {/* Cyan glow on right */}
+        <div className="absolute top-[35%] right-[8%] w-[420px] h-[340px] rounded-full bg-[#22C8F2]/12 blur-[130px] pointer-events-none" />
 
+        {/* Subtle top & bottom edge gradient transitions */}
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#050509] via-[#050509]/60 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#050509] via-[#050509]/60 to-transparent pointer-events-none" />
+      </div>
+
+      <div className="relative z-10 max-w-[1340px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* ===================================================================== */}
-        {/* FULLSCREEN TYPOGRAPHY: "HOW IT WORKS" (SHATTERS ON SCROLL)            */}
+        {/* 2. SECTION HEADING: EDITORIAL TYPOGRAPHY & PURPLE GRADIENT HIGHLIGHT  */}
         {/* ===================================================================== */}
         <div
-          ref={typographyRef}
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none select-none px-4 pt-20 sm:pt-0"
+          ref={headerRef}
+          className="text-center max-w-4xl mx-auto mb-14 sm:mb-20 lg:mb-24 will-change-transform"
         >
-          <div className="flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 backdrop-blur-sm text-[10px] sm:text-xs font-mono uppercase tracking-widest text-purple-300 mb-4 sm:mb-6">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-            <span>Process & Implementation</span>
+          {/* Eyebrow */}
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="w-6 sm:w-10 h-px bg-white/20" />
+            <span className="text-[10px] sm:text-xs font-mono font-bold tracking-[0.25em] uppercase text-[#A5A5B5]">
+              EMPEROR NEXUS ARCHITECTURE
+            </span>
+            <span className="w-6 sm:w-10 h-px bg-white/20" />
           </div>
 
-          <h1
-            className="font-headline font-black text-4xl sm:text-6xl md:text-8xl lg:text-9xl tracking-tight text-white uppercase text-center flex flex-wrap justify-center items-center gap-x-2 sm:gap-x-4 md:gap-x-6"
-            style={{ perspective: "1200px" }}
-          >
-            {/* Word: HOW */}
-            <span className="inline-flex">
-              {HEADLINE_LETTERS.slice(0, 3).map((item, idx) => (
-                <span
-                  key={idx}
-                  ref={(el) => (letterRefs.current[idx] = el)}
-                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_15px_30px_rgba(150,61,255,0.4)]"
-                >
-                  {item.char}
-                </span>
-              ))}
+          {/* Main Headline */}
+          <h2 className="font-sans font-black text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] uppercase tracking-tight leading-[1.12] text-[#F5F5F7]">
+            FROM RAW DOCUMENTS TO AUTONOMOUS SALES{" "}
+            <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#C28AFF] via-[#963DFF] to-[#C28AFF] drop-shadow-[0_0_25px_rgba(150,61,255,0.45)]">
+              IN 5 MINUTES
             </span>
-
-            {/* Word: IT */}
-            <span className="inline-flex">
-              {HEADLINE_LETTERS.slice(4, 6).map((item, idx) => (
-                <span
-                  key={idx + 4}
-                  ref={(el) => (letterRefs.current[idx + 4] = el)}
-                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_15px_30px_rgba(150,61,255,0.4)]"
-                >
-                  {item.char}
-                </span>
-              ))}
-            </span>
-
-            {/* Word: WORKS */}
-            <span className="inline-flex">
-              {HEADLINE_LETTERS.slice(7).map((item, idx) => (
-                <span
-                  key={idx + 7}
-                  ref={(el) => (letterRefs.current[idx + 7] = el)}
-                  className="inline-block will-change-transform text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-[0_15px_30px_rgba(150,61,255,0.4)]"
-                >
-                  {item.char}
-                </span>
-              ))}
-            </span>
-          </h1>
-
-          <p className="mt-4 sm:mt-6 text-xs sm:text-base text-[#9898A6] max-w-lg text-center tracking-wide font-mono uppercase">
-            Scroll to reveal architecture & deployment
-          </p>
-        </div>
-
-        {/* ===================================================================== */}
-        {/* PERSISTENT HEADER (Appears smoothly as letters scatter)               */}
-        {/* ===================================================================== */}
-        <div
-          ref={sectionHeaderRef}
-          className="relative z-10 max-w-4xl mx-auto text-center shrink-0 pt-2 pb-1 sm:pb-2 px-3"
-        >
-          <h2 className="font-headline font-black text-lg sm:text-2xl md:text-3xl lg:text-4xl uppercase tracking-tight leading-snug sm:leading-tight text-transparent bg-clip-text bg-gradient-to-b from-[#C28AFF] via-white to-[#55A9FF] drop-shadow-md">
-            From Raw Documents To Autonomous Sales In 5 Minutes
           </h2>
-          <p className="mt-1 text-[11px] sm:text-xs md:text-sm text-[#9898A6] max-w-2xl mx-auto leading-relaxed">
+
+          {/* Supporting Description */}
+          <p className="mt-3 text-xs sm:text-sm md:text-base text-[#A5A5B5] max-w-2xl mx-auto leading-relaxed font-normal">
             No machine learning engineers, vector database setups, or prompt writing required.
           </p>
         </div>
 
         {/* ===================================================================== */}
-        {/* 3 PROCESS CARDS (RESPONSIVE SCROLL-DRIVEN SLIDE ON PHONE, 3-COL ON DESKTOP) */}
+        {/* 3. THREE CONNECTED VISUAL STAGES (PURPLE → ORANGE → CYAN)             */}
         {/* ===================================================================== */}
-        <div className="relative z-20 max-w-7xl mx-auto w-full my-auto overflow-hidden md:overflow-visible py-2 sm:py-3">
-          <div
-            ref={cardsTrackRef}
-            className="flex md:grid md:grid-cols-3 gap-4 lg:gap-6 items-stretch will-change-transform"
-            style={{
-              perspective: "1400px",
-              transformStyle: "preserve-3d",
-            }}
-          >
-            {PROCESS_CARDS.map((card, idx) => {
-              const Icon = card.icon;
+        <div className="relative w-full">
+          {/* ------------------------------------------------------------------- */}
+          {/* CONNECTING ENERGY LINE (DESKTOP: HORIZONTAL THROUGH SPHERES)        */}
+          {/* ------------------------------------------------------------------- */}
+          <div className="hidden lg:block absolute top-[108px] inset-x-[14%] h-12 pointer-events-none z-0">
+            <svg
+              className="w-full h-full overflow-visible"
+              viewBox="0 0 1000 48"
+              fill="none"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                {/* Multi-stop gradient connecting Stage 1 to 2 to 3 */}
+                <linearGradient id="energyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#963DFF" stopOpacity="0.9" />
+                  <stop offset="50%" stopColor="#FF713D" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#22C8F2" stopOpacity="0.9" />
+                </linearGradient>
 
-              return (
+                <filter id="energyGlow" x="-20%" y="-50%" width="140%" height="200%">
+                  <feGaussianBlur stdDeviation="5" result="glow" />
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Glowing underlying energy wave path */}
+              <path
+                d="M 50,24 C 250,24 250,24 500,24 C 750,24 750,24 950,24"
+                stroke="url(#energyGradient)"
+                strokeWidth="2.5"
+                filter="url(#energyGlow)"
+                className="opacity-70"
+              />
+
+              {/* Fine animated particle dashed trace */}
+              <path
+                ref={energyLineRef}
+                d="M 50,24 C 250,24 250,24 500,24 C 750,24 750,24 950,24"
+                stroke="url(#energyGradient)"
+                strokeWidth="2"
+                strokeDasharray="6 6"
+                className="opacity-90"
+              />
+
+              {/* Connection Node 1 (Purple - Ingestion) */}
+              <circle cx="50" cy="24" r="6" fill="#963DFF" filter="url(#energyGlow)" />
+              <circle cx="50" cy="24" r="2.5" fill="#FFFFFF" />
+
+              {/* Connection Node 2 (Orange - Persona) */}
+              <circle cx="500" cy="24" r="6" fill="#FF713D" filter="url(#energyGlow)" />
+              <circle cx="500" cy="24" r="2.5" fill="#FFFFFF" />
+
+              {/* Connection Node 3 (Cyan - Embed) */}
+              <circle cx="950" cy="24" r="6" fill="#22C8F2" filter="url(#energyGlow)" />
+              <circle cx="950" cy="24" r="2.5" fill="#FFFFFF" />
+            </svg>
+          </div>
+
+          {/* ------------------------------------------------------------------- */}
+          {/* THREE STAGE COLUMNS                                                 */}
+          {/* ------------------------------------------------------------------- */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 sm:gap-14 lg:gap-8 relative z-10 items-stretch">
+            {/* ================================================================= */}
+            {/* STAGE 01: INGESTION (PURPLE #963DFF)                              */}
+            {/* ================================================================= */}
+            <div
+              ref={stage1Ref}
+              className="flex flex-col items-center text-center will-change-transform"
+            >
+              {/* Visual 3D Energy Sphere */}
+              <div
+                ref={sphere1Ref}
+                className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8 flex items-center justify-center shrink-0"
+              >
+                {/* Outer Glass Energy Sphere Body */}
                 <div
-                  key={card.step}
-                  ref={(el) => (cardRefs.current[idx] = el)}
-                  className="featured-card group relative w-[85vw] max-w-[320px] shrink-0 md:w-auto md:max-w-none rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 cursor-pointer select-none border-2 will-change-transform backface-hidden"
+                  className="w-full h-full rounded-full border border-[#963DFF]/50 relative flex items-center justify-center overflow-hidden"
                   style={{
-                    backgroundColor: "#0D0D15",
-                    borderColor: card.accentColor,
-                    boxShadow: `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`,
-                    WebkitBackfaceVisibility: "hidden",
-                    backfaceVisibility: "hidden",
-                    WebkitTransform: "translateZ(0)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = card.accentColor;
-                    e.currentTarget.style.boxShadow = `0 0 45px ${card.accentColor}45, 0 20px 50px rgba(0,0,0,0.9)`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = card.accentColor;
-                    e.currentTarget.style.boxShadow = `0 0 25px ${card.accentColor}25, 0 16px 40px rgba(0,0,0,0.8)`;
+                    background:
+                      "radial-gradient(circle at 35% 25%, rgba(194, 138, 255, 0.45), rgba(150, 61, 255, 0.18) 50%, rgba(13, 10, 26, 0.75) 80%, rgba(150, 61, 255, 0.45) 100%)",
+                    boxShadow:
+                      "0 0 45px rgba(150, 61, 255, 0.38), inset 0 0 30px rgba(194, 138, 255, 0.25)",
                   }}
                 >
-                {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
-                <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
-                  <span className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/40 transition-colors select-none">
-                    {card.step}
-                  </span>
-                  <div
-                    className="w-10 sm:w-12 lg:w-14 h-1.5 sm:h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
-                    style={{ backgroundColor: card.accentColor }}
-                  />
-                </div>
+                  {/* Internal ambient radial glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#963DFF]/15 to-[#C28AFF]/20 pointer-events-none" />
 
-                {/* Upper Center: Prominent Illustrated Icon */}
-                <div className="my-2 sm:my-3 lg:my-4 flex justify-center w-full">
-                  <div
-                    className="w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-                    style={{
-                      backgroundColor: `${card.accentColor}18`,
-                      border: `1.5px solid ${card.accentColor}50`,
-                      boxShadow: `0 0 25px ${card.accentColor}25`,
-                    }}
-                  >
-                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 lg:w-11 lg:h-11" />
+                  {/* Pulsing Luminous Center Core */}
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#963DFF] to-[#C28AFF] shadow-[0_0_25px_rgba(150,61,255,0.85)] animate-pulse flex items-center justify-center z-10">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+
+                  {/* Floating Document Badges Inside Sphere */}
+                  <div ref={docs1Ref} className="absolute inset-0 z-20 pointer-events-none">
+                    {/* PDF Badge */}
+                    <div className="absolute top-5 left-5 bg-rose-500/25 border border-rose-500/50 text-rose-300 px-2 py-1 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1 shadow-[0_0_12px_rgba(244,63,94,0.35)] backdrop-blur-xs">
+                      <FileText className="w-2.5 h-2.5" />
+                      <span>PDF</span>
+                    </div>
+
+                    {/* DOCX Badge */}
+                    <div className="absolute top-6 right-5 bg-sky-500/25 border border-sky-500/50 text-sky-300 px-2 py-1 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1 shadow-[0_0_12px_rgba(14,165,233,0.35)] backdrop-blur-xs">
+                      <FileText className="w-2.5 h-2.5" />
+                      <span>DOCX</span>
+                    </div>
+
+                    {/* TXT Badge */}
+                    <div className="absolute bottom-6 left-6 bg-purple-500/25 border border-purple-500/50 text-purple-300 px-2 py-1 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1 shadow-[0_0_12px_rgba(168,85,247,0.35)] backdrop-blur-xs">
+                      <FileText className="w-2.5 h-2.5" />
+                      <span>TXT</span>
+                    </div>
+
+                    {/* Website URL Badge */}
+                    <div className="absolute bottom-5 right-5 bg-teal-500/25 border border-teal-500/50 text-teal-300 px-2 py-1 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1 shadow-[0_0_12px_rgba(20,184,166,0.35)] backdrop-blur-xs">
+                      <Globe className="w-2.5 h-2.5" />
+                      <span>URL</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Middle: Centered Heading & Structured Description */}
-                <div className="text-center space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 flex-1 flex flex-col justify-center">
-                  <span
-                    className="text-[9px] sm:text-[10px] lg:text-[11px] font-mono font-bold uppercase tracking-wider block"
-                    style={{ color: card.accentColor }}
-                  >
-                    {card.tagline}
-                  </span>
-                  <h3
-                    style={{ color: "#FFFFFF", WebkitTextFillColor: "#FFFFFF" }}
-                    className="font-extrabold text-xs sm:text-sm lg:text-base tracking-tight uppercase"
-                  >
-                    {card.title}
-                  </h3>
-                  <p
-                    style={{ color: "#9898A6", WebkitTextFillColor: "#9898A6" }}
-                    className="text-[11px] sm:text-xs leading-relaxed line-clamp-3 px-1 font-normal"
-                  >
-                    {card.description}
-                  </p>
-                  <div className="pt-0.5">
-                    <span
-                      style={{ color: "#E4E4E7", backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.12)" }}
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono border"
-                    >
-                      ✦ {card.feature}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
-                <div className="w-full pt-1 mt-auto">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onOpenTrial) {
-                        onOpenTrial();
-                      } else {
-                        window.location.href = "/login";
-                      }
-                    }}
-                    className="w-full py-2 sm:py-2.5 lg:py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer hover:brightness-105 active:scale-[0.98]"
-                    style={{
-                      backgroundColor: card.accentColor,
-                      color: card.buttonTextColor || "#FFFFFF",
-                      boxShadow: `0 4px 20px ${card.accentColor}35`,
-                    }}
-                  >
-                    <span>{card.ctaText}</span>
-                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                </div>
+                {/* Tilted Glowing Orbital Ring */}
+                <div
+                  className="absolute inset-[-14px] rounded-full border border-[#963DFF]/40 border-dashed animate-[spin_24s_linear_infinite] pointer-events-none"
+                  style={{ transform: "rotateX(68deg) rotateZ(-25deg)" }}
+                />
+                <div
+                  className="absolute inset-[-14px] rounded-full border-t-2 border-[#C28AFF] shadow-[0_0_15px_#C28AFF] pointer-events-none"
+                  style={{ transform: "rotateX(68deg) rotateZ(-25deg)" }}
+                />
               </div>
-            );
-          })}
+
+              {/* Stage Step Label */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#963DFF] shadow-[0_0_8px_#963DFF]" />
+                <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#C28AFF]">
+                  01 — INGESTION
+                </span>
+              </div>
+
+              {/* Stage Heading */}
+              <h3 className="font-sans font-black text-xl sm:text-2xl text-white uppercase tracking-tight mb-2.5">
+                CONNECT KNOWLEDGE BASE
+              </h3>
+
+              {/* Stage Description */}
+              <p className="text-xs sm:text-sm text-[#A5A5B5] max-w-sm leading-relaxed mb-4 font-normal">
+                Upload brochures, pricing schedules, FAQs, technical manuals, or provide your website URL for instant indexing.
+              </p>
+
+              {/* Supporting Feature Pill */}
+              <div className="mb-6">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-[#963DFF]/10 border border-[#963DFF]/30 text-[#C28AFF] shadow-[0_0_10px_rgba(150,61,255,0.15)]">
+                  <span>✦ Supports PDF, DOCX, TXT, CSV &amp; live URL crawler sync</span>
+                </span>
+              </div>
+
+              {/* Solid Accent CTA Button */}
+              <div className="w-full max-w-[260px] mt-auto">
+                <button
+                  type="button"
+                  onClick={handleAction}
+                  className="group w-full py-2.5 sm:py-3 px-6 rounded-full font-bold text-xs sm:text-sm text-white bg-[#963DFF] shadow-[0_4px_22px_rgba(150,61,255,0.45)] hover:shadow-[0_4px_32px_rgba(150,61,255,0.7)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Start Ingestion</span>
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            </div>
+
+            {/* ================================================================= */}
+            {/* STAGE 02: PERSONA ENGINE (ORANGE #FF713D)                         */}
+            {/* ================================================================= */}
+            <div
+              ref={stage2Ref}
+              className="flex flex-col items-center text-center will-change-transform"
+            >
+              {/* Visual 3D Energy Sphere */}
+              <div
+                ref={sphere2Ref}
+                className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8 flex items-center justify-center shrink-0"
+              >
+                {/* Outer Glass Energy Sphere Body */}
+                <div
+                  className="w-full h-full rounded-full border border-[#FF713D]/50 relative flex items-center justify-center overflow-hidden"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 35% 25%, rgba(255, 170, 130, 0.45), rgba(255, 113, 61, 0.18) 50%, rgba(26, 12, 8, 0.75) 80%, rgba(255, 113, 61, 0.45) 100%)",
+                    boxShadow:
+                      "0 0 45px rgba(255, 113, 61, 0.38), inset 0 0 30px rgba(255, 150, 100, 0.25)",
+                  }}
+                >
+                  {/* Internal ambient radial glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#FF713D]/15 to-[#FFA07A]/20 pointer-events-none" />
+
+                  {/* Center: Friendly AI Assistant Character */}
+                  <div className="relative z-10 flex flex-col items-center justify-center">
+                    <img
+                      src="/e-logoicon.webp"
+                      alt="Emperor Nexus AI Assistant"
+                      className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-[0_0_25px_rgba(255,113,61,0.75)] animate-pulse"
+                    />
+                  </div>
+
+                  {/* Floating Orbiting Configuration Pills */}
+                  <div ref={pills2Ref} className="absolute inset-0 z-20 pointer-events-none">
+                    {/* Personality Pill */}
+                    <div className="absolute top-4 left-3 bg-[#1A0E08]/90 border border-[#FF713D]/60 text-[#FF9E7A] text-[8px] sm:text-[9px] font-mono px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(255,113,61,0.35)] flex items-center gap-1 backdrop-blur-xs">
+                      <Sparkles className="w-2 h-2 text-[#FF713D]" />
+                      <span>Personality</span>
+                    </div>
+
+                    {/* Welcome Message Pill */}
+                    <div className="absolute top-5 right-3 bg-[#1A0E08]/90 border border-[#FF713D]/60 text-[#FF9E7A] text-[8px] sm:text-[9px] font-mono px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(255,113,61,0.35)] flex items-center gap-1 backdrop-blur-xs">
+                      <MessageSquare className="w-2 h-2 text-[#FF713D]" />
+                      <span>Welcome Msg</span>
+                    </div>
+
+                    {/* Brand Style Pill */}
+                    <div className="absolute bottom-5 left-3 bg-[#1A0E08]/90 border border-[#FF713D]/60 text-[#FF9E7A] text-[8px] sm:text-[9px] font-mono px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(255,113,61,0.35)] flex items-center gap-1 backdrop-blur-xs">
+                      <Palette className="w-2 h-2 text-[#FF713D]" />
+                      <span>Brand Style</span>
+                    </div>
+
+                    {/* Launcher Pill */}
+                    <div className="absolute bottom-4 right-3 bg-[#1A0E08]/90 border border-[#FF713D]/60 text-[#FF9E7A] text-[8px] sm:text-[9px] font-mono px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(255,113,61,0.35)] flex items-center gap-1 backdrop-blur-xs">
+                      <Sliders className="w-2 h-2 text-[#FF713D]" />
+                      <span>Launcher</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tilted Glowing Orbital Ring */}
+                <div
+                  className="absolute inset-[-14px] rounded-full border border-[#FF713D]/40 border-dashed animate-[spin_26s_linear_infinite] pointer-events-none"
+                  style={{ transform: "rotateX(68deg) rotateZ(25deg)" }}
+                />
+                <div
+                  className="absolute inset-[-14px] rounded-full border-t-2 border-[#FFA07A] shadow-[0_0_15px_#FFA07A] pointer-events-none"
+                  style={{ transform: "rotateX(68deg) rotateZ(25deg)" }}
+                />
+              </div>
+
+              {/* Stage Step Label */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#FF713D] shadow-[0_0_8px_#FF713D]" />
+                <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#FF9E7A]">
+                  02 — PERSONA ENGINE
+                </span>
+              </div>
+
+              {/* Stage Heading */}
+              <h3 className="font-sans font-black text-xl sm:text-2xl text-white uppercase tracking-tight mb-2.5">
+                CALIBRATE PERSONA STYLING
+              </h3>
+
+              {/* Stage Description */}
+              <p className="text-xs sm:text-sm text-[#A5A5B5] max-w-sm leading-relaxed mb-4 font-normal">
+                Choose assistant personality, welcome greetings, brand colors, logo, launcher shape and attention-grabbing animation.
+              </p>
+
+              {/* Supporting Feature Pill */}
+              <div className="mb-6">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-[#FF713D]/10 border border-[#FF713D]/30 text-[#FF9E7A] shadow-[0_0_10px_rgba(255,113,61,0.15)]">
+                  <span>✦ Custom logo upload, squircle / circle buttons &amp; 19 launcher animations</span>
+                </span>
+              </div>
+
+              {/* Solid Accent CTA Button */}
+              <div className="w-full max-w-[260px] mt-auto">
+                <button
+                  type="button"
+                  onClick={handleAction}
+                  className="group w-full py-2.5 sm:py-3 px-6 rounded-full font-bold text-xs sm:text-sm text-white bg-[#FF713D] shadow-[0_4px_22px_rgba(255,113,61,0.45)] hover:shadow-[0_4px_32px_rgba(255,113,61,0.7)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Calibrate Persona</span>
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            </div>
+
+            {/* ================================================================= */}
+            {/* STAGE 03: LIVE EMBED (CYAN #22C8F2)                               */}
+            {/* ================================================================= */}
+            <div
+              ref={stage3Ref}
+              className="flex flex-col items-center text-center will-change-transform"
+            >
+              {/* Visual 3D Energy Sphere */}
+              <div
+                ref={sphere3Ref}
+                className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8 flex items-center justify-center shrink-0"
+              >
+                {/* Outer Glass Energy Sphere Body */}
+                <div
+                  className="w-full h-full rounded-full border border-[#22C8F2]/50 relative flex items-center justify-center overflow-hidden"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 35% 25%, rgba(130, 235, 255, 0.45), rgba(34, 200, 242, 0.18) 50%, rgba(6, 20, 28, 0.75) 80%, rgba(34, 200, 242, 0.45) 100%)",
+                    boxShadow:
+                      "0 0 45px rgba(34, 200, 242, 0.38), inset 0 0 30px rgba(100, 220, 255, 0.25)",
+                  }}
+                >
+                  {/* Internal ambient radial glow */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-[#22C8F2]/15 to-[#80EAFF]/20 pointer-events-none" />
+
+                  {/* Center: Floating Mini Browser / Code Interface */}
+                  <div
+                    ref={embed3Ref}
+                    className="relative z-10 w-32 sm:w-36 rounded-xl bg-[#07131D]/92 border border-[#22C8F2]/40 p-2.5 shadow-[0_12px_30px_rgba(0,0,0,0.85),0_0_20px_rgba(34,200,242,0.25)] text-left will-change-transform"
+                  >
+                    {/* Browser Window Header */}
+                    <div className="flex items-center justify-between border-b border-white/[0.08] pb-1.5 mb-2">
+                      <div className="flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500/80" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+                      </div>
+                      <span className="text-[8px] font-mono text-[#22C8F2]/80">index.html</span>
+                    </div>
+
+                    {/* Script Tag Snippet */}
+                    <div className="space-y-0.5 font-mono text-[8px]">
+                      <div className="text-white/30">&lt;!-- Nexus Widget --&gt;</div>
+                      <div className="text-[#22C8F2] flex items-center gap-1 truncate font-semibold">
+                        <Code2 className="w-2.5 h-2.5 shrink-0" />
+                        <span>&lt;script src=&quot;nexus.js&quot;&gt;</span>
+                      </div>
+                    </div>
+
+                    {/* Embed Indicator with Animated Live Pointer */}
+                    <div className="mt-2 pt-1.5 border-t border-white/[0.06] flex items-center justify-between">
+                      <span className="text-[8px] font-mono text-emerald-400 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+                        Live Active
+                      </span>
+
+                      {/* Beacon Pulse Target Pointer */}
+                      <div className="relative flex items-center justify-center">
+                        <span className="absolute w-4 h-4 rounded-full bg-[#22C8F2]/40 animate-ping" />
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#22C8F2] text-[#050509] flex items-center justify-center shadow-[0_0_10px_#22C8F2]">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tilted Glowing Orbital Ring */}
+                <div
+                  className="absolute inset-[-14px] rounded-full border border-[#22C8F2]/40 border-dashed animate-[spin_20s_linear_infinite] pointer-events-none"
+                  style={{ transform: "rotateX(68deg) rotateZ(-15deg)" }}
+                />
+                <div
+                  className="absolute inset-[-14px] rounded-full border-t-2 border-[#7AE5FF] shadow-[0_0_15px_#7AE5FF] pointer-events-none"
+                  style={{ transform: "rotateX(68deg) rotateZ(-15deg)" }}
+                />
+              </div>
+
+              {/* Stage Step Label */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C8F2] shadow-[0_0_8px_#22C8F2]" />
+                <span className="text-xs font-mono font-bold tracking-widest uppercase text-[#22C8F2]">
+                  03 — LIVE EMBED
+                </span>
+              </div>
+
+              {/* Stage Heading */}
+              <h3 className="font-sans font-black text-xl sm:text-2xl text-white uppercase tracking-tight mb-2.5">
+                DEPLOY SINGLE LINE CODE
+              </h3>
+
+              {/* Stage Description */}
+              <p className="text-xs sm:text-sm text-[#A5A5B5] max-w-sm leading-relaxed mb-4 font-normal">
+                Integrate the assistant into your website using the provided script with instant anti-cache live updates.
+              </p>
+
+              {/* Supporting Feature Pill */}
+              <div className="mb-6">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-mono bg-[#22C8F2]/10 border border-[#22C8F2]/30 text-[#7AE5FF] shadow-[0_0_10px_rgba(34,200,242,0.15)]">
+                  <span>✦ Zero dependencies, anti-cache instant updates &amp; mobile-ready</span>
+                </span>
+              </div>
+
+              {/* Solid Accent CTA Button */}
+              <div className="w-full max-w-[260px] mt-auto">
+                <button
+                  type="button"
+                  onClick={handleAction}
+                  className="group w-full py-2.5 sm:py-3 px-6 rounded-full font-bold text-xs sm:text-sm text-[#050509] bg-[#22C8F2] shadow-[0_4px_22px_rgba(34,200,242,0.45)] hover:shadow-[0_4px_32px_rgba(34,200,242,0.7)] hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Get Embed Code</span>
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* ===================================================================== */}
-        {/* BOTTOM ACTION CTA BANNER                                              */}
+        {/* 4. BOTTOM ACTION CTA BANNER                                           */}
         {/* ===================================================================== */}
-        <div className="relative z-10 text-center shrink-0 pt-0.5 pb-1">
+        <div className="text-center pt-14 sm:pt-18 lg:pt-20">
           <button
             type="button"
-            onClick={onOpenTrial}
-            className="inline-flex items-center gap-2 px-5 sm:px-8 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm text-white btn-primary-gradient cursor-pointer shadow-[0_0_25px_rgba(150,61,255,0.4)] hover:shadow-[0_0_35px_rgba(150,61,255,0.6)] hover:scale-105 active:scale-95 transition-all duration-300"
+            onClick={handleAction}
+            className="inline-flex items-center gap-2.5 px-6 sm:px-9 py-3 sm:py-3.5 rounded-full font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] via-[#7C3AED] to-[#22C8F2] shadow-[0_0_30px_rgba(150,61,255,0.4)] hover:shadow-[0_0_45px_rgba(150,61,255,0.65)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
           >
             <span>Launch Your Autonomous Assistant</span>
-            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
