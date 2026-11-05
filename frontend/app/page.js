@@ -48,6 +48,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState({ left: 0, arrowLeft: 20, width: 360 });
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeNav, setActiveNav] = useState("home");
@@ -55,6 +56,56 @@ export default function HomePage() {
   const [navIndicatorStyle, setNavIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const navLinkRefs = useRef({});
   const pillBarRef = useRef(null);
+  const buttonRefs = useRef({});
+  const hoverTimeoutRef = useRef(null);
+
+  const updateDropdownPosition = (indId) => {
+    const btn = buttonRefs.current[indId];
+    const wrapper = pillBarRef.current;
+    if (btn && wrapper) {
+      const bRect = btn.getBoundingClientRect();
+      const wRect = wrapper.getBoundingClientRect();
+
+      const btnCenter = bRect.left + bRect.width / 2 - wRect.left;
+      const cardWidth = Math.min(360, wRect.width - 24);
+
+      const targetLeft = btnCenter - cardWidth / 2;
+      const minLeft = 12;
+      const maxLeft = wRect.width - cardWidth - 12;
+      const clampedLeft = Math.max(minLeft, Math.min(maxLeft, targetLeft));
+      const arrowLeft = btnCenter - clampedLeft;
+
+      setDropdownPos({
+        left: clampedLeft,
+        arrowLeft: Math.max(16, Math.min(cardWidth - 16, arrowLeft)),
+        width: cardWidth,
+      });
+    }
+  };
+
+  const handlePillMouseEnter = (indId) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    updateDropdownPosition(indId);
+    setActiveDropdown(indId);
+  };
+
+  const handlePillMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 180);
+  };
+
+  const handleCardMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+  };
+
+  const handleCardMouseLeave = () => {
+    handlePillMouseLeave();
+  };
 
   // Close dropdown on click outside or escape key
   useEffect(() => {
@@ -73,6 +124,9 @@ export default function HomePage() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -467,7 +521,7 @@ export default function HomePage() {
 
             <button
               type="button"
-              onClick={() => handleToggleIndustryDropdown("real-estate")}
+              onClick={() => handlePillMouseEnter("real-estate")}
               className="px-7 py-3.5 rounded-full font-medium text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
             >
               <div className="w-4 h-4 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#A494F4] group-hover:bg-[#9E60F4]/20 transition-all">
@@ -489,8 +543,17 @@ export default function HomePage() {
                 return (
                   <React.Fragment key={ind.id}>
                     <button
+                      ref={(el) => (buttonRefs.current[ind.id] = el)}
                       type="button"
-                      onClick={() => handleToggleIndustryDropdown(ind.id)}
+                      onMouseEnter={() => handlePillMouseEnter(ind.id)}
+                      onMouseLeave={handlePillMouseLeave}
+                      onClick={() => {
+                        if (activeDropdown === ind.id) {
+                          setActiveDropdown(null);
+                        } else {
+                          handlePillMouseEnter(ind.id);
+                        }
+                      }}
                       className={`group/pill inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                         isOpen
                           ? "text-white bg-white/[0.14] border border-[#C28AFF]/60 shadow-[0_0_16px_rgba(194,138,255,0.35)]"
@@ -519,7 +582,7 @@ export default function HomePage() {
           </div>
 
           {/* =================================================================== */}
-          {/* DOWN-SIDE CURTAIN CARD (Short, little information, curtain effect)  */}
+          {/* DOWN-SIDE CURTAIN CARD ALIGNED TO HOVERED WORD (NOT IN CENTER)      */}
           {/* =================================================================== */}
           {activeDropdown && HERO_INDUSTRY_DATA[activeDropdown] && (() => {
             const indData = HERO_INDUSTRY_DATA[activeDropdown];
@@ -527,18 +590,32 @@ export default function HomePage() {
             const ActiveIcon = activeIndObj ? activeIndObj.icon : Building2;
 
             return (
-              <div className="w-full max-w-xl mx-auto mt-2 sm:mt-2.5 origin-top animate-curtain-down overflow-hidden">
-                <div className="relative w-full bg-[#0E0E18]/95 backdrop-blur-2xl border border-white/[0.12] rounded-2xl p-3 sm:p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(150,61,255,0.15)] text-white">
-                  {/* Top curtain accent trim */}
+              <div
+                onMouseEnter={handleCardMouseEnter}
+                onMouseLeave={handleCardMouseLeave}
+                className="absolute top-[calc(100%+6px)] z-50 origin-top animate-curtain-drop pointer-events-auto"
+                style={{
+                  left: `${dropdownPos.left}px`,
+                  width: `${dropdownPos.width}px`,
+                }}
+              >
+                <div className="relative w-full bg-[#0E0E18]/95 backdrop-blur-2xl border border-white/[0.14] rounded-2xl p-3 sm:p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_25px_rgba(150,61,255,0.2)] text-white">
+                  {/* Top curtain notch / arrow pointing directly to the hovered word */}
                   <div
-                    className="absolute top-0 inset-x-0 h-[2px] opacity-90"
+                    className="absolute -top-1.5 w-3 h-3 rotate-45 bg-[#0E0E18] border-t border-l border-white/[0.14]"
+                    style={{ left: `${dropdownPos.arrowLeft - 6}px` }}
+                  />
+
+                  {/* Top curtain accent glow line */}
+                  <div
+                    className="absolute top-0 inset-x-0 h-[2px] opacity-90 rounded-t-2xl"
                     style={{
                       backgroundImage: `linear-gradient(to right, transparent, ${indData.color}, transparent)`,
                     }}
                   />
 
-                  <div className="flex items-start justify-between gap-3">
-                    {/* Left: Icon + Title + 1 Line Short Info */}
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    {/* Left: Icon + Title + Short Info */}
                     <div className="flex items-start gap-2.5 min-w-0">
                       <div
                         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"

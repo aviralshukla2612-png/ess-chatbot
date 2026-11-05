@@ -654,20 +654,21 @@ body::-webkit-scrollbar {
   animation: fa-wag 1.8s ease-in-out infinite !important;
 }
 
-@keyframes curtainDown {
+@keyframes curtainDrop {
   0% {
     opacity: 0;
-    max-height: 0;
-    transform: scaleY(0.65) translateY(-6px);
+    clip-path: inset(0% 0% 100% 0% round 16px);
+    transform: translateY(-8px) scaleY(0.9);
   }
   100% {
     opacity: 1;
-    max-height: 200px;
-    transform: scaleY(1) translateY(0);
+    clip-path: inset(0% 0% 0% 0% round 16px);
+    transform: translateY(0) scaleY(1);
   }
 }
 
-.animate-curtain-down {
-  animation: curtainDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-curtain-drop {
+  animation: curtainDrop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top center;
+  will-change: clip-path, transform, opacity;
 }
