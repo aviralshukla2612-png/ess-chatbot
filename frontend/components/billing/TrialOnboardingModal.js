@@ -150,6 +150,14 @@ export default function TrialOnboardingModal({
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
                 if (onActivated) onActivated(verifyData.subscription);
                 if (onClose) onClose();
+
+                // If not already on /bots/create, redirect to /bots/create with auto-selected industry
+                try {
+                  const savedInd = typeof window !== "undefined" ? localStorage.getItem("nexus_selected_industry") : null;
+                  if (savedInd && typeof window !== "undefined" && !window.location.pathname.includes("/bots/create")) {
+                    window.location.href = `/bots/create?industry=${encodeURIComponent(savedInd)}`;
+                  }
+                } catch (e) {}
               } else {
                 setError(verifyData.error || "Payment verification failed.");
               }
@@ -201,6 +209,13 @@ export default function TrialOnboardingModal({
       if (verifyData.success) {
         if (onActivated) onActivated(verifyData.subscription);
         if (onClose) onClose();
+
+        try {
+          const savedInd = typeof window !== "undefined" ? localStorage.getItem("nexus_selected_industry") : null;
+          if (savedInd && typeof window !== "undefined" && !window.location.pathname.includes("/bots/create")) {
+            window.location.href = `/bots/create?industry=${encodeURIComponent(savedInd)}`;
+          }
+        } catch (e) {}
       } else {
         throw new Error(verifyData.error || "Instant trial verification failed");
       }

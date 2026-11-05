@@ -86,7 +86,22 @@ export default function IndustryBotWizard() {
   const [submitError, setSubmitError] = useState("");
   const [createdBot, setCreatedBot] = useState(null);
 
-  // 1. Pre-fill user/org details and check for existing draft
+  // 1. Auto-update defaults when industry changes (if user hasn't heavily customized them)
+  const handleSelectIndustry = (indId) => {
+    setSelectedIndustry(indId);
+    const ind = INDUSTRIES.find((i) => i.id === indId);
+    if (ind) {
+      setAssistantConfig((prev) => ({
+        ...prev,
+        name: ind.defaultBotName,
+        welcomeMessage: ind.defaultWelcomeMessage,
+        starterQuestions: [...ind.starterQuestions],
+        primaryColor: ind.accentColor || prev.primaryColor,
+      }));
+    }
+  };
+
+  // 2. Pre-fill user/org details and check for URL param / stored industry or existing draft
   useEffect(() => {
     async function loadAccountDetails() {
       try {
@@ -100,6 +115,30 @@ export default function IndustryBotWizard() {
             businessEmail: prev.businessEmail || meRes.user.email || "",
             businessName: prev.businessName || meRes.activeOrgName || meRes.user.name || "",
           }));
+        }
+      } catch (e) {}
+
+      // Auto-detect selected industry from landing page / sign-in redirect
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryInd = urlParams.get("industry") || localStorage.getItem("nexus_selected_industry");
+        if (queryInd) {
+          const s = String(queryInd).toLowerCase().trim();
+          let canonical = null;
+          if (s === "real-estate" || s === "realestate" || s === "property") canonical = "real-estate";
+          else if (s === "healthcare" || s === "clinic" || s === "health" || s === "medical") canonical = "clinic";
+          else if (s === "hospital") canonical = "hospital";
+          else if (s === "education" || s === "school" || s === "college" || s === "admissions") canonical = "education";
+          else if (s === "hospitality" || s === "hotel" || s === "resort") canonical = "hotel";
+          else if (s === "restaurant" || s === "dining" || s === "cafe" || s === "food") canonical = "restaurant";
+          else if (s === "retail" || s === "retail-ecommerce" || s === "ecommerce" || s === "shop") canonical = "retail-ecommerce";
+          else if (s === "professional-services" || s === "consulting" || s === "corporate") canonical = "professional-services";
+          else if (s === "and-more" || s === "other" || s === "more") canonical = "other";
+          else if (INDUSTRIES.some((i) => i.id === s)) canonical = s;
+
+          if (canonical) {
+            handleSelectIndustry(canonical);
+          }
         }
       } catch (e) {}
 
@@ -117,21 +156,6 @@ export default function IndustryBotWizard() {
 
     loadAccountDetails();
   }, []);
-
-  // 2. Auto-update defaults when industry changes (if user hasn't heavily customized them)
-  const handleSelectIndustry = (indId) => {
-    setSelectedIndustry(indId);
-    const ind = INDUSTRIES.find((i) => i.id === indId);
-    if (ind) {
-      setAssistantConfig((prev) => ({
-        ...prev,
-        name: ind.defaultBotName,
-        welcomeMessage: ind.defaultWelcomeMessage,
-        starterQuestions: [...ind.starterQuestions],
-        primaryColor: ind.accentColor || prev.primaryColor,
-      }));
-    }
-  };
 
   // 3. Draft management
   const handleResumeDraft = () => {

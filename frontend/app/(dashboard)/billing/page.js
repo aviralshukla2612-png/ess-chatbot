@@ -223,6 +223,21 @@ export default function BillingPage() {
               setExtensionSuccessMsg(`🎉 Plan extended successfully! You are now subscribed to ${plan.name}.`);
               loadBilling();
               window.dispatchEvent(new CustomEvent("subscription-updated"));
+
+              // Auto-redirect to bot creation with the user's selected industry after paying
+              try {
+                const params = new URLSearchParams(window.location.search);
+                const targetInd =
+                  params.get("industry") ||
+                  (typeof window !== "undefined"
+                    ? localStorage.getItem("nexus_selected_industry")
+                    : null);
+                if (targetInd) {
+                  setTimeout(() => {
+                    window.location.href = `/bots/create?industry=${encodeURIComponent(targetInd)}`;
+                  }, 1200);
+                }
+              } catch (e) {}
             } else {
               setExtensionError(verifyData.error || "Payment verification failed.");
             }

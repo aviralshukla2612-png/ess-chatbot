@@ -57,6 +57,7 @@ export default function LoginPage() {
   const [companyName, setCompanyName] = useState("");
   const [redirectPath, setRedirectPath] = useState("");
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedIndustry, setSelectedIndustry] = useState(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -72,6 +73,18 @@ export default function LoginPage() {
       const plan = params.get("plan");
       if (plan) {
         setSelectedPlan(plan.toLowerCase());
+      }
+      const ind = params.get("industry");
+      if (ind) {
+        setSelectedIndustry(ind);
+        try {
+          localStorage.setItem("nexus_selected_industry", ind);
+        } catch (e) {}
+      } else {
+        try {
+          const stored = localStorage.getItem("nexus_selected_industry");
+          if (stored) setSelectedIndustry(stored);
+        } catch (e) {}
       }
       const tab = params.get("tab");
       if (tab === "register") {
@@ -109,11 +122,13 @@ export default function LoginPage() {
         }
 
         if (selectedPlan) {
-          window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}&checkout=true`);
+          const indQuery = selectedIndustry ? `&industry=${encodeURIComponent(selectedIndustry)}` : "";
+          window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}${indQuery}&checkout=true`);
           return;
         }
 
-        window.location.replace(redirectPath || "/dashboard");
+        const defaultTarget = selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
+        window.location.replace(redirectPath || defaultTarget);
         return;
       }
 
@@ -140,12 +155,14 @@ export default function LoginPage() {
       }
 
       if (selectedPlan) {
-        window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}&checkout=true`);
+        const indQuery = selectedIndustry ? `&industry=${encodeURIComponent(selectedIndustry)}` : "";
+        window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}${indQuery}&checkout=true`);
         return;
       }
 
       const isSuper = data.user?.role === "SUPER_ADMIN" || data.orgRole === "SUPER_ADMIN" || isPlatformAdmin;
-      const destination = isSuper ? "/admin" : (redirectPath || "/dashboard");
+      const defaultTarget = isSuper ? "/admin" : (selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard");
+      const destination = redirectPath || defaultTarget;
       window.location.replace(destination);
     } catch (err) {
       setErrorMessage(err.message || "Authentication failed. Please check your credentials.");

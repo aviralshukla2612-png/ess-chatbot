@@ -205,57 +205,63 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
   const HERO_INDUSTRY_DATA = {
     "real-estate": {
       id: "real-estate",
+      wizardIndustry: "real-estate",
       title: "Real Estate Assistant",
       color: "#C28AFF",
       shortDesc: "Answers unit layout & pricing questions, shares floor plans, and schedules private VIP viewings into your CRM.",
-      badges: ["✦ Property PDF Grounded", "✦ VIP Tour Booking"],
+      badges: ["Property PDF Grounded", "VIP Tour Booking"],
       ctaText: "Deploy",
       ctaLink: "/login?industry=real-estate",
     },
     healthcare: {
       id: "healthcare",
+      wizardIndustry: "clinic",
       title: "Healthcare Intake Assistant",
       color: "#55A9FF",
       shortDesc: "24/7 patient intake, verified medical FAQs, insurance network eligibility checks, and doctor consultation bookings.",
-      badges: ["✦ Clinical Intake Routing", "✦ Insurance Network Check"],
+      badges: ["Clinical Intake Routing", "Insurance Network Check"],
       ctaText: "Deploy",
-      ctaLink: "/login?industry=healthcare",
+      ctaLink: "/login?industry=clinic",
     },
     education: {
       id: "education",
+      wizardIndustry: "education",
       title: "Admissions Counselor",
       color: "#C28AFF",
       shortDesc: "Guides prospective students on degree prerequisites, tuition fees, scholarship criteria, and captures enrollment leads.",
-      badges: ["✦ Prospectus Ingestion", "✦ Student Lead Capture"],
+      badges: ["Prospectus Ingestion", "Student Lead Capture"],
       ctaText: "Deploy",
       ctaLink: "/login?industry=education",
     },
     hospitality: {
       id: "hospitality",
+      wizardIndustry: "hotel",
       title: "Guest Concierge",
       color: "#FF713D",
       shortDesc: "Handles 24/7 suite reservations, dining menus, local itineraries, and bespoke guest inquiries with zero delay.",
-      badges: ["✦ Direct Suite Booking", "✦ 24/7 Digital Concierge"],
+      badges: ["Direct Suite Booking", "24/7 Digital Concierge"],
       ctaText: "Deploy",
-      ctaLink: "/login?industry=hospitality",
+      ctaLink: "/login?industry=hotel",
     },
     retail: {
       id: "retail",
+      wizardIndustry: "retail-ecommerce",
       title: "Shopping Assistant",
       color: "#22C8F2",
       shortDesc: "Recommends products from your catalog, tracks live orders, and resolves returns with zero wait times.",
-      badges: ["✦ Live Order Tracking", "✦ Product Recommendations"],
+      badges: ["Live Order Tracking", "Product Recommendations"],
       ctaText: "Deploy",
-      ctaLink: "/login?industry=retail",
+      ctaLink: "/login?industry=retail-ecommerce",
     },
     "and-more": {
       id: "and-more",
+      wizardIndustry: "other",
       title: "Custom AI for Any Site",
       color: "#A494F4",
       shortDesc: "Upload company PDFs, Word docs, or website URLs to deploy an autonomous sales assistant in 5 minutes.",
-      badges: ["✦ 1-Line Universal Embed", "✦ 99.8% Grounded Accuracy"],
+      badges: ["1-Line Universal Embed", "99.8% Grounded Accuracy"],
       ctaText: "Build Now",
-      ctaLink: "/login",
+      ctaLink: "/login?industry=other",
     },
   };
 
@@ -464,10 +470,6 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
                         <h4 className="font-bold text-xs sm:text-sm text-white truncate">
                           {indData.title}
                         </h4>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>Active</span>
-                        </span>
                       </div>
 
                       <p className="mt-0.5 text-[11px] sm:text-xs text-[#C5C5D2] leading-snug line-clamp-2">
@@ -501,7 +503,13 @@ export default function HeroSection({ onOpenExperience, onOpenTrial, onSelectInd
 
                     <button
                       type="button"
-                      onClick={onOpenTrial}
+                      onClick={() => {
+                        const wizardId = indData.wizardIndustry || indData.id;
+                        try {
+                          localStorage.setItem("nexus_selected_industry", wizardId);
+                        } catch (e) {}
+                        window.location.href = `/login?industry=${wizardId}&redirect=${encodeURIComponent(`/bots/create?industry=${wizardId}`)}`;
+                      }}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold text-white btn-primary-gradient cursor-pointer shadow-sm hover:scale-105 active:scale-95 transition-all whitespace-nowrap mt-auto"
                     >
                       <span>{indData.ctaText}</span>
