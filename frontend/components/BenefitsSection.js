@@ -7,9 +7,6 @@ import {
   MessageSquare,
   Zap,
   BarChart3,
-  Check,
-  ArrowRight,
-  Link2,
 } from "lucide-react";
 
 if (typeof window !== "undefined") {
@@ -22,22 +19,20 @@ export default function BenefitsSection({ onOpenTrial }) {
   const headerRef = useRef(null);
   const bgWaveRef = useRef(null);
 
-  // Scene 1: Customer Engagement
+  // Scene 1: Customer Engagement (Card 1: bg4.png)
   const scene1Ref = useRef(null);
-  const b1Msg1Ref = useRef(null);
-  const b1Msg2Ref = useRef(null);
   const b1BadgeRef = useRef(null);
+  const b1CardRef = useRef(null);
 
-  // Scene 2: Intelligent Automation
+  // Scene 2: Intelligent Automation (Card 2: bg5.png)
   const scene2Ref = useRef(null);
-  const b2ItemsRef = useRef(null);
   const b2BadgeRef = useRef(null);
+  const b2CardRef = useRef(null);
 
-  // Scene 3: Enquiry Visibility
+  // Scene 3: Enquiry Visibility (Card 3: bg6.png)
   const scene3Ref = useRef(null);
-  const b3BarsRef = useRef(null);
-  const b3LeadsRef = useRef(null);
   const b3BadgeRef = useRef(null);
+  const b3CardRef = useRef(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -69,9 +64,8 @@ export default function BenefitsSection({ onOpenTrial }) {
           pointerEvents: "auto",
         });
       }
-      if (b1Msg1Ref.current) gsap.set(b1Msg1Ref.current, { autoAlpha: 1, x: 0 });
-      if (b1Msg2Ref.current) gsap.set(b1Msg2Ref.current, { autoAlpha: 1, x: 0 });
       if (b1BadgeRef.current) gsap.set(b1BadgeRef.current, { scale: 1, autoAlpha: 1 });
+      if (b1CardRef.current) gsap.set(b1CardRef.current, { scale: 1, autoAlpha: 1 });
 
       // Scene 2: Hidden initially
       if (scene2Ref.current) {
@@ -84,9 +78,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         });
       }
       if (b2BadgeRef.current) gsap.set(b2BadgeRef.current, { scale: 0, autoAlpha: 0 });
-      if (b2ItemsRef.current) {
-        gsap.set(b2ItemsRef.current.children, { autoAlpha: 0, y: 15 });
-      }
+      if (b2CardRef.current) gsap.set(b2CardRef.current, { scale: 0.94, autoAlpha: 0 });
 
       // Scene 3: Hidden initially
       if (scene3Ref.current) {
@@ -99,12 +91,7 @@ export default function BenefitsSection({ onOpenTrial }) {
         });
       }
       if (b3BadgeRef.current) gsap.set(b3BadgeRef.current, { scale: 0, autoAlpha: 0 });
-      if (b3BarsRef.current) {
-        gsap.set(b3BarsRef.current.children, { scaleY: 0.15, transformOrigin: "bottom center" });
-      }
-      if (b3LeadsRef.current) {
-        gsap.set(b3LeadsRef.current.children, { autoAlpha: 0, x: 15 });
-      }
+      if (b3CardRef.current) gsap.set(b3CardRef.current, { scale: 0.94, autoAlpha: 0 });
 
       // Master Scroll-Driven Timeline
       const tl = gsap.timeline({
@@ -160,11 +147,11 @@ export default function BenefitsSection({ onOpenTrial }) {
           0.38
         );
       }
-      if (b2ItemsRef.current) {
+      if (b2CardRef.current) {
         tl.to(
-          b2ItemsRef.current.children,
-          { autoAlpha: 1, y: 0, duration: 0.10, stagger: 0.03, ease: "power2.out" },
-          0.40
+          b2CardRef.current,
+          { scale: 1, autoAlpha: 1, duration: 0.12, ease: "power2.out" },
+          0.36
         );
       }
 
@@ -204,18 +191,11 @@ export default function BenefitsSection({ onOpenTrial }) {
           0.70
         );
       }
-      if (b3BarsRef.current) {
+      if (b3CardRef.current) {
         tl.to(
-          b3BarsRef.current.children,
-          { scaleY: 1, duration: 0.12, stagger: 0.02, ease: "power2.out" },
-          0.72
-        );
-      }
-      if (b3LeadsRef.current) {
-        tl.to(
-          b3LeadsRef.current.children,
-          { autoAlpha: 1, x: 0, duration: 0.10, stagger: 0.03, ease: "power2.out" },
-          0.75
+          b3CardRef.current,
+          { scale: 1, autoAlpha: 1, duration: 0.12, ease: "power2.out" },
+          0.68
         );
       }
 
@@ -357,10 +337,12 @@ export default function BenefitsSection({ onOpenTrial }) {
               </p>
             </div>
 
-            {/* Right: Floating Realistic Chatbot Interface */}
+            {/* Right: Floating Visual Card 1 (bg 4) */}
             <div className="w-full lg:w-[58%] flex justify-center lg:justify-start">
               <div
-                className="relative p-[1.5px] rounded-[28px] bg-gradient-to-br from-[#00D98B] via-[#00D98B]/40 to-[#55A9FF] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(0,217,139,0.22),0_0_40px_rgba(85,169,255,0.2)] text-left w-full max-w-[380px] sm:max-w-[420px]"
+                ref={b1CardRef}
+                onClick={onOpenTrial}
+                className="relative p-[1.5px] rounded-[28px] bg-gradient-to-br from-[#00D98B] via-[#00D98B]/40 to-[#55A9FF] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(0,217,139,0.25),0_0_40px_rgba(85,169,255,0.2)] text-left w-full max-w-[460px] sm:max-w-[520px] lg:max-w-[560px] group overflow-hidden transition-all duration-500 hover:scale-[1.02] cursor-pointer"
                 style={{
                   transform: "perspective(1200px) rotateY(4deg) rotateX(2deg)",
                 }}
@@ -374,54 +356,32 @@ export default function BenefitsSection({ onOpenTrial }) {
                 </div>
 
                 {/* Top and Bottom edge reflections */}
-                <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#00D98B] to-transparent pointer-events-none" />
-                <div className="absolute -bottom-px left-16 right-16 h-px bg-gradient-to-r from-transparent via-[#55A9FF] to-transparent pointer-events-none" />
+                <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#00D98B] to-transparent pointer-events-none z-20" />
+                <div className="absolute -bottom-px left-16 right-16 h-px bg-gradient-to-r from-transparent via-[#55A9FF] to-transparent pointer-events-none z-20" />
 
-                {/* Inner Card Body */}
-                <div className="relative w-full rounded-[26.5px] p-4 sm:p-5 bg-[#080B15]/95 backdrop-blur-2xl overflow-hidden">
-                  {/* Subtle ambient internal gradient sheen */}
-                  <div className="absolute top-0 right-0 w-56 h-36 bg-gradient-to-bl from-[#00D98B]/10 via-[#55A9FF]/5 to-transparent pointer-events-none" />
+                {/* Inner Card Body with High-Res Visual bg 4 */}
+                <div className="relative w-full rounded-[26.5px] overflow-hidden bg-[#080B15] border border-white/10 aspect-[16/10] sm:aspect-[16/9.5]">
+                  <img
+                    src="/bg4.png"
+                    alt="Emperor Nexus Autonomous AI Customer Engagement"
+                    className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                    loading="eager"
+                  />
+                  {/* Subtle glass reflection & vignette overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050507]/80 via-transparent to-white/5 pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-48 h-32 bg-gradient-to-bl from-[#00D98B]/15 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Chat Header */}
-                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5 mb-3 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#963DFF] to-[#55A9FF] flex items-center justify-center text-white text-[10px] font-black shadow-[0_0_10px_rgba(150,61,255,0.4)]">
-                        E
-                      </div>
-                      <div>
-                        <span className="text-xs sm:text-sm font-semibold text-white tracking-tight block">
-                          Emperor Nexus
-                        </span>
-                        <span className="text-[9px] text-[#00D98B] flex items-center gap-1 font-mono">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#00D98B] animate-pulse" />
-                          Online · Approved Knowledge
-                        </span>
-                      </div>
+                  {/* Glass Info Pill */}
+                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-10 flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#080B15]/85 backdrop-blur-md border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-[#00D98B] animate-pulse shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-white tracking-wide truncate">
+                        24/7 Autonomous AI Assistant
+                      </span>
                     </div>
-                    <span className="text-[10px] font-mono text-white/40">24/7 Live</span>
-                  </div>
-
-                  {/* Chat Bubbles */}
-                  <div className="space-y-2.5 relative z-10">
-                    <div ref={b1Msg1Ref} className="flex justify-end will-change-transform">
-                      <div className="bg-[#1E293B]/80 text-white text-xs sm:text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tr-xs border border-white/10 max-w-[85%] shadow-sm leading-relaxed">
-                        What are your services?
-                      </div>
-                    </div>
-
-                    <div ref={b1Msg2Ref} className="flex justify-start will-change-transform">
-                      <div className="bg-[#0F172A]/90 text-neutral-200 text-xs sm:text-[13px] px-3.5 py-2.5 rounded-2xl rounded-tl-xs border border-[#00D98B]/30 max-w-[90%] shadow-[0_4px_16px_rgba(0,217,139,0.08)] leading-relaxed">
-                        We offer consultation, implementation and ongoing support for enterprises.
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Input Bar */}
-                  <div className="mt-3 pt-2 border-t border-white/[0.06] flex items-center justify-between text-white/30 text-[11px] font-sans relative z-10">
-                    <span>Ask Emperor Nexus a question...</span>
-                    <div className="w-5 h-5 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-white/50">
-                      <ArrowRight className="w-3 h-3" />
-                    </div>
+                    <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#00D98B] uppercase tracking-wider shrink-0 ml-2">
+                      Always Active
+                    </span>
                   </div>
                 </div>
               </div>
@@ -456,10 +416,12 @@ export default function BenefitsSection({ onOpenTrial }) {
               </p>
             </div>
 
-            {/* Left: Floating Business Knowledge Interface */}
+            {/* Left: Floating Visual Card 2 (bg5) */}
             <div className="w-full lg:w-[58%] flex justify-center lg:justify-end">
               <div
-                className="relative p-[1.5px] rounded-[28px] bg-gradient-to-br from-[#963DFF] via-[#C28AFF]/50 to-[#55A9FF] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(150,61,255,0.25),0_0_40px_rgba(85,169,255,0.2)] text-left w-full max-w-[380px] sm:max-w-[420px]"
+                ref={b2CardRef}
+                onClick={onOpenTrial}
+                className="relative p-[1.5px] rounded-[28px] bg-gradient-to-br from-[#963DFF] via-[#C28AFF]/50 to-[#55A9FF] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(150,61,255,0.3),0_0_40px_rgba(85,169,255,0.2)] text-left w-full max-w-[460px] sm:max-w-[520px] lg:max-w-[560px] group overflow-hidden transition-all duration-500 hover:scale-[1.02] cursor-pointer"
                 style={{
                   transform: "perspective(1200px) rotateY(-4deg) rotateX(2deg)",
                 }}
@@ -473,79 +435,32 @@ export default function BenefitsSection({ onOpenTrial }) {
                 </div>
 
                 {/* Top and Bottom edge reflections */}
-                <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#963DFF] to-transparent pointer-events-none" />
-                <div className="absolute -bottom-px left-16 right-16 h-px bg-gradient-to-r from-transparent via-[#55A9FF] to-transparent pointer-events-none" />
+                <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#963DFF] to-transparent pointer-events-none z-20" />
+                <div className="absolute -bottom-px left-16 right-16 h-px bg-gradient-to-r from-transparent via-[#55A9FF] to-transparent pointer-events-none z-20" />
 
-                {/* Inner Card Body */}
-                <div className="relative w-full rounded-[26.5px] p-4 sm:p-5 bg-[#080B15]/95 backdrop-blur-2xl overflow-hidden">
-                  {/* Subtle ambient internal gradient sheen */}
-                  <div className="absolute top-0 right-0 w-56 h-36 bg-gradient-to-bl from-[#963DFF]/10 via-[#55A9FF]/5 to-transparent pointer-events-none" />
+                {/* Inner Card Body with High-Res Visual bg5 */}
+                <div className="relative w-full rounded-[26.5px] overflow-hidden bg-[#080B15] border border-white/10 aspect-[16/10] sm:aspect-[16/9.5]">
+                  <img
+                    src="/bg5.png"
+                    alt="Emperor Nexus Intelligent Knowledge Automation"
+                    className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                    loading="eager"
+                  />
+                  {/* Subtle glass reflection & vignette overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050507]/80 via-transparent to-white/5 pointer-events-none" />
+                  <div className="absolute top-0 left-0 w-48 h-32 bg-gradient-to-br from-[#963DFF]/20 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Knowledge Header */}
-                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5 mb-3 relative z-10">
-                    <span className="text-xs sm:text-sm font-semibold text-white tracking-tight">
-                      Business Knowledge
-                    </span>
-                    <span className="text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-[#963DFF]/20 text-[#C28AFF] border border-[#963DFF]/40">
+                  {/* Glass Info Pill */}
+                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-10 flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#080B15]/85 backdrop-blur-md border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-[#C28AFF] animate-pulse shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-white tracking-wide truncate">
+                        Intelligent Knowledge Engine
+                      </span>
+                    </div>
+                    <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#C28AFF] uppercase tracking-wider shrink-0 ml-2">
                       100% Grounded
                     </span>
-                  </div>
-
-                  {/* Document Rows */}
-                  <div ref={b2ItemsRef} className="space-y-2 relative z-10">
-                    {/* File 1: PDF */}
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-[#963DFF]/40 transition-colors">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-mono text-[9px] font-black">
-                          PDF
-                        </div>
-                        <div>
-                          <span className="text-xs sm:text-[13px] font-medium text-white block">
-                            Company Profile.pdf
-                          </span>
-                          <span className="text-[9px] text-white/40">14 pages · Verified</span>
-                        </div>
-                      </div>
-                      <div className="w-4 h-4 rounded-full bg-[#00D98B]/15 border border-[#00D98B]/40 flex items-center justify-center text-[#00D98B]">
-                        <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-
-                    {/* File 2: DOCX */}
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-[#963DFF]/40 transition-colors">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-md bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center font-mono text-[9px] font-black">
-                          DOC
-                        </div>
-                        <div>
-                          <span className="text-xs sm:text-[13px] font-medium text-white block">
-                            Services.docx
-                          </span>
-                          <span className="text-[9px] text-white/40">8 packages · Synced</span>
-                        </div>
-                      </div>
-                      <div className="w-4 h-4 rounded-full bg-[#00D98B]/15 border border-[#00D98B]/40 flex items-center justify-center text-[#00D98B]">
-                        <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                      </div>
-                    </div>
-
-                    {/* File 3: Website Content */}
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-[#963DFF]/40 transition-colors">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-md bg-purple-500/20 text-[#C28AFF] border border-purple-500/30 flex items-center justify-center">
-                          <Link2 className="w-3 h-3" />
-                        </div>
-                        <div>
-                          <span className="text-xs sm:text-[13px] font-medium text-white block">
-                            Website Content
-                          </span>
-                          <span className="text-[9px] text-white/40">Live Crawler Active</span>
-                        </div>
-                      </div>
-                      <div className="w-4 h-4 rounded-full bg-[#00D98B]/15 border border-[#00D98B]/40 flex items-center justify-center text-[#00D98B]">
-                        <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -580,179 +495,51 @@ export default function BenefitsSection({ onOpenTrial }) {
               </p>
             </div>
 
-            {/* Right: Floating Business Dashboard Interface (Matching Image 2 Reference) */}
+            {/* Right: Floating Visual Card 3 (bg6) */}
             <div className="w-full lg:w-[58%] flex justify-center lg:justify-start">
               <div
-                className="relative p-[1.5px] rounded-[28px] bg-gradient-to-br from-[#38BDF8] via-[#818CF8]/50 to-[#C084FC] shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_35px_rgba(56,189,248,0.22),0_0_40px_rgba(192,132,252,0.25)] text-left w-full max-w-[420px] sm:max-w-[460px]"
+                ref={b3CardRef}
+                onClick={onOpenTrial}
+                className="relative p-[1.5px] rounded-[28px] bg-gradient-to-br from-[#38BDF8] via-[#818CF8]/50 to-[#C084FC] shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(56,189,248,0.25),0_0_40px_rgba(192,132,252,0.25)] text-left w-full max-w-[460px] sm:max-w-[520px] lg:max-w-[560px] group overflow-hidden transition-all duration-500 hover:scale-[1.02] cursor-pointer"
                 style={{
                   transform: "perspective(1200px) rotateX(2deg)",
                 }}
               >
+                {/* Floating Cyan/Blue Badge with BarChart3 Icon */}
+                <div
+                  ref={b3BadgeRef}
+                  className="absolute -top-3.5 -left-3.5 sm:-top-4 sm:-left-4 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-[#080B15] border border-[#38BDF8]/70 shadow-[0_0_20px_rgba(56,189,248,0.5)] flex items-center justify-center text-[#38BDF8] will-change-transform z-20"
+                >
+                  <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+
                 {/* Top and Bottom edge luminous reflections */}
-                <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent pointer-events-none" />
-                <div className="absolute -bottom-px left-16 right-16 h-px bg-gradient-to-r from-transparent via-[#C084FC] to-transparent pointer-events-none" />
+                <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent pointer-events-none z-20" />
+                <div className="absolute -bottom-px left-16 right-16 h-px bg-gradient-to-r from-transparent via-[#C084FC] to-transparent pointer-events-none z-20" />
 
-                {/* Inner Card Body */}
-                <div className="relative w-full rounded-[26.5px] p-4 sm:p-5 bg-[#080B15]/95 backdrop-blur-2xl overflow-hidden">
-                  {/* Subtle ambient internal gradient sheen */}
-                  <div className="absolute top-0 right-0 w-64 h-40 bg-gradient-to-bl from-[#818CF8]/10 via-[#C084FC]/5 to-transparent pointer-events-none" />
+                {/* Inner Card Body with High-Res Visual bg6 */}
+                <div className="relative w-full rounded-[26.5px] overflow-hidden bg-[#080B15] border border-white/10 aspect-[16/10] sm:aspect-[16/9.5]">
+                  <img
+                    src="/bg6.png"
+                    alt="Emperor Nexus Enquiry Visibility & Analytics"
+                    className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                    loading="eager"
+                  />
+                  {/* Subtle glass reflection & vignette overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050507]/80 via-transparent to-white/5 pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-48 h-32 bg-gradient-to-bl from-[#38BDF8]/15 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Dashboard Header */}
-                  <div className="flex items-center justify-between mb-3.5 relative z-10">
-                    <div className="flex items-center gap-3">
-                      {/* Blue/Indigo Icon Box */}
-                      <div
-                        ref={b3BadgeRef}
-                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#1E3A8A] via-[#1E40AF] to-[#4338CA] border border-[#60A5FA]/40 shadow-[0_0_20px_rgba(59,130,246,0.35)] flex items-center justify-center will-change-transform shrink-0"
-                      >
-                        {/* Custom Bar Chart Icon matching target image */}
-                        <div className="flex items-end gap-1 h-5">
-                          <span className="w-1 h-2.5 bg-white rounded-full" />
-                          <span className="w-1 h-5 bg-white rounded-full" />
-                          <span className="w-1 h-3.5 bg-white rounded-full" />
-                        </div>
-                      </div>
-
-                      {/* Title & Subtitle */}
-                      <div>
-                        <h4 className="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">
-                          Enquiries
-                        </h4>
-                        <p className="text-[11px] sm:text-xs text-[#94A3B8] mt-0.5 font-normal leading-tight">
-                          Customer conversations &amp; leads
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Right: 3 Dots Menu */}
-                    <div className="flex items-center gap-1 text-white/30 px-1 py-0.5 shrink-0">
-                      <span className="w-1 h-1 rounded-full bg-white/40" />
-                      <span className="w-1 h-1 rounded-full bg-white/40" />
-                      <span className="w-1 h-1 rounded-full bg-white/40" />
-                    </div>
-                  </div>
-
-                  {/* Chart Area */}
-                  <div className="relative rounded-2xl bg-[#060812]/90 border border-white/[0.08] p-3 sm:p-3.5 mb-3 overflow-hidden">
-                    {/* SVG Trend Wave Curve */}
-                    <svg
-                      className="absolute inset-0 w-full h-full pointer-events-none z-10"
-                      viewBox="0 0 350 90"
-                      preserveAspectRatio="none"
-                      fill="none"
-                    >
-                      <path
-                        d="M 12,66 C 22,64 26,60 32,60 C 52,60 62,40 80,40 C 98,40 108,52 128,52 C 148,52 158,26 176,26 C 196,26 206,40 224,40 C 244,40 254,16 272,16 C 292,16 304,6 320,6"
-                        stroke="#38BDF8"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        className="opacity-75 drop-shadow-[0_0_8px_rgba(56,189,248,0.6)]"
-                      />
-                    </svg>
-
-                    {/* 7 Bars */}
-                    <div
-                      ref={b3BarsRef}
-                      className="flex items-end justify-between gap-2 sm:gap-2.5 h-20 sm:h-24 px-1 sm:px-2 relative z-0"
-                    >
-                      {/* Bar 1 */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end">
-                        <div
-                          className="w-full max-w-[34px] h-[34%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#1E40AF] to-[#60A5FA] shadow-[0_0_10px_rgba(59,130,246,0.3)] transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Bar 2 */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end">
-                        <div
-                          className="w-full max-w-[34px] h-[54%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#2563EB] to-[#60A5FA] shadow-[0_0_12px_rgba(59,130,246,0.35)] transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Bar 3 */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end">
-                        <div
-                          className="w-full max-w-[34px] h-[40%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#6D28D9] to-[#A78BFA] shadow-[0_0_10px_rgba(167,139,250,0.3)] transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Bar 4 */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end">
-                        <div
-                          className="w-full max-w-[34px] h-[70%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#7C3AED] to-[#C084FC] shadow-[0_0_14px_rgba(192,132,252,0.4)] transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Bar 5 */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end">
-                        <div
-                          className="w-full max-w-[34px] h-[52%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#6D28D9] to-[#A78BFA] shadow-[0_0_10px_rgba(167,139,250,0.3)] transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Bar 6 */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end">
-                        <div
-                          className="w-full max-w-[34px] h-[80%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#2563EB] to-[#60A5FA] shadow-[0_0_15px_rgba(59,130,246,0.4)] transition-all duration-300"
-                        />
-                      </div>
-
-                      {/* Bar 7 (Peak with Beacon Dot) */}
-                      <div className="flex-1 flex flex-col items-center h-full justify-end relative">
-                        {/* Glowing Beacon Dot on Peak */}
-                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center justify-center z-20 pointer-events-none">
-                          <span className="absolute w-4 h-4 rounded-full bg-[#38BDF8]/40 animate-ping" />
-                          <span className="w-2.5 h-2.5 rounded-full bg-white border-2 border-[#38BDF8] shadow-[0_0_12px_#38BDF8]" />
-                        </div>
-                        <div
-                          className="w-full max-w-[34px] h-[95%] rounded-t-md sm:rounded-t-lg bg-gradient-to-t from-[#4F46E5] via-[#2563EB] to-[#38BDF8] shadow-[0_0_20px_rgba(56,189,248,0.5)] transition-all duration-300"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Customer Enquiry Rows */}
-                  <div ref={b3LeadsRef} className="space-y-2 relative z-10">
-                    {/* Row 1: John D. */}
-                    <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-[#55A9FF]/30 transition-colors">
-                      <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#312E81] to-[#4338CA] border border-[#6366F1]/40 flex items-center justify-center text-white text-[11px] sm:text-xs font-bold tracking-tight shadow-[0_0_10px_rgba(99,102,241,0.3)] shrink-0">
-                          JD
-                        </div>
-                        <div className="text-left">
-                          <div className="text-xs sm:text-sm font-semibold text-white leading-tight">
-                            John D.
-                          </div>
-                          <div className="text-[10px] sm:text-[11px] text-[#94A3B8] mt-0.5 leading-none">
-                            Request for product demo
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-medium px-2.5 sm:px-3 py-1 rounded-full bg-[#1E293B]/80 text-[#60A5FA] border border-[#3B82F6]/30 shadow-sm shrink-0">
-                        New Enquiry
+                  {/* Glass Info Pill */}
+                  <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 z-10 flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-[#080B15]/85 backdrop-blur-md border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-pulse shrink-0" />
+                      <span className="text-xs sm:text-sm font-semibold text-white tracking-wide truncate">
+                        Real-Time Enquiry Intelligence
                       </span>
                     </div>
-
-                    {/* Row 2: Emily S. */}
-                    <div className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-[#00D98B]/30 transition-colors">
-                      <div className="flex items-center gap-2.5 sm:gap-3">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-[#064E3B] to-[#047857] border border-[#10B981]/40 flex items-center justify-center text-white text-[11px] sm:text-xs font-bold tracking-tight shadow-[0_0_10px_rgba(16,185,129,0.3)] shrink-0">
-                          ES
-                        </div>
-                        <div className="text-left">
-                          <div className="text-xs sm:text-sm font-semibold text-white leading-tight">
-                            Emily S.
-                          </div>
-                          <div className="text-[10px] sm:text-[11px] text-[#94A3B8] mt-0.5 leading-none">
-                            Pricing and implementation details
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-medium px-2.5 sm:px-3 py-1 rounded-full bg-[#064E3B]/60 text-[#34D399] border border-[#10B981]/40 flex items-center gap-1.5 shadow-sm shrink-0">
-                        <Check className="w-3 h-3 stroke-[2.5]" />
-                        Qualified Lead
-                      </span>
-                    </div>
+                    <span className="text-[10px] sm:text-[11px] font-mono font-bold text-[#38BDF8] uppercase tracking-wider shrink-0 ml-2">
+                      Instant Lead Sync
+                    </span>
                   </div>
                 </div>
               </div>
