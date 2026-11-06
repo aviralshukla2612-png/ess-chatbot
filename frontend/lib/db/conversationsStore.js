@@ -102,7 +102,11 @@ export const conversationsStore = {
   getConversations(filters = {}) {
     let list = loadFromDisk();
     if (filters.organizationId) {
-      list = list.filter((c) => (c.organizationId || "org_ess_default") === filters.organizationId);
+      list = list.filter((c) => 
+        !c.organizationId || 
+        c.organizationId === "org_ess_default" || 
+        c.organizationId === filters.organizationId
+      );
     }
     if (filters.botId && filters.botId !== "All") {
       list = list.filter((c) => c.botId === filters.botId || c.botName === filters.botId);

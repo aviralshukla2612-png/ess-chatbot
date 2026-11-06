@@ -616,7 +616,10 @@ function ConversationsContent() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setFilterTab(tab.id)}
+                onClick={() => {
+                  setFilterTab(tab.id);
+                  setSelectedAgentFilter("All");
+                }}
                 className={cn(
                   "px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5",
                   isTabActive
@@ -758,18 +761,41 @@ function ConversationsContent() {
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {!loading && filtered.length === 0 && (
-                <div className="p-8 text-center space-y-3 my-auto">
+                <div className="p-8 text-center space-y-3.5 my-auto">
                   <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mx-auto">
                     <Inbox className="w-6 h-6" />
                   </div>
-                  <h4 className="text-sm font-bold text-white">No conversations found</h4>
-                  <p className="text-xs text-neutral-400 leading-relaxed max-w-xs mx-auto">
-                    {filterTab === "Human Active"
-                      ? "No conversations are currently taken over by a human agent."
+                  <h4 className="text-sm font-bold text-white">
+                    {filterTab === "Assigned to Me"
+                      ? "No conversations assigned to you yet"
+                      : filterTab === "Unassigned"
+                      ? "No unassigned conversations"
+                      : filterTab === "Human Active"
+                      ? "No human takeover sessions active"
                       : filterTab === "Waiting for Human"
-                      ? "No visitors are currently waiting for human intervention."
+                      ? "No visitors waiting for an agent"
+                      : filterTab === "Resolved"
+                      ? "No resolved conversations"
+                      : "No conversations found"}
+                  </h4>
+                  <p className="text-xs text-neutral-400 leading-relaxed max-w-xs mx-auto">
+                    {filterTab === "Assigned to Me"
+                      ? "Conversations you take over or that are assigned to you will appear here. Switch to 'All' or 'Open' to take over incoming visitor chats."
                       : "Incoming chat sessions from your website widget will appear here in real-time."}
                   </p>
+                  {(filterTab !== "All" || selectedAgentFilter !== "All" || search) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterTab("All");
+                        setSelectedAgentFilter("All");
+                        setSearch("");
+                      }}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md transition-all cursor-pointer"
+                    >
+                      <span>View All Conversations ({conversations.length})</span>
+                    </button>
+                  )}
                 </div>
               )}
 
