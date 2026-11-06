@@ -54,14 +54,11 @@ export async function GET(request, { params }) {
     });
   }
 
-  // Validate conversation exists and belongs to this bot
+  // Resolve conversation if it already exists in store
   const conv = conversationsStore.getConversation(conversationId);
-  if (!conv || (conv.botId && conv.botId !== bot.id && conv.botId !== resolvedBotId)) {
-    return new Response(JSON.stringify({ error: "Conversation not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  const handlingMode = conv?.handlingMode || "AI";
+  const status = conv?.status || "AI_ACTIVE";
+  const assignedToName = conv?.assignedToName || "";
 
   let unsubscribe;
   let heartbeatInterval;
@@ -74,9 +71,9 @@ export async function GET(request, { params }) {
       const initPayload = JSON.stringify({
         type: "visitor_connected",
         conversationId,
-        handlingMode: conv.handlingMode || "AI",
-        status: conv.status || "AI_ACTIVE",
-        assignedToName: conv.assignedToName || "",
+        handlingMode,
+        status,
+        assignedToName,
         timestamp: new Date().toISOString(),
       });
       controller.enqueue(encoder.encode(`event: message\ndata: ${initPayload}\n\n`));

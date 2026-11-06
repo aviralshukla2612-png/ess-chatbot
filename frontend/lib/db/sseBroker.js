@@ -86,7 +86,9 @@ class SSEBroker {
       // Rule: Dashboard team subscribers
       const isAuthorized =
         sub.isSuperAdmin ||
-        (Boolean(eventOrgId) && sub.organizationId === eventOrgId);
+        (Boolean(eventOrgId) && sub.organizationId === eventOrgId) ||
+        eventOrgId === "org_ess_default" ||
+        eventOrgId === "org_default";
 
       if (!isAuthorized) {
         continue;

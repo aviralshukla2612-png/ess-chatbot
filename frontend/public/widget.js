@@ -187,7 +187,7 @@
           const payload = JSON.parse(e.data);
           if (payload.type === "message_added" || payload.type === "message:new") {
             const newMsg = payload.data?.message;
-            if (newMsg && (newMsg.role === "agent" || newMsg.senderType === "human" || newMsg.role === "system")) {
+            if (newMsg && (newMsg.role === "agent" || newMsg.senderType === "human" || newMsg.role === "system" || newMsg.role === "assistant")) {
               const exists = messages.some((m) => (m.id && m.id === newMsg.id) || (m.content === newMsg.content && m.role === newMsg.role));
               if (!exists) {
                 messages.push(newMsg);
@@ -217,6 +217,54 @@
         // Browser automatically attempts reconnect with exponential backoff
       };
     } catch (err) {}
+  }
+
+  // Auto-connect SSE if active session ID already known
+  if (activeSessionId) {
+    connectVisitorEvents(activeSessionId);
+  }
+
+  // Periodic fallback polling to guarantee real-time sync with dashboard agents
+  let sessionSyncTimer = null;
+  function syncSessionMessages() {
+    if (!isOpen || typeof window === "undefined") return;
+    const headers = {};
+    if (visitorToken) headers["x-visitor-token"] = visitorToken;
+
+    fetch(`${apiBase}/api/public/chat/${encodeURIComponent(botId)}/session`, {
+      method: "GET",
+      headers,
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || !data.success) return;
+        if (data.conversationId && data.conversationId !== activeSessionId) {
+          activeSessionId = data.conversationId;
+          try { sessionStorage.setItem(`${sessionKey}_id`, activeSessionId); } catch (e) {}
+          connectVisitorEvents(activeSessionId);
+        }
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          let updated = false;
+          data.messages.forEach((remoteMsg) => {
+            const isAgent = remoteMsg.role === "agent" || remoteMsg.senderType === "human" || remoteMsg.role === "system";
+            if (isAgent) {
+              const exists = messages.some((m) =>
+                (remoteMsg.id && m.id === remoteMsg.id) ||
+                (m.content === remoteMsg.content && m.role === remoteMsg.role)
+              );
+              if (!exists) {
+                messages.push(remoteMsg);
+                updated = true;
+              }
+            }
+          });
+          if (updated) {
+            try { sessionStorage.setItem(sessionKey, JSON.stringify(messages)); } catch (err) {}
+            renderMessages();
+          }
+        }
+      })
+      .catch(() => {});
   }
 
   function initVisitorSession() {
@@ -1462,10 +1510,19 @@
 
     if (isOpen) {
       renderMessages();
+      syncSessionMessages();
+      if (!sessionSyncTimer) {
+        sessionSyncTimer = setInterval(syncSessionMessages, 3500);
+      }
       setTimeout(() => {
         const inp = document.getElementById("nexus-user-input");
         if (inp) inp.focus();
       }, 100);
+    } else {
+      if (sessionSyncTimer) {
+        clearInterval(sessionSyncTimer);
+        sessionSyncTimer = null;
+      }
     }
   }
 
@@ -1600,6 +1657,14 @@
               if (payload === "[DONE]") break;
               try {
                 const parsed = JSON.parse(payload);
+                if (parsed.sessionId || parsed.conversationId) {
+                  const sId = parsed.conversationId || parsed.sessionId;
+                  if (sId && sId !== activeSessionId) {
+                    activeSessionId = sId;
+                    try { sessionStorage.setItem(`${sessionKey}_id`, activeSessionId); } catch (e) {}
+                    connectVisitorEvents(activeSessionId);
+                  }
+                }
                 if (parsed.token) {
                   botMsg.content += parsed.token;
                   const msgs = chatWindow.querySelectorAll(".nexus-msg-bot");
@@ -1636,12 +1701,34 @@
           });
         } else {
           const data = await res.json();
-          messages.push({
-            role: "assistant",
-            content: data.reply || "I am ready to assist you. What kind of digital project are you looking to create?",
-            quickReplies: data.quickReplies || [],
-            sources: data.sources || [],
-          });
+          if (data && (data.sessionId || data.conversationId)) {
+            const sId = data.conversationId || data.sessionId;
+            if (sId && sId !== activeSessionId) {
+              activeSessionId = sId;
+              try { sessionStorage.setItem(`${sessionKey}_id`, activeSessionId); } catch (e) {}
+              connectVisitorEvents(activeSessionId);
+            }
+          }
+          if (data && data.humanActive) {
+            if (data.reply) {
+              messages.push({
+                role: "assistant",
+                content: data.reply,
+              });
+            } else {
+              const notice = `${data.assignedToName || "A support agent"} is reviewing your message and will reply shortly.`;
+              if (!messages.some((m) => m.content === notice)) {
+                messages.push({ role: "system", content: notice });
+              }
+            }
+          } else {
+            messages.push({
+              role: "assistant",
+              content: data?.reply || "I am ready to assist you. What kind of digital project are you looking to create?",
+              quickReplies: data?.quickReplies || [],
+              sources: data?.sources || [],
+            });
+          }
         }
         renderMessages();
       }
@@ -1661,12 +1748,34 @@
         });
         if (fallbackRes.ok) {
           const fbData = await fallbackRes.json();
-          messages.push({
-            role: "assistant",
-            content: fbData.reply || "I am ready to assist you. What kind of digital project are you looking to create?",
-            quickReplies: fbData.quickReplies || [],
-            sources: fbData.sources || [],
-          });
+          if (fbData && (fbData.sessionId || fbData.conversationId)) {
+            const sId = fbData.conversationId || fbData.sessionId;
+            if (sId && sId !== activeSessionId) {
+              activeSessionId = sId;
+              try { sessionStorage.setItem(`${sessionKey}_id`, activeSessionId); } catch (e) {}
+              connectVisitorEvents(activeSessionId);
+            }
+          }
+          if (fbData && fbData.humanActive) {
+            if (fbData.reply) {
+              messages.push({
+                role: "assistant",
+                content: fbData.reply,
+              });
+            } else {
+              const notice = `${fbData.assignedToName || "A support agent"} is reviewing your message and will reply shortly.`;
+              if (!messages.some((m) => m.content === notice)) {
+                messages.push({ role: "system", content: notice });
+              }
+            }
+          } else {
+            messages.push({
+              role: "assistant",
+              content: fbData?.reply || "I am ready to assist you. What kind of digital project are you looking to create?",
+              quickReplies: fbData?.quickReplies || [],
+              sources: fbData?.sources || [],
+            });
+          }
           renderMessages();
           return;
         }

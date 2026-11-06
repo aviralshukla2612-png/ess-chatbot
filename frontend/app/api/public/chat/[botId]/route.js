@@ -1625,7 +1625,8 @@ Here are our official contact details to speak with our engineering leadership:
           GroqKeyPoolManager.recordSuccess("primary", turnTokens);
         } catch (poolErr) {}
 
-        let streamPayload = `data: ${JSON.stringify({ token: deterministicReply })}\n\n`;
+        let streamPayload = `data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`;
+        streamPayload += `data: ${JSON.stringify({ token: deterministicReply })}\n\n`;
         if (quickReplies && quickReplies.length > 0) {
           streamPayload += `data: ${JSON.stringify({ quickReplies })}\n\n`;
         }
@@ -1636,6 +1637,9 @@ Here are our official contact details to speak with our engineering leadership:
       const responseStream = new TransformStream();
       const writer = responseStream.writable.getWriter();
       const encoder = new TextEncoder();
+
+      // Emit session metadata immediately so widget locks on to active conversation
+      writer.write(encoder.encode(`data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`));
 
       let accumulatedReply = "";
 

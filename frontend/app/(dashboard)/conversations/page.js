@@ -471,11 +471,42 @@ function ConversationsContent() {
     if (!replyInput.trim() || !currentChat) return;
     const text = replyInput;
     setReplyInput("");
-    await conversationsApi.addMessage(currentChat.id, {
+
+    // Optimistic UI update: instantly render sent message in agent view
+    const optimisticMsg = {
+      id: `m_opt_${Date.now()}`,
       role: "agent",
       senderType: "human",
+      senderName: currentUser?.name || "Agent",
       content: text,
-    });
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: new Date().toISOString(),
+    };
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === currentChat.id
+          ? {
+              ...c,
+              handlingMode: "HUMAN",
+              status: "HUMAN_ACTIVE",
+              assignedToName: c.assignedToName || currentUser?.name || "Support Agent",
+              lastMessage: text,
+              messages: [...(c.messages || []), optimisticMsg],
+            }
+          : c
+      )
+    );
+    setTimeout(scrollToBottom, 50);
+
+    try {
+      await conversationsApi.addMessage(currentChat.id, {
+        role: "agent",
+        senderType: "human",
+        content: text,
+      });
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
     await loadConversations();
     window.dispatchEvent(new CustomEvent("conversation-updated"));
   };

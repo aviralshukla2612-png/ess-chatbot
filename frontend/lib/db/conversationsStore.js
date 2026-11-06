@@ -105,6 +105,7 @@ export const conversationsStore = {
       list = list.filter((c) => 
         !c.organizationId || 
         c.organizationId === "org_ess_default" || 
+        c.organizationId === "org_default" ||
         c.organizationId === filters.organizationId
       );
     }
@@ -176,7 +177,13 @@ export const conversationsStore = {
       if (c.id !== id) return false;
       if (!organizationId) return true;
       const cOrg = c.organizationId || "org_ess_default";
-      return cOrg === organizationId || cOrg === "org_ess_default" || organizationId === "org_ess_default";
+      return (
+        cOrg === organizationId ||
+        cOrg === "org_ess_default" ||
+        organizationId === "org_ess_default" ||
+        cOrg === "org_default" ||
+        organizationId === "org_default"
+      );
     }) || null;
   },
 
