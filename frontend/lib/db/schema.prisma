@@ -48,6 +48,8 @@ model Bot {
   welcomeMessage String          @default("Hello! How can I help you today?")
   launcherPosition String        @default("bottom-right") // bottom-right, bottom-left
   brandingEnabled Boolean        @default(true)
+  globalBotEnabled Boolean       @default(true)
+  fallbackMessage String?        @default("Our automated assistant is temporarily paused. A team member will assist you shortly.")
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -193,7 +195,13 @@ model Conversation {
   visitorEmail       String?
   visitorPhone       String?
   visitorLocation    String?
-  status             String        @default("Active") // Active, Closed, Archived, Expired
+  status             String        @default("Active") // Active, Closed, Archived, Expired, HUMAN_ACTIVE, WAITING_FOR_HUMAN, AI_RESUMED, Resolved
+  handlingMode       String        @default("AI")     // AI, HUMAN
+  assignedToId       String?
+  assignedToName     String?
+  assignedAt         DateTime?
+  resolvedAt         DateTime?
+  unreadCount        Int           @default(0)
   isLead             Boolean       @default(false)
   leadScore          String?       // Hot, High, Medium, Low
   lastMessage        String?
@@ -206,8 +214,12 @@ model Conversation {
   bot                Bot           @relation(fields: [botId], references: [id], onDelete: Cascade)
   visitor            Visitor?      @relation(fields: [visitorId], references: [id], onDelete: SetNull)
   messages           Message[]
+  notes              InternalNote[]
+  assignments        ConversationAssignment[]
 
   @@index([organizationId, botId])
+  @@index([organizationId, handlingMode, status])
+  @@index([assignedToId])
   @@index([visitorId, lastActivityAt])
   @@index([historyExpiresAt])
   @@index([createdAt])
@@ -216,7 +228,10 @@ model Conversation {
 model Message {
   id              String        @id @default(cuid())
   conversationId  String
-  role            String        // user, assistant, system
+  role            String        // user, assistant, system, agent
+  senderType      String        @default("visitor") // visitor, bot, human, system
+  senderId        String?
+  senderName      String?
   content         String
   tokens          Int?
   latencyMs       Int?
@@ -225,6 +240,47 @@ model Message {
   conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
+}
+
+model InternalNote {
+  id              String        @id @default(cuid())
+  conversationId  String
+  organizationId  String
+  authorId        String?
+  authorName      String        @default("Team Member")
+  content         String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([organizationId])
+}
+
+model ConversationAssignment {
+  id              String        @id @default(cuid())
+  conversationId  String
+  assignedToId    String
+  assignedToName  String?
+  assignedById    String?
+  assignedByName  String?
+  assignedAt      DateTime      @default(now())
+  releasedAt      DateTime?
+
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([assignedToId])
+}
+
+model WorkspaceBotSettings {
+  id              String        @id @default(cuid())
+  organizationId  String        @unique
+  globalEnabled   Boolean       @default(true)
+  fallbackMessage String        @default("Our automated assistant is temporarily paused. A team member will assist you shortly.")
+  updatedById     String?
+  updatedAt       DateTime      @updatedAt
 }
 
 model Lead {

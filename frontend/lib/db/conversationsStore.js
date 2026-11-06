@@ -108,7 +108,42 @@ export const conversationsStore = {
       list = list.filter((c) => c.botId === filters.botId || c.botName === filters.botId);
     }
     if (filters.status && filters.status !== "All") {
-      list = list.filter((c) => c.status?.toLowerCase() === filters.status.toLowerCase());
+      const s = filters.status.toLowerCase();
+      if (s === "open" || s === "active") {
+        list = list.filter((c) => c.status !== "Closed" && c.status !== "Resolved" && c.status !== "RESOLVED" && c.status !== "Expired");
+      } else if (s === "resolved" || s === "closed") {
+        list = list.filter((c) => c.status === "Closed" || c.status?.toUpperCase() === "RESOLVED");
+      } else if (s === "human_active" || s === "human") {
+        list = list.filter((c) => c.handlingMode === "HUMAN" || c.status === "HUMAN_ACTIVE");
+      } else if (s === "waiting_for_human" || s === "waiting") {
+        list = list.filter((c) => c.status === "WAITING_FOR_HUMAN");
+      } else {
+        list = list.filter((c) => c.status?.toLowerCase() === s);
+      }
+    }
+    if (filters.handlingMode && filters.handlingMode !== "All") {
+      list = list.filter((c) => (c.handlingMode || "AI").toUpperCase() === filters.handlingMode.toUpperCase());
+    }
+    if (filters.assignedToId) {
+      if (filters.assignedToId === "unassigned") {
+        list = list.filter((c) => !c.assignedToId);
+      } else {
+        list = list.filter((c) => c.assignedToId === filters.assignedToId);
+      }
+    }
+    if (filters.view) {
+      const v = filters.view.toLowerCase();
+      if (v === "assigned_to_me" && filters.currentUserId) {
+        list = list.filter((c) => c.assignedToId === filters.currentUserId);
+      } else if (v === "unassigned") {
+        list = list.filter((c) => !c.assignedToId && c.status !== "Resolved" && c.status !== "RESOLVED" && c.status !== "Closed");
+      } else if (v === "resolved") {
+        list = list.filter((c) => c.status === "Closed" || c.status?.toUpperCase() === "RESOLVED");
+      } else if (v === "human_active") {
+        list = list.filter((c) => c.handlingMode === "HUMAN" || c.status === "HUMAN_ACTIVE");
+      } else if (v === "waiting_for_human") {
+        list = list.filter((c) => c.status === "WAITING_FOR_HUMAN");
+      }
     }
     if (filters.onlyLeads) {
       list = list.filter((c) => c.isLead);
@@ -119,12 +154,15 @@ export const conversationsStore = {
         (c) =>
           c.visitorName?.toLowerCase().includes(q) ||
           c.lastMessage?.toLowerCase().includes(q) ||
-          c.visitorEmail?.toLowerCase().includes(q)
+          c.visitorEmail?.toLowerCase().includes(q) ||
+          c.visitorPhone?.toLowerCase().includes(q) ||
+          c.assignedToName?.toLowerCase().includes(q) ||
+          c.id?.toLowerCase().includes(q)
       );
     }
     // Return sorted newest first
     return [...list].sort(
-      (a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0)
+      (a, b) => new Date(b.updatedAt || b.lastActivityAt || b.createdAt || 0) - new Date(a.updatedAt || a.lastActivityAt || a.createdAt || 0)
     );
   },
 
@@ -216,7 +254,13 @@ export const conversationsStore = {
         data.visitorLocation && data.visitorLocation !== "Direct Session"
           ? data.visitorLocation
           : "Ahmedabad, Gujarat (India)",
-      status: data.status || "Active",
+      status: data.status || "AI_ACTIVE",
+      handlingMode: data.handlingMode || "AI",
+      assignedToId: data.assignedToId || null,
+      assignedToName: data.assignedToName || null,
+      assignedAt: data.assignedAt || null,
+      resolvedAt: data.resolvedAt || null,
+      unreadCount: data.unreadCount || 0,
       isLead: Boolean(data.isLead || data.visitorEmail || data.visitorPhone),
       leadScore: data.leadScore || (data.visitorEmail ? "High" : "Medium"),
       startedAt: now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true }) + " IST",
@@ -227,6 +271,8 @@ export const conversationsStore = {
       lastActivityAt,
       historyExpiresAt,
       qualification: data.qualification || null,
+      notes: data.notes || [],
+      assignmentHistory: data.assignmentHistory || [],
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
       messages: data.messages || [],
@@ -241,10 +287,13 @@ export const conversationsStore = {
     // Sync to PostgreSQL
     try {
       queryDb(
-        `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "leadId", "visitorName", "visitorEmail", "visitorPhone", "visitorLocation", "status", "isLead", "leadScore", "lastMessage", "qualificationState", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "leadId", "visitorName", "visitorEmail", "visitorPhone", "visitorLocation", "status", "handlingMode", "assignedToId", "assignedToName", "assignedAt", "unreadCount", "isLead", "leadScore", "lastMessage", "qualificationState", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
          ON CONFLICT ("id") DO UPDATE 
          SET "visitorId" = COALESCE(EXCLUDED."visitorId", "Conversation"."visitorId"),
+             "handlingMode" = COALESCE(EXCLUDED."handlingMode", "Conversation"."handlingMode"),
+             "assignedToId" = COALESCE(EXCLUDED."assignedToId", "Conversation"."assignedToId"),
+             "assignedToName" = COALESCE(EXCLUDED."assignedToName", "Conversation"."assignedToName"),
              "lastActivityAt" = EXCLUDED."lastActivityAt",
              "historyExpiresAt" = EXCLUDED."historyExpiresAt",
              "qualificationState" = EXCLUDED."qualificationState",
@@ -260,6 +309,11 @@ export const conversationsStore = {
           newConv.visitorPhone,
           newConv.visitorLocation,
           newConv.status,
+          newConv.handlingMode,
+          newConv.assignedToId,
+          newConv.assignedToName,
+          newConv.assignedAt,
+          newConv.unreadCount,
           newConv.isLead,
           newConv.leadScore,
           newConv.lastMessage,
@@ -296,9 +350,17 @@ export const conversationsStore = {
       }
     }
 
+    const role = message.role || "user";
+    const senderType = message.senderType || (role === "agent" ? "human" : role === "user" ? "visitor" : role === "system" ? "system" : "bot");
+    const senderId = message.senderId || (senderType === "human" ? (options.agentId || null) : null);
+    const senderName = message.senderName || (senderType === "human" ? (options.agentName || "Agent") : null);
+
     const newMsg = {
       id: message.id || `m_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      role: message.role || "user",
+      role,
+      senderType,
+      senderId,
+      senderName,
       content: message.content || message.text || "",
       quickReplies: message.quickReplies || [],
       sources: message.sources || [],
@@ -314,6 +376,13 @@ export const conversationsStore = {
     conv.historyExpiresAt = new Date(now.getTime() + DEFAULT_HISTORY_WINDOW_MS).toISOString();
     conv.updatedAt = now.toISOString();
 
+    // Manage unread count
+    if (role === "user") {
+      conv.unreadCount = (conv.unreadCount || 0) + 1;
+    } else if (senderType === "human") {
+      conv.unreadCount = 0;
+    }
+
     if (options.visitorId && !conv.visitorId) {
       conv.visitorId = options.visitorId;
     }
@@ -323,8 +392,14 @@ export const conversationsStore = {
 
     saveToDisk(list);
 
-    // Broadcast in real-time to all connected dashboards
+    // Broadcast in real-time to all connected dashboards and visitors
     sseBroker.broadcast("message_added", {
+      conversationId: conv.id,
+      organizationId: conv.organizationId,
+      message: newMsg,
+      conversation: conv,
+    });
+    sseBroker.broadcast("message:new", {
       conversationId: conv.id,
       organizationId: conv.organizationId,
       message: newMsg,
@@ -336,8 +411,8 @@ export const conversationsStore = {
       (async () => {
         // Ensure parent Conversation exists before inserting child Message
         await queryDb(
-          `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "visitorName", "status", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "visitorName", "status", "handlingMode", "assignedToId", "assignedToName", "unreadCount", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
            ON CONFLICT ("id") DO NOTHING;`,
           [
             conv.id,
@@ -346,6 +421,10 @@ export const conversationsStore = {
             conv.visitorId || null,
             conv.visitorName || "Client Inquiry",
             conv.status || "Active",
+            conv.handlingMode || "AI",
+            conv.assignedToId || null,
+            conv.assignedToName || null,
+            conv.unreadCount || 0,
             conv.lastActivityAt,
             conv.historyExpiresAt,
             conv.createdAt,
@@ -354,10 +433,10 @@ export const conversationsStore = {
         );
 
         await queryDb(
-          `INSERT INTO "Message" ("id", "conversationId", "role", "content", "createdAt")
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO "Message" ("id", "conversationId", "role", "senderType", "senderId", "senderName", "content", "createdAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            ON CONFLICT ("id") DO NOTHING;`,
-          [newMsg.id, conv.id, newMsg.role, newMsg.content, newMsg.createdAt]
+          [newMsg.id, conv.id, newMsg.role, newMsg.senderType, newMsg.senderId, newMsg.senderName, newMsg.content, newMsg.createdAt]
         );
 
         await queryDb(
@@ -367,14 +446,16 @@ export const conversationsStore = {
                "historyExpiresAt" = $3,
                "visitorId" = COALESCE($4, "visitorId"),
                "qualificationState" = COALESCE($5, "qualificationState"),
-               "updatedAt" = $6
-           WHERE "id" = $7;`,
+               "unreadCount" = $6,
+               "updatedAt" = $7
+           WHERE "id" = $8;`,
           [
             newMsg.content,
             conv.lastActivityAt,
             conv.historyExpiresAt,
             conv.visitorId,
             conv.qualification ? JSON.stringify(conv.qualification) : null,
+            conv.unreadCount || 0,
             conv.updatedAt,
             conv.id,
           ]
@@ -511,11 +592,449 @@ export const conversationsStore = {
     } catch (e) {}
   },
 
+  takeoverConversation(id, agentUser = {}) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    const now = new Date();
+    const agentId = agentUser.id || "agent_admin";
+    const agentName = agentUser.name || agentUser.email || "Support Agent";
+
+    const prevConv = list[index];
+
+    // Atomically change handlingMode and status
+    list[index] = {
+      ...prevConv,
+      handlingMode: "HUMAN",
+      status: "HUMAN_ACTIVE",
+      assignedToId: agentId,
+      assignedToName: agentName,
+      assignedAt: now.toISOString(),
+      unreadCount: 0,
+      updatedAt: now.toISOString(),
+    };
+
+    // Add a system event message in chat history
+    const sysMsg = {
+      id: `m_sys_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      role: "system",
+      senderType: "system",
+      content: `Human takeover active. Agent ${agentName} is now handling this conversation.`,
+      timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: now.toISOString(),
+    };
+    list[index].messages = [...(list[index].messages || []), sysMsg];
+    list[index].lastActivityAt = now.toISOString();
+
+    saveToDisk(list);
+
+    // Broadcast real-time SSE events
+    sseBroker.broadcast("conversation_takeover", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      agentId,
+      agentName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation:takeover", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      agentId,
+      agentName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation_updated", list[index]);
+    sseBroker.broadcast("conversation:updated", list[index]);
+
+    // Dual-write to PostgreSQL
+    try {
+      queryDb(
+        `UPDATE "Conversation"
+         SET "handlingMode" = 'HUMAN',
+             "status" = 'HUMAN_ACTIVE',
+             "assignedToId" = $1,
+             "assignedToName" = $2,
+             "assignedAt" = $3,
+             "unreadCount" = 0,
+             "updatedAt" = $4
+         WHERE "id" = $5;`,
+        [agentId, agentName, now.toISOString(), now.toISOString(), id]
+      ).catch(() => {});
+
+      queryDb(
+        `INSERT INTO "Message" ("id", "conversationId", "role", "senderType", "content", "createdAt")
+         VALUES ($1, $2, 'system', 'system', $3, $4);`,
+        [sysMsg.id, id, sysMsg.content, sysMsg.createdAt]
+      ).catch(() => {});
+
+      queryDb(
+        `INSERT INTO "ConversationAssignment" ("id", "conversationId", "assignedToId", "assignedToName", "assignedById", "assignedByName", "assignedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+        [`asg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, id, agentId, agentName, agentId, agentName, now.toISOString()]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  resumeBot(id, agentUser = {}) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    const now = new Date();
+    const agentName = agentUser.name || agentUser.email || "Support Agent";
+
+    list[index] = {
+      ...list[index],
+      handlingMode: "AI",
+      status: "AI_RESUMED",
+      updatedAt: now.toISOString(),
+    };
+
+    const sysMsg = {
+      id: `m_sys_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      role: "system",
+      senderType: "system",
+      content: `AI Assistant resumed by ${agentName}. The bot will handle incoming customer inquiries.`,
+      timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: now.toISOString(),
+    };
+    list[index].messages = [...(list[index].messages || []), sysMsg];
+    list[index].lastActivityAt = now.toISOString();
+
+    saveToDisk(list);
+
+    sseBroker.broadcast("conversation_resume", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      agentName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation:resume", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      agentName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation_updated", list[index]);
+    sseBroker.broadcast("conversation:updated", list[index]);
+
+    try {
+      queryDb(
+        `UPDATE "Conversation"
+         SET "handlingMode" = 'AI',
+             "status" = 'AI_RESUMED',
+             "updatedAt" = $1
+         WHERE "id" = $2;`,
+        [now.toISOString(), id]
+      ).catch(() => {});
+
+      queryDb(
+        `INSERT INTO "Message" ("id", "conversationId", "role", "senderType", "content", "createdAt")
+         VALUES ($1, $2, 'system', 'system', $3, $4);`,
+        [sysMsg.id, id, sysMsg.content, sysMsg.createdAt]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  assignConversation(id, targetUser = {}, assignedByUser = {}) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    const now = new Date();
+    const targetId = targetUser.id;
+    const targetName = targetUser.name || targetUser.email || "Team Member";
+    const byName = assignedByUser.name || assignedByUser.email || "Admin";
+
+    list[index] = {
+      ...list[index],
+      assignedToId: targetId,
+      assignedToName: targetName,
+      assignedAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+
+    const sysMsg = {
+      id: `m_sys_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      role: "system",
+      senderType: "system",
+      content: `Conversation assigned to ${targetName} by ${byName}.`,
+      timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: now.toISOString(),
+    };
+    list[index].messages = [...(list[index].messages || []), sysMsg];
+
+    saveToDisk(list);
+
+    sseBroker.broadcast("conversation_assigned", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      targetId,
+      targetName,
+      assignedBy: byName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation:assigned", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      targetId,
+      targetName,
+      assignedBy: byName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation_updated", list[index]);
+    sseBroker.broadcast("conversation:updated", list[index]);
+
+    try {
+      queryDb(
+        `UPDATE "Conversation"
+         SET "assignedToId" = $1, "assignedToName" = $2, "assignedAt" = $3, "updatedAt" = $3
+         WHERE "id" = $4;`,
+        [targetId, targetName, now.toISOString(), id]
+      ).catch(() => {});
+
+      queryDb(
+        `INSERT INTO "ConversationAssignment" ("id", "conversationId", "assignedToId", "assignedToName", "assignedById", "assignedByName", "assignedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+        [`asg_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`, id, targetId, targetName, assignedByUser.id || null, byName, now.toISOString()]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  unassignConversation(id, unassignedByUser = {}) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    const now = new Date();
+    const byName = unassignedByUser.name || unassignedByUser.email || "Admin";
+
+    list[index] = {
+      ...list[index],
+      assignedToId: null,
+      assignedToName: null,
+      status: "WAITING_FOR_HUMAN",
+      updatedAt: now.toISOString(),
+    };
+
+    const sysMsg = {
+      id: `m_sys_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      role: "system",
+      senderType: "system",
+      content: `Conversation unassigned by ${byName}.`,
+      timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: now.toISOString(),
+    };
+    list[index].messages = [...(list[index].messages || []), sysMsg];
+
+    saveToDisk(list);
+
+    sseBroker.broadcast("conversation_unassigned", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      unassignedBy: byName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation:unassigned", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      unassignedBy: byName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation_updated", list[index]);
+    sseBroker.broadcast("conversation:updated", list[index]);
+
+    try {
+      queryDb(
+        `UPDATE "Conversation"
+         SET "assignedToId" = NULL, "assignedToName" = NULL, "status" = 'WAITING_FOR_HUMAN', "updatedAt" = $1
+         WHERE "id" = $2;`,
+        [now.toISOString(), id]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  releaseConversation(id, agentUser = {}) {
+    return this.unassignConversation(id, agentUser);
+  },
+
+  resolveConversation(id, agentUser = {}) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    const now = new Date();
+    const agentName = agentUser.name || agentUser.email || "Agent";
+
+    list[index] = {
+      ...list[index],
+      status: "RESOLVED",
+      resolvedAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+
+    const sysMsg = {
+      id: `m_sys_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      role: "system",
+      senderType: "system",
+      content: `Conversation marked as resolved by ${agentName}.`,
+      timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: now.toISOString(),
+    };
+    list[index].messages = [...(list[index].messages || []), sysMsg];
+
+    saveToDisk(list);
+
+    sseBroker.broadcast("conversation_resolved", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      resolvedBy: agentName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation:resolved", {
+      conversationId: id,
+      organizationId: list[index].organizationId,
+      resolvedBy: agentName,
+      conversation: list[index],
+    });
+    sseBroker.broadcast("conversation_updated", list[index]);
+    sseBroker.broadcast("conversation:updated", list[index]);
+
+    try {
+      queryDb(
+        `UPDATE "Conversation"
+         SET "status" = 'RESOLVED', "resolvedAt" = $1, "updatedAt" = $1
+         WHERE "id" = $2;`,
+        [now.toISOString(), id]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  reopenConversation(id, agentUser = {}) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    const now = new Date();
+    const agentName = agentUser.name || agentUser.email || "Agent";
+
+    list[index] = {
+      ...list[index],
+      status: list[index].handlingMode === "HUMAN" ? "HUMAN_ACTIVE" : "Active",
+      resolvedAt: null,
+      updatedAt: now.toISOString(),
+    };
+
+    const sysMsg = {
+      id: `m_sys_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      role: "system",
+      senderType: "system",
+      content: `Conversation reopened by ${agentName}.`,
+      timestamp: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      createdAt: now.toISOString(),
+    };
+    list[index].messages = [...(list[index].messages || []), sysMsg];
+
+    saveToDisk(list);
+
+    sseBroker.broadcast("conversation_updated", list[index]);
+    sseBroker.broadcast("conversation:updated", list[index]);
+
+    try {
+      queryDb(
+        `UPDATE "Conversation"
+         SET "status" = $1, "resolvedAt" = NULL, "updatedAt" = $2
+         WHERE "id" = $3;`,
+        [list[index].status, now.toISOString(), id]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  markRead(id) {
+    const list = loadFromDisk();
+    const index = list.findIndex((c) => c.id === id);
+    if (index === -1) return null;
+
+    list[index].unreadCount = 0;
+    saveToDisk(list);
+
+    try {
+      queryDb('UPDATE "Conversation" SET "unreadCount" = 0, "updatedAt" = NOW() WHERE "id" = $1;', [id]).catch(() => {});
+    } catch (e) {}
+
+    return list[index];
+  },
+
+  addInternalNote(conversationId, { authorId, authorName, content, organizationId }) {
+    if (!content || !content.trim()) return null;
+    const list = loadFromDisk();
+    const conv = list.find((c) => c.id === conversationId);
+    if (!conv) return null;
+
+    const now = new Date();
+    const note = {
+      id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      conversationId,
+      organizationId: organizationId || conv.organizationId || "org_ess_default",
+      authorId: authorId || null,
+      authorName: authorName || "Team Member",
+      content: content.trim(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    };
+
+    conv.notes = [...(conv.notes || []), note];
+    saveToDisk(list);
+
+    // Broadcast internal note ONLY to dashboard subscribers (never delivered to visitors)
+    sseBroker.broadcast("internal_note_added", {
+      conversationId,
+      organizationId: conv.organizationId,
+      note,
+    });
+    sseBroker.broadcast("internal_note:new", {
+      conversationId,
+      organizationId: conv.organizationId,
+      note,
+    });
+
+    try {
+      queryDb(
+        `INSERT INTO "InternalNote" ("id", "conversationId", "organizationId", "authorId", "authorName", "content", "createdAt", "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`,
+        [note.id, note.conversationId, note.organizationId, note.authorId, note.authorName, note.content, note.createdAt, note.updatedAt]
+      ).catch(() => {});
+    } catch (e) {}
+
+    return note;
+  },
+
+  getInternalNotes(conversationId) {
+    const list = loadFromDisk();
+    const conv = list.find((c) => c.id === conversationId);
+    return conv?.notes || [];
+  },
+
   clearAll() {
     saveToDisk([]);
     sseBroker.broadcast("conversations_cleared", {});
     try {
       queryDb('DELETE FROM "Message";').catch(() => {});
+      queryDb('DELETE FROM "InternalNote";').catch(() => {});
+      queryDb('DELETE FROM "ConversationAssignment";').catch(() => {});
       queryDb('DELETE FROM "Conversation";').catch(() => {});
     } catch (e) {}
     return { success: true };

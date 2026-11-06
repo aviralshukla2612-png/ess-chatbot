@@ -10,6 +10,9 @@ export async function GET(request) {
     const { principal } = auth;
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "All";
+    const handlingMode = searchParams.get("handlingMode") || "All";
+    const assignedToId = searchParams.get("assignedToId");
+    const view = searchParams.get("view");
     const onlyLeads = searchParams.get("onlyLeads") === "true";
     const search = searchParams.get("search") || "";
     const botId = searchParams.get("botId") || "All";
@@ -24,14 +27,31 @@ export async function GET(request) {
     const conversations = conversationsStore.getConversations({
       organizationId: targetOrgId,
       status,
+      handlingMode,
+      assignedToId,
+      view,
+      currentUserId: principal.userId,
       onlyLeads,
       search,
       botId,
     });
 
+    // Calculate aggregate live inbox status counts for sidebar and navigation tabs
+    const allOrgConvs = conversationsStore.getConversations({ organizationId: targetOrgId });
+    const counts = {
+      all: allOrgConvs.length,
+      unread: allOrgConvs.reduce((acc, c) => acc + (c.unreadCount || 0), 0),
+      unassigned: allOrgConvs.filter((c) => !c.assignedToId && c.status !== "RESOLVED").length,
+      assignedToMe: allOrgConvs.filter((c) => c.assignedToId === principal.userId && c.status !== "RESOLVED").length,
+      humanActive: allOrgConvs.filter((c) => (c.handlingMode === "HUMAN" || c.status === "HUMAN_ACTIVE") && c.status !== "RESOLVED").length,
+      waitingForHuman: allOrgConvs.filter((c) => c.status === "WAITING_FOR_HUMAN").length,
+      resolved: allOrgConvs.filter((c) => c.status === "RESOLVED").length,
+    };
+
     return NextResponse.json({
       success: true,
       conversations,
+      counts,
       total: conversations.length,
     });
   } catch (err) {

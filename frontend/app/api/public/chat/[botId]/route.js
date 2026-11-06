@@ -321,6 +321,55 @@ export async function POST(request, { params }) {
       currentSessionId = `session_${botId}_${Date.now()}`;
     }
 
+    // --- PHASE 6 & 12: GLOBAL BOT CHECK ---
+    if (bot.globalBotEnabled === false) {
+      const fallbackText = bot.fallbackMessage || "Our automated assistant is temporarily paused. A team member will assist you shortly.";
+      conversationsStore.addMessage(
+        currentSessionId,
+        { role: "user", content: message },
+        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+      );
+      conversationsStore.addMessage(
+        currentSessionId,
+        { role: "system", senderType: "system", content: fallbackText },
+        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+      );
+      if (existingConv && existingConv.status !== "HUMAN_ACTIVE") {
+        conversationsStore.updateConversation(currentSessionId, { status: "WAITING_FOR_HUMAN" });
+      }
+      return corsResponse(
+        NextResponse.json({
+          success: true,
+          botDisabled: true,
+          reply: fallbackText,
+          sessionId: currentSessionId,
+          visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
+        }),
+        request
+      );
+    }
+
+    // --- PHASE 5 & 12: CONVERSATION-LEVEL HUMAN TAKEOVER CHECK ---
+    if (existingConv && (existingConv.handlingMode === "HUMAN" || existingConv.status === "HUMAN_ACTIVE")) {
+      // Human takeover is active! Record visitor's message and pause AI response completely
+      conversationsStore.addMessage(
+        currentSessionId,
+        { role: "user", content: message },
+        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+      );
+      return corsResponse(
+        NextResponse.json({
+          success: true,
+          humanActive: true,
+          reply: "", // Silence AI reply so visitor only receives human messages
+          assignedToName: existingConv.assignedToName || "Support Agent",
+          sessionId: currentSessionId,
+          visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
+        }),
+        request
+      );
+    }
+
     const latestConvForVisitor = persistentVisitor ? conversationsStore.getLatestConversationForVisitor(persistentVisitor.id, bot.id) : null;
     const restoredQual = existingConv?.qualification || latestConvForVisitor?.qualification || null;
 
@@ -1655,6 +1704,14 @@ Here are our official contact details to speak with our engineering leadership:
             }
           }
 
+          // Concurrency check: If human takeover occurred mid-generation, discard AI reply
+          const convMidStream = conversationsStore.getConversation(currentSessionId);
+          if (convMidStream && (convMidStream.handlingMode === "HUMAN" || convMidStream.status === "HUMAN_ACTIVE")) {
+            console.log(`[PublicChat] Discarding streaming AI reply for ${currentSessionId}: Human takeover is active.`);
+            writer.close();
+            return;
+          }
+
           // Save message to conversation store
           conversationsStore.addMessage(
             currentSessionId,
@@ -1803,6 +1860,23 @@ Here are our official contact details to speak with our engineering leadership:
         { role: "user", content: message },
         { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
       );
+
+      // Concurrency check: If human takeover occurred during inference, do not output AI assistant reply
+      if (reloadedConv.handlingMode === "HUMAN" || reloadedConv.status === "HUMAN_ACTIVE") {
+        console.log(`[PublicChat] Discarding non-streaming AI reply for ${currentSessionId}: Human takeover active.`);
+        return corsResponse(
+          NextResponse.json({
+            success: true,
+            humanActive: true,
+            reply: "",
+            assignedToName: reloadedConv.assignedToName || "Support Agent",
+            sessionId: currentSessionId,
+            visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
+          }),
+          request
+        );
+      }
+
       conversationsStore.addMessage(
         currentSessionId,
         {

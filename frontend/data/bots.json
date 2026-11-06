@@ -29,9 +29,9 @@
       "Cloud & DevOps",
       "Hire Dedicated Developers"
     ],
-    "conversationsCount": 3,
-    "questionsCount": 5,
-    "leadsCount": 2,
+    "conversationsCount": 6,
+    "questionsCount": 6,
+    "leadsCount": 6,
     "sourcesCount": 1,
     "createdDate": "Oct 9, 2026",
     "lastActive": "Just now",
@@ -44,6 +44,11 @@
         "status": "Ready",
         "chunks": 5
       }
-    ]
+    ],
+    "launcherAnimation": "none",
+    "globalBotEnabled": true,
+    "fallbackMessage": "All agents are busy, we will respond shortly.",
+    "websiteUrl": null,
+    "phoneNumber": null
   }
 ]

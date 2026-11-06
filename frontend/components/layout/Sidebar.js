@@ -25,6 +25,11 @@ import {
   CreditCard,
   ArrowRight,
   ShieldCheck,
+  UserCheck,
+  Inbox,
+  CheckCircle2,
+  Activity,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +37,7 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Bots", href: "/bots", icon: Bot },
   { name: "Knowledge", href: "/knowledge", icon: BookOpen },
-  { name: "Conversations", href: "/conversations", icon: MessageSquare },
+  { name: "Live Conversations", href: "/conversations", icon: MessageSquare },
   { name: "Leads", href: "/leads", icon: Users2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Team", href: "/team", icon: UserPlus },
@@ -47,6 +52,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
   const [orgList, setOrgList] = useState(["My Workspace"]);
   const [currentUser, setCurrentUser] = useState(null);
   const [subData, setSubData] = useState(null);
+  const [convCounts, setConvCounts] = useState({ unread: 0, unassigned: 0, assignedToMe: 0, resolved: 0, all: 0 });
   const orgDropdownRef = React.useRef(null);
 
   const fetchSubscription = () => {
@@ -55,6 +61,17 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
       .then((d) => {
         if (d?.success) {
           setSubData(d);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const fetchConvCounts = () => {
+    fetch("/api/conversations?limit=1", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.counts) {
+          setConvCounts(d.counts);
         }
       })
       .catch(() => {});
@@ -99,10 +116,20 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
       .catch(() => {});
 
     fetchSubscription();
+    fetchConvCounts();
 
     const handleSubUpdate = () => fetchSubscription();
+    const handleConvUpdate = () => fetchConvCounts();
     window.addEventListener("subscription-updated", handleSubUpdate);
-    return () => window.removeEventListener("subscription-updated", handleSubUpdate);
+    window.addEventListener("conversation-updated", handleConvUpdate);
+
+    const convInterval = setInterval(fetchConvCounts, 15000);
+
+    return () => {
+      window.removeEventListener("subscription-updated", handleSubUpdate);
+      window.removeEventListener("conversation-updated", handleConvUpdate);
+      clearInterval(convInterval);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -210,6 +237,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                 <div className="space-y-1">
                   {navItems.map((item) => {
                     const isBotsItem = item.href === "/bots";
+                    const isConversationsItem = item.href === "/conversations";
                     const isActive =
                       pathname === item.href ||
                       (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -239,7 +267,51 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
                               Open
                             </span>
                           )}
+                          {isConversationsItem && convCounts.unread > 0 && (
+                            <span className="text-[9.5px] bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.2 rounded-full font-bold">
+                              {convCounts.unread}
+                            </span>
+                          )}
+                          {isConversationsItem && convCounts.unassigned > 0 && (
+                            <span className="text-[9.5px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded-full font-bold">
+                              {convCounts.unassigned}
+                            </span>
+                          )}
                         </Link>
+
+                        {/* When inside Live Conversations, show dedicated Phase 3 sub-navigation */}
+                        {isConversationsItem && pathname.startsWith("/conversations") && (
+                          <div className="ml-5 pl-2.5 border-l border-[#B68A55]/30 space-y-1 my-1.5 py-1">
+                            {[
+                              { name: "Live Inbox", href: "/conversations", icon: MessageSquare, count: convCounts.all },
+                              { name: "Assigned to Me", href: "/conversations?view=assigned_to_me", icon: UserCheck, count: convCounts.assignedToMe },
+                              { name: "Unassigned", href: "/conversations?view=unassigned", icon: Inbox, count: convCounts.unassigned },
+                              { name: "Resolved", href: "/conversations?view=resolved", icon: CheckCircle2, count: convCounts.resolved },
+                              { name: "Team Activity", href: "/conversations?view=team_activity", icon: Activity },
+                              { name: "Bot Controls", href: "/conversations?view=bot_controls", icon: SlidersHorizontal },
+                            ].map((sub) => {
+                              const SubIcon = sub.icon;
+                              return (
+                                <Link
+                                  key={sub.name}
+                                  href={sub.href}
+                                  onClick={onClose}
+                                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-all"
+                                >
+                                  <div className="flex items-center gap-2 truncate">
+                                    <SubIcon className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                                    <span className="truncate">{sub.name}</span>
+                                  </div>
+                                  {typeof sub.count === "number" && sub.count > 0 && (
+                                    <span className="text-[9.5px] px-1.5 py-0.2 rounded-full font-bold bg-neutral-200 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300">
+                                      {sub.count}
+                                    </span>
+                                  )}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
 
                         {/* When inside a Bot, show nested Bot Sub-navigation */}
                         {isBotsItem && activeBotId && (

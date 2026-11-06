@@ -351,6 +351,40 @@ export const authStore = {
   },
 
   /**
+   * Get all active members for an organization.
+   */
+  async getOrgMembers(organizationId) {
+    if (!organizationId) return [];
+    try {
+      const dbRes = await queryDb(
+        `SELECT u."id", u."name", u."email", u."role" as "platformRole", m."role" as "orgRole", m."status", m."createdAt" as "joinedAt"
+         FROM "OrganizationMembership" m
+         JOIN "User" u ON m."userId" = u."id"
+         WHERE m."organizationId" = $1 AND m."status" = 'ACTIVE';`,
+        [organizationId]
+      );
+      if (dbRes.ok && dbRes.rows.length > 0) {
+        return dbRes.rows;
+      }
+    } catch (e) {}
+
+    // Memory or usersStore fallback
+    const members = [];
+    const allUsers = usersStore.getUsers ? usersStore.getUsers() : [];
+    for (const u of allUsers) {
+      members.push({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        orgRole: u.role === "Platform Super Admin" || u.role === "Workspace Owner" ? "ORG_OWNER" : "MEMBER",
+        status: u.status || "ACTIVE",
+        joinedAt: u.createdAt || new Date().toISOString(),
+      });
+    }
+    return members;
+  },
+
+  /**
    * Get user by ID.
    */
   async getUserById(userId) {

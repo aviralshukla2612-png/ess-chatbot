@@ -32,11 +32,32 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, error: "Message content is required" }, { status: 400 });
     }
 
-    const result = conversationsStore.addMessage(id, {
-      role: body.role || "assistant",
-      content: body.content || body.text,
-      sources: body.sources || [],
-    });
+    const agentName = principal.name || principal.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+    // When an agent replies, ensure conversation is in HUMAN handling mode and assigned to them if unassigned
+    if (existing.handlingMode !== "HUMAN") {
+      conversationsStore.takeoverConversation(id, {
+        id: principal.userId,
+        name: agentName,
+        email: principal.email,
+      });
+    }
+
+    const result = conversationsStore.addMessage(
+      id,
+      {
+        role: "agent",
+        senderType: "human",
+        senderId: principal.userId,
+        senderName: agentName,
+        content: body.content || body.text,
+        sources: body.sources || [],
+      },
+      {
+        agentId: principal.userId,
+        agentName,
+      }
+    );
 
     return NextResponse.json({
       success: true,

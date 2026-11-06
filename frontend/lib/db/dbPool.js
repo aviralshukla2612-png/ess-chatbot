@@ -135,6 +135,8 @@ export async function initPostgresTables() {
           ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherMarginLeft" INTEGER DEFAULT 24;
           ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherMarginTop" INTEGER DEFAULT 24;
           ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "launcherAnimation" VARCHAR(64) DEFAULT 'none';
+          ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "globalBotEnabled" BOOLEAN DEFAULT TRUE;
+          ALTER TABLE "Bot" ADD COLUMN IF NOT EXISTS "fallbackMessage" TEXT DEFAULT 'Our automated assistant is temporarily paused. A team member will assist you shortly.';
         `);
 
         // 3.5. Visitors Table (Persistent identity, opaque token hashes)
@@ -188,6 +190,12 @@ export async function initPostgresTables() {
           ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "qualificationState" JSONB DEFAULT '{}'::JSONB;
           ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "lastActivityAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
           ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "historyExpiresAt" TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours');
+          ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "handlingMode" VARCHAR(32) DEFAULT 'AI';
+          ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "assignedToId" VARCHAR(64);
+          ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "assignedToName" VARCHAR(255);
+          ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "assignedAt" TIMESTAMP WITH TIME ZONE;
+          ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "resolvedAt" TIMESTAMP WITH TIME ZONE;
+          ALTER TABLE "Conversation" ADD COLUMN IF NOT EXISTS "unreadCount" INT DEFAULT 0;
         `);
 
         // 5. Messages Table
@@ -196,10 +204,56 @@ export async function initPostgresTables() {
             "id" VARCHAR(128) PRIMARY KEY,
             "conversationId" VARCHAR(128) NOT NULL REFERENCES "Conversation"("id") ON DELETE CASCADE,
             "role" VARCHAR(32) NOT NULL,
+            "senderType" VARCHAR(32) DEFAULT 'visitor',
+            "senderId" VARCHAR(64),
+            "senderName" VARCHAR(255),
             "content" TEXT NOT NULL,
             "tokens" INT,
             "latencyMs" INT,
             "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+          ALTER TABLE "Message" ADD COLUMN IF NOT EXISTS "senderType" VARCHAR(32) DEFAULT 'visitor';
+          ALTER TABLE "Message" ADD COLUMN IF NOT EXISTS "senderId" VARCHAR(64);
+          ALTER TABLE "Message" ADD COLUMN IF NOT EXISTS "senderName" VARCHAR(255);
+        `);
+
+        // 5.5. Internal Notes Table (Team only, private)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "InternalNote" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "conversationId" VARCHAR(128) NOT NULL REFERENCES "Conversation"("id") ON DELETE CASCADE,
+            "organizationId" VARCHAR(64) NOT NULL,
+            "authorId" VARCHAR(64),
+            "authorName" VARCHAR(255) DEFAULT 'Team Member',
+            "content" TEXT NOT NULL,
+            "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+
+        // 5.6. Conversation Assignments Audit Table
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "ConversationAssignment" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "conversationId" VARCHAR(128) NOT NULL REFERENCES "Conversation"("id") ON DELETE CASCADE,
+            "assignedToId" VARCHAR(64) NOT NULL,
+            "assignedToName" VARCHAR(255),
+            "assignedById" VARCHAR(64),
+            "assignedByName" VARCHAR(255),
+            "assignedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "releasedAt" TIMESTAMP WITH TIME ZONE
+          );
+        `);
+
+        // 5.7. Workspace Bot Settings Table
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS "WorkspaceBotSettings" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "organizationId" VARCHAR(64) NOT NULL UNIQUE,
+            "globalEnabled" BOOLEAN DEFAULT TRUE,
+            "fallbackMessage" TEXT DEFAULT 'Our automated assistant is temporarily paused. A team member will assist you shortly.',
+            "updatedById" VARCHAR(64),
+            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
           );
         `);
 
@@ -477,6 +531,11 @@ export async function initPostgresTables() {
           CREATE INDEX IF NOT EXISTS idx_subscription_org ON "Subscription" ("organizationId");
           CREATE INDEX IF NOT EXISTS idx_usage_org_metric_period ON "UsageRecord" ("organizationId", "metric", "periodKey");
           CREATE INDEX IF NOT EXISTS idx_apikey_hash ON "ApiKey" ("keyHash");
+          CREATE INDEX IF NOT EXISTS idx_internal_notes_conv ON "InternalNote" ("conversationId");
+          CREATE INDEX IF NOT EXISTS idx_internal_notes_org ON "InternalNote" ("organizationId");
+          CREATE INDEX IF NOT EXISTS idx_conv_assignment ON "ConversationAssignment" ("conversationId", "assignedToId");
+          CREATE INDEX IF NOT EXISTS idx_conv_handling ON "Conversation" ("organizationId", "handlingMode", "status");
+          CREATE INDEX IF NOT EXISTS idx_conv_assigned ON "Conversation" ("assignedToId");
         `);
 
         await client.query("COMMIT;");

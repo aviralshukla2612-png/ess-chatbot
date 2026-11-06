@@ -381,6 +381,8 @@ export const botsStore = {
       launcherPosition: "bottom-right",
       launcherAnimation: "none",
       brandingEnabled: true,
+      globalBotEnabled: botData.globalBotEnabled !== false,
+      fallbackMessage: botData.fallbackMessage || "Our automated assistant is temporarily paused. A team member will assist you shortly.",
       company: botData.company || null,
       websiteUrl: botData.websiteUrl || null,
       phoneNumber: botData.phoneNumber || botData.phone || null,
@@ -459,6 +461,18 @@ export const botsStore = {
     } catch (e) {}
 
     return merged;
+  },
+
+  updateBot(id, updates) {
+    const existing = this.getBot(id);
+    if (!existing) return null;
+    return this.upsertBot({ ...existing, ...updates }, existing.organizationId);
+  },
+
+  async updateBotAsync(id, updates) {
+    const existing = (await this.getBotAsync(id)) || this.getBot(id);
+    if (!existing) return null;
+    return this.upsertBot({ ...existing, ...updates }, existing.organizationId);
   },
 
   deleteBot(id, organizationId = null) {

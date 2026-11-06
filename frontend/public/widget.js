@@ -172,6 +172,53 @@
     });
 
   // 3.1. Fetch or Restore 24-Hour Active Conversation Session & Customer Identity
+  let visitorEventSource = null;
+  function connectVisitorEvents(convId) {
+    if (!convId || typeof window === "undefined" || !window.EventSource) return;
+    if (visitorEventSource) {
+      try { visitorEventSource.close(); } catch (e) {}
+      visitorEventSource = null;
+    }
+    try {
+      const sseUrl = `${apiBase}/api/public/chat/${encodeURIComponent(botId)}/events?conversationId=${encodeURIComponent(convId)}`;
+      visitorEventSource = new EventSource(sseUrl);
+      visitorEventSource.onmessage = function(e) {
+        try {
+          const payload = JSON.parse(e.data);
+          if (payload.type === "message_added" || payload.type === "message:new") {
+            const newMsg = payload.data?.message;
+            if (newMsg && (newMsg.role === "agent" || newMsg.senderType === "human" || newMsg.role === "system")) {
+              const exists = messages.some((m) => (m.id && m.id === newMsg.id) || (m.content === newMsg.content && m.role === newMsg.role));
+              if (!exists) {
+                messages.push(newMsg);
+                try { sessionStorage.setItem(sessionKey, JSON.stringify(messages)); } catch (err) {}
+                renderMessages();
+              }
+            }
+          } else if (payload.type === "conversation_takeover" || payload.type === "conversation:takeover") {
+            const agentName = payload.data?.agentName || "Support Agent";
+            const notice = `${agentName} has joined the chat to assist you.`;
+            if (!messages.some((m) => m.content === notice)) {
+              messages.push({ role: "system", content: notice });
+              try { sessionStorage.setItem(sessionKey, JSON.stringify(messages)); } catch (err) {}
+              renderMessages();
+            }
+          } else if (payload.type === "conversation_resume" || payload.type === "conversation:resume") {
+            const notice = "AI Assistant has resumed for this conversation.";
+            if (!messages.some((m) => m.content === notice)) {
+              messages.push({ role: "system", content: notice });
+              try { sessionStorage.setItem(sessionKey, JSON.stringify(messages)); } catch (err) {}
+              renderMessages();
+            }
+          }
+        } catch (err) {}
+      };
+      visitorEventSource.onerror = function() {
+        // Browser automatically attempts reconnect with exponential backoff
+      };
+    } catch (err) {}
+  }
+
   function initVisitorSession() {
     const headers = {};
     if (visitorToken) headers["x-visitor-token"] = visitorToken;
@@ -192,6 +239,7 @@
         if (data.conversationId) {
           activeSessionId = data.conversationId;
           try { sessionStorage.setItem(`${sessionKey}_id`, activeSessionId); } catch (e) {}
+          connectVisitorEvents(activeSessionId);
         }
 
         if (data.hasActiveChat && Array.isArray(data.messages) && data.messages.length > 0) {
@@ -211,6 +259,9 @@
         console.warn("[NexusAI Widget] Session sync failed, operating with fallback session.", e);
       });
   }
+
+  // Trigger visitor session sync and real-time event listener on initialization
+  initVisitorSession();
   // Helper functions for dynamic theme styling
   function adjustColorBrightness(hex, percent) {
     const safeHex = sanitizeColor(hex);
@@ -706,6 +757,32 @@
       padding: 3px 8px;
       border-radius: 6px;
       border: 1px solid #2B2B2B;
+    }
+
+    /* Live Agent & System Messages */
+    .nexus-msg-agent {
+      background: #151522 !important;
+      color: #F8FAFC !important;
+      border: 1px solid #6D28D9 !important;
+      border-radius: 18px 18px 18px 4px !important;
+      box-shadow: 0 4px 16px rgba(109, 40, 217, 0.28) !important;
+    }
+    .nexus-msg-row-system {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 8px 0;
+    }
+    .nexus-msg-system {
+      background: rgba(139, 92, 246, 0.12);
+      color: #DDD6FE;
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      border-radius: 14px;
+      font-size: 11.5px;
+      padding: 6px 14px;
+      text-align: center;
+      max-width: 90%;
+      line-height: 1.4;
     }
 
     /* Input Dock and Capsule */
@@ -1276,17 +1353,43 @@
     }
 
     messages.forEach((m, idx) => {
+      const isSystem = m.role === "system" || m.senderType === "system";
+      const isAgent = m.role === "agent" || m.senderType === "human";
       const isUser = m.role === "user";
       const row = document.createElement("div");
-      row.className = `nexus-msg-row ${isUser ? "nexus-msg-row-user" : "nexus-msg-row-bot"}`;
+
+      if (isSystem) {
+        row.className = "nexus-msg-row nexus-msg-row-system";
+        row.innerHTML = `<div class="nexus-msg-system">${formatMessage(m.content, false)}</div>`;
+        list.appendChild(row);
+        return;
+      }
 
       if (isUser) {
+        row.className = "nexus-msg-row nexus-msg-row-user";
         row.innerHTML = `
           <div class="nexus-msg nexus-msg-user">
             ${formatMessage(m.content, true)}
           </div>
         `;
+      } else if (isAgent) {
+        row.className = "nexus-msg-row nexus-msg-row-bot";
+        const agentInitial = ((m.senderName || "Agent").trim()[0] || "A").toUpperCase();
+        row.innerHTML = `
+          <div class="nexus-agent-avatar-mini" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(109,40,217,0.4);">
+            ${agentInitial}
+          </div>
+          <div class="nexus-msg-content-wrap">
+            <div style="font-size:11px;color:#C4B5FD;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:5px;">
+              <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981;"></span>
+              <span>${m.senderName || "Support Agent"}</span>
+              <span style="font-size:9.5px;color:#94A3B8;font-weight:normal;">(Live Agent)</span>
+            </div>
+            <div class="nexus-msg nexus-msg-agent">${formatMessage(m.content, false)}</div>
+          </div>
+        `;
       } else {
+        row.className = "nexus-msg-row nexus-msg-row-bot";
         row.innerHTML = `
           <div class="nexus-bot-avatar-mini">${botConfig.avatar || "🤖"}</div>
           <div class="nexus-msg-content-wrap">

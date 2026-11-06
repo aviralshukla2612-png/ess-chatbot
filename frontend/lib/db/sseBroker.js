@@ -12,6 +12,8 @@ class SSEBroker {
    * @param {Object} [metadata={}]
    * @param {string|null} [metadata.organizationId=null]
    * @param {boolean} [metadata.isSuperAdmin=false]
+   * @param {string|null} [metadata.conversationId=null]
+   * @param {boolean} [metadata.isVisitor=false]
    * @returns {Function} unsubscribe function
    */
   subscribe(controller, metadata = {}) {
@@ -19,6 +21,8 @@ class SSEBroker {
       controller,
       organizationId: metadata.organizationId || null,
       isSuperAdmin: Boolean(metadata.isSuperAdmin),
+      conversationId: metadata.conversationId || null,
+      isVisitor: Boolean(metadata.isVisitor),
       subscribedAt: new Date(),
     };
     this.clients.add(subscriber);
@@ -28,12 +32,13 @@ class SSEBroker {
   }
 
   /**
-   * Broadcast an event to subscribers authorized for the event's organization.
+   * Broadcast an event to subscribers authorized for the event's organization or visitor conversation.
    *
-   * Tenant isolation rules:
+   * Tenant isolation & privacy rules:
    * 1. Super-admin subscribers receive all events.
    * 2. Tenant subscribers receive events only if their organizationId matches the event organizationId.
-   * 3. Events without any reliable organization association are never delivered to tenant users.
+   * 3. Visitor subscribers receive only visitor-safe events strictly matching their active conversationId.
+   * 4. Internal notes are strictly forbidden from ever being delivered to visitor subscribers.
    */
   broadcast(eventType, payload = {}) {
     // Resolve organizationId from top-level or nested entities
@@ -43,6 +48,16 @@ class SSEBroker {
       payload.lead?.organizationId ||
       payload.bot?.organizationId ||
       null;
+
+    const eventConvId =
+      payload.conversationId ||
+      payload.conversation?.id ||
+      payload.message?.conversationId ||
+      null;
+
+    const isInternalNote =
+      eventType.startsWith("internal_note") ||
+      eventType.includes("note");
 
     const data = JSON.stringify({
       type: eventType,
@@ -54,7 +69,21 @@ class SSEBroker {
 
     const deadSubscribers = [];
     for (const sub of this.clients) {
-      // Pre-delivery authorization check
+      // Rule: Visitor subscribers
+      if (sub.isVisitor) {
+        // Never deliver internal notes or admin events to visitors
+        if (isInternalNote || !eventConvId || sub.conversationId !== eventConvId) {
+          continue;
+        }
+        try {
+          sub.controller.enqueue(encoded);
+        } catch (err) {
+          deadSubscribers.push(sub);
+        }
+        continue;
+      }
+
+      // Rule: Dashboard team subscribers
       const isAuthorized =
         sub.isSuperAdmin ||
         (Boolean(eventOrgId) && sub.organizationId === eventOrgId);
