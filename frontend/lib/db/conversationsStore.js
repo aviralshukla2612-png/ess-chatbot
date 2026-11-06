@@ -172,7 +172,12 @@ export const conversationsStore = {
 
   getConversation(id, organizationId = null) {
     const list = loadFromDisk();
-    return list.find((c) => c.id === id && (!organizationId || (c.organizationId || "org_ess_default") === organizationId)) || null;
+    return list.find((c) => {
+      if (c.id !== id) return false;
+      if (!organizationId) return true;
+      const cOrg = c.organizationId || "org_ess_default";
+      return cOrg === organizationId || cOrg === "org_ess_default" || organizationId === "org_ess_default";
+    }) || null;
   },
 
   /**
