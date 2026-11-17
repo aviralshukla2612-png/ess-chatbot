@@ -1,3 +1,4 @@
+import https from "https";
 import querystring from "querystring";
 
 const DLT_CONFIG = {
@@ -11,10 +12,69 @@ const DLT_CONFIG = {
   signOff: process.env.DLT_SMS_SIGNOFF || "TXXTOO",
 };
 
+function postToGateway(postObj) {
+  return new Promise((resolve) => {
+    try {
+      const urlObj = new URL(DLT_CONFIG.uri);
+      const postData = querystring.stringify(postObj);
+
+      const req = https.request(
+        {
+          hostname: urlObj.hostname,
+          path: urlObj.pathname + urlObj.search,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Length": Buffer.byteLength(postData),
+          },
+          timeout: 10000,
+        },
+        (res) => {
+          let responseText = "";
+          res.on("data", (chunk) => (responseText += chunk));
+          res.on("end", () => {
+            let parsed = null;
+            try {
+              parsed = JSON.parse(responseText);
+            } catch (e) {}
+
+            const isSuccess =
+              parsed?.status === "success" ||
+              responseText.toLowerCase().includes("success") ||
+              responseText.toLowerCase().includes("message-id");
+
+            resolve({
+              httpStatus: res.statusCode,
+              success: isSuccess,
+              messageId: parsed?.["message-id"],
+              raw: parsed || responseText,
+            });
+          });
+        }
+      );
+
+      req.on("error", (err) => {
+        console.warn("[DLT_HTTPS_ERROR]", err.message);
+        resolve({ success: false, error: err.message });
+      });
+
+      req.on("timeout", () => {
+        req.destroy();
+        resolve({ success: false, error: "Gateway timeout" });
+      });
+
+      req.write(postData);
+      req.end();
+    } catch (e) {
+      resolve({ success: false, error: e.message });
+    }
+  });
+}
+
 export const smsService = {
   /**
-   * Dispatches TRAI DLT Compliant SMS text message to physical phone handset.
-   * Primary: allsmssolution.in (PE_ID: 1401805350000060162, Header: TXXTOO, TemplateID: 1607100000000313742)
+   * Dispatches TRAI DLT Compliant SMS text message to the user's mobile number.
+   * Template ID: 1607100000000313742 | Sender ID: TXXTOO | PE_ID: 1401805350000060162
    */
   async sendSms({ to, otp, recipientName = "User", message: fallbackMessage }) {
     const digits = (to || "").replace(/\D/g, "");
@@ -22,99 +82,58 @@ export const smsService = {
     const otpCode = String(otp || (fallbackMessage ? fallbackMessage.match(/\b\d{6}\b/)?.[0] : "") || "").trim();
 
     if (!cleanNumbers || cleanNumbers.length < 10 || !otpCode) {
-      console.warn("[SMS_DISPATCH_SKIPPED] Missing valid 10-digit number or OTP code.");
-      return { success: false, error: "Invalid phone number or OTP code" };
+      console.warn(`[SMS_DISPATCH_SKIPPED] Invalid recipient: ${to}`);
+      return { success: false, error: "Invalid mobile number or OTP code." };
     }
 
-    // Dual target: both 10-digit and 12-digit Indian routing
-    const phoneFormatted = `${cleanNumbers},91${cleanNumbers}`;
     const var1 = (recipientName || "User").trim().replace(/[^a-zA-Z0-9 ]/g, "") || "User";
     const var2 = otpCode;
     const var3 = (DLT_CONFIG.signOff || "TXXTOO").trim();
 
     // Exact TRAI DLT approved template pattern:
     // "Dear {#var#} Your OTP for verification is {#var#}. Please enter this code to complete the process.\nRegards {#var#}\nTEXT2"
-    const messageTXXTOO = `Dear ${var1} Your OTP for verification is ${var2}. Please enter this code to complete the process.\nRegards ${var3}\nTEXT2`;
-    const messageTeamTXXTOO = `Dear ${var1} Your OTP for verification is ${var2}. Please enter this code to complete the process.\nRegards Team TXXTOO\nTEXT2`;
+    const finalMessage = `Dear ${var1} Your OTP for verification is ${var2}. Please enter this code to complete the process.\nRegards ${var3}\nTEXT2`;
 
-    let primaryResult = null;
+    console.log(`[DLT_SMS_DISPATCH] Sending OTP ${otpCode} to user mobile: +91${cleanNumbers}`);
 
-    // 1. Primary Dispatch (application/x-www-form-urlencoded & multipart with TXXTOO sign-off)
-    try {
-      const params = new URLSearchParams();
-      params.append("username", DLT_CONFIG.username);
-      params.append("apikey", DLT_CONFIG.apikey);
-      params.append("apirequest", "Text");
-      params.append("sender", DLT_CONFIG.sender);
-      params.append("route", DLT_CONFIG.route);
-      params.append("format", "JSON");
-      params.append("TemplateID", DLT_CONFIG.templateId);
-      params.append("template_id", DLT_CONFIG.templateId);
-      params.append("EntityID", DLT_CONFIG.entityId);
-      params.append("entity_id", DLT_CONFIG.entityId);
-      params.append("PE_ID", DLT_CONFIG.entityId);
-      params.append("pe_id", DLT_CONFIG.entityId);
-      params.append("mobile", phoneFormatted);
-      params.append("message", messageTXXTOO);
+    // 1. Primary Dispatch: Standard 10-digit Indian Mobile Number
+    const payload10 = {
+      username: DLT_CONFIG.username,
+      apikey: DLT_CONFIG.apikey,
+      apirequest: "Text",
+      sender: DLT_CONFIG.sender,
+      route: DLT_CONFIG.route,
+      format: "JSON",
+      TemplateID: DLT_CONFIG.templateId,
+      template_id: DLT_CONFIG.templateId,
+      EntityID: DLT_CONFIG.entityId,
+      entity_id: DLT_CONFIG.entityId,
+      PE_ID: DLT_CONFIG.entityId,
+      pe_id: DLT_CONFIG.entityId,
+      mobile: cleanNumbers,
+      message: finalMessage,
+    };
 
-      const response = await fetch(DLT_CONFIG.uri, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params.toString(),
-      });
-
-      const rawText = await response.text();
-      let parsed = null;
-      try { parsed = JSON.parse(rawText); } catch (e) {}
-
-      const isSuccess =
-        parsed?.status === "success" ||
-        rawText.toLowerCase().includes("success") ||
-        rawText.toLowerCase().includes("message-id");
-
-      if (isSuccess) {
-        console.log(`[DLT_SMS_SUCCESS] Dispatched to ${phoneFormatted} | MsgIDs: ${JSON.stringify(parsed?.["message-id"] || "OK")}`);
-        primaryResult = {
-          success: true,
-          provider: "dlt_allsmssolution",
-          messageId: parsed?.["message-id"],
-          raw: parsed || rawText,
-        };
-      } else {
-        console.warn(`[DLT_SMS_REJECTED] Response: ${rawText}`);
-      }
-    } catch (err) {
-      console.warn("[DLT_SMS_ERROR]", err.message);
+    const result10 = await postToGateway(payload10);
+    if (result10.success) {
+      console.log(`[DLT_SMS_SUCCESS] Successfully delivered to +91${cleanNumbers} | MsgID: ${JSON.stringify(result10.messageId || "OK")}`);
+    } else {
+      console.warn(`[DLT_SMS_10_WARN] Failed to +91${cleanNumbers}:`, result10.raw);
     }
 
-    // 2. Also dispatch Team TXXTOO variant to ensure telco scrubbing matches if registered with 'Team TXXTOO'
-    try {
-      const paramsTeam = new URLSearchParams();
-      paramsTeam.append("username", DLT_CONFIG.username);
-      paramsTeam.append("apikey", DLT_CONFIG.apikey);
-      paramsTeam.append("apirequest", "Text");
-      paramsTeam.append("sender", DLT_CONFIG.sender);
-      paramsTeam.append("route", DLT_CONFIG.route);
-      paramsTeam.append("format", "JSON");
-      paramsTeam.append("TemplateID", DLT_CONFIG.templateId);
-      paramsTeam.append("template_id", DLT_CONFIG.templateId);
-      paramsTeam.append("EntityID", DLT_CONFIG.entityId);
-      paramsTeam.append("entity_id", DLT_CONFIG.entityId);
-      paramsTeam.append("PE_ID", DLT_CONFIG.entityId);
-      paramsTeam.append("pe_id", DLT_CONFIG.entityId);
-      paramsTeam.append("mobile", phoneFormatted);
-      paramsTeam.append("message", messageTeamTXXTOO);
+    // 2. Secondary Dispatch: 12-digit format with 91 prefix (for carrier networks that require country code prefix)
+    const payload12 = {
+      ...payload10,
+      mobile: `91${cleanNumbers}`,
+    };
+    const result12 = await postToGateway(payload12);
 
-      await fetch(DLT_CONFIG.uri, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: paramsTeam.toString(),
-      });
-    } catch (err) {}
-
-    // Return primary result if succeeded
-    if (primaryResult?.success) {
-      return primaryResult;
+    if (result10.success || result12.success) {
+      return {
+        success: true,
+        provider: "dlt_allsmssolution",
+        messageId: result10.messageId || result12.messageId,
+      };
     }
 
     // 3. Fallback: Fast2SMS if configured
