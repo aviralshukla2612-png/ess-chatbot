@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -44,6 +44,110 @@ const PLAN_INFO = {
     color: "#55A9FF",
   },
 };
+
+/**
+ * 6 Separate OTP Boxes Component with Auto-Advance, Backspace Backtracking, and Paste Support
+ */
+function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = true }) {
+  const inputRefs = useRef([]);
+
+  // 6 individual character slots
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
+
+  const handleBoxChange = (e, idx) => {
+    const val = e.target.value.replace(/\D/g, "");
+
+    // If emptied
+    if (!val) {
+      const newOtp = value.slice(0, idx) + "" + value.slice(idx + 1);
+      onChange(newOtp.trim());
+      return;
+    }
+
+    // If multiple characters typed or auto-filled
+    if (val.length > 1) {
+      const char = val.slice(-1);
+      const newArr = [...digits];
+      newArr[idx] = char;
+      const combined = newArr.join("").slice(0, 6);
+      onChange(combined);
+      if (idx < 5 && inputRefs.current[idx + 1]) {
+        inputRefs.current[idx + 1].focus();
+      }
+      return;
+    }
+
+    // Single digit typed
+    const newArr = [...digits];
+    newArr[idx] = val;
+    const combined = newArr.join("").slice(0, 6);
+    onChange(combined);
+
+    if (idx < 5 && inputRefs.current[idx + 1]) {
+      inputRefs.current[idx + 1].focus();
+    }
+  };
+
+  const handleKeyDown = (e, idx) => {
+    if (e.key === "Backspace") {
+      if (!digits[idx] && idx > 0) {
+        // Current box already empty: move to previous box & clear it
+        const newArr = [...digits];
+        newArr[idx - 1] = "";
+        onChange(newArr.join("").trim());
+        if (inputRefs.current[idx - 1]) {
+          inputRefs.current[idx - 1].focus();
+        }
+      } else {
+        const newArr = [...digits];
+        newArr[idx] = "";
+        onChange(newArr.join("").trim());
+      }
+    } else if (e.key === "ArrowLeft" && idx > 0) {
+      inputRefs.current[idx - 1]?.focus();
+    } else if (e.key === "ArrowRight" && idx < 5) {
+      inputRefs.current[idx + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    onChange(pasted);
+    const nextIdx = Math.min(pasted.length, 5);
+    inputRefs.current[nextIdx]?.focus();
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 my-2" onPaste={handlePaste}>
+      {[0, 1, 2, 3, 4, 5].map((idx) => {
+        const char = digits[idx];
+        const isFilled = Boolean(char);
+        return (
+          <input
+            key={idx}
+            ref={(el) => (inputRefs.current[idx] = el)}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={1}
+            disabled={disabled}
+            autoFocus={autoFocus && idx === 0}
+            value={char}
+            onChange={(e) => handleBoxChange(e, idx)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
+            className={`w-11 sm:w-12 h-13 sm:h-14 text-center font-mono text-xl sm:text-2xl font-black rounded-xl sm:rounded-2xl border transition-all duration-200 outline-hidden select-none ${
+              isFilled
+                ? "bg-[#100D1C] border-[#963DFF] text-white shadow-[0_0_15px_rgba(150,61,255,0.35)]"
+                : "bg-black/80 border-white/15 text-white/90 hover:border-white/30 focus:border-[#963DFF] focus:bg-[#0C0A14] focus:ring-2 focus:ring-[#963DFF]/40"
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -134,7 +238,7 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Send Registration OTP
+  // Send Registration OTP via DLT Gateway
   const handleSendRegOtp = async () => {
     const rawDigits = regPhone.replace(/\D/g, "");
     if (rawDigits.length < 10) {
@@ -164,7 +268,7 @@ export default function LoginPage() {
       setRegCooldown(data.cooldownSeconds || 60);
       setRegAttemptsLeft(5);
       setRegIsBanned(false);
-      setSuccessMessage(`OTP code sent to ${data.phone}. Code is valid for 10 minutes.`);
+      setSuccessMessage(`OTP code sent via SMS to ${data.phone}. Code is valid for 10 minutes.`);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -175,7 +279,7 @@ export default function LoginPage() {
   // Verify Registration OTP
   const handleVerifyRegOtp = async () => {
     if (!regOtp || regOtp.trim().length !== 6) {
-      setErrorMessage("Please enter the 6-digit OTP code");
+      setErrorMessage("Please enter the complete 6-digit OTP code");
       return;
     }
     setErrorMessage("");
@@ -255,7 +359,7 @@ export default function LoginPage() {
     }
   };
 
-  // Send Login OTP
+  // Send Login OTP via DLT Gateway
   const handleSendLoginOtp = async () => {
     const rawDigits = loginPhone.replace(/\D/g, "");
     if (rawDigits.length < 10) {
@@ -285,7 +389,7 @@ export default function LoginPage() {
       setLoginCooldown(data.cooldownSeconds || 60);
       setLoginAttemptsLeft(5);
       setLoginIsBanned(false);
-      setSuccessMessage(`OTP sent to ${data.phone}. Code is valid for 10 minutes.`);
+      setSuccessMessage(`OTP sent via SMS to ${data.phone}. Code is valid for 10 minutes.`);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -530,9 +634,9 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* OTP Input for Login */}
+              {/* OTP Input for Login (6 SEPARATE BOXES) */}
               {loginOtpSent && !loginIsBanned && (
-                <div className="p-3.5 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
+                <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
                       <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
@@ -545,14 +649,12 @@ export default function LoginPage() {
                     )}
                   </div>
 
-                  <input
-                    type="text"
-                    maxLength={6}
-                    autoFocus
+                  {/* 6 SEPARATE BOXES COMPONENT */}
+                  <SixDigitOtpBoxes
                     value={loginOtp}
-                    onChange={(e) => setLoginOtp(e.target.value.replace(/\D/g, ""))}
-                    placeholder="••••••"
-                    className="w-full px-4 py-3 text-center font-mono tracking-[0.5em] text-lg font-bold rounded-xl border border-white/15 bg-black focus:border-[#963DFF] outline-hidden text-white shadow-inner"
+                    onChange={setLoginOtp}
+                    disabled={loginOtpVerifying}
+                    autoFocus={true}
                   />
 
                   <button
@@ -707,9 +809,9 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {/* OTP Input Field & Verification Button */}
+                {/* OTP Input Field & Verification Button (6 SEPARATE BOXES) */}
                 {regOtpSent && !regPhoneVerified && !regIsBanned && (
-                  <div className="p-3 rounded-xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-2.5 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="text-[#D1D1DB] font-medium flex items-center gap-1">
                         <KeyRound className="w-3 h-3 text-[#C28AFF]" />
@@ -722,33 +824,31 @@ export default function LoginPage() {
                       )}
                     </div>
 
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        maxLength={6}
-                        autoFocus
-                        value={regOtp}
-                        onChange={(e) => setRegOtp(e.target.value.replace(/\D/g, ""))}
-                        placeholder="••••••"
-                        className="flex-1 px-3.5 py-2.5 text-center font-mono tracking-[0.4em] text-base font-bold rounded-xl border border-white/15 bg-black focus:border-[#963DFF] outline-hidden text-white shadow-inner"
-                      />
-                      <button
-                        type="button"
-                        disabled={regOtpVerifying || regOtp.length !== 6}
-                        onClick={handleVerifyRegOtp}
-                        className="px-4 py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:brightness-110 disabled:opacity-50 text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                      >
-                        {regOtpVerifying ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Verify</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-[#9898A6]">
+                    {/* 6 SEPARATE BOXES COMPONENT */}
+                    <SixDigitOtpBoxes
+                      value={regOtp}
+                      onChange={setRegOtp}
+                      disabled={regOtpVerifying}
+                      autoFocus={true}
+                    />
+
+                    <button
+                      type="button"
+                      disabled={regOtpVerifying || regOtp.length !== 6}
+                      onClick={handleVerifyRegOtp}
+                      className="w-full py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:brightness-110 disabled:opacity-50 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                    >
+                      {regOtpVerifying ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Verify OTP Code</span>
+                        </>
+                      )}
+                    </button>
+
+                    <p className="text-[10px] text-[#9898A6] text-center">
                       Security Policy: Maximum 5 attempts allowed before a 24-hour lockout is triggered.
                     </p>
                   </div>

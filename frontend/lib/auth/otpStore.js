@@ -256,12 +256,14 @@ export const otpStore = {
     console.log(`Expires  : ${OTP_EXPIRY_MINUTES} minutes`);
     console.log(`========================================\n`);
 
-    // 5. Send via SMS Provider if configured
+    // 5. Send via DLT SMS Provider
     try {
       const { smsService } = await import("./smsService.js");
       await smsService.sendSms({
         to: phone,
-        message: `Your Emperor Nexus verification code is ${otp}. Valid for 10 minutes. Do not share this code with anyone.`,
+        otp,
+        recipientName: "User",
+        message: `Dear User Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards Team Emperor\nTEXT2`,
       });
     } catch (smsErr) {
       console.warn("[SMS_PROVIDER_WARNING]", smsErr.message);
