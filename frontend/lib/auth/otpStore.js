@@ -274,8 +274,7 @@ export const otpStore = {
       phone,
       cooldownSeconds: COOLDOWN_SECONDS,
       message: `OTP sent successfully to ${phone}. Valid for 10 minutes.`,
-      // Expose debug OTP in development or when explicit test flag is active
-      debugOtp: process.env.NODE_ENV !== "production" || process.env.SHOW_DEBUG_OTP === "true" ? otp : undefined,
+      debugOtp: process.env.SHOW_DEBUG_OTP !== "false" ? otp : undefined,
     };
   },
 

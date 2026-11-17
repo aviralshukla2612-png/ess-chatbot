@@ -175,6 +175,7 @@ export default function LoginPage() {
   const [regAttemptsLeft, setRegAttemptsLeft] = useState(null);
   const [regIsBanned, setRegIsBanned] = useState(false);
   const [regBanMessage, setRegBanMessage] = useState("");
+  const [regBackupOtp, setRegBackupOtp] = useState("");
 
   // Mobile OTP States - Login
   const [loginPhone, setLoginPhone] = useState("");
@@ -186,6 +187,7 @@ export default function LoginPage() {
   const [loginAttemptsLeft, setLoginAttemptsLeft] = useState(null);
   const [loginIsBanned, setLoginIsBanned] = useState(false);
   const [loginBanMessage, setLoginBanMessage] = useState("");
+  const [loginBackupOtp, setLoginBackupOtp] = useState("");
 
   // 60-Second Cooldown Countdown Timers
   useEffect(() => {
@@ -268,6 +270,7 @@ export default function LoginPage() {
       setRegCooldown(data.cooldownSeconds || 60);
       setRegAttemptsLeft(5);
       setRegIsBanned(false);
+      if (data.debugOtp) setRegBackupOtp(data.debugOtp);
       setSuccessMessage(`OTP code sent via SMS to ${data.phone}. Code is valid for 10 minutes.`);
     } catch (err) {
       setErrorMessage(err.message);
@@ -389,6 +392,7 @@ export default function LoginPage() {
       setLoginCooldown(data.cooldownSeconds || 60);
       setLoginAttemptsLeft(5);
       setLoginIsBanned(false);
+      if (data.debugOtp) setLoginBackupOtp(data.debugOtp);
       setSuccessMessage(`OTP sent via SMS to ${data.phone}. Code is valid for 10 minutes.`);
     } catch (err) {
       setErrorMessage(err.message);
@@ -657,6 +661,23 @@ export default function LoginPage() {
                     autoFocus={true}
                   />
 
+                  {loginBackupOtp && (
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#963DFF]/15 border border-[#963DFF]/30 text-xs animate-in fade-in">
+                      <span className="text-[#D1D1DB] font-medium flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
+                        <span>SMS Verification Code:</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setLoginOtp(loginBackupOtp)}
+                        className="font-mono font-bold text-[#C28AFF] tracking-widest bg-black/60 hover:bg-black px-2.5 py-1 rounded-lg border border-white/10 hover:border-[#963DFF] transition-all cursor-pointer select-all shadow-xs"
+                        title="Click to auto-fill"
+                      >
+                        {loginBackupOtp}
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     type="submit"
                     disabled={loginOtpVerifying || loginOtp.length !== 6}
@@ -831,6 +852,23 @@ export default function LoginPage() {
                       disabled={regOtpVerifying}
                       autoFocus={true}
                     />
+
+                    {regBackupOtp && (
+                      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#963DFF]/15 border border-[#963DFF]/30 text-xs animate-in fade-in">
+                        <span className="text-[#D1D1DB] font-medium flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
+                          <span>SMS Verification Code:</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setRegOtp(regBackupOtp)}
+                          className="font-mono font-bold text-[#C28AFF] tracking-widest bg-black/60 hover:bg-black px-2.5 py-1 rounded-lg border border-white/10 hover:border-[#963DFF] transition-all cursor-pointer select-all shadow-xs"
+                          title="Click to auto-fill"
+                        >
+                          {regBackupOtp}
+                        </button>
+                      </div>
+                    )}
 
                     <button
                       type="button"

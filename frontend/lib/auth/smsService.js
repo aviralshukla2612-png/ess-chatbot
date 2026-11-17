@@ -20,23 +20,71 @@ export const smsService = {
    * Dispatches SMS to a recipient phone number using TRAI DLT-approved template.
    */
   async sendSms({ to, otp, recipientName = "User", message: fallbackMessage }) {
-    // 1. Clean 10-digit Indian phone number
-    const cleanNumbers = (to || "").replace(/^\+91/, "").replace(/\D/g, "");
-    const otpCode = otp || (fallbackMessage ? fallbackMessage.match(/\b\d{6}\b/)?.[0] : "");
+    // 1. Clean 10-digit Indian phone number (extract last 10 digits)
+    const digits = (to || "").replace(/\D/g, "");
+    const cleanNumbers = digits.length >= 10 ? digits.slice(-10) : digits;
+    const otpCode = String(otp || (fallbackMessage ? fallbackMessage.match(/\b\d{6}\b/)?.[0] : "") || "").trim();
 
     // ========================================================
     // 1. Primary: TRAI DLT Telecom Gateway (allsmssolution.in)
     // ========================================================
     if (DLT_CONFIG.uri && DLT_CONFIG.apikey && cleanNumbers.length === 10 && otpCode) {
+      const var1 = (recipientName || "User").trim().replace(/[^a-zA-Z0-9 ]/g, "") || "User";
+      const var2 = otpCode;
+      const var3 = (DLT_CONFIG.signOff || "Team Emperor").trim();
+
+      // Exact approved TRAI DLT template text:
+      // "Dear {#var#} Your OTP for verification is {#var#}. Please enter this code to complete the process.\nRegards {#var#}\nTEXT2"
+      const finalMessage = `Dear ${var1} Your OTP for verification is ${var2}. Please enter this code to complete the process.\nRegards ${var3}\nTEXT2`;
+
+      // Method A: Multipart Form Data (matching PHP cURL in send.php)
       try {
-        const var1 = recipientName || "User";
-        const var2 = otpCode;
-        const var3 = DLT_CONFIG.signOff || "Team Emperor";
+        const formData = new FormData();
+        formData.append("username", DLT_CONFIG.username);
+        formData.append("apikey", DLT_CONFIG.apikey);
+        formData.append("apirequest", "Text");
+        formData.append("sender", DLT_CONFIG.sender);
+        formData.append("route", DLT_CONFIG.route);
+        formData.append("format", "JSON");
+        formData.append("TemplateID", DLT_CONFIG.templateId);
+        formData.append("EntityID", DLT_CONFIG.entityId);
+        formData.append("PE_ID", DLT_CONFIG.entityId);
+        formData.append("mobile", cleanNumbers);
+        formData.append("message", finalMessage);
 
-        // Exact approved TRAI DLT template text:
-        // "Dear {#var#} Your OTP for verification is {#var#}. Please enter this code to complete the process.\nRegards {#var#}\nTEXT2"
-        const finalMessage = `Dear ${var1} Your OTP for verification is ${var2}. Please enter this code to complete the process.\nRegards ${var3}\nTEXT2`;
+        const response = await fetch(DLT_CONFIG.uri, {
+          method: "POST",
+          body: formData,
+        });
 
+        const rawText = await response.text();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(rawText);
+        } catch (e) {}
+
+        const isSuccess =
+          parsed?.status === "success" ||
+          rawText.toLowerCase().includes("success") ||
+          rawText.toLowerCase().includes("message-id");
+
+        if (isSuccess) {
+          console.log(`[DLT_SMS_SUCCESS] Dispatched to +91${cleanNumbers} | MsgID: ${JSON.stringify(parsed?.["message-id"] || "OK")}`);
+          return {
+            success: true,
+            provider: "dlt_allsmssolution",
+            messageId: parsed?.["message-id"],
+            raw: parsed || rawText,
+          };
+        } else {
+          console.warn(`[DLT_SMS_MULTIPART_REJECTED] Response: ${rawText}`);
+        }
+      } catch (multipartErr) {
+        console.warn("[DLT_SMS_MULTIPART_ERROR]", multipartErr.message);
+      }
+
+      // Method B: URLSearchParams Fallback (URL-Encoded POST)
+      try {
         const params = new URLSearchParams();
         params.append("username", DLT_CONFIG.username);
         params.append("apikey", DLT_CONFIG.apikey);
@@ -70,7 +118,7 @@ export const smsService = {
           rawText.toLowerCase().includes("message-id");
 
         if (isSuccess) {
-          console.log(`[DLT_SMS_SUCCESS] Dispatched to +91${cleanNumbers} | MsgID: ${parsed?.["message-id"] || "OK"}`);
+          console.log(`[DLT_SMS_URLENC_SUCCESS] Dispatched to +91${cleanNumbers} | MsgID: ${JSON.stringify(parsed?.["message-id"] || "OK")}`);
           return {
             success: true,
             provider: "dlt_allsmssolution",
@@ -78,10 +126,10 @@ export const smsService = {
             raw: parsed || rawText,
           };
         } else {
-          console.warn(`[DLT_SMS_WARNING] Gateway response: ${rawText}`);
+          console.warn(`[DLT_SMS_URLENC_REJECTED] Response: ${rawText}`);
         }
-      } catch (dltErr) {
-        console.warn("[DLT_SMS_ERROR]", dltErr.message);
+      } catch (urlErr) {
+        console.warn("[DLT_SMS_URLENC_ERROR]", urlErr.message);
       }
     }
 
@@ -114,40 +162,8 @@ export const smsService = {
     }
 
     // ========================================================
-    // 3. Tertiary: Twilio Gateway (Optional international)
+    // 3. Fallback: Log to stdout
     // ========================================================
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
-    if (twilioSid && twilioToken && twilioFrom) {
-      try {
-        const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
-        const body = new URLSearchParams();
-        body.append("To", to);
-        body.append("From", twilioFrom);
-        body.append("Body", fallbackMessage || `Your verification code is ${otpCode}`);
-
-        const res = await fetch(
-          `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Basic ${auth}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: body.toString(),
-          }
-        );
-        if (res.ok) {
-          console.log(`[Twilio_SUCCESS] Dispatched to ${to}`);
-          return { success: true, provider: "twilio" };
-        }
-      } catch (err) {
-        console.warn("[Twilio_Error]", err.message);
-      }
-    }
-
-    // 4. Console log fallback
     console.log(`[SMS_LOG] Dispatched to ${to}: OTP is ${otpCode}`);
     return { success: true, provider: "console_log" };
   },
