@@ -25,10 +25,10 @@ async function updateAllLogos() {
   for (let y = 0; y < height; y++) {
     for (let x = 660; x < width; x++) {
       const idx = (y * width + x) * 4;
-      const isSeparator = (x >= 668 && x <= 682 && y >= 45 && y <= 455);
-      const isEmperor = (x >= 750 && x <= 1230 && y >= 50 && y <= 115);
-      const isNexus = (x >= 750 && x <= 1795 && y >= 150 && y <= 330);
-      const isSales = (x >= 750 && x <= 1630 && y >= 355 && y <= 420);
+      const isSeparator = (x >= 660 && x <= 695 && y >= 35 && y <= 465);
+      const isEmperor = (x >= 740 && x <= 1450 && y >= 35 && y <= 135);
+      const isNexus = (x >= 740 && x <= 1819 && y >= 140 && y <= 340);
+      const isSales = (x >= 740 && x <= 1819 && y >= 340 && y <= 450);
 
       if (!isSeparator && !isEmperor && !isNexus && !isSales) {
         outRgba[idx] = 0;
@@ -48,7 +48,7 @@ async function updateAllLogos() {
       const idx = (y * width + x) * 4;
       if (outRgba[idx + 3] === 0) continue;
 
-      const isX = (x >= 1155 && x <= 1375 && y >= 150 && y <= 330);
+      const isX = (x >= 1100 && x <= 1460 && y >= 145 && y <= 340);
 
       if (isX) {
         // NEXUS X: Vibrant cyan/purple gradient

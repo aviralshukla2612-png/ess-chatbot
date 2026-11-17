@@ -355,12 +355,12 @@ export default function TrionnLoader({ onComplete }) {
           />
 
           {/* Emperor Nexus Brand Logo (Always Prominently Visible) */}
-          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-6 sm:p-8">
+          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-4 sm:p-5">
             <img
               ref={logoImgRef}
               src="/logo.png"
               alt="Emperor Nexus — Sales AI Assistant"
-              className="max-h-[140px] sm:max-h-[160px] md:max-h-[180px] w-auto max-w-[85%] object-contain filter drop-shadow-[0_0_35px_rgba(150,61,255,0.7)] select-none pointer-events-none"
+              className="w-full max-w-[92%] sm:max-w-[90%] h-auto max-h-[140px] sm:max-h-[160px] object-contain filter drop-shadow-[0_0_35px_rgba(150,61,255,0.7)] select-none pointer-events-none"
             />
           </div>
         </div>
