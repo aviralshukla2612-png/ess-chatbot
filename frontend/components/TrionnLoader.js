@@ -17,6 +17,7 @@ export default function TrionnLoader({ onComplete }) {
   const containerRef = useRef(null);
   const boxWrapRef = useRef(null);
   const logoWrapRef = useRef(null);
+  const logoImgRef = useRef(null);
   const videoRef = useRef(null);
   const borderRectRef = useRef(null);
   const counterRef = useRef(null);
@@ -57,8 +58,15 @@ export default function TrionnLoader({ onComplete }) {
       });
 
       gsap.set(logoWrapRef.current, {
-        opacity: 0.85,
+        opacity: 0.9,
       });
+
+      if (logoImgRef.current) {
+        gsap.set(logoImgRef.current, {
+          scale: 0.85,
+          opacity: 1,
+        });
+      }
 
       gsap.set(
         [
@@ -127,6 +135,18 @@ export default function TrionnLoader({ onComplete }) {
         },
         0.2
       );
+
+      if (logoImgRef.current) {
+        tl.to(
+          logoImgRef.current,
+          {
+            scale: 1,
+            duration: 0.75,
+            ease: "power2.out",
+          },
+          0.1
+        );
+      }
 
       // ========================================================
       // 2. BOX LINE IS MADE + COUNTER 000% -> 100% (0.75s -> 2.65s)
@@ -315,11 +335,15 @@ export default function TrionnLoader({ onComplete }) {
           willChange: "transform",
         }}
       >
-        {/* Inside: Logo / Video container that moves with the box */}
+        {/* Inside: Logo / Ambient Video container that moves with the box */}
         <div
           ref={logoWrapRef}
-          className="absolute inset-1 overflow-hidden flex items-center justify-center bg-[#07070A]"
+          className="absolute inset-1 overflow-hidden flex flex-col items-center justify-center bg-[#07070A]"
         >
+          {/* Ambient Royal Purple Radial Glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(150,61,255,0.3)_0%,rgba(10,10,14,0.6)_65%,#07070A_100%)] pointer-events-none" />
+
+          {/* Ambient Video Background Layer (if supported/available) */}
           <video
             ref={videoRef}
             src="/loader_video.mp4"
@@ -327,8 +351,18 @@ export default function TrionnLoader({ onComplete }) {
             muted
             loop
             playsInline
-            className="w-full h-full object-cover object-center pointer-events-none select-none"
+            className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen pointer-events-none select-none"
           />
+
+          {/* Emperor Nexus Brand Logo (Always Prominently Visible) */}
+          <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-6 sm:p-8">
+            <img
+              ref={logoImgRef}
+              src="/logo.png"
+              alt="Emperor Nexus — Sales AI Assistant"
+              className="max-h-[140px] sm:max-h-[160px] md:max-h-[180px] w-auto max-w-[85%] object-contain filter drop-shadow-[0_0_35px_rgba(150,61,255,0.7)] select-none pointer-events-none"
+            />
+          </div>
         </div>
 
         {/* 
