@@ -7,17 +7,13 @@ import { useRouter } from "next/navigation";
 import {
   Sparkles,
   CheckCircle2,
-  Mail,
   Lock,
-  Eye,
-  EyeOff,
   ArrowRight,
   ShieldAlert,
   Building,
   User,
   Globe,
   ArrowLeft,
-  Zap,
   CreditCard,
   Check,
   Phone,
@@ -52,15 +48,11 @@ const PLAN_INFO = {
 export default function LoginPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("login"); // 'login' or 'register'
-  const [loginMethod, setLoginMethod] = useState("password"); // 'password' or 'otp'
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
 
-  // Form states (common)
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Form states
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [redirectPath, setRedirectPath] = useState("");
@@ -91,7 +83,7 @@ export default function LoginPage() {
   const [loginIsBanned, setLoginIsBanned] = useState(false);
   const [loginBanMessage, setLoginBanMessage] = useState("");
 
-  // 60s Cooldown Timers
+  // 60-Second Cooldown Countdown Timers
   useEffect(() => {
     if (regCooldown <= 0) return;
     const interval = setInterval(() => {
@@ -172,7 +164,7 @@ export default function LoginPage() {
       setRegCooldown(data.cooldownSeconds || 60);
       setRegAttemptsLeft(5);
       setRegIsBanned(false);
-      setSuccessMessage(`OTP sent to ${data.phone}. Code is valid for 10 minutes.`);
+      setSuccessMessage(`OTP code sent to ${data.phone}. Code is valid for 10 minutes.`);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -219,6 +211,50 @@ export default function LoginPage() {
     }
   };
 
+  // Registration Submit
+  const handleRegisterSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      if (!fullName.trim()) throw new Error("Full name is required");
+      if (!companyName.trim()) throw new Error("Company / Organization name is required");
+      if (!regPhoneVerified || !regVerificationToken) {
+        throw new Error("Please verify your mobile number with OTP first");
+      }
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: fullName.trim(),
+          organizationName: companyName.trim(),
+          phone: regPhone,
+          verificationToken: regVerificationToken,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Registration failed. Please try again.");
+      }
+
+      if (selectedPlan) {
+        const indQuery = selectedIndustry ? `&industry=${encodeURIComponent(selectedIndustry)}` : "";
+        window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}${indQuery}&checkout=true`);
+        return;
+      }
+
+      const defaultTarget = selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
+      window.location.replace(redirectPath || defaultTarget);
+    } catch (err) {
+      setErrorMessage(err.message || "Registration failed. Please try again.");
+      setLoading(false);
+    }
+  };
+
   // Send Login OTP
   const handleSendLoginOtp = async () => {
     const rawDigits = loginPhone.replace(/\D/g, "");
@@ -257,9 +293,13 @@ export default function LoginPage() {
     }
   };
 
-  // Verify Login OTP & Sign In
-  const handleLoginWithOtp = async (e) => {
+  // Verify Login OTP & Complete Sign In
+  const handleLoginSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    if (!loginOtpSent) {
+      await handleSendLoginOtp();
+      return;
+    }
     if (!loginOtp || loginOtp.trim().length !== 6) {
       setErrorMessage("Please enter the 6-digit OTP code");
       return;
@@ -300,12 +340,12 @@ export default function LoginPage() {
       const lData = await lRes.json();
       if (!lRes.ok || !lData.success) {
         if (lData.userFound === false) {
-          // Pre-fill phone in register tab
+          // Pre-fill phone in register tab with verified status
           setRegPhone(loginPhone);
           setRegPhoneVerified(true);
           setRegVerificationToken(vData.verificationToken);
           setActiveTab("register");
-          throw new Error("No account found for this mobile number. Please fill your details below to create your workspace.");
+          throw new Error("No account found for this mobile number. Please fill in your name to create your workspace.");
         }
         throw new Error(lData.error || "Sign in failed");
       }
@@ -323,89 +363,6 @@ export default function LoginPage() {
       setErrorMessage(err.message);
     } finally {
       setLoginOtpVerifying(false);
-    }
-  };
-
-  // Submit Handler for Email/Password or Registration
-  const handleSubmit = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-
-    try {
-      if (activeTab === "register") {
-        if (!fullName.trim()) throw new Error("Full name is required");
-        if (!companyName.trim()) throw new Error("Company / Organization name is required");
-        if (!regPhoneVerified || !regVerificationToken) {
-          throw new Error("Please verify your mobile number with OTP before registering");
-        }
-        if (!email.trim()) throw new Error("Work email address is required");
-        if (!password || password.length < 8) throw new Error("Password must be at least 8 characters");
-
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: fullName.trim(),
-            organizationName: companyName.trim(),
-            email: email.trim(),
-            password,
-            phone: regPhone,
-            verificationToken: regVerificationToken,
-          }),
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || "Registration failed. Please check your credentials.");
-        }
-
-        if (selectedPlan) {
-          const indQuery = selectedIndustry ? `&industry=${encodeURIComponent(selectedIndustry)}` : "";
-          window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}${indQuery}&checkout=true`);
-          return;
-        }
-
-        const defaultTarget = selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
-        window.location.replace(redirectPath || defaultTarget);
-        return;
-      }
-
-      // Password Login Flow
-      if (!email.trim()) throw new Error("Email address is required");
-      if (!password) throw new Error("Password is required");
-
-      const isPlatformAdmin = email.trim().toLowerCase() === "admin@emperorsmartsolutions.com";
-
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-          directLogin: false,
-          portalRole: isPlatformAdmin ? "superadmin" : "ORG_ADMIN",
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Invalid email or password");
-      }
-
-      if (selectedPlan) {
-        const indQuery = selectedIndustry ? `&industry=${encodeURIComponent(selectedIndustry)}` : "";
-        window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}${indQuery}&checkout=true`);
-        return;
-      }
-
-      const isSuper = data.user?.role === "SUPER_ADMIN" || data.orgRole === "SUPER_ADMIN" || isPlatformAdmin;
-      const defaultTarget = isSuper ? "/admin" : selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
-      window.location.replace(redirectPath || defaultTarget);
-    } catch (err) {
-      setErrorMessage(err.message || "Authentication failed. Please check your credentials.");
-      setLoading(false);
     }
   };
 
@@ -431,12 +388,12 @@ export default function LoginPage() {
             />
           </Link>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            {activeTab === "register" ? "Create Organization Workspace" : "Welcome Back"}
+            {activeTab === "register" ? "Create Workspace" : "Sign In with Mobile OTP"}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-[#9898A6]">
             {activeTab === "register"
-              ? "Verify mobile number & launch your AI workspace in under 2 minutes"
-              : "Sign in with OTP or password to access your dashboard"}
+              ? "Verify mobile number & launch your AI workspace in seconds"
+              : "Enter your mobile number to receive an instant verification code"}
           </p>
         </div>
 
@@ -455,7 +412,7 @@ export default function LoginPage() {
                   </span>
                 </div>
                 <p className="text-[11px] text-[#9898A6] mt-0.5">
-                  Sign in or register to complete your order with Razorpay
+                  Complete sign-in or registration to proceed with order
                 </p>
               </div>
             </div>
@@ -498,8 +455,8 @@ export default function LoginPage() {
                   : "text-[#9898A6] hover:text-white"
               }`}
             >
-              <Lock className="w-3.5 h-3.5" />
-              <span>Sign In</span>
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Sign In with OTP</span>
             </button>
             <button
               type="button"
@@ -519,9 +476,136 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* ================= REGISTER VIEW ================= */}
+          {/* ================= SIGN IN VIEW (100% MOBILE & OTP) ================= */}
+          {activeTab === "login" && (
+            <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs sm:text-sm">
+              <div>
+                <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
+                  Mobile Number
+                </label>
+                <div className="flex gap-2">
+                  <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
+                    🇮🇳 +91
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    value={loginPhone}
+                    onChange={(e) => setLoginPhone(e.target.value)}
+                    placeholder="10-digit mobile number"
+                    className="flex-1 px-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                  />
+                  <button
+                    type="button"
+                    disabled={loginOtpSending || loginCooldown > 0 || loginIsBanned || !loginPhone}
+                    onClick={handleSendLoginOtp}
+                    className="px-3.5 py-3 rounded-xl bg-[#963DFF] hover:bg-[#8529f7] disabled:bg-white/5 disabled:text-white/40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(150,61,255,0.3)]"
+                  >
+                    {loginOtpSending ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : loginCooldown > 0 ? (
+                      <>
+                        <Clock className="w-3 h-3 text-[#C28AFF]" />
+                        <span>{loginCooldown}s</span>
+                      </>
+                    ) : loginOtpSent ? (
+                      "Resend"
+                    ) : (
+                      "Send OTP"
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* 24-Hour Banned Notice for Login */}
+              {loginIsBanned && (
+                <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-rose-200">Account Temporarily Locked for 24 Hours</p>
+                    <p className="text-[11px] text-rose-300/90 mt-0.5">
+                      {loginBanMessage || "This number has been locked for 24 hours due to 5 consecutive failed OTP attempts."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* OTP Input for Login */}
+              {loginOtpSent && !loginIsBanned && (
+                <div className="p-3.5 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
+                      Enter 6-Digit OTP Code:
+                    </span>
+                    {loginAttemptsLeft !== null && (
+                      <span className={`text-[11px] font-bold ${loginAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
+                        {loginAttemptsLeft} of 5 attempts left
+                      </span>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    value={loginOtp}
+                    onChange={(e) => setLoginOtp(e.target.value.replace(/\D/g, ""))}
+                    placeholder="••••••"
+                    className="w-full px-4 py-3 text-center font-mono tracking-[0.5em] text-lg font-bold rounded-xl border border-white/15 bg-black focus:border-[#963DFF] outline-hidden text-white shadow-inner"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={loginOtpVerifying || loginOtp.length !== 6}
+                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loginOtpVerifying ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Verifying & Signing In...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Sign In to Workspace</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[11px] text-[#9898A6] text-center">
+                    Security Policy: 5 consecutive failed attempts will lock this mobile number for 24 hours.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Button if OTP not sent yet */}
+              {!loginOtpSent && (
+                <button
+                  type="button"
+                  onClick={handleSendLoginOtp}
+                  disabled={loginOtpSending || !loginPhone}
+                  className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loginOtpSending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Sending OTP...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send OTP Code</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              )}
+            </form>
+          )}
+
+          {/* ================= REGISTER VIEW (100% MOBILE & OTP) ================= */}
           {activeTab === "register" && (
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
+            <form onSubmit={handleRegisterSubmit} className="space-y-4 text-xs sm:text-sm">
               {/* Full Name */}
               <div>
                 <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
@@ -565,7 +649,7 @@ export default function LoginPage() {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-[#D1D1DB] flex items-center gap-1.5">
                     <Smartphone className="w-3.5 h-3.5 text-[#C28AFF]" />
-                    <span>Mobile Number (Verification Required)</span>
+                    <span>Mobile Number (OTP Verification)</span>
                   </label>
                   {regPhoneVerified && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
@@ -610,7 +694,7 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                {/* 24-Hour Banned Notice */}
+                {/* 24-Hour Banned Notice for Registration */}
                 {regIsBanned && (
                   <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
@@ -642,6 +726,7 @@ export default function LoginPage() {
                       <input
                         type="text"
                         maxLength={6}
+                        autoFocus
                         value={regOtp}
                         onChange={(e) => setRegOtp(e.target.value.replace(/\D/g, ""))}
                         placeholder="••••••"
@@ -664,56 +749,10 @@ export default function LoginPage() {
                       </button>
                     </div>
                     <p className="text-[10px] text-[#9898A6]">
-                      Entered wrong code? You have a maximum of 5 attempts before a 24-hour ban is applied.
+                      Security Policy: Maximum 5 attempts allowed before a 24-hour lockout is triggered.
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* Work Email Address */}
-              <div>
-                <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Work Email Address
-                </label>
-                <div className="relative group">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#C28AFF] transition-colors" />
-                  <input
-                    type="email"
-                    required
-                    autoComplete="username"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@company.com"
-                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Create Password (min. 8 chars)
-                </label>
-                <div className="relative group">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#C28AFF] transition-colors" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white focus:outline-hidden transition-colors cursor-pointer"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
               </div>
 
               {/* Submit Action Button */}
@@ -732,227 +771,6 @@ export default function LoginPage() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
-          )}
-
-          {/* ================= SIGN IN VIEW ================= */}
-          {activeTab === "login" && (
-            <div className="space-y-4 text-xs sm:text-sm">
-              {/* Method Switcher: Password vs Mobile OTP */}
-              <div className="flex p-0.5 rounded-xl bg-[#0A0A0E] border border-white/10 text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginMethod("password");
-                    setErrorMessage("");
-                  }}
-                  className={`flex-1 py-2 rounded-lg font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    loginMethod === "password"
-                      ? "bg-white/10 text-white shadow-xs"
-                      : "text-[#9898A6] hover:text-white"
-                  }`}
-                >
-                  <Mail className="w-3.5 h-3.5 text-[#C28AFF]" />
-                  <span>Email & Password</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginMethod("otp");
-                    setErrorMessage("");
-                  }}
-                  className={`flex-1 py-2 rounded-lg font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    loginMethod === "otp"
-                      ? "bg-[#963DFF] text-white shadow-[0_0_15px_rgba(150,61,255,0.35)]"
-                      : "text-[#9898A6] hover:text-white"
-                  }`}
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-[#C28AFF]" />
-                  <span>Mobile & OTP</span>
-                </button>
-              </div>
-
-              {/* Login Method A: Password */}
-              {loginMethod === "password" && (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Email */}
-                  <div>
-                    <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                      Email address
-                    </label>
-                    <div className="relative group">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#C28AFF] transition-colors" />
-                      <input
-                        type="email"
-                        required
-                        autoComplete="username"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="name@company.com"
-                        className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Password */}
-                  <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="text-xs font-semibold text-[#D1D1DB]">Password</label>
-                      <Link
-                        href="/forgot-password"
-                        className="text-[#C28AFF] hover:text-white hover:underline text-[11px] transition-colors"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="relative group">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#C28AFF] transition-colors" />
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••••••"
-                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white focus:outline-hidden transition-colors cursor-pointer"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="checkbox"
-                      id="remember"
-                      defaultChecked
-                      className="w-4 h-4 rounded-sm border-white/20 bg-[#06060A] text-[#963DFF] accent-[#963DFF] cursor-pointer"
-                    />
-                    <label htmlFor="remember" className="text-xs text-[#9898A6] cursor-pointer select-none">
-                      Remember me on this browser
-                    </label>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <span>{loading ? "Signing In..." : "Sign In to Workspace"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-              )}
-
-              {/* Login Method B: Mobile Number & OTP */}
-              {loginMethod === "otp" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                      Enter Registered Mobile Number
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
-                        🇮🇳 +91
-                      </div>
-                      <input
-                        type="tel"
-                        value={loginPhone}
-                        onChange={(e) => setLoginPhone(e.target.value)}
-                        placeholder="10-digit mobile number"
-                        className="flex-1 px-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                      />
-                      <button
-                        type="button"
-                        disabled={loginOtpSending || loginCooldown > 0 || loginIsBanned || !loginPhone}
-                        onClick={handleSendLoginOtp}
-                        className="px-3.5 py-3 rounded-xl bg-[#963DFF] hover:bg-[#8529f7] disabled:bg-white/5 disabled:text-white/40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(150,61,255,0.3)]"
-                      >
-                        {loginOtpSending ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : loginCooldown > 0 ? (
-                          <>
-                            <Clock className="w-3 h-3 text-[#C28AFF]" />
-                            <span>{loginCooldown}s</span>
-                          </>
-                        ) : loginOtpSent ? (
-                          "Resend"
-                        ) : (
-                          "Send OTP"
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 24-Hour Banned Notice for Login */}
-                  {loginIsBanned && (
-                    <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
-                      <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold text-rose-200">Account Temporarily Locked</p>
-                        <p className="text-[11px] text-rose-300/90 mt-0.5">
-                          {loginBanMessage || "This number has been locked for 24 hours due to 5 consecutive wrong OTP attempts."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* OTP Input for Login */}
-                  {loginOtpSent && !loginIsBanned && (
-                    <div className="p-3.5 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
-                          <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
-                          Enter 6-Digit OTP Code:
-                        </span>
-                        {loginAttemptsLeft !== null && (
-                          <span className={`text-[11px] font-bold ${loginAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
-                            {loginAttemptsLeft} of 5 attempts left
-                          </span>
-                        )}
-                      </div>
-
-                      <input
-                        type="text"
-                        maxLength={6}
-                        value={loginOtp}
-                        onChange={(e) => setLoginOtp(e.target.value.replace(/\D/g, ""))}
-                        placeholder="••••••"
-                        className="w-full px-4 py-3 text-center font-mono tracking-[0.5em] text-lg font-bold rounded-xl border border-white/15 bg-black focus:border-[#963DFF] outline-hidden text-white shadow-inner"
-                      />
-
-                      <button
-                        type="button"
-                        disabled={loginOtpVerifying || loginOtp.length !== 6}
-                        onClick={handleLoginWithOtp}
-                        className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {loginOtpVerifying ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>Verifying & Signing In...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Sign In to Workspace</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </>
-                        )}
-                      </button>
-
-                      <p className="text-[11px] text-[#9898A6] text-center">
-                        Note: 5 consecutive failed attempts will lock this mobile number for 24 hours.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
           )}
 
           {/* Social or SSO Divider */}

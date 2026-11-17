@@ -36,24 +36,28 @@ export const authStore = {
    * Register a new User and create their primary Organization.
    */
   async register({ email, password, name, organizationName, role = "MEMBER", phone, phoneVerified = false }) {
-    if (!email || !email.includes("@")) {
-      throw new Error("A valid email address is required");
-    }
-    if (!password || password.length < 8) {
-      throw new Error("Password must be at least 8 characters long");
-    }
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = (name || cleanEmail.split("@")[0]).trim();
-    const orgName = (organizationName || `${cleanName}'s Workspace`).trim();
     const cleanPhone = phone ? otpStore.normalizePhone(phone) : null;
-
-    // 1. Check duplicate email in DB
-    const existingDb = await queryDb('SELECT "id" FROM "User" WHERE "email" = $1;', [cleanEmail]);
-    if (existingDb.ok && existingDb.rows.length > 0) {
-      throw new Error("An account with this email already exists");
+    if (!cleanPhone && (!email || !email.includes("@"))) {
+      throw new Error("A valid mobile number is required");
     }
-    if (memoryUsers.has(cleanEmail)) {
-      throw new Error("An account with this email already exists");
+
+    const cleanDigits = cleanPhone ? cleanPhone.replace(/\D/g, "") : Date.now().toString();
+    const cleanEmail = email && email.includes("@")
+      ? email.trim().toLowerCase()
+      : `${cleanDigits}@phone.emperornexus.com`;
+
+    const cleanName = (name || (cleanPhone ? `User ${cleanDigits.slice(-4)}` : cleanEmail.split("@")[0])).trim();
+    const orgName = (organizationName || `${cleanName}'s Workspace`).trim();
+
+    // 1. Check duplicate email in DB if email explicitly provided
+    if (email) {
+      const existingDb = await queryDb('SELECT "id" FROM "User" WHERE "email" = $1;', [cleanEmail]);
+      if (existingDb.ok && existingDb.rows.length > 0) {
+        throw new Error("An account with this email already exists");
+      }
+      if (memoryUsers.has(cleanEmail)) {
+        throw new Error("An account with this email already exists");
+      }
     }
 
     // Check duplicate phone if provided
@@ -69,8 +73,10 @@ export const authStore = {
       }
     }
 
-    // 2. Hash password
-    const passwordHash = await hashPassword(password);
+    // 2. Hash password (or generate random secure hash if phone-only registration)
+    const passwordHash = password && password.length >= 8
+      ? await hashPassword(password)
+      : await hashPassword(crypto.randomBytes(32).toString("hex"));
     const userId = `usr_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
     const orgId = `org_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
     const slug = `${cleanEmail.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "-")}-${Date.now().toString(36)}`;

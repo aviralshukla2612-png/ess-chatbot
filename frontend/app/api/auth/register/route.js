@@ -6,14 +6,7 @@ import { signSessionToken, createSessionCookie } from "@/lib/auth/session";
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, password, name, organizationName, phone, verificationToken } = body;
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+    const { name, organizationName, phone, verificationToken } = body;
 
     if (!phone) {
       return NextResponse.json(
@@ -38,11 +31,12 @@ export async function POST(request) {
       );
     }
 
+    const cleanName = (name || "").trim() || `User ${cleanPhone.slice(-4)}`;
+    const cleanOrg = (organizationName || "").trim() || `${cleanName}'s Workspace`;
+
     const { user, organization, orgRole } = await authStore.register({
-      email,
-      password,
-      name,
-      organizationName,
+      name: cleanName,
+      organizationName: cleanOrg,
       phone: cleanPhone,
       phoneVerified: true,
     });

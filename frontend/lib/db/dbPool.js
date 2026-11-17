@@ -424,6 +424,8 @@ export async function initPostgresTables() {
           );
           ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(32);
           ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phoneVerified" BOOLEAN DEFAULT FALSE;
+          ALTER TABLE "User" ALTER COLUMN "email" DROP NOT NULL;
+          ALTER TABLE "User" ALTER COLUMN "passwordHash" DROP NOT NULL;
 
           CREATE TABLE IF NOT EXISTS "OtpVerification" (
             "id" VARCHAR(128) PRIMARY KEY,
