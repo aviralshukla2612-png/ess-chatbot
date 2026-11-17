@@ -16,7 +16,13 @@ export async function POST(request) {
     const result = await otpStore.sendOtp({ phone, purpose, name });
 
     if (!result.success) {
-      const status = result.banned ? 403 : result.cooldown ? 429 : 400;
+      const status = result.banned
+        ? 403
+        : result.cooldown
+        ? 429
+        : result.gatewayFailed
+        ? 502
+        : 400;
       return NextResponse.json(result, { status });
     }
 
@@ -24,6 +30,9 @@ export async function POST(request) {
       success: true,
       message: result.message,
       phone: result.phone,
+      messageId: result.messageId || null,
+      provider: result.provider || "dlt_allsmssolution",
+      latencyMs: result.latencyMs || null,
       cooldownSeconds: result.cooldownSeconds,
     });
   } catch (err) {
@@ -33,4 +42,3 @@ export async function POST(request) {
     );
   }
 }
-

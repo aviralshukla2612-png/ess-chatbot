@@ -137,6 +137,39 @@ CREATE TABLE IF NOT EXISTS "AuditLog" (
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 11. User & Mobile OTP Verification Tables
+CREATE TABLE IF NOT EXISTS "User" (
+  "id" VARCHAR(64) PRIMARY KEY,
+  "name" VARCHAR(255) NOT NULL,
+  "email" VARCHAR(255) UNIQUE,
+  "phone" VARCHAR(32),
+  "phoneVerified" BOOLEAN DEFAULT FALSE,
+  "passwordHash" TEXT,
+  "role" VARCHAR(64) DEFAULT 'MEMBER',
+  "status" VARCHAR(64) DEFAULT 'ACTIVE',
+  "emailVerifiedAt" TIMESTAMP WITH TIME ZONE,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phone" VARCHAR(32);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phoneVerified" BOOLEAN DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS "OtpVerification" (
+  "id" VARCHAR(128) PRIMARY KEY,
+  "phone" VARCHAR(32) NOT NULL,
+  "otpHash" VARCHAR(128) NOT NULL,
+  "attempts" INT DEFAULT 0,
+  "maxAttempts" INT DEFAULT 5,
+  "bannedUntil" TIMESTAMP WITH TIME ZONE,
+  "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+  "lastSentAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "verified" BOOLEAN DEFAULT FALSE,
+  "purpose" VARCHAR(32) DEFAULT 'registration',
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_otp_phone" ON "OtpVerification" ("phone");
+
 -- Indexes for performance & vector search
 CREATE INDEX IF NOT EXISTS idx_bot_org ON "Bot" ("organizationId");
 CREATE INDEX IF NOT EXISTS idx_conversation_tenant ON "Conversation" ("organizationId", "botId");

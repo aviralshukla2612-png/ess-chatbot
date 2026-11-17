@@ -81,9 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Calculate & Update Live Preview
   function updatePreview() {
-    const v1 = var1Input.value.trim() || 'John Doe';
+    const v1 = var1Input.value.trim() || 'User';
     const v2 = var2Input.value.trim() || '123456';
-    const v3 = var3Input.value.trim() || 'TXXTOO Team';
+    const v3 = var3Input.value.trim() || 'Team Nexus';
 
     const template = currentSettings.template_pattern;
     previewSender.textContent = currentSettings.sender_id || 'TXXTOO';

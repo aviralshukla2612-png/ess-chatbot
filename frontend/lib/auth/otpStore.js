@@ -1,47 +1,127 @@
 import crypto from "crypto";
 import fs from "fs";
+import fsp from "fs/promises";
 import path from "path";
-import { queryDb } from "../db/dbPool.js";
+import { getDbPool, isDbConnected } from "../db/dbPool.js";
 
-const OTP_SECRET = process.env.OTP_SECRET || process.env.JWT_SECRET || "nexus_otp_secret_key_prod_2026";
+const OTP_SECRET =
+  process.env.OTP_SECRET || process.env.JWT_SECRET || "nexus_otp_secret_key_prod_2026";
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_SECONDS = 60;
 const OTP_EXPIRY_MINUTES = 10;
 const BAN_HOURS = 24;
+const DB_OTP_TIMEOUT_MS = 600;
 
-const DATA_DIR = path.join(process.cwd(), "data");
+function resolveDataDir() {
+  const direct = path.join(process.cwd(), "data");
+  if (fs.existsSync(direct)) return direct;
+  const nested = path.join(process.cwd(), "frontend", "data");
+  if (fs.existsSync(nested)) return nested;
+  return direct;
+}
+
+const DATA_DIR = resolveDataDir();
 const OTP_FILE = path.join(DATA_DIR, "otp_store.json");
 
-// In-memory fallback
+// Primary ultra-fast in-memory store hydrated from disk
 const memoryOtp = new Map();
+let diskHydrated = false;
+let otpTableEnsured = false;
 
-function ensureDataDir() {
+function hydrateFromDiskOnce() {
+  if (diskHydrated || process.env.NODE_ENV === "test") return;
+  diskHydrated = true;
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-  } catch (e) {}
-}
-
-function loadDiskStore() {
-  try {
-    ensureDataDir();
     if (fs.existsSync(OTP_FILE)) {
-      const data = fs.readFileSync(OTP_FILE, "utf8");
-      return JSON.parse(data);
+      const raw = fs.readFileSync(OTP_FILE, "utf8");
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        for (const [phone, rec] of Object.entries(parsed)) {
+          if (rec && typeof rec === "object") {
+            memoryOtp.set(phone, rec);
+          }
+        }
+      }
     }
-  } catch (e) {}
-  return {};
+  } catch {}
 }
 
-function saveDiskStore(store) {
+async function flushDiskStoreAsync() {
+  if (process.env.NODE_ENV === "test") return;
   try {
-    ensureDataDir();
-    fs.writeFileSync(OTP_FILE, JSON.stringify(store, null, 2), "utf8");
-  } catch (e) {}
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    const snapshot = Object.fromEntries(memoryOtp.entries());
+    await fsp.writeFile(OTP_FILE, JSON.stringify(snapshot, null, 2), "utf8");
+  } catch {}
+}
+
+/**
+ * Bounded fast PostgreSQL query exclusively for OtpVerification.
+ * Never blocks OTP sending on multi-second cold-start vector DDL or offline DB timeouts.
+ */
+async function queryOtpDbBounded(sql, params = [], timeoutMs = DB_OTP_TIMEOUT_MS) {
+  const pool = getDbPool();
+  if (!pool) return null;
+
+  let timer = null;
+  try {
+    const work = (async () => {
+      if (!otpTableEnsured) {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS "OtpVerification" (
+            "id" VARCHAR(128) PRIMARY KEY,
+            "phone" VARCHAR(32) NOT NULL,
+            "otpHash" VARCHAR(128) NOT NULL,
+            "attempts" INT DEFAULT 0,
+            "maxAttempts" INT DEFAULT 5,
+            "bannedUntil" TIMESTAMP WITH TIME ZONE,
+            "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+            "lastSentAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "verified" BOOLEAN DEFAULT FALSE,
+            "purpose" VARCHAR(32) DEFAULT 'registration',
+            "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          );
+          CREATE INDEX IF NOT EXISTS "idx_otp_phone" ON "OtpVerification"("phone");
+        `);
+        otpTableEnsured = true;
+      }
+      return await pool.query(sql, params);
+    })();
+
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("OTP DB timeout")), timeoutMs);
+      timer.unref?.();
+    });
+
+    const res = await Promise.race([work, timeoutPromise]);
+    return res;
+  } catch {
+    return null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+function pickNewestRecord(...records) {
+  let best = null;
+  let bestTs = -1;
+  for (const r of records) {
+    if (!r) continue;
+    const ts = new Date(r.updatedAt || r.lastSentAt || r.createdAt || 0).getTime() || 0;
+    if (!best || ts >= bestTs) {
+      best = r;
+      bestTs = ts;
+    }
+  }
+  return best;
 }
 
 export const otpStore = {
+  _resetMemoryStore() {
+    memoryOtp.clear();
+  },
+
   /**
    * Normalizes phone numbers to standard E.164 format (defaults to India +91 if 10 digits)
    */
@@ -51,14 +131,21 @@ export const otpStore = {
     if (clean.startsWith("00")) {
       clean = "+" + clean.slice(2);
     }
+    // Strip leading 0 on 11-digit Indian mobile (e.g. 09876543210)
+    if (/^0[6-9]\d{9}$/.test(clean)) {
+      clean = "+91" + clean.slice(1);
+    }
     // 10 digits Indian mobile without country code
     if (/^[6-9]\d{9}$/.test(clean)) {
       clean = "+91" + clean;
     }
+    // 12 digits starting with 91 without '+'
+    if (/^91[6-9]\d{9}$/.test(clean)) {
+      clean = "+" + clean;
+    }
     if (!clean.startsWith("+")) {
       clean = "+" + clean;
     }
-    // Validate length: E.164 typically 11-15 characters including '+'
     if (clean.length < 11 || clean.length > 16) {
       return null;
     }
@@ -84,7 +171,12 @@ export const otpStore = {
       const decoded = Buffer.from(token, "base64").toString("utf8");
       const [tPhone, tPurpose, tTime, tSig] = decoded.split(":");
       if (!tPhone || !tPurpose || !tTime || !tSig) return false;
-      if (tPhone !== phone || tPurpose !== purpose) return false;
+      if (tPhone !== phone) return false;
+
+      // Allow verified "login" OTP token to seamlessly complete new-account registration handoff
+      const purposeMatches =
+        tPurpose === purpose || (purpose === "registration" && tPurpose === "login");
+      if (!purposeMatches) return false;
 
       // Token expires in 20 minutes
       const ageMs = Date.now() - parseInt(tTime, 10);
@@ -94,91 +186,94 @@ export const otpStore = {
         .createHmac("sha256", OTP_SECRET)
         .update(`${tPhone}:${tPurpose}:${tTime}`)
         .digest("hex");
-      return crypto.timingSafeEqual(Buffer.from(tSig), Buffer.from(expectedSig));
-    } catch (e) {
+      const sigBuf = Buffer.from(tSig);
+      const expBuf = Buffer.from(expectedSig);
+      if (sigBuf.length !== expBuf.length) return false;
+      return crypto.timingSafeEqual(sigBuf, expBuf);
+    } catch {
       return false;
     }
   },
 
   /**
-   * Retrieves active OTP record for phone from DB or fallback
+   * Retrieves the freshest OTP record for phone across memory, disk, and bounded PostgreSQL.
    */
   async getRecord(phone) {
-    // 1. Try PostgreSQL
-    try {
-      const res = await queryDb(
-        'SELECT * FROM "OtpVerification" WHERE "phone" = $1 ORDER BY "createdAt" DESC LIMIT 1;',
+    hydrateFromDiskOnce();
+    const memRec = memoryOtp.get(phone) || null;
+
+    // Only query PostgreSQL if already connected (avoids 5s offline connection stall)
+    let dbRec = null;
+    if (isDbConnected()) {
+      const res = await queryOtpDbBounded(
+        'SELECT * FROM "OtpVerification" WHERE "phone" = $1 ORDER BY "updatedAt" DESC LIMIT 1;',
         [phone]
       );
-      if (res.ok && res.rows && res.rows.length > 0) {
-        return res.rows[0];
+      if (res && res.rows && res.rows.length > 0) {
+        dbRec = res.rows[0];
       }
-    } catch (e) {}
+    }
 
-    // 2. Try Disk
-    const disk = loadDiskStore();
-    if (disk[phone]) return disk[phone];
-
-    // 3. Try In-memory
-    return memoryOtp.get(phone) || null;
+    const freshest = pickNewestRecord(memRec, dbRec);
+    if (freshest) {
+      memoryOtp.set(phone, freshest);
+    }
+    return freshest;
   },
 
   /**
-   * Saves or updates OTP record in DB, disk, and memory
+   * Saves OTP record immediately in memory and asynchronously persists to disk & PostgreSQL.
    */
   async saveRecord(record) {
+    hydrateFromDiskOnce();
     const now = new Date().toISOString();
     const updated = {
       ...record,
       updatedAt: now,
     };
 
-    // 1. Memory
+    // 1. Synchronous in-memory commit (0ms — immediately available to verifyOtp)
     memoryOtp.set(record.phone, updated);
 
-    // 2. Disk
-    try {
-      const disk = loadDiskStore();
-      disk[record.phone] = updated;
-      saveDiskStore(disk);
-    } catch (e) {}
+    // 2. Non-blocking background persistence to disk & PostgreSQL
+    flushDiskStoreAsync();
 
-    // 3. PostgreSQL
-    try {
-      await queryDb(
-        `INSERT INTO "OtpVerification" (
-          "id", "phone", "otpHash", "attempts", "maxAttempts", "bannedUntil", "expiresAt", "lastSentAt", "verified", "purpose", "createdAt", "updatedAt"
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT ("id") DO UPDATE SET
-          "otpHash" = EXCLUDED."otpHash",
-          "attempts" = EXCLUDED."attempts",
-          "bannedUntil" = EXCLUDED."bannedUntil",
-          "expiresAt" = EXCLUDED."expiresAt",
-          "lastSentAt" = EXCLUDED."lastSentAt",
-          "verified" = EXCLUDED."verified",
-          "updatedAt" = EXCLUDED."updatedAt";`,
-        [
-          updated.id,
-          updated.phone,
-          updated.otpHash,
-          updated.attempts || 0,
-          updated.maxAttempts || MAX_ATTEMPTS,
-          updated.bannedUntil || null,
-          updated.expiresAt,
-          updated.lastSentAt || now,
-          Boolean(updated.verified),
-          updated.purpose || "registration",
-          updated.createdAt || now,
-          now,
-        ]
-      );
-    } catch (e) {}
+    queryOtpDbBounded(
+      `INSERT INTO "OtpVerification" (
+        "id", "phone", "otpHash", "attempts", "maxAttempts", "bannedUntil", "expiresAt", "lastSentAt", "verified", "purpose", "createdAt", "updatedAt"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ON CONFLICT ("id") DO UPDATE SET
+        "otpHash" = EXCLUDED."otpHash",
+        "attempts" = EXCLUDED."attempts",
+        "bannedUntil" = EXCLUDED."bannedUntil",
+        "expiresAt" = EXCLUDED."expiresAt",
+        "lastSentAt" = EXCLUDED."lastSentAt",
+        "verified" = EXCLUDED."verified",
+        "purpose" = EXCLUDED."purpose",
+        "updatedAt" = EXCLUDED."updatedAt";`,
+      [
+        updated.id,
+        updated.phone,
+        updated.otpHash,
+        updated.attempts || 0,
+        updated.maxAttempts || MAX_ATTEMPTS,
+        updated.bannedUntil || null,
+        updated.expiresAt,
+        updated.lastSentAt || now,
+        Boolean(updated.verified),
+        updated.purpose || "registration",
+        updated.createdAt || now,
+        now,
+      ],
+      1500
+    ).catch(() => {});
 
     return updated;
   },
 
   /**
    * Generates and dispatches a 6-digit OTP to a mobile phone with rate limiting & 24h ban check.
+   * Only commits the 60-second cooldown AFTER gateway dispatch succeeds.
    */
   async sendOtp({ phone: rawPhone, purpose = "registration", name }) {
     const phone = this.normalizePhone(rawPhone);
@@ -228,50 +323,62 @@ export const otpStore = {
     const otp = String(crypto.randomInt(100000, 999999));
     const otpHash = this.hashOtp(phone, otp);
     const expiresAt = new Date(now + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
-    const id = existing?.id || `otp_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+    const id = existing?.id || `otp_${now}_${crypto.randomUUID().slice(0, 8)}`;
 
+    console.log(
+      `[EMPEROR_NEXUS_OTP] Dispatching to ${phone} | Purpose: ${purpose} | Valid: ${OTP_EXPIRY_MINUTES}m`
+    );
+
+    // 4. Dispatch via TRAI DLT SMS Gateway FIRST (3 Variables: "User", 6-digit OTP, "Team Nexus")
+    let smsRes = { success: false, error: "SMS provider unavailable." };
+    try {
+      const { smsService } = await import("./smsService.js");
+      smsRes = await smsService.sendSms({
+        to: phone,
+        otp,
+        recipientName: "User",
+      });
+    } catch (smsErr) {
+      console.warn("[SMS_PROVIDER_ERROR]", smsErr.message);
+      smsRes = { success: false, error: smsErr.message };
+    }
+
+    // Do NOT fake success or lock cooldown if SMS dispatch failed!
+    if (!smsRes || !smsRes.success) {
+      return {
+        success: false,
+        gatewayFailed: true,
+        error:
+          smsRes?.error ||
+          "Unable to dispatch SMS verification code right now. Please check the number and try again.",
+      };
+    }
+
+    // 5. Commit OTP record & 60s cooldown ONLY after gateway accepted the message
     const newRecord = {
       id,
       phone,
       otpHash,
-      // If ban expired, reset attempts to 0; otherwise keep attempts = 0 for fresh OTP
       attempts: 0,
       maxAttempts: MAX_ATTEMPTS,
       bannedUntil: null,
       expiresAt,
-      lastSentAt: new Date(now).toISOString(),
+      lastSentAt: new Date().toISOString(),
       verified: false,
       purpose,
+      messageId: smsRes.messageId || null,
+      provider: smsRes.provider || "dlt_allsmssolution",
       createdAt: existing?.createdAt || new Date(now).toISOString(),
     };
 
     await this.saveRecord(newRecord);
 
-    // 4. Log OTP in console for operational verification & testing
-    console.log(`\n========================================`);
-    console.log(`📱 [EMPEROR NEXUS OTP DISPATCH]`);
-    console.log(`Recipient: ${phone}`);
-    console.log(`OTP Code : ${otp}`);
-    console.log(`Purpose  : ${purpose}`);
-    console.log(`Expires  : ${OTP_EXPIRY_MINUTES} minutes`);
-    console.log(`========================================\n`);
-
-    // 5. Send via TRAI DLT SMS Provider (TXXTOO / 1607100000000313742)
-    try {
-      const { smsService } = await import("./smsService.js");
-      await smsService.sendSms({
-        to: phone,
-        otp,
-        recipientName: "User",
-        message: `Dear User Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards Team Emperor\nTEXT2`,
-      });
-    } catch (smsErr) {
-      console.warn("[SMS_PROVIDER_WARNING]", smsErr.message);
-    }
-
     return {
       success: true,
       phone,
+      messageId: smsRes.messageId || null,
+      provider: smsRes.provider || "dlt_allsmssolution",
+      latencyMs: smsRes.latencyMs || null,
       cooldownSeconds: COOLDOWN_SECONDS,
       message: `OTP sent via SMS text message to ${phone}. Valid for 10 minutes.`,
     };
@@ -327,12 +434,14 @@ export const otpStore = {
       };
     }
 
-    // 3. Compare hash
+    // 3. Constant-time HMAC comparison
     const inputHash = this.hashOtp(phone, cleanOtp);
-    const isMatch = crypto.timingSafeEqual(Buffer.from(inputHash), Buffer.from(record.otpHash));
+    const inputBuf = Buffer.from(inputHash);
+    const recordBuf = Buffer.from(String(record.otpHash || ""));
+    const isMatch =
+      inputBuf.length === recordBuf.length && crypto.timingSafeEqual(inputBuf, recordBuf);
 
     if (isMatch) {
-      // Successful verification
       record.verified = true;
       record.attempts = 0;
       record.bannedUntil = null;
@@ -354,12 +463,13 @@ export const otpStore = {
     record.attempts = newAttempts;
 
     if (newAttempts >= MAX_ATTEMPTS) {
-      // 5 Failed attempts reached: Apply 24-hour lockout!
       const bannedUntil = new Date(now + BAN_HOURS * 60 * 60 * 1000).toISOString();
       record.bannedUntil = bannedUntil;
       await this.saveRecord(record);
 
-      console.warn(`🚨 [SECURITY ALERT] Phone ${phone} locked for 24 hours after ${MAX_ATTEMPTS} failed OTP attempts.`);
+      console.warn(
+        `🚨 [SECURITY ALERT] Phone ${phone} locked for 24 hours after ${MAX_ATTEMPTS} failed OTP attempts.`
+      );
 
       return {
         success: false,
@@ -380,4 +490,3 @@ export const otpStore = {
     };
   },
 };
-

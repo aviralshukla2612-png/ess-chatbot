@@ -244,6 +244,33 @@ export default function LoginPage() {
     }
   }, []);
 
+  // Poll carrier Delivery Report (DLR) in background to confirm handset arrival
+  const trackCarrierDelivery = (messageId, phoneLabel) => {
+    if (!messageId) return;
+    [3800, 8200].forEach((delay) => {
+      setTimeout(async () => {
+        try {
+          const r = await fetch(`/api/auth/otp/dlr?messageId=${encodeURIComponent(messageId)}`, {
+            cache: "no-store",
+          });
+          if (!r.ok) return;
+          const d = await r.json();
+          if (d?.status === "delivered") {
+            setSuccessMessage((prev) =>
+              prev && prev.includes("verified successfully")
+                ? prev
+                : `SMS OTP delivered to ${phoneLabel}. Enter your 6-digit code below.`
+            );
+          } else if (d?.status === "failed") {
+            setErrorMessage(
+              `Telecom carrier rejected SMS delivery (${d.stat || "DLT/DND block"}, code ${d.err || "N/A"}). Please check DND status or retry.`
+            );
+          }
+        } catch {}
+      }, delay);
+    });
+  };
+
   // Send Registration OTP via DLT Gateway
   const handleSendRegOtp = async () => {
     const rawDigits = regPhone.replace(/\D/g, "");
@@ -266,6 +293,8 @@ export default function LoginPage() {
         if (data.banned) {
           setRegIsBanned(true);
           setRegBanMessage(data.error);
+        } else if (data.cooldown && data.cooldownSeconds) {
+          setRegCooldown(data.cooldownSeconds);
         }
         throw new Error(data.error || "Failed to dispatch verification code");
       }
@@ -274,7 +303,8 @@ export default function LoginPage() {
       setRegCooldown(data.cooldownSeconds || 60);
       setRegAttemptsLeft(5);
       setRegIsBanned(false);
-      setSuccessMessage(`SMS Verification Code sent to ${data.phone}. Please check your text messages.`);
+      setSuccessMessage(`SMS Verification Code dispatched to ${data.phone}. Checking handset delivery...`);
+      trackCarrierDelivery(data.messageId, data.phone);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -401,6 +431,8 @@ export default function LoginPage() {
         if (data.banned) {
           setLoginIsBanned(true);
           setLoginBanMessage(data.error);
+        } else if (data.cooldown && data.cooldownSeconds) {
+          setLoginCooldown(data.cooldownSeconds);
         }
         throw new Error(data.error || "Failed to dispatch verification code");
       }
@@ -409,7 +441,8 @@ export default function LoginPage() {
       setLoginCooldown(data.cooldownSeconds || 60);
       setLoginAttemptsLeft(5);
       setLoginIsBanned(false);
-      setSuccessMessage(`SMS Verification Code sent to ${data.phone}. Please check your text messages.`);
+      setSuccessMessage(`SMS Verification Code dispatched to ${data.phone}. Checking handset delivery...`);
+      trackCarrierDelivery(data.messageId, data.phone);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
