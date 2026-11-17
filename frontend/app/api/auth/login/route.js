@@ -77,6 +77,9 @@ export async function POST(request) {
           { status: 404 }
         );
       }
+    } else if (phone && password) {
+      // Mobile Phone & Password Login Flow
+      authResult = await authStore.loginWithPhoneAndPassword({ phone, password });
     } else {
       // Standard Email & Password Flow
       if (!email || !password) {

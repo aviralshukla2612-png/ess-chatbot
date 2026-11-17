@@ -6,7 +6,7 @@ import { signSessionToken, createSessionCookie } from "@/lib/auth/session";
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, organizationName, phone, verificationToken } = body;
+    const { name, organizationName, phone, verificationToken, password } = body;
 
     if (!phone) {
       return NextResponse.json(
@@ -19,6 +19,13 @@ export async function POST(request) {
     if (!cleanPhone) {
       return NextResponse.json(
         { success: false, error: "Invalid mobile number. Please enter a valid 10-digit number." },
+        { status: 400 }
+      );
+    }
+
+    if (!password || password.length < 6) {
+      return NextResponse.json(
+        { success: false, error: "Password must be at least 6 characters." },
         { status: 400 }
       );
     }
@@ -38,6 +45,7 @@ export async function POST(request) {
       name: cleanName,
       organizationName: cleanOrg,
       phone: cleanPhone,
+      password,
       phoneVerified: true,
     });
 

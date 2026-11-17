@@ -257,14 +257,13 @@ export const otpStore = {
     console.log(`========================================\n`);
 
     // 5. Send via TRAI DLT SMS Provider (TXXTOO / 1607100000000313742)
-    const recipientName = (name || (purpose === "login" ? "User" : "Customer")).trim();
     try {
       const { smsService } = await import("./smsService.js");
       await smsService.sendSms({
         to: phone,
         otp,
-        recipientName,
-        message: `Dear ${recipientName} Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards TXXTOO\nTEXT2`,
+        recipientName: "User",
+        message: `Dear User Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards Team Nexus\nTEXT2`,
       });
     } catch (smsErr) {
       console.warn("[SMS_PROVIDER_WARNING]", smsErr.message);

@@ -21,6 +21,8 @@ import {
   Clock,
   AlertTriangle,
   Smartphone,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const PLAN_INFO = {
@@ -173,9 +175,16 @@ export default function LoginPage() {
   const [regIsBanned, setRegIsBanned] = useState(false);
   const [regBanMessage, setRegBanMessage] = useState("");
   const [regBackupOtp, setRegBackupOtp] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirmPassword, setRegConfirmPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
-  // Mobile OTP States - Login
+  // Mobile States - Login
   const [loginPhone, setLoginPhone] = useState("");
+  const [loginMode, setLoginMode] = useState("password"); // 'password' or 'otp'
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginOtp, setLoginOtp] = useState("");
   const [loginOtpSent, setLoginOtpSent] = useState(false);
   const [loginOtpSending, setLoginOtpSending] = useState(false);
@@ -315,11 +324,27 @@ export default function LoginPage() {
     }
   };
 
-  // Registration Submit
+  // Registration Submit (Mobile OTP -> Create Password)
   const handleRegisterSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!regOtpSent) {
-      await handleSendRegOtp();
+
+    // Stage 1: If phone not verified yet, ensure OTP is verified first
+    if (!regPhoneVerified || !regVerificationToken) {
+      if (!regOtpSent) {
+        await handleSendRegOtp();
+        return;
+      }
+      await handleVerifyRegOtp();
+      return;
+    }
+
+    // Stage 2: Phone is verified -> Validate Passwords
+    if (!regPassword || regPassword.length < 6) {
+      setErrorMessage("Please create a password with at least 6 characters");
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setErrorMessage("Passwords do not match");
       return;
     }
 
@@ -328,40 +353,13 @@ export default function LoginPage() {
     setSuccessMessage("");
 
     try {
-      let token = regVerificationToken;
-
-      // If OTP code is entered but token not yet obtained, verify OTP right now
-      if (!token) {
-        if (!regOtp || regOtp.trim().length !== 6) {
-          throw new Error("Please enter the complete 6-digit OTP code");
-        }
-        const vRes = await fetch("/api/auth/otp/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: regPhone, otp: regOtp.trim(), purpose: "registration" }),
-        });
-        const vData = await vRes.json();
-        if (!vRes.ok || !vData.success) {
-          if (vData.banned) {
-            setRegIsBanned(true);
-            setRegBanMessage(vData.error);
-            setRegAttemptsLeft(0);
-          } else if (vData.attemptsLeft !== undefined) {
-            setRegAttemptsLeft(vData.attemptsLeft);
-          }
-          throw new Error(vData.error || "Invalid OTP code");
-        }
-        token = vData.verificationToken;
-        setRegVerificationToken(token);
-        setRegPhoneVerified(true);
-      }
-
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: regPhone,
-          verificationToken: token,
+          password: regPassword,
+          verificationToken: regVerificationToken,
         }),
       });
 
@@ -423,9 +421,57 @@ export default function LoginPage() {
     }
   };
 
-  // Verify Login OTP & Complete Sign In
+  // Login Submit (Password or OTP Mode)
   const handleLoginSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    const rawDigits = loginPhone.replace(/\D/g, "");
+    if (rawDigits.length < 10) {
+      setErrorMessage("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    // 1. Mobile & Password Mode
+    if (loginMode === "password") {
+      if (!loginPassword) {
+        setErrorMessage("Please enter your password");
+        return;
+      }
+      setLoading(true);
+      try {
+        const lRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone: loginPhone,
+            password: loginPassword,
+          }),
+        });
+        const lData = await lRes.json();
+        if (!lRes.ok || !lData.success) {
+          throw new Error(lData.error || "Invalid mobile number or password");
+        }
+
+        if (selectedPlan) {
+          const indQuery = selectedIndustry ? `&industry=${encodeURIComponent(selectedIndustry)}` : "";
+          window.location.replace(`/billing?plan=${encodeURIComponent(selectedPlan)}${indQuery}&checkout=true`);
+          return;
+        }
+
+        const isSuper = lData.user?.role === "SUPER_ADMIN" || lData.orgRole === "SUPER_ADMIN";
+        const defaultTarget = isSuper ? "/admin" : selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
+        window.location.replace(redirectPath || defaultTarget);
+      } catch (err) {
+        setErrorMessage(err.message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // 2. Mobile & OTP Mode
     if (!loginOtpSent) {
       await handleSendLoginOtp();
       return;
@@ -434,8 +480,6 @@ export default function LoginPage() {
       setErrorMessage("Please enter the 6-digit OTP code");
       return;
     }
-    setErrorMessage("");
-    setSuccessMessage("");
     setLoginOtpVerifying(true);
 
     try {
@@ -470,12 +514,12 @@ export default function LoginPage() {
       const lData = await lRes.json();
       if (!lRes.ok || !lData.success) {
         if (lData.userFound === false) {
-          // Pre-fill phone in register tab with verified status
+          // Pre-fill phone in register tab with verified status and switch to set password
           setRegPhone(loginPhone);
           setRegPhoneVerified(true);
           setRegVerificationToken(vData.verificationToken);
           setActiveTab("register");
-          throw new Error("No account found for this mobile number. Click 'Create Workspace & Continue' to set up your account.");
+          throw new Error("No account found for this mobile number. Please create a password to complete registration.");
         }
         throw new Error(lData.error || "Sign in failed");
       }
@@ -518,12 +562,12 @@ export default function LoginPage() {
             />
           </Link>
           <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            {activeTab === "register" ? "Create Workspace" : "Sign In with Mobile OTP"}
+            {activeTab === "register" ? "Create Workspace" : "Sign In to Workspace"}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-[#9898A6]">
             {activeTab === "register"
-              ? "Verify mobile number & launch your AI workspace in seconds"
-              : "Enter your mobile number to receive an instant verification code"}
+              ? "Verify mobile number with OTP & set your password"
+              : "Enter your mobile number and password or sign in with OTP"}
           </p>
         </div>
 
@@ -586,7 +630,7 @@ export default function LoginPage() {
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span>Sign In with OTP</span>
+              <span>Sign In</span>
             </button>
             <button
               type="button"
@@ -606,7 +650,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* ================= SIGN IN VIEW (100% MOBILE & OTP) ================= */}
+          {/* ================= SIGN IN VIEW (MOBILE & PASSWORD OR OTP) ================= */}
           {activeTab === "login" && (
             <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs sm:text-sm">
               <div>
@@ -625,25 +669,27 @@ export default function LoginPage() {
                     placeholder="10-digit mobile number"
                     className="flex-1 px-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
                   />
-                  <button
-                    type="button"
-                    disabled={loginOtpSending || loginCooldown > 0 || loginIsBanned || !loginPhone}
-                    onClick={handleSendLoginOtp}
-                    className="px-3.5 py-3 rounded-xl bg-[#963DFF] hover:bg-[#8529f7] disabled:bg-white/5 disabled:text-white/40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(150,61,255,0.3)]"
-                  >
-                    {loginOtpSending ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : loginCooldown > 0 ? (
-                      <>
-                        <Clock className="w-3 h-3 text-[#C28AFF]" />
-                        <span>{loginCooldown}s</span>
-                      </>
-                    ) : loginOtpSent ? (
-                      "Resend"
-                    ) : (
-                      "Send OTP"
-                    )}
-                  </button>
+                  {loginMode === "otp" && (
+                    <button
+                      type="button"
+                      disabled={loginOtpSending || loginCooldown > 0 || loginIsBanned || !loginPhone}
+                      onClick={handleSendLoginOtp}
+                      className="px-3.5 py-3 rounded-xl bg-[#963DFF] hover:bg-[#8529f7] disabled:bg-white/5 disabled:text-white/40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(150,61,255,0.3)]"
+                    >
+                      {loginOtpSending ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : loginCooldown > 0 ? (
+                        <>
+                          <Clock className="w-3 h-3 text-[#C28AFF]" />
+                          <span>{loginCooldown}s</span>
+                        </>
+                      ) : loginOtpSent ? (
+                        "Resend"
+                      ) : (
+                        "Send OTP"
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -660,55 +706,52 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* OTP Input for Login (6 SEPARATE BOXES) */}
-              {loginOtpSent && !loginIsBanned && (
-                <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
-                      Enter 6-Digit OTP Code:
-                    </span>
-                    {loginAttemptsLeft !== null && (
-                      <span className={`text-[11px] font-bold ${loginAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
-                        {loginAttemptsLeft} of 5 attempts left
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 6 SEPARATE BOXES COMPONENT */}
-                  <SixDigitOtpBoxes
-                    value={loginOtp}
-                    onChange={setLoginOtp}
-                    disabled={loginOtpVerifying}
-                    autoFocus={true}
-                  />
-
-                  {loginBackupOtp && (
-                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#963DFF]/15 border border-[#963DFF]/30 text-xs animate-in fade-in">
-                      <span className="text-[#D1D1DB] font-medium flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
-                        <span>SMS Verification Code:</span>
-                      </span>
+              {/* Mode A: Password Input */}
+              {loginMode === "password" && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-[#D1D1DB]">Password</label>
                       <button
                         type="button"
-                        onClick={() => setLoginOtp(loginBackupOtp)}
-                        className="font-mono font-bold text-[#C28AFF] tracking-widest bg-black/60 hover:bg-black px-2.5 py-1 rounded-lg border border-white/10 hover:border-[#963DFF] transition-all cursor-pointer select-all shadow-xs"
-                        title="Click to auto-fill"
+                        onClick={() => {
+                          setLoginMode("otp");
+                          setErrorMessage("");
+                        }}
+                        className="text-[11px] text-[#C28AFF] hover:underline cursor-pointer"
                       >
-                        {loginBackupOtp}
+                        Sign in with OTP code instead
                       </button>
                     </div>
-                  )}
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type={showLoginPassword ? "text" : "password"}
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="Enter your account password"
+                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                      >
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
 
                   <button
                     type="submit"
-                    disabled={loginOtpVerifying || loginOtp.length !== 6}
+                    disabled={loading || !loginPhone || !loginPassword}
                     className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {loginOtpVerifying ? (
+                    {loading ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Verifying & Signing In...</span>
+                        <span>Signing In...</span>
                       </>
                     ) : (
                       <>
@@ -717,40 +760,116 @@ export default function LoginPage() {
                       </>
                     )}
                   </button>
-
-                  <p className="text-[11px] text-[#9898A6] text-center">
-                    Security Policy: 5 consecutive failed attempts will lock this mobile number for 24 hours.
-                  </p>
                 </div>
               )}
 
-              {/* Action Button if OTP not sent yet */}
-              {!loginOtpSent && (
-                <button
-                  type="button"
-                  onClick={handleSendLoginOtp}
-                  disabled={loginOtpSending || !loginPhone}
-                  className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {loginOtpSending ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Sending OTP...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Send OTP Code</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
+              {/* Mode B: OTP Input for Login */}
+              {loginMode === "otp" && (
+                <div className="space-y-4 animate-in fade-in">
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginMode("password");
+                        setErrorMessage("");
+                      }}
+                      className="text-[11px] text-[#C28AFF] hover:underline cursor-pointer"
+                    >
+                      Sign in with Password instead
+                    </button>
+                  </div>
+
+                  {loginOtpSent && !loginIsBanned && (
+                    <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
+                          <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
+                          Enter 6-Digit OTP Code:
+                        </span>
+                        {loginAttemptsLeft !== null && (
+                          <span className={`text-[11px] font-bold ${loginAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
+                            {loginAttemptsLeft} of 5 attempts left
+                          </span>
+                        )}
+                      </div>
+
+                      <SixDigitOtpBoxes
+                        value={loginOtp}
+                        onChange={setLoginOtp}
+                        disabled={loginOtpVerifying}
+                        autoFocus={true}
+                      />
+
+                      {loginBackupOtp && (
+                        <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#963DFF]/15 border border-[#963DFF]/30 text-xs animate-in fade-in">
+                          <span className="text-[#D1D1DB] font-medium flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
+                            <span>SMS Verification Code:</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setLoginOtp(loginBackupOtp)}
+                            className="font-mono font-bold text-[#C28AFF] tracking-widest bg-black/60 hover:bg-black px-2.5 py-1 rounded-lg border border-white/10 hover:border-[#963DFF] transition-all cursor-pointer select-all shadow-xs"
+                            title="Click to auto-fill"
+                          >
+                            {loginBackupOtp}
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={loginOtpVerifying || loginOtp.length !== 6}
+                        className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {loginOtpVerifying ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <span>Verifying & Signing In...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Sign In to Workspace</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+
+                      <p className="text-[11px] text-[#9898A6] text-center">
+                        Security Policy: 5 consecutive failed attempts will lock this mobile number for 24 hours.
+                      </p>
+                    </div>
                   )}
-                </button>
+
+                  {!loginOtpSent && (
+                    <button
+                      type="button"
+                      onClick={handleSendLoginOtp}
+                      disabled={loginOtpSending || !loginPhone}
+                      className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {loginOtpSending ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Sending OTP...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Send OTP Code</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               )}
             </form>
           )}
 
-          {/* ================= REGISTER VIEW (100% MOBILE & OTP) ================= */}
+          {/* ================= REGISTER VIEW (MOBILE -> OTP -> CREATE PASSWORD) ================= */}
           {activeTab === "register" && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4 text-xs sm:text-sm">
+              {/* Step 1: Mobile Number Input */}
               <div>
                 <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
                   Mobile Number
@@ -792,6 +911,30 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Verified Mobile Number Banner */}
+              {regPhoneVerified && (
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="font-semibold">+91 {regPhone.replace(/\D/g, "").slice(-10)} Verified</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegPhoneVerified(false);
+                      setRegVerificationToken("");
+                      setRegOtp("");
+                      setRegOtpSent(false);
+                      setRegPassword("");
+                      setRegConfirmPassword("");
+                    }}
+                    className="text-[11px] text-emerald-400/80 hover:text-emerald-300 underline cursor-pointer"
+                  >
+                    Change Number
+                  </button>
+                </div>
+              )}
+
               {/* 24-Hour Banned Notice for Registration */}
               {regIsBanned && (
                 <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
@@ -805,8 +948,8 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* OTP Input Field & Verification (6 SEPARATE BOXES) */}
-              {regOtpSent && !regIsBanned && (
+              {/* STAGE 1: OTP Input Field & Verification Button */}
+              {regOtpSent && !regPhoneVerified && !regIsBanned && (
                 <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
@@ -824,7 +967,7 @@ export default function LoginPage() {
                   <SixDigitOtpBoxes
                     value={regOtp}
                     onChange={setRegOtp}
-                    disabled={loading || regOtpVerifying}
+                    disabled={regOtpVerifying}
                     autoFocus={true}
                   />
 
@@ -846,19 +989,20 @@ export default function LoginPage() {
                   )}
 
                   <button
-                    type="submit"
-                    disabled={loading || regOtp.length !== 6}
-                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    type="button"
+                    disabled={regOtpVerifying || regOtp.length !== 6}
+                    onClick={handleVerifyRegOtp}
+                    className="w-full py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:brightness-110 disabled:opacity-50 text-white font-bold text-xs sm:text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {loading ? (
+                    {regOtpVerifying ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Creating Workspace...</span>
+                        <span>Verifying OTP...</span>
                       </>
                     ) : (
                       <>
-                        <span>Create Workspace & Continue</span>
-                        <ArrowRight className="w-4 h-4" />
+                        <Check className="w-4 h-4" />
+                        <span>Verify & Create Password</span>
                       </>
                     )}
                   </button>
@@ -870,7 +1014,7 @@ export default function LoginPage() {
               )}
 
               {/* Action Button if OTP not sent yet */}
-              {!regOtpSent && (
+              {!regOtpSent && !regPhoneVerified && (
                 <button
                   type="button"
                   onClick={handleSendRegOtp}
@@ -884,11 +1028,96 @@ export default function LoginPage() {
                     </>
                   ) : (
                     <>
-                      <span>Send OTP Code</span>
+                      <span>Send Verification Code</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
+              )}
+
+              {/* STAGE 2: Create Password & Confirm Password (APPEARS ONLY AFTER OTP VERIFICATION) */}
+              {regPhoneVerified && (
+                <div className="space-y-3.5 pt-1 animate-in fade-in slide-in-from-top-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
+                      Create Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type={showRegPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        placeholder="Minimum 6 characters"
+                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                      >
+                        {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <input
+                        type={showRegConfirmPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        value={regConfirmPassword}
+                        onChange={(e) => setRegConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your password"
+                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                      >
+                        {showRegConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {regPassword && regConfirmPassword && (
+                      <p className={`text-[11px] mt-1.5 flex items-center gap-1 ${regPassword === regConfirmPassword ? "text-emerald-400" : "text-rose-400"}`}>
+                        {regPassword === regConfirmPassword ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Passwords match</span>
+                          </>
+                        ) : (
+                          "Passwords do not match"
+                        )}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || !regPassword || regPassword.length < 6 || regPassword !== regConfirmPassword}
+                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Creating Workspace...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Create Workspace & Launch</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </form>
           )}

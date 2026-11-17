@@ -74,7 +74,7 @@ export const authStore = {
     }
 
     // 2. Hash password (or generate random secure hash if phone-only registration)
-    const passwordHash = password && password.length >= 8
+    const passwordHash = password && password.length >= 6
       ? await hashPassword(password)
       : await hashPassword(crypto.randomBytes(32).toString("hex"));
     const userId = `usr_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
@@ -209,6 +209,66 @@ export const authStore = {
 
     if (user.status !== "ACTIVE") {
       throw new Error("Account has been suspended. Please contact support.");
+    }
+
+    const memberships = await this.getUserMemberships(user.id);
+    const primaryMembership = memberships[0] || null;
+    const orgId = primaryMembership?.organizationId || DEFAULT_ORG_ID;
+    const defaultOrgRole = primaryMembership?.role || (user.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "MEMBER");
+    const isSuper = user.role === "SUPER_ADMIN" || user.email === DEFAULT_ADMIN_EMAIL;
+    const orgRole = isSuper ? "SUPER_ADMIN" : defaultOrgRole;
+
+    return {
+      userFound: true,
+      user: {
+        id: user.id,
+        name: isSuper ? "Emperor Smart Solution" : user.name,
+        email: user.email,
+        phone: user.phone,
+        role: isSuper ? "SUPER_ADMIN" : user.role,
+      },
+      organizationId: orgId,
+      orgRole,
+      memberships,
+    };
+  },
+
+  /**
+   * Authenticate a user by mobile phone & password.
+   */
+  async loginWithPhoneAndPassword({ phone, password }) {
+    if (!phone || !password) {
+      throw new Error("Mobile number and password are required");
+    }
+    const cleanPhone = otpStore.normalizePhone(phone);
+    if (!cleanPhone) {
+      throw new Error("Invalid mobile number");
+    }
+
+    let user = null;
+    const dbRes = await queryDb('SELECT * FROM "User" WHERE "phone" = $1;', [cleanPhone]);
+    if (dbRes.ok && dbRes.rows.length > 0) {
+      user = dbRes.rows[0];
+    } else {
+      for (const u of memoryUsers.values()) {
+        if (u.phone === cleanPhone) {
+          user = u;
+          break;
+        }
+      }
+    }
+
+    if (!user) {
+      throw new Error("Invalid mobile number or password");
+    }
+
+    if (user.status !== "ACTIVE") {
+      throw new Error("Account has been suspended. Please contact support.");
+    }
+
+    const isValid = await verifyPassword(password, user.passwordHash);
+    if (!isValid) {
+      throw new Error("Invalid mobile number or password");
     }
 
     const memberships = await this.getUserMemberships(user.id);
