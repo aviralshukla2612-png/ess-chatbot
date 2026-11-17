@@ -255,7 +255,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: regPhone, purpose: "registration" }),
+        body: JSON.stringify({ phone: regPhone, purpose: "registration", name: fullName.trim() }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -271,7 +271,7 @@ export default function LoginPage() {
       setRegAttemptsLeft(5);
       setRegIsBanned(false);
       if (data.debugOtp) setRegBackupOtp(data.debugOtp);
-      setSuccessMessage(`OTP code sent via SMS to ${data.phone}. Code is valid for 10 minutes.`);
+      setSuccessMessage(`SMS Verification Code sent to ${data.phone}. Please check your text messages.`);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -393,7 +393,7 @@ export default function LoginPage() {
       setLoginAttemptsLeft(5);
       setLoginIsBanned(false);
       if (data.debugOtp) setLoginBackupOtp(data.debugOtp);
-      setSuccessMessage(`OTP sent via SMS to ${data.phone}. Code is valid for 10 minutes.`);
+      setSuccessMessage(`SMS Verification Code sent to ${data.phone}. Please check your text messages.`);
     } catch (err) {
       setErrorMessage(err.message);
     } finally {

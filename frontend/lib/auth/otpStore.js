@@ -180,7 +180,7 @@ export const otpStore = {
   /**
    * Generates and dispatches a 6-digit OTP to a mobile phone with rate limiting & 24h ban check.
    */
-  async sendOtp({ phone: rawPhone, purpose = "registration" }) {
+  async sendOtp({ phone: rawPhone, purpose = "registration", name }) {
     const phone = this.normalizePhone(rawPhone);
     if (!phone) {
       return {
@@ -256,14 +256,15 @@ export const otpStore = {
     console.log(`Expires  : ${OTP_EXPIRY_MINUTES} minutes`);
     console.log(`========================================\n`);
 
-    // 5. Send via DLT SMS Provider
+    // 5. Send via TRAI DLT SMS Provider (TXXTOO / 1607100000000313742)
+    const recipientName = (name || (purpose === "login" ? "User" : "Customer")).trim();
     try {
       const { smsService } = await import("./smsService.js");
       await smsService.sendSms({
         to: phone,
         otp,
-        recipientName: "User",
-        message: `Dear User Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards Team Emperor\nTEXT2`,
+        recipientName,
+        message: `Dear ${recipientName} Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards TXXTOO\nTEXT2`,
       });
     } catch (smsErr) {
       console.warn("[SMS_PROVIDER_WARNING]", smsErr.message);
@@ -273,7 +274,7 @@ export const otpStore = {
       success: true,
       phone,
       cooldownSeconds: COOLDOWN_SECONDS,
-      message: `OTP sent successfully to ${phone}. Valid for 10 minutes.`,
+      message: `OTP sent via SMS text message to ${phone}. Valid for 10 minutes.`,
       debugOtp: process.env.SHOW_DEBUG_OTP !== "false" ? otp : undefined,
     };
   },

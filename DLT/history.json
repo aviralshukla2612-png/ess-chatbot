@@ -1,5 +1,69 @@
 [
     {
+        "id": "msg_1794899539_751",
+        "timestamp": "2026-11-17 08:12:19",
+        "phone": "6354351080",
+        "variables": {
+            "var1": "Rahul",
+            "var2": "537770",
+            "var3": "Team Emperor"
+        },
+        "message": "Dear Rahul Your OTP for verification is 537770. Please enter this code to complete the process.\nRegards Team Emperor\nTEXT2",
+        "message_id": "8220-a57-5c3c-fd53",
+        "http_code": 200,
+        "duration_ms": 230.14,
+        "curl_error": "",
+        "is_success": true,
+        "status_summary": "SMS Sent Successfully",
+        "raw_response": "{\"status\":\"success\",\"message-id\":[\"8220-a57-5c3c-fd53\"],\"message\":\"SMS Sent Successfully\"}",
+        "parsed_response": {
+            "status": "success",
+            "message-id": [
+                "8220-a57-5c3c-fd53"
+            ],
+            "message": "SMS Sent Successfully"
+        },
+        "request_payload": {
+            "uri": "https:\/\/allsmssolution.in\/sms-panel\/api\/http\/index.php",
+            "sender": "TXXTOO",
+            "route": "TRANS",
+            "TemplateID": "1607100000000313742",
+            "EntityID": "1401805350000060162",
+            "username": "EMPEROR",
+            "apikey_mask": "62CE****446",
+            "mobile": "6354351080"
+        }
+    },
+    {
+        "id": "msg_1794899528_547",
+        "timestamp": "2026-11-17 08:12:08",
+        "phone": "6354351080",
+        "variables": {
+            "var1": "Rahul",
+            "var2": "537770",
+            "var3": "Team Emperor"
+        },
+        "message": "Dear Rahul Your OTP for verification is 537770. Please enter this code to complete the process.\nRegards Team Emperor\nTEXT2",
+        "message_id": null,
+        "http_code": 403,
+        "duration_ms": 44.43,
+        "curl_error": "",
+        "is_success": false,
+        "status_summary": "HTTP 403 Response",
+        "raw_response": "Request to POST \/sms-panel\/api\/http\/index.php on allsmssolution.in not allowed by policy\n",
+        "parsed_response": null,
+        "request_payload": {
+            "uri": "https:\/\/allsmssolution.in\/sms-panel\/api\/http\/index.php",
+            "sender": "TXXTOO",
+            "route": "TRANS",
+            "TemplateID": "1607100000000313742",
+            "EntityID": "1401805350000060162",
+            "username": "EMPEROR",
+            "apikey_mask": "62CE****446",
+            "mobile": "6354351080"
+        }
+    },
+    {
         "id": "msg_1792840347_856",
         "timestamp": "2026-10-24 11:12:27",
         "phone": "6354351080",

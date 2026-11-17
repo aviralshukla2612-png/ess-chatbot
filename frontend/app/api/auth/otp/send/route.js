@@ -4,7 +4,7 @@ import { otpStore } from "@/lib/auth/otpStore";
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { phone, purpose = "registration" } = body;
+    const { phone, purpose = "registration", name } = body;
 
     if (!phone) {
       return NextResponse.json(
@@ -13,7 +13,7 @@ export async function POST(request) {
       );
     }
 
-    const result = await otpStore.sendOtp({ phone, purpose });
+    const result = await otpStore.sendOtp({ phone, purpose, name });
 
     if (!result.success) {
       const status = result.banned ? 403 : result.cooldown ? 429 : 400;
