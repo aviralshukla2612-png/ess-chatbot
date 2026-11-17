@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authStore } from "@/lib/db/authStore";
+import { otpStore } from "@/lib/auth/otpStore";
 import { signSessionToken, createSessionCookie } from "@/lib/auth/session";
 
 // Sliding window login attempt rate limiter
@@ -8,7 +9,7 @@ const loginAttempts = new Map();
 function checkLoginRateLimit(ip) {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxAttempts = 10;
+  const maxAttempts = 15;
 
   const entry = loginAttempts.get(ip) || { count: 0, resetAt: now + windowMs };
   if (now > entry.resetAt) {
@@ -30,13 +31,7 @@ export async function POST(request) {
   try {
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
     const body = await request.json().catch(() => ({}));
-    const { email, password } = body;
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+    const { email, password, phone, verificationToken, mode } = body;
 
     const rateCheck = checkLoginRateLimit(clientIp);
     if (!rateCheck.allowed) {
@@ -49,7 +44,50 @@ export async function POST(request) {
       );
     }
 
-    const authResult = await authStore.login({ email, password });
+    let authResult;
+
+    // Mobile Phone OTP Login Flow
+    if (phone && (verificationToken || mode === "otp")) {
+      const cleanPhone = otpStore.normalizePhone(phone);
+      if (!cleanPhone) {
+        return NextResponse.json(
+          { success: false, error: "Invalid mobile number. Please check the number entered." },
+          { status: 400 }
+        );
+      }
+
+      // Verify cryptographic token from OTP verification
+      const isValid = otpStore.verifyVerificationToken(cleanPhone, verificationToken, "login");
+      if (!isValid) {
+        return NextResponse.json(
+          { success: false, error: "Invalid or expired OTP session. Please request a new verification code." },
+          { status: 400 }
+        );
+      }
+
+      authResult = await authStore.loginWithPhone({ phone: cleanPhone });
+      if (!authResult.userFound) {
+        return NextResponse.json(
+          {
+            success: false,
+            userFound: false,
+            phone: cleanPhone,
+            error: "No account found with this mobile number. Please register your account.",
+          },
+          { status: 404 }
+        );
+      }
+    } else {
+      // Standard Email & Password Flow
+      if (!email || !password) {
+        return NextResponse.json(
+          { success: false, error: "Email and password are required" },
+          { status: 400 }
+        );
+      }
+
+      authResult = await authStore.login({ email, password });
+    }
 
     const { user, organizationId, orgRole, memberships } = authResult;
 
@@ -79,10 +117,11 @@ export async function POST(request) {
       maxAge: 7 * 24 * 3600,
       secure: process.env.COOKIE_SECURE === "true",
     });
+
     return response;
   } catch (err) {
     return NextResponse.json(
-      { success: false, error: err.message || "Invalid email or password" },
+      { success: false, error: err.message || "Authentication failed" },
       { status: 401 }
     );
   }

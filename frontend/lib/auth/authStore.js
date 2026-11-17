@@ -9,6 +9,7 @@ import { queryDb } from "../db/dbPool.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { usersStore, isDummyOrTestAccount } from "../db/usersStore.js";
 import { sseBroker } from "../db/sseBroker.js";
+import { otpStore } from "./otpStore.js";
 
 // In-memory fallback stores for test/offline environments
 const memoryUsers = new Map();
@@ -34,7 +35,7 @@ export const authStore = {
   /**
    * Register a new User and create their primary Organization.
    */
-  async register({ email, password, name, organizationName, role = "MEMBER" }) {
+  async register({ email, password, name, organizationName, role = "MEMBER", phone, phoneVerified = false }) {
     if (!email || !email.includes("@")) {
       throw new Error("A valid email address is required");
     }
@@ -44,6 +45,7 @@ export const authStore = {
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = (name || cleanEmail.split("@")[0]).trim();
     const orgName = (organizationName || `${cleanName}'s Workspace`).trim();
+    const cleanPhone = phone ? otpStore.normalizePhone(phone) : null;
 
     // 1. Check duplicate email in DB
     const existingDb = await queryDb('SELECT "id" FROM "User" WHERE "email" = $1;', [cleanEmail]);
@@ -52,6 +54,19 @@ export const authStore = {
     }
     if (memoryUsers.has(cleanEmail)) {
       throw new Error("An account with this email already exists");
+    }
+
+    // Check duplicate phone if provided
+    if (cleanPhone) {
+      const existingPhone = await queryDb('SELECT "id" FROM "User" WHERE "phone" = $1;', [cleanPhone]);
+      if (existingPhone.ok && existingPhone.rows.length > 0) {
+        throw new Error("An account with this mobile number already exists");
+      }
+      for (const u of memoryUsers.values()) {
+        if (u.phone === cleanPhone) {
+          throw new Error("An account with this mobile number already exists");
+        }
+      }
     }
 
     // 2. Hash password
@@ -68,6 +83,8 @@ export const authStore = {
       id: userId,
       name: cleanName,
       email: cleanEmail,
+      phone: cleanPhone,
+      phoneVerified: Boolean(phoneVerified),
       passwordHash,
       role: userRole,
       status: "ACTIVE",
@@ -111,8 +128,8 @@ export const authStore = {
     );
     if (dbOrg.ok) {
       await queryDb(
-        'INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "status") VALUES ($1, $2, $3, $4, $5, $6);',
-        [userId, cleanName, cleanEmail, passwordHash, userRole, "ACTIVE"]
+        'INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "status", "phone", "phoneVerified") VALUES ($1, $2, $3, $4, $5, $6, $7, $8);',
+        [userId, cleanName, cleanEmail, passwordHash, userRole, "ACTIVE", cleanPhone, Boolean(phoneVerified)]
       );
       await queryDb(
         'INSERT INTO "OrganizationMembership" ("id", "organizationId", "userId", "role", "status") VALUES ($1, $2, $3, $4, $5);',
@@ -134,20 +151,79 @@ export const authStore = {
         id: userId,
         name: cleanName,
         email: cleanEmail,
+        phone: cleanPhone,
         organization: orgName,
         role: userRole === "SUPER_ADMIN" ? "Platform Super Admin" : "Workspace Owner",
         status: "Active",
       });
       sseBroker.broadcast("USER_CREATED", {
-        user: { id: userId, name: cleanName, email: cleanEmail, role: userRole },
+        user: { id: userId, name: cleanName, email: cleanEmail, phone: cleanPhone, role: userRole },
         organizationId: orgId,
       });
     } catch (e) {}
 
     return {
-      user: { id: userId, name: cleanName, email: cleanEmail, role: userRole },
+      user: { id: userId, name: cleanName, email: cleanEmail, phone: cleanPhone, role: userRole },
       organization: orgObj,
       orgRole,
+    };
+  },
+
+  /**
+   * Authenticate user by verified mobile phone number.
+   */
+  async loginWithPhone({ phone }) {
+    if (!phone) {
+      throw new Error("Mobile number is required");
+    }
+    const cleanPhone = otpStore.normalizePhone(phone);
+    if (!cleanPhone) {
+      throw new Error("Invalid mobile number");
+    }
+
+    let user = null;
+    const dbRes = await queryDb('SELECT * FROM "User" WHERE "phone" = $1;', [cleanPhone]);
+    if (dbRes.ok && dbRes.rows.length > 0) {
+      user = dbRes.rows[0];
+    } else {
+      for (const u of memoryUsers.values()) {
+        if (u.phone === cleanPhone) {
+          user = u;
+          break;
+        }
+      }
+    }
+
+    if (!user) {
+      return {
+        userFound: false,
+        phone: cleanPhone,
+      };
+    }
+
+    if (user.status !== "ACTIVE") {
+      throw new Error("Account has been suspended. Please contact support.");
+    }
+
+    const memberships = await this.getUserMemberships(user.id);
+    const primaryMembership = memberships[0] || null;
+    const orgId = primaryMembership?.organizationId || DEFAULT_ORG_ID;
+    const defaultOrgRole = primaryMembership?.role || (user.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "MEMBER");
+    const isSuper = user.role === "SUPER_ADMIN" || user.email === DEFAULT_ADMIN_EMAIL;
+    const orgRole = isSuper ? "SUPER_ADMIN" : defaultOrgRole;
+
+    return {
+      userFound: true,
+      user: {
+        id: user.id,
+        name: isSuper ? "Emperor Smart Solution" : user.name,
+        email: user.email,
+        phone: user.phone,
+        role: isSuper ? "SUPER_ADMIN" : user.role,
+      },
+      organizationId: orgId,
+      orgRole,
+      memberships,
     };
   },
 
