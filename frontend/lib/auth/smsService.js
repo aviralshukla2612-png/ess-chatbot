@@ -72,6 +72,42 @@ function postToGateway(postObj) {
   });
 }
 
+function getFromGateway(payload) {
+  return new Promise((resolve) => {
+    try {
+      const q = querystring.stringify(payload);
+      const url = `${DLT_CONFIG.uri}?${q}`;
+      https
+        .get(url, { timeout: 10000 }, (res) => {
+          let text = "";
+          res.on("data", (chunk) => (text += chunk));
+          res.on("end", () => {
+            let parsed = null;
+            try {
+              parsed = JSON.parse(text);
+            } catch (e) {}
+            const ok =
+              parsed?.status === "success" ||
+              text.toLowerCase().includes("success") ||
+              text.toLowerCase().includes("message-id");
+            resolve({
+              httpStatus: res.statusCode,
+              success: ok,
+              raw: parsed || text,
+              messageId: parsed?.["message-id"],
+            });
+          });
+        })
+        .on("error", (e) => {
+          console.warn("[DLT_GET_HTTPS_ERROR]", e.message);
+          resolve({ success: false, error: e.message });
+        });
+    } catch (e) {
+      resolve({ success: false, error: e.message });
+    }
+  });
+}
+
 export const smsService = {
   /**
    * Dispatches TRAI DLT Compliant SMS text message to the user's mobile number.
@@ -115,7 +151,12 @@ export const smsService = {
       message: finalMessage,
     };
 
-    const result = await postToGateway(payload10);
+    let result = await postToGateway(payload10);
+    if (!result.success) {
+      console.warn(`[DLT_POST_FAILED] Retrying via GET method for +91${cleanNumbers}... Response:`, result.raw);
+      result = await getFromGateway(payload10);
+    }
+
     if (result.success) {
       console.log(`[DLT_SMS_SUCCESS] Successfully delivered to +91${cleanNumbers} | MsgID: ${JSON.stringify(result.messageId || "OK")}`);
       return {
@@ -124,7 +165,7 @@ export const smsService = {
         messageId: result.messageId,
       };
     } else {
-      console.warn(`[DLT_SMS_WARN] Gateway dispatch warning for +91${cleanNumbers}:`, result.raw);
+      console.warn(`[DLT_SMS_WARN] Gateway dispatch failure for +91${cleanNumbers}:`, result.raw);
     }
 
     // Fallback: Fast2SMS if configured

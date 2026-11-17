@@ -263,7 +263,7 @@ export const otpStore = {
         to: phone,
         otp,
         recipientName: "User",
-        message: `Dear User Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards Team Nexus\nTEXT2`,
+        message: `Dear User Your OTP for verification is ${otp}. Please enter this code to complete the process.\nRegards Team Emperor\nTEXT2`,
       });
     } catch (smsErr) {
       console.warn("[SMS_PROVIDER_WARNING]", smsErr.message);
