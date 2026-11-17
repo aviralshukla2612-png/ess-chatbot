@@ -10,7 +10,6 @@ import {
   Lock,
   ArrowRight,
   ShieldAlert,
-  Building,
   User,
   Globe,
   ArrowLeft,
@@ -156,9 +155,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Form states
-  const [fullName, setFullName] = useState("");
-  const [companyName, setCompanyName] = useState("");
+  // URL & Plan states
   const [redirectPath, setRedirectPath] = useState("");
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedIndustry, setSelectedIndustry] = useState(null);
@@ -255,7 +252,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: regPhone, purpose: "registration", name: fullName.trim() }),
+        body: JSON.stringify({ phone: regPhone, purpose: "registration" }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -321,25 +318,50 @@ export default function LoginPage() {
   // Registration Submit
   const handleRegisterSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
+    if (!regOtpSent) {
+      await handleSendRegOtp();
+      return;
+    }
+
     setLoading(true);
     setErrorMessage("");
     setSuccessMessage("");
 
     try {
-      if (!fullName.trim()) throw new Error("Full name is required");
-      if (!companyName.trim()) throw new Error("Company / Organization name is required");
-      if (!regPhoneVerified || !regVerificationToken) {
-        throw new Error("Please verify your mobile number with OTP first");
+      let token = regVerificationToken;
+
+      // If OTP code is entered but token not yet obtained, verify OTP right now
+      if (!token) {
+        if (!regOtp || regOtp.trim().length !== 6) {
+          throw new Error("Please enter the complete 6-digit OTP code");
+        }
+        const vRes = await fetch("/api/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: regPhone, otp: regOtp.trim(), purpose: "registration" }),
+        });
+        const vData = await vRes.json();
+        if (!vRes.ok || !vData.success) {
+          if (vData.banned) {
+            setRegIsBanned(true);
+            setRegBanMessage(vData.error);
+            setRegAttemptsLeft(0);
+          } else if (vData.attemptsLeft !== undefined) {
+            setRegAttemptsLeft(vData.attemptsLeft);
+          }
+          throw new Error(vData.error || "Invalid OTP code");
+        }
+        token = vData.verificationToken;
+        setRegVerificationToken(token);
+        setRegPhoneVerified(true);
       }
 
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: fullName.trim(),
-          organizationName: companyName.trim(),
           phone: regPhone,
-          verificationToken: regVerificationToken,
+          verificationToken: token,
         }),
       });
 
@@ -453,7 +475,7 @@ export default function LoginPage() {
           setRegPhoneVerified(true);
           setRegVerificationToken(vData.verificationToken);
           setActiveTab("register");
-          throw new Error("No account found for this mobile number. Please fill in your name to create your workspace.");
+          throw new Error("No account found for this mobile number. Click 'Create Workspace & Continue' to set up your account.");
         }
         throw new Error(lData.error || "Sign in failed");
       }
@@ -729,58 +751,10 @@ export default function LoginPage() {
           {/* ================= REGISTER VIEW (100% MOBILE & OTP) ================= */}
           {activeTab === "register" && (
             <form onSubmit={handleRegisterSubmit} className="space-y-4 text-xs sm:text-sm">
-              {/* Full Name */}
               <div>
                 <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Your Full Name
+                  Mobile Number
                 </label>
-                <div className="relative group">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#C28AFF] transition-colors" />
-                  <input
-                    type="text"
-                    required
-                    autoComplete="name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Aviral Shukla"
-                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Company Name */}
-              <div>
-                <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Company / Organization Name
-                </label>
-                <div className="relative group">
-                  <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#C28AFF] transition-colors" />
-                  <input
-                    type="text"
-                    required
-                    autoComplete="organization"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="e.g. Emperor Smart Solutions"
-                    className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Mobile Number & OTP Verification */}
-              <div className="p-3.5 rounded-2xl bg-[#07070B] border border-white/10 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[#D1D1DB] flex items-center gap-1.5">
-                    <Smartphone className="w-3.5 h-3.5 text-[#C28AFF]" />
-                    <span>Mobile Number (OTP Verification)</span>
-                  </label>
-                  {regPhoneVerified && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                      <Check className="w-3 h-3" /> Verified
-                    </span>
-                  )}
-                </div>
-
                 <div className="flex gap-2">
                   <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
                     🇮🇳 +91
@@ -816,98 +790,106 @@ export default function LoginPage() {
                     </button>
                   )}
                 </div>
-
-                {/* 24-Hour Banned Notice for Registration */}
-                {regIsBanned && (
-                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-rose-200">Mobile Number Locked for 24 Hours</p>
-                      <p className="text-[11px] text-rose-300/90 mt-0.5">
-                        {regBanMessage || "You have reached the maximum 5 failed attempts. Please try again after 24 hours."}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* OTP Input Field & Verification Button (6 SEPARATE BOXES) */}
-                {regOtpSent && !regPhoneVerified && !regIsBanned && (
-                  <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-[#D1D1DB] font-medium flex items-center gap-1">
-                        <KeyRound className="w-3 h-3 text-[#C28AFF]" />
-                        Enter 6-Digit OTP:
-                      </span>
-                      {regAttemptsLeft !== null && (
-                        <span className={`font-semibold ${regAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
-                          {regAttemptsLeft} of 5 attempts left
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 6 SEPARATE BOXES COMPONENT */}
-                    <SixDigitOtpBoxes
-                      value={regOtp}
-                      onChange={setRegOtp}
-                      disabled={regOtpVerifying}
-                      autoFocus={true}
-                    />
-
-                    {regBackupOtp && (
-                      <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#963DFF]/15 border border-[#963DFF]/30 text-xs animate-in fade-in">
-                        <span className="text-[#D1D1DB] font-medium flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
-                          <span>SMS Verification Code:</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setRegOtp(regBackupOtp)}
-                          className="font-mono font-bold text-[#C28AFF] tracking-widest bg-black/60 hover:bg-black px-2.5 py-1 rounded-lg border border-white/10 hover:border-[#963DFF] transition-all cursor-pointer select-all shadow-xs"
-                          title="Click to auto-fill"
-                        >
-                          {regBackupOtp}
-                        </button>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      disabled={regOtpVerifying || regOtp.length !== 6}
-                      onClick={handleVerifyRegOtp}
-                      className="w-full py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:brightness-110 disabled:opacity-50 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                    >
-                      {regOtpVerifying ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Verify OTP Code</span>
-                        </>
-                      )}
-                    </button>
-
-                    <p className="text-[10px] text-[#9898A6] text-center">
-                      Security Policy: Maximum 5 attempts allowed before a 24-hour lockout is triggered.
-                    </p>
-                  </div>
-                )}
               </div>
 
-              {/* Submit Action Button */}
-              <button
-                type="submit"
-                disabled={loading || !regPhoneVerified}
-                className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-3 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <span>
-                  {loading
-                    ? "Creating Workspace..."
-                    : !regPhoneVerified
-                    ? "Verify Mobile OTP to Continue"
-                    : "Create Organization & Continue"}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {/* 24-Hour Banned Notice for Registration */}
+              {regIsBanned && (
+                <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-rose-200">Mobile Number Locked for 24 Hours</p>
+                    <p className="text-[11px] text-rose-300/90 mt-0.5">
+                      {regBanMessage || "You have reached the maximum 5 failed attempts. Please try again after 24 hours."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* OTP Input Field & Verification (6 SEPARATE BOXES) */}
+              {regOtpSent && !regIsBanned && (
+                <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
+                      Enter 6-Digit OTP Code:
+                    </span>
+                    {regAttemptsLeft !== null && (
+                      <span className={`text-[11px] font-bold ${regAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
+                        {regAttemptsLeft} of 5 attempts left
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 6 SEPARATE BOXES COMPONENT */}
+                  <SixDigitOtpBoxes
+                    value={regOtp}
+                    onChange={setRegOtp}
+                    disabled={loading || regOtpVerifying}
+                    autoFocus={true}
+                  />
+
+                  {regBackupOtp && (
+                    <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#963DFF]/15 border border-[#963DFF]/30 text-xs animate-in fade-in">
+                      <span className="text-[#D1D1DB] font-medium flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#C28AFF]" />
+                        <span>SMS Verification Code:</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setRegOtp(regBackupOtp)}
+                        className="font-mono font-bold text-[#C28AFF] tracking-widest bg-black/60 hover:bg-black px-2.5 py-1 rounded-lg border border-white/10 hover:border-[#963DFF] transition-all cursor-pointer select-all shadow-xs"
+                        title="Click to auto-fill"
+                      >
+                        {regBackupOtp}
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading || regOtp.length !== 6}
+                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Creating Workspace...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Create Workspace & Continue</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[11px] text-[#9898A6] text-center">
+                    Security Policy: Maximum 5 attempts allowed before a 24-hour lockout is triggered.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Button if OTP not sent yet */}
+              {!regOtpSent && (
+                <button
+                  type="button"
+                  onClick={handleSendRegOtp}
+                  disabled={regOtpSending || !regPhone}
+                  className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {regOtpSending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Sending OTP...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send OTP Code</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              )}
             </form>
           )}
 
