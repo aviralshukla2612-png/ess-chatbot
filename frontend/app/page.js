@@ -11,7 +11,6 @@ import HowItWorksSection from "@/components/HowItWorksSection";
 import PricingSection from "@/components/PricingSection";
 import Footer from "@/components/Footer";
 import TrionnLoader from "@/components/TrionnLoader";
-import LiveDemoChatWidget from "@/components/LiveDemoChatWidget";
 
 // Register ScrollTrigger globally
 if (typeof window !== "undefined") {
@@ -866,9 +865,6 @@ export default function HomePage() {
 
       {/* 7. NOTH.IN STYLE SIGNATURE FOOTER WITH GSAP SCROLL REVEAL & ELASTIC BOUNCE */}
       <Footer />
-
-      {/* 8. INTERACTIVE LIVE DEMO CHATBOT WIDGET */}
-      <LiveDemoChatWidget />
     </div>
   );
 }

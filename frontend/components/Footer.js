@@ -320,22 +320,6 @@ export default function Footer() {
 
           {/* Right: Editorial Links */}
           <div className="flex flex-col items-start md:items-end space-y-3 pt-2">
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-2xl sm:text-3xl font-medium text-white/80 hover:text-white transition-all duration-200 hover:translate-x-1"
-            >
-              Linkedin
-            </a>
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-2xl sm:text-3xl font-medium text-white/80 hover:text-white transition-all duration-200 hover:translate-x-1"
-            >
-              Twitter / X
-            </a>
             <Link
               href="/login"
               className="text-2xl sm:text-3xl font-medium text-white/80 hover:text-white transition-all duration-200 hover:translate-x-1 flex items-center gap-2 cursor-pointer"
