@@ -11,6 +11,7 @@ import HowItWorksSection from "@/components/HowItWorksSection";
 import PricingSection from "@/components/PricingSection";
 import Footer from "@/components/Footer";
 import TrionnLoader from "@/components/TrionnLoader";
+import LiveDemoChatWidget from "@/components/LiveDemoChatWidget";
 
 // Register ScrollTrigger globally
 if (typeof window !== "undefined") {
@@ -39,6 +40,7 @@ import {
   Code2,
   Check,
   ChevronDown,
+  Menu,
   X,
   Bot,
   Send,
@@ -491,17 +493,69 @@ export default function HomePage() {
             />
           </nav>
 
-          {/* Right Action: Dashboard Button linking to /login */}
-          <div className="flex items-center gap-4">
+          {/* Right Action: Dashboard Button and Mobile Hamburger Menu */}
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/login"
-              className="group relative inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full text-xs font-bold text-white btn-primary-gradient cursor-pointer overflow-hidden transition-all duration-300"
+              className="group relative inline-flex items-center gap-1.5 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs font-bold text-white btn-primary-gradient cursor-pointer overflow-hidden transition-all duration-300"
             >
               <span>Dashboard</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
+
+            {/* Mobile Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Toggle navigation menu"
+              className="md:hidden p-2 rounded-xl text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors cursor-pointer"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 text-[#C28AFF]" />
+              ) : (
+                <Menu className="w-5 h-5 text-white" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-[#0A0A12]/98 backdrop-blur-2xl border-b border-white/10 px-5 py-4 space-y-1.5 animate-in slide-in-from-top-2 duration-200 shadow-[0_20px_40px_rgba(0,0,0,0.9)]">
+            {[
+              { id: "home", label: "Home" },
+              { id: "industries", label: "Industries" },
+              { id: "benefits", label: "Benefits" },
+              { id: "how-it-works", label: "How It Works" },
+              { id: "pricing", label: "Pricing" },
+            ].map((nav) => (
+              <a
+                key={nav.id}
+                href={`#${nav.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveNav(nav.id);
+                  setMobileMenuOpen(false);
+                  const el = document.getElementById(nav.id);
+                  if (el) {
+                    const isPinned = nav.id === "industries" || nav.id === "benefits" || nav.id === "how-it-works";
+                    const topOffset = isPinned
+                      ? el.getBoundingClientRect().top + window.scrollY
+                      : el.getBoundingClientRect().top + window.scrollY - 70;
+                    window.scrollTo({ top: Math.max(0, topOffset), behavior: "smooth" });
+                  }
+                }}
+                className={`block py-2.5 px-3.5 rounded-xl text-sm font-medium transition-all ${
+                  activeNav === nav.id
+                    ? "bg-[#963DFF]/25 text-[#C28AFF] font-bold border border-[#963DFF]/30"
+                    : "text-[#D9D9E2] hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {nav.label}
+              </a>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* 2. HERO SECTION */}
@@ -555,10 +609,10 @@ export default function HomePage() {
             and discover what you offer — 24/7.
           </p>
 
-          <div className="mt-5 sm:mt-6 flex flex-row items-center justify-center gap-3.5 w-auto">
+          <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full sm:w-auto px-4 sm:px-0">
             <Link
               href="/login"
-              className="px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer group shadow-[0_8px_25px_rgba(158,96,244,0.45)]"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full font-medium text-sm sm:text-base text-white btn-primary-gradient flex items-center justify-center gap-2 cursor-pointer group shadow-[0_8px_25px_rgba(158,96,244,0.45)] text-center"
             >
               <span>{isAuthenticated ? "Launch Dashboard" : "Get Started"}</span>
               <span className="text-lg leading-none transition-transform duration-200 group-hover:translate-x-1">→</span>
@@ -567,7 +621,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => handlePillMouseEnter("real-estate")}
-              className="px-7 py-3.5 rounded-full font-medium text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-full font-medium text-sm sm:text-base btn-secondary-glass flex items-center justify-center gap-2.5 cursor-pointer group text-center"
             >
               <div className="w-4 h-4 rounded-full border border-white/60 flex items-center justify-center group-hover:border-[#A494F4] group-hover:bg-[#9E60F4]/20 transition-all">
                 <Play className="w-2 h-2 fill-current text-white group-hover:text-[#A494F4] transition-colors ml-0.5" />
@@ -638,7 +692,7 @@ export default function HomePage() {
               <div
                 onMouseEnter={handleCardMouseEnter}
                 onMouseLeave={handleCardMouseLeave}
-                className="absolute top-[calc(100%+8px)] z-50 origin-top animate-curtain-drop pointer-events-auto before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-['']"
+                className="absolute top-[calc(100%+8px)] z-50 origin-top animate-curtain-drop pointer-events-auto before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 before:content-[''] max-w-[calc(100vw-24px)]"
                 style={{
                   left: `${dropdownPos.left}px`,
                   width: `${dropdownPos.width}px`,
@@ -813,7 +867,8 @@ export default function HomePage() {
       {/* 7. NOTH.IN STYLE SIGNATURE FOOTER WITH GSAP SCROLL REVEAL & ELASTIC BOUNCE */}
       <Footer />
 
-
+      {/* 8. INTERACTIVE LIVE DEMO CHATBOT WIDGET */}
+      <LiveDemoChatWidget />
     </div>
   );
 }

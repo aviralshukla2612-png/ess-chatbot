@@ -274,7 +274,7 @@ export const otpStore = {
       phone,
       cooldownSeconds: COOLDOWN_SECONDS,
       message: `OTP sent via SMS text message to ${phone}. Valid for 10 minutes.`,
-      debugOtp: process.env.SHOW_DEBUG_OTP !== "false" ? otp : undefined,
+      debugOtp: process.env.NODE_ENV === "development" && process.env.SHOW_DEBUG_OTP === "true" ? otp : undefined,
     };
   },
 

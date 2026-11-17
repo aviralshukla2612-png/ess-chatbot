@@ -17,7 +17,6 @@ export default function TrionnLoader({ onComplete }) {
   const containerRef = useRef(null);
   const boxWrapRef = useRef(null);
   const logoWrapRef = useRef(null);
-  const logoImgRef = useRef(null);
   const videoRef = useRef(null);
   const borderRectRef = useRef(null);
   const counterRef = useRef(null);
@@ -58,15 +57,8 @@ export default function TrionnLoader({ onComplete }) {
       });
 
       gsap.set(logoWrapRef.current, {
-        opacity: 0.9,
+        opacity: 1,
       });
-
-      if (logoImgRef.current) {
-        gsap.set(logoImgRef.current, {
-          scale: 0.85,
-          opacity: 1,
-        });
-      }
 
       gsap.set(
         [
@@ -92,14 +84,17 @@ export default function TrionnLoader({ onComplete }) {
         borderRectRef.current.style.strokeDashoffset = "1";
       }
 
-      // Try playing the video
+      // Try playing the video immediately
       if (videoRef.current) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.muted = true;
+        videoRef.current.currentTime = 0;
+        const p = videoRef.current.play();
+        if (p !== undefined) p.catch(() => {});
       }
 
       // ========================================================
       // 1. SMALL -> MEDIUM SIZE (0.0s -> 0.75s)
-      // Box, corner pluses and logo move together from small to medium size
+      // Box, corner pluses and video move together from small to medium size
       // ========================================================
       tl.to(
         boxWrapRef.current,
@@ -125,28 +120,6 @@ export default function TrionnLoader({ onComplete }) {
         },
         0
       );
-
-      tl.to(
-        logoWrapRef.current,
-        {
-          opacity: 1,
-          duration: 0.5,
-          ease: "power2.out",
-        },
-        0.2
-      );
-
-      if (logoImgRef.current) {
-        tl.to(
-          logoImgRef.current,
-          {
-            scale: 1,
-            duration: 0.75,
-            ease: "power2.out",
-          },
-          0.1
-        );
-      }
 
       // ========================================================
       // 2. BOX LINE IS MADE + COUNTER 000% -> 100% (0.75s -> 2.65s)
@@ -329,21 +302,18 @@ export default function TrionnLoader({ onComplete }) {
       */}
       <div
         ref={boxWrapRef}
-        className="relative w-[270px] h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/[0.08] shrink-0"
+        className="relative w-[240px] h-[240px] xs:w-[270px] xs:h-[270px] sm:w-[310px] sm:h-[310px] md:w-[330px] md:h-[330px] flex items-center justify-center bg-[#07070A] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/[0.08] shrink-0"
         style={{
           transformOrigin: "center center",
           willChange: "transform",
         }}
       >
-        {/* Inside: Logo / Ambient Video container that moves with the box */}
+        {/* Inside: User's High-Tech AI Video container that moves with the box */}
         <div
           ref={logoWrapRef}
-          className="absolute inset-1 overflow-hidden flex flex-col items-center justify-center bg-[#07070A]"
+          className="absolute inset-1 overflow-hidden flex items-center justify-center bg-[#07070A]"
         >
-          {/* Ambient Royal Purple Radial Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(150,61,255,0.3)_0%,rgba(10,10,14,0.6)_65%,#07070A_100%)] pointer-events-none" />
-
-          {/* Ambient Video Background Layer (if supported/available) */}
+          {/* User's Exact 3D AI Loader Video (100% Vibrant, Fully Visible) */}
           <video
             ref={videoRef}
             src="/loader_video.mp4"
@@ -351,18 +321,9 @@ export default function TrionnLoader({ onComplete }) {
             muted
             loop
             playsInline
-            className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen pointer-events-none select-none"
+            preload="auto"
+            className="w-full h-full object-cover object-center pointer-events-none select-none"
           />
-
-          {/* Emperor Nexus Mascot Emblem (Clean square mascot, perfectly sized for square loader box) */}
-          <div className="relative z-10 flex items-center justify-center w-full h-full p-6 sm:p-8 pointer-events-none select-none">
-            <img
-              ref={logoImgRef}
-              src="/icon-512.png"
-              alt="Emperor Nexus Mascot"
-              className="w-28 h-28 sm:w-36 sm:h-36 object-contain filter drop-shadow-[0_0_35px_rgba(150,61,255,0.85)] select-none pointer-events-none"
-            />
-          </div>
         </div>
 
         {/* 
