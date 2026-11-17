@@ -25,7 +25,6 @@ export async function POST(request) {
       message: result.message,
       phone: result.phone,
       cooldownSeconds: result.cooldownSeconds,
-      debugOtp: result.debugOtp,
     });
   } catch (err) {
     return NextResponse.json(

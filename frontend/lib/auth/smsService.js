@@ -9,7 +9,8 @@ const DLT_CONFIG = {
   route: process.env.DLT_SMS_ROUTE || "TRANS",
   templateId: process.env.DLT_SMS_TEMPLATE_ID || "1607100000000313742",
   entityId: process.env.DLT_SMS_ENTITY_ID || "1401805350000060162",
-  signOff: process.env.DLT_SMS_SIGNOFF || "Team Nexus",
+  // TRAI DLT approved sign-off for Entity 1401805350000060162 & Header TXXTOO
+  signOff: process.env.DLT_SMS_SIGNOFF || "Team Emperor",
 };
 
 function postToGateway(postObj) {
@@ -26,7 +27,6 @@ function postToGateway(postObj) {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
             "Content-Length": Buffer.byteLength(postData),
-            "User-Agent": "Emperor-Nexus-Auth/1.0",
           },
           timeout: 10000,
         },
@@ -89,7 +89,7 @@ export const smsService = {
 
     const var1 = "User";
     const var2 = otpCode;
-    const var3 = (DLT_CONFIG.signOff || "Team Nexus").trim();
+    const var3 = (DLT_CONFIG.signOff || "Team Emperor").trim();
 
     // Exact TRAI DLT approved template pattern:
     // "Dear {#var#} Your OTP for verification is {#var#}. Please enter this code to complete the process.\nRegards {#var#}\nTEXT2"
