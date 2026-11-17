@@ -423,13 +423,14 @@ export default function LoginPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
+    const isEmail = loginPhone.includes("@");
     const rawDigits = loginPhone.replace(/\D/g, "");
-    if (rawDigits.length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number");
+    if (!isEmail && rawDigits.length < 10) {
+      setErrorMessage("Please enter a valid 10-digit mobile number or admin email");
       return;
     }
 
-    // 1. Mobile & Password Mode
+    // 1. Mobile & Password Mode (or Admin Email & Password)
     if (loginMode === "password") {
       if (!loginPassword) {
         setErrorMessage("Please enter your password");
@@ -437,17 +438,18 @@ export default function LoginPage() {
       }
       setLoading(true);
       try {
+        const payload = isEmail
+          ? { email: loginPhone.trim().toLowerCase(), password: loginPassword }
+          : { phone: loginPhone, password: loginPassword };
+
         const lRes = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: loginPhone,
-            password: loginPassword,
-          }),
+          body: JSON.stringify(payload),
         });
         const lData = await lRes.json();
         if (!lRes.ok || !lData.success) {
-          throw new Error(lData.error || "Invalid mobile number or password");
+          throw new Error(lData.error || (isEmail ? "Invalid admin email or password" : "Invalid mobile number or password"));
         }
 
         if (selectedPlan) {
@@ -651,18 +653,20 @@ export default function LoginPage() {
             <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs sm:text-sm">
               <div>
                 <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Mobile Number
+                  Mobile Number or Admin Email
                 </label>
                 <div className="flex gap-2">
-                  <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
-                    🇮🇳 +91
-                  </div>
+                  {!loginPhone.includes("@") && (
+                    <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
+                      🇮🇳 +91
+                    </div>
+                  )}
                   <input
-                    type="tel"
+                    type="text"
                     required
                     value={loginPhone}
                     onChange={(e) => setLoginPhone(e.target.value)}
-                    placeholder="10-digit mobile number"
+                    placeholder="10-digit mobile number or admin email"
                     className="flex-1 px-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
                   />
                   {loginMode === "otp" && (
