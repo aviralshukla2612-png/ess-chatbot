@@ -31,7 +31,8 @@
   --text-inverse: #FFFFFF;
 
   --border-subtle: #E2E8F0;
-  --border-strong: #CBD5E1;
+  --border-default: #CBD5E1;
+  --border-strong: #94A3B8;
 
   /* Single Primary Brand Accent — Enterprise Royal Indigo */
   --accent-primary: #4F46E5;
@@ -119,6 +120,7 @@
   --text-inverse: #0F172A;
 
   --border-subtle: #1E293B;
+  --border-default: #293548;
   --border-strong: #334155;
 
   --accent-primary: #6366F1;
