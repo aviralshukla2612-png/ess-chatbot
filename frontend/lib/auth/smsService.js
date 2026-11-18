@@ -415,7 +415,7 @@ export const smsService = {
           {
             hostname: urlObj.hostname,
             port: urlObj.port || defaultPort,
-            path: `${urlObj.pathname}?${q}`,
+            path: `${urlObj.pathname}${urlObj.search ? urlObj.search + "&" : "?"}${q}`,
             method: "GET",
             agent,
             headers: { "User-Agent": "Mozilla/5.0 (compatible; EmperorNexus/2.0)" },

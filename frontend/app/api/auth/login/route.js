@@ -111,6 +111,10 @@ export async function POST(request) {
       memberships,
     });
 
+    const isHttps =
+      process.env.COOKIE_SECURE === "true" ||
+      request.headers.get("x-forwarded-proto") === "https";
+
     response.cookies.set({
       name: "ess_session",
       value: token,
@@ -118,7 +122,7 @@ export async function POST(request) {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 7 * 24 * 3600,
-      secure: process.env.COOKIE_SECURE === "true",
+      secure: isHttps,
     });
 
     return response;

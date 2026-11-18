@@ -34,8 +34,18 @@ export async function GET() {
 
   // 1. Check Inference Provider Readiness
   if (DEFAULT_PROVIDER === "groq") {
-    const hasKey = Boolean(process.env.GROQ_API_KEY && !process.env.GROQ_API_KEY.includes("your_groq_api_key"));
-    dependencies.inference.status = hasKey ? "configured" : "missing_api_key";
+    let hasPoolKey = false;
+    try {
+      const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
+      hasPoolKey = GroqKeyPoolManager.hasAvailableKeys();
+    } catch {}
+    const hasEnvKey = Boolean(
+      process.env.GROQ_API_KEY &&
+      process.env.GROQ_API_KEY.length > 10 &&
+      !process.env.GROQ_API_KEY.includes("your_groq_api_key")
+    );
+    const hasKey = hasEnvKey || hasPoolKey;
+    dependencies.inference.status = hasKey ? "configured" : "awaiting_key_in_admin_panel";
     dependencies.inference.model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
   } else if (DEFAULT_PROVIDER === "ollama") {
     try {
@@ -71,7 +81,7 @@ export async function GET() {
   }
 
   const isLivenessHealthy = true;
-  const isReadinessHealthy = storageStatus.startsWith("operational") && dependencies.inference.status !== "missing_api_key";
+  const isReadinessHealthy = storageStatus.startsWith("operational") && dbStatus === "connected";
   const latencyMs = Date.now() - startTime;
 
   return NextResponse.json(

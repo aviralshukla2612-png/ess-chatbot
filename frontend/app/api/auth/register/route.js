@@ -64,7 +64,19 @@ export async function POST(request) {
       orgRole,
     });
 
-    response.headers.set("Set-Cookie", createSessionCookie(token));
+    const isHttps =
+      process.env.COOKIE_SECURE === "true" ||
+      request.headers.get("x-forwarded-proto") === "https";
+
+    response.cookies.set({
+      name: "ess_session",
+      value: token,
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 3600,
+      secure: isHttps,
+    });
     return response;
   } catch (err) {
     return NextResponse.json(

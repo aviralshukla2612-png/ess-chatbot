@@ -12,7 +12,11 @@ try {
   // ioredis not available in this environment
 }
 
-const REDIS_URL = process.env.REDIS_URL || process.env.REDIS_HOST ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}` : null;
+const REDIS_URL =
+  process.env.REDIS_URL ||
+  (process.env.REDIS_HOST
+    ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`
+    : null);
 
 let redisClient = null;
 let isConnected = false;
