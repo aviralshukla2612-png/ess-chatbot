@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { leadsStore } from "@/lib/db/leadsStore";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, requireOrgRole, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
 
 export async function GET(request) {
   try {
@@ -15,16 +15,9 @@ export async function GET(request) {
     const search = searchParams.get("search") || "";
     const requestedOrg = searchParams.get("organizationId");
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN ||
-      principal.platformRole === "Platform Super Admin" ||
-      principal.platformRole === "SUPER_ADMIN" ||
-      principal.orgRole === "SUPER_ADMIN" ||
-      (principal.email && principal.email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
     const targetOrgId = isSuperAdmin ? (requestedOrg || null) : principal.organizationId;
 
-    // Filter leads by target organizationId (null for superadmin viewing all tenant leads)
     const leads = await leadsStore.getLeadsAsync({
       organizationId: targetOrgId,
       status,
@@ -51,9 +44,11 @@ export async function POST(request) {
     const { principal } = auth;
     const body = await request.json();
 
-    // Bind lead to caller's organizationId
-    body.organizationId = principal.organizationId;
-    const newLead = leadsStore.createLead(body);
+    // Bind lead strictly to caller's organizationId
+    const newLead = leadsStore.createLead({
+      ...body,
+      organizationId: principal.organizationId,
+    });
 
     return NextResponse.json({
       success: true,
@@ -66,17 +61,12 @@ export async function POST(request) {
 
 export async function DELETE(request) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
     if (!auth.ok) return auth.response;
 
     const { principal } = auth;
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN ||
-      principal.platformRole === "Platform Super Admin" ||
-      principal.platformRole === "SUPER_ADMIN" ||
-      principal.orgRole === "SUPER_ADMIN" ||
-      (principal.email && principal.email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const scopedOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const { searchParams } = new URL(request.url);
     const clearAll = searchParams.get("clearAll") === "true" || searchParams.get("purgeAll") === "true";
@@ -87,7 +77,10 @@ export async function DELETE(request) {
 
     if (purgeDummy) {
       if (!isSuperAdmin) {
-        return NextResponse.json({ success: false, error: "Only platform administrators can purge dummy leads." }, { status: 403 });
+        return NextResponse.json(
+          { success: false, error: "Only platform administrators can purge dummy leads." },
+          { status: 403 }
+        );
       }
 
       await queryDb(`
@@ -109,33 +102,35 @@ export async function DELETE(request) {
     }
 
     if (clearAll) {
-      leadsStore.clearAll(isSuperAdmin ? null : principal.organizationId);
-      return NextResponse.json({ success: true, message: "All leads cleared successfully." });
+      leadsStore.clearAll(scopedOrgId);
+      return NextResponse.json({ success: true, message: "Workspace leads cleared successfully." });
     }
 
-    // Support JSON body for batch deletion: { ids: ["lead_1", "lead_2"] }
     let body = null;
     try {
       body = await request.json();
-    } catch (e) {}
+    } catch {}
 
     if (body && Array.isArray(body.ids) && body.ids.length > 0) {
       for (const id of body.ids) {
-        leadsStore.deleteLead(id, isSuperAdmin ? null : principal.organizationId);
-        await queryDb('DELETE FROM "Lead" WHERE "id" = $1;', [id]).catch(() => {});
+        leadsStore.deleteLead(id, scopedOrgId);
       }
-      return NextResponse.json({ success: true, message: `${body.ids.length} leads deleted successfully.` });
+      return NextResponse.json({
+        success: true,
+        message: `${body.ids.length} leads deleted successfully.`,
+      });
     }
 
     if (leadId) {
-      leadsStore.deleteLead(leadId, isSuperAdmin ? null : principal.organizationId);
-      await queryDb('DELETE FROM "Lead" WHERE "id" = $1;', [leadId]).catch(() => {});
+      leadsStore.deleteLead(leadId, scopedOrgId);
       return NextResponse.json({ success: true, message: "Lead deleted successfully." });
     }
 
-    return NextResponse.json({ success: false, error: "Missing parameter: id, ids, or clearAll" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "Missing parameter: id, ids, or clearAll" },
+      { status: 400 }
+    );
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
-

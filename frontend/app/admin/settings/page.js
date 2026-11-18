@@ -4,19 +4,19 @@ import React, { useState, useEffect } from "react";
 import {
   Cpu,
   Database,
-  CheckCircle2,
-  AlertCircle,
   RefreshCw,
-  Server,
   Zap,
-  Radio,
   Save,
 } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
+import { InlineAlert, useToast } from "@/components/ui/Toast";
 
 export default function AdminSettingsPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
   const [diagnostics, setDiagnostics] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -27,7 +27,6 @@ export default function AdminSettingsPage() {
     postgresHost: "postgres:5432",
     postgresDb: "ess_chatbot",
     groqModel: "llama-3.3-70b-versatile",
-    groqApiKey: "",
     leadWebhookUrl: "",
   });
 
@@ -61,6 +60,7 @@ export default function AdminSettingsPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMsg("");
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
@@ -69,75 +69,56 @@ export default function AdminSettingsPage() {
       });
       const data = await res.json();
       if (data.ok) {
-        setNotification({
-          type: "success",
-          message: "Platform configuration saved and applied to live cluster.",
+        toast({
+          title: "Platform configuration saved",
+          message: "Settings applied across inference and webhook handlers.",
+          variant: "success",
         });
         loadSettings();
       } else {
-        setNotification({
-          type: "error",
-          message: data.error || "Failed to save configuration.",
-        });
+        setErrorMsg(data.error || "Failed to save configuration.");
       }
     } catch (err) {
-      setNotification({
-        type: "error",
-        message: err.message || "Network error.",
-      });
+      setErrorMsg(err.message || "Network error.");
     } finally {
       setSaving(false);
-      setTimeout(() => setNotification(null), 4000);
     }
   };
 
   return (
-    <div className="max-w-4xl space-y-6 animate-fade-in pb-12 font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
-            Platform Global Configuration
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Live connection endpoints, LLM model defaults, and vector database clustering.
-          </p>
-        </div>
-        <button
-          onClick={loadSettings}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-neutral-200 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 transition-colors shadow-xs cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-neutral-400"}`} />
-          <span>Refresh Diagnostics</span>
-        </button>
-      </div>
+    <div className="max-w-4xl space-y-6 pb-12 animate-fade-in">
+      <PageHeader
+        badge="Cluster Runtime"
+        title="Platform Global Configuration"
+        description="Configure default AI inference providers, model identifiers, database health diagnostics, and global SSRF-safe webhooks."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={RefreshCw}
+            loading={loading}
+            onClick={loadSettings}
+          >
+            Refresh Diagnostics
+          </Button>
+        }
+      />
 
-      {/* Status banner */}
-      {notification && (
-        <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2.5 shadow-xs transition-all ${
-            notification.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-              : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-          }`}
-        >
-          {notification.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-          )}
-          <span className="font-medium">{notification.message}</span>
-        </div>
+      {errorMsg && (
+        <InlineAlert
+          variant="error"
+          title="Configuration Error"
+          message={errorMsg}
+          onDismiss={() => setErrorMsg("")}
+        />
       )}
 
       {/* Cluster Live Status Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Ollama Health */}
-        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-xs flex items-start justify-between">
+        <div className="p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex items-start justify-between">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-teal-400" />
+            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               Ollama Inference Engine
             </span>
             <div className="flex items-center gap-2 mt-1">
@@ -148,26 +129,27 @@ export default function AdminSettingsPage() {
                     : "bg-amber-500"
                 }`}
               />
-              <span className="text-sm font-bold text-white capitalize">
-                {diagnostics?.ollama?.status === "connected" ? "Live & Ready" : diagnostics?.ollama?.status || "Checking..."}
+              <span className="text-sm font-bold text-[var(--text-primary)] capitalize">
+                {diagnostics?.ollama?.status === "connected"
+                  ? "Connected"
+                  : diagnostics?.ollama?.status || "Standby"}
               </span>
             </div>
-            <p className="text-[11px] text-neutral-500 font-mono">
+            <p className="text-[11px] text-[var(--text-muted)] font-mono">
               Endpoint: {formData.ollamaUrl}
             </p>
           </div>
           {diagnostics?.ollama?.availableModels?.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-400 border border-teal-500/30">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
               {diagnostics.ollama.availableModels.length} models
             </span>
           )}
         </div>
 
-        {/* Postgres Health */}
-        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-xs flex items-start justify-between">
+        <div className="p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex items-start justify-between">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5 text-[#B68A55]" />
+            <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               PostgreSQL & pgvector
             </span>
             <div className="flex items-center gap-2 mt-1">
@@ -178,56 +160,57 @@ export default function AdminSettingsPage() {
                     : "bg-amber-500"
                 }`}
               />
-              <span className="text-sm font-bold text-white capitalize">
-                {diagnostics?.database?.status === "connected" ? "Connected" : diagnostics?.database?.status || "Connecting..."}
+              <span className="text-sm font-bold text-[var(--text-primary)] capitalize">
+                {diagnostics?.database?.status === "connected"
+                  ? "Connected"
+                  : diagnostics?.database?.status || "Local Store Fallback"}
               </span>
               {diagnostics?.database?.latencyMs > 0 && (
-                <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md border border-emerald-500/30">
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/25">
                   {diagnostics.database.latencyMs}ms
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-neutral-500 font-mono">
+            <p className="text-[11px] text-[var(--text-muted)] font-mono">
               Database: {diagnostics?.database?.database || "ess_chatbot"}
             </p>
           </div>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/30">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--bg-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
             HNSW 768-d
           </span>
         </div>
       </div>
 
-      {/* Main Settings Form */}
+      {/* Settings Form */}
       <form onSubmit={handleSave} className="space-y-6 text-xs">
-        {/* Section 1: AI Provider & Engine */}
-        <div className="p-6 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-            <h3 className="font-bold text-sm text-white flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-teal-400" />
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+            <h3 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               Primary AI Inference Provider
             </h3>
-            <span className="text-[11px] font-medium text-neutral-400">
-              Active: <strong className="text-[#B68A55] uppercase">{formData.aiProvider}</strong>
+            <span className="text-[11px] font-medium text-[var(--text-muted)]">
+              Active: <strong className="text-indigo-600 dark:text-indigo-400 uppercase">{formData.aiProvider}</strong>
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">
+              <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
                 Default Provider
               </label>
               <select
                 value={formData.aiProvider}
                 onChange={(e) => setFormData({ ...formData, aiProvider: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-[#121212] hover:bg-neutral-900 border border-neutral-800 rounded-xl font-medium text-white text-xs focus:border-[#B68A55] transition-colors"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl font-medium text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
               >
-                <option value="ollama" className="bg-[#121212] text-white">Local Container (Ollama On-Premise)</option>
-                <option value="groq" className="bg-[#121212] text-white">Cloud LPU Fast Engine (Groq Cloud)</option>
+                <option value="ollama">Local Container (Ollama On-Premise)</option>
+                <option value="groq">Cloud LPU Engine (Groq Cloud)</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">
+              <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
                 Ollama Engine Host URL
               </label>
               <input
@@ -235,35 +218,27 @@ export default function AdminSettingsPage() {
                 value={formData.ollamaUrl}
                 onChange={(e) => setFormData({ ...formData, ollamaUrl: e.target.value })}
                 placeholder="http://ollama:11434"
-                className="w-full px-3.5 py-2.5 bg-[#121212] hover:bg-neutral-900 border border-neutral-800 rounded-xl font-mono text-white text-xs focus:border-[#B68A55] transition-colors"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl font-mono text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">
+              <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
                 Default Chat / Sales Model Tag
               </label>
               <input
                 type="text"
                 value={formData.chatModel}
                 onChange={(e) => setFormData({ ...formData, chatModel: e.target.value })}
-                placeholder="qwen2.5:3b or granite3-dense:8b"
-                className="w-full px-3.5 py-2.5 bg-[#121212] hover:bg-neutral-900 border border-neutral-800 rounded-xl font-mono text-white text-xs focus:border-[#B68A55] transition-colors"
+                placeholder="qwen2.5:3b"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl font-mono text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
               />
-              <p className="text-[10px] text-neutral-500 mt-1">
-                Installed models on server:{" "}
-                <span className="font-semibold text-neutral-300">
-                  {diagnostics?.ollama?.availableModels?.length > 0
-                    ? diagnostics.ollama.availableModels.join(", ")
-                    : "qwen2.5:3b, granite3-dense:8b"}
-                </span>
-              </p>
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">
+              <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
                 Vector Embedding Model
               </label>
               <input
@@ -271,103 +246,77 @@ export default function AdminSettingsPage() {
                 value={formData.embeddingModel}
                 onChange={(e) => setFormData({ ...formData, embeddingModel: e.target.value })}
                 placeholder="nomic-embed-text"
-                className="w-full px-3.5 py-2.5 bg-[#121212] hover:bg-neutral-900 border border-neutral-800 rounded-xl font-mono text-white text-xs focus:border-[#B68A55] transition-colors"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl font-mono text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
               />
-              <p className="text-[10px] text-neutral-500 mt-1">
-                Standard 768-dimensional RAG document embedder.
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Section 2: PostgreSQL & pgvector Database */}
-        <div className="p-6 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-            <h3 className="font-bold text-sm text-white flex items-center gap-2">
-              <Database className="w-4 h-4 text-[#B68A55]" />
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+            <h3 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+              <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               PostgreSQL & Vector Storage
             </h3>
-            <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
-              Active Docker Network
+            <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/25">
+              Internal Docker Network
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">
+              <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
                 PostgreSQL Host & Port
               </label>
               <input
                 type="text"
                 value={formData.postgresHost}
                 disabled
-                className="w-full px-3.5 py-2.5 bg-[#1a1a1a] border border-neutral-800 rounded-xl font-mono text-neutral-500 text-xs cursor-not-allowed"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-xl font-mono text-[var(--text-muted)] cursor-not-allowed"
               />
-              <p className="text-[10px] text-neutral-500 mt-1">
-                Internal docker service: <code className="text-neutral-400">postgres:5432</code>
-              </p>
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">
+              <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
                 Target Database Name
               </label>
               <input
                 type="text"
                 value={formData.postgresDb}
                 disabled
-                className="w-full px-3.5 py-2.5 bg-[#1a1a1a] border border-neutral-800 rounded-xl font-mono text-neutral-500 text-xs cursor-not-allowed"
+                className="w-full px-3.5 py-2.5 bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-xl font-mono text-[var(--text-muted)] cursor-not-allowed"
               />
-              <p className="text-[10px] text-neutral-500 mt-1">
-                PostgreSQL database: <code className="text-neutral-400">ess_chatbot</code>
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Section 3: CRM / Lead Webhook */}
-        <div className="p-6 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-xs space-y-4">
-          <h3 className="font-bold text-sm text-white flex items-center gap-2 pb-3 border-b border-neutral-800">
-            <Zap className="w-4 h-4 text-[#B68A55]" />
-            Global Lead Integration & Webhook
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] space-y-4">
+          <h3 className="font-bold text-sm text-[var(--text-primary)] flex items-center gap-2 pb-3 border-b border-[var(--border-subtle)]">
+            <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            Global CRM Lead Webhook
           </h3>
 
           <div>
-            <label className="block text-neutral-300 font-semibold mb-1">
-              Global CRM Webhook Destination
+            <label className="block text-[var(--text-secondary)] font-semibold mb-1.5">
+              Global Webhook Destination (HTTPS)
             </label>
             <input
               type="url"
               value={formData.leadWebhookUrl}
               onChange={(e) => setFormData({ ...formData, leadWebhookUrl: e.target.value })}
               placeholder="https://your-crm.com/api/webhooks/leads"
-              className="w-full px-3.5 py-2.5 bg-[#121212] hover:bg-neutral-900 border border-neutral-800 rounded-xl font-mono text-white text-xs focus:border-[#B68A55] transition-colors"
+              className="w-full px-3.5 py-2.5 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl font-mono text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
             />
-            <p className="text-[10px] text-neutral-500 mt-1">
-              Qualified sales leads from all tenant bots will automatically dispatch to this endpoint with HMAC-SHA256 signature.
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">
+              Validated against private-network SSRF rules and signed with HMAC-SHA256.
             </p>
           </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#B68A55] hover:bg-[#a67c48] text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Saving Configuration...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Platform Config
-              </>
-            )}
-          </button>
+        <div className="flex items-center justify-end">
+          <Button type="submit" icon={Save} loading={saving}>
+            Save Platform Config
+          </Button>
         </div>
       </form>
     </div>

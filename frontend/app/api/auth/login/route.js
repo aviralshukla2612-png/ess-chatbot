@@ -1,47 +1,32 @@
 import { NextResponse } from "next/server";
 import { authStore } from "@/lib/db/authStore";
 import { otpStore } from "@/lib/auth/otpStore";
-import { signSessionToken, createSessionCookie } from "@/lib/auth/session";
-
-// Sliding window login attempt rate limiter
-const loginAttempts = new Map();
-
-function checkLoginRateLimit(ip) {
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxAttempts = 15;
-
-  const entry = loginAttempts.get(ip) || { count: 0, resetAt: now + windowMs };
-  if (now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + windowMs });
-    return { allowed: true };
-  }
-
-  if (entry.count >= maxAttempts) {
-    const retrySec = Math.ceil((entry.resetAt - now) / 1000);
-    return { allowed: false, retrySec };
-  }
-
-  entry.count++;
-  loginAttempts.set(ip, entry);
-  return { allowed: true };
-}
+import { signSessionToken } from "@/lib/auth/session";
+import {
+  extractClientIp,
+  enforceRateLimit,
+  applyRateLimitHeaders,
+} from "@/lib/security/rateLimitPolicy";
 
 export async function POST(request) {
   try {
-    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+    const clientIp = extractClientIp(request);
     const body = await request.json().catch(() => ({}));
     const { email, password, phone, verificationToken, mode } = body;
 
-    const rateCheck = checkLoginRateLimit(clientIp);
-    if (!rateCheck.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Too many login attempts. Please try again in ${rateCheck.retrySec} seconds.`,
-        },
-        { status: 429, headers: { "Retry-After": String(rateCheck.retrySec) } }
-      );
+    // 1. Per-IP distributed sliding-window login rate limit
+    const ipCheck = await enforceRateLimit("login_ip", clientIp);
+    if (!ipCheck.ok) {
+      return ipCheck.response;
+    }
+
+    // 2. Per-account brute-force protection
+    const accountKey = (email || phone || "").toString().trim().toLowerCase();
+    if (accountKey) {
+      const accountCheck = await enforceRateLimit("login_account", accountKey);
+      if (!accountCheck.ok) {
+        return accountCheck.response;
+      }
     }
 
     let authResult;
@@ -50,42 +35,58 @@ export async function POST(request) {
     if (phone && (verificationToken || mode === "otp")) {
       const cleanPhone = otpStore.normalizePhone(phone);
       if (!cleanPhone) {
-        return NextResponse.json(
-          { success: false, error: "Invalid mobile number. Please check the number entered." },
-          { status: 400 }
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Invalid mobile number. Please check the number entered." },
+            { status: 400 }
+          ),
+          ipCheck.result
         );
       }
 
       // Verify cryptographic token from OTP verification
       const isValid = otpStore.verifyVerificationToken(cleanPhone, verificationToken, "login");
       if (!isValid) {
-        return NextResponse.json(
-          { success: false, error: "Invalid or expired OTP session. Please request a new verification code." },
-          { status: 400 }
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Invalid or expired OTP session. Please request a new verification code." },
+            { status: 400 }
+          ),
+          ipCheck.result
         );
       }
 
       authResult = await authStore.loginWithPhone({ phone: cleanPhone });
       if (!authResult.userFound) {
-        return NextResponse.json(
-          {
-            success: false,
-            userFound: false,
-            phone: cleanPhone,
-            error: "No account found with this mobile number. Please register your account.",
-          },
-          { status: 404 }
+        // Keep verificationToken unconsumed so immediate registration handoff can complete once
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            {
+              success: false,
+              userFound: false,
+              phone: cleanPhone,
+              error: "No account found with this mobile number. Please register your account.",
+            },
+            { status: 404 }
+          ),
+          ipCheck.result
         );
       }
+
+      // Consume token once login succeeds to prevent replay
+      otpStore.consumeVerificationToken(verificationToken);
     } else if (phone && password) {
       // Mobile Phone & Password Login Flow
       authResult = await authStore.loginWithPhoneAndPassword({ phone, password });
     } else {
       // Standard Email & Password Flow
       if (!email || !password) {
-        return NextResponse.json(
-          { success: false, error: "Email and password are required" },
-          { status: 400 }
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Email and password are required" },
+            { status: 400 }
+          ),
+          ipCheck.result
         );
       }
 
@@ -96,6 +97,7 @@ export async function POST(request) {
 
     const token = signSessionToken({
       userId: user.id,
+      name: user.name,
       email: user.email,
       role: user.role,
       organizationId,
@@ -113,6 +115,7 @@ export async function POST(request) {
 
     const isHttps =
       process.env.COOKIE_SECURE === "true" ||
+      process.env.NODE_ENV === "production" ||
       request.headers.get("x-forwarded-proto") === "https";
 
     response.cookies.set({
@@ -125,10 +128,14 @@ export async function POST(request) {
       secure: isHttps,
     });
 
-    return response;
+    return applyRateLimitHeaders(response, ipCheck.result);
   } catch (err) {
+    const safeMsg =
+      err?.message === "Account has been suspended. Please contact support."
+        ? err.message
+        : "Invalid email or password";
     return NextResponse.json(
-      { success: false, error: err.message || "Authentication failed" },
+      { success: false, error: safeMsg },
       { status: 401 }
     );
   }

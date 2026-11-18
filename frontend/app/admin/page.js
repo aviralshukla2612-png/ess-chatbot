@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Building2,
   Users,
@@ -25,12 +25,15 @@ import {
 import Link from "next/link";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import { analyticsApi } from "@/lib/api/analytics";
-import { botsApi } from "@/lib/api/bots";
+import { getChartTheme } from "@/lib/design/tokens";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
 
 export default function AdminOverviewPage() {
   const [timeRange, setTimeRange] = useState("Last 30 days");
   const [metrics, setMetrics] = useState(null);
+  const [isDark, setIsDark] = useState(false);
   const [statsData, setStatsData] = useState({
     organizationsCount: 1,
     usersCount: 1,
@@ -41,19 +44,29 @@ export default function AdminOverviewPage() {
     uptime: "99.9%",
     tier: "Enterprise",
   });
-  const [topOrgs, setTopOrgs] = useState([
-    { name: "Emperor Smart Solutions", bots: 1, conversations: 0, users: 1 }
-  ]);
+  const [topOrgs, setTopOrgs] = useState([]);
   const [growthData, setGrowthData] = useState([
     { date: "Day 1", orgs: 1, users: 1, bots: 1 },
     { date: "Today", orgs: 1, users: 1, bots: 1 },
   ]);
 
+  useEffect(() => {
+    const checkDark = () =>
+      setIsDark(document.documentElement.classList.contains("dark"));
+    checkDark();
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
   const loadData = async () => {
     try {
       const [dashMetrics, statsRes] = await Promise.all([
         analyticsApi.getDashboardMetrics(),
-        fetch("/api/admin/stats").then((r) => r.ok ? r.json() : null),
+        fetch("/api/admin/stats").then((r) => (r.ok ? r.json() : null)),
       ]);
       setMetrics(dashMetrics);
       if (statsRes?.success) {
@@ -67,256 +80,190 @@ export default function AdminOverviewPage() {
   };
 
   const { isLive, lastSync, triggerSync } = useRealtimeSync(loadData, {
-    pollingInterval: 4000,
+    pollingInterval: 6000,
   });
 
+  const chartTheme = getChartTheme(isDark);
+
   return (
-    <div className="space-y-6 pb-12 animate-fade-in font-sans">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
-            Platform Overview & Global Monitor
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-0.5">
-            Real-time multi-tenant platform health and analytics.
-          </p>
-        </div>
+    <div className="space-y-6 pb-12 animate-fade-in">
+      <PageHeader
+        badge="Super Admin Control Plane"
+        title="Platform Overview & Global Monitor"
+        description="Real-time multi-tenant workspace health, global AI throughput, and top tenant activity."
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <RealtimeBadge isLive={isLive} lastSynced={lastSync} onRefresh={triggerSync} />
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
+            <div className="relative">
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
+                aria-label="Select platform time window"
+                className="appearance-none pl-3.5 pr-8 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-lg text-xs font-semibold text-[var(--text-primary)] outline-hidden shadow-2xs cursor-pointer"
+              >
+                <option value="Last 7 days">Last 7 days</option>
+                <option value="Last 30 days">Last 30 days</option>
+                <option value="Last 90 days">Last 90 days</option>
+                <option value="All Time">All Time</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+        }
+      />
 
-          {/* Date Filter Dropdown */}
-          <div className="relative">
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
-              className="appearance-none pl-3.5 pr-8 py-2 bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-[#141414] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl text-xs font-semibold text-[#252525] dark:text-neutral-200 outline-hidden shadow-xs cursor-pointer transition-colors"
-            >
-              <option value="Last 7 days" className="bg-white dark:bg-[#0D0D0D] text-[#252525] dark:text-white">Last 7 days</option>
-              <option value="Last 30 days" className="bg-white dark:bg-[#0D0D0D] text-[#252525] dark:text-white">Last 30 days</option>
-              <option value="Last 90 days" className="bg-white dark:bg-[#0D0D0D] text-[#252525] dark:text-white">Last 90 days</option>
-              <option value="All Time" className="bg-white dark:bg-[#0D0D0D] text-[#252525] dark:text-white">All Time</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-        </div>
-      </div>
-
-      {/* 8 Platform KPI Cards (2 Rows of 4) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Row 1, Card 1: Organizations */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {statsData.organizationsCount}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Organizations
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 dark:bg-indigo-950/40 border border-indigo-500/20 dark:border-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-            <Building2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 1, Card 2: Users */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {statsData.usersCount}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Users
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-sky-500/10 dark:bg-sky-950/40 border border-sky-500/20 dark:border-sky-900/50 flex items-center justify-center text-sky-600 dark:text-sky-400">
-            <Users className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 1, Card 3: Bots */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {statsData.botsCount ?? metrics?.activeBotsCount ?? 1}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Bots
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-teal-500/10 dark:bg-teal-950/40 border border-teal-500/20 dark:border-teal-900/50 flex items-center justify-center text-teal-600 dark:text-teal-400">
-            <Bot className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 1, Card 4: Conversations */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {metrics?.totalConversations ?? 0}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Conversations
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <MessageSquare className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 2, Card 5: Questions */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {metrics?.totalQuestions ?? 0}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Questions
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-violet-500/10 dark:bg-violet-950/40 border border-violet-500/20 dark:border-violet-900/50 flex items-center justify-center text-violet-600 dark:text-violet-400">
-            <HelpCircle className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 2, Card 6: Leads */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {metrics?.leadsGenerated ?? 0}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Leads
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/20 dark:border-amber-900/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <Target className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 2, Card 7: Platform Uptime */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              99.9%
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Platform Uptime
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-cyan-500/10 dark:bg-cyan-950/40 border border-cyan-500/20 dark:border-cyan-900/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        {/* Row 2, Card 8: Monthly Plan */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              Enterprise
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Active Tier
-            </div>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-[#B68A55]/15 border border-[#B68A55]/30 flex items-center justify-center text-[#B68A55]">
-            <CreditCard className="w-5 h-5" />
-          </div>
-        </div>
+      {/* 8 Platform KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          title="Organizations"
+          value={statsData.organizationsCount}
+          icon={Building2}
+          colorScheme="indigo"
+        />
+        <StatCard
+          title="Registered Users"
+          value={statsData.usersCount}
+          icon={Users}
+          colorScheme="sky"
+        />
+        <StatCard
+          title="Deployed Bots"
+          value={statsData.botsCount ?? metrics?.activeBotsCount ?? 0}
+          icon={Bot}
+          colorScheme="emerald"
+        />
+        <StatCard
+          title="Conversations"
+          value={statsData.conversationsCount || metrics?.totalConversations || 0}
+          icon={MessageSquare}
+          colorScheme="indigo"
+        />
+        <StatCard
+          title="Visitor Questions"
+          value={statsData.questionsCount || metrics?.totalQuestions || 0}
+          icon={HelpCircle}
+          colorScheme="violet"
+        />
+        <StatCard
+          title="Generated Leads"
+          value={statsData.leadsCount || metrics?.leadsGenerated || 0}
+          icon={Target}
+          colorScheme="amber"
+        />
+        <StatCard
+          title="Platform Uptime"
+          value={statsData.uptime || "99.9%"}
+          icon={CheckCircle2}
+          colorScheme="emerald"
+        />
+        <StatCard
+          title="Control Tier"
+          value={statsData.tier || "Enterprise"}
+          icon={CreditCard}
+          colorScheme="slate"
+        />
       </div>
 
       {/* Bottom Grid: Platform Growth & Top Organizations */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Platform Growth (7 cols) */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs space-y-4">
+        <div className="lg:col-span-7 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-5 shadow-[var(--shadow-xs)] space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <h3 className="text-sm font-bold text-[#252525] dark:text-white">
-              Platform Growth
-            </h3>
+            <div>
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                Multi-Tenant Platform Growth
+              </h3>
+              <p className="text-xs text-[var(--text-muted)]">
+                Workspaces, users, and active chatbots over time
+              </p>
+            </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                <span className="text-slate-600 dark:text-neutral-300 font-medium">Organizations</span>
+                <span className="text-[var(--text-secondary)] font-medium">Orgs</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-                <span className="text-slate-600 dark:text-neutral-300 font-medium">Users</span>
+                <span className="text-[var(--text-secondary)] font-medium">Users</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-                <span className="text-slate-600 dark:text-neutral-300 font-medium">Bots</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span className="text-[var(--text-secondary)] font-medium">Bots</span>
               </div>
             </div>
           </div>
 
           <div className="h-68 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart
+                data={growthData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
                 <defs>
-                  <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
+                  <linearGradient id="adminUsers" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartTheme.secondary} stopOpacity={0.22} />
+                    <stop offset="95%" stopColor={chartTheme.secondary} stopOpacity={0.0} />
                   </linearGradient>
-                  <linearGradient id="colorBots" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0.0} />
+                  <linearGradient id="adminBots" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartTheme.tertiary} stopOpacity={0.22} />
+                    <stop offset="95%" stopColor={chartTheme.tertiary} stopOpacity={0.0} />
                   </linearGradient>
-                  <linearGradient id="colorOrgs" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+                  <linearGradient id="adminOrgs" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartTheme.primary} stopOpacity={0.22} />
+                    <stop offset="95%" stopColor={chartTheme.primary} stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-neutral-200 dark:text-neutral-800" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke={chartTheme.grid}
+                />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  className="text-neutral-500 dark:text-neutral-400"
-                  axisLine={{ stroke: "currentColor" }}
+                  tick={{ fontSize: 11, fill: chartTheme.axisText }}
+                  axisLine={{ stroke: chartTheme.grid }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11 }}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  tick={{ fontSize: 11, fill: chartTheme.axisText }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#18181b",
-                    borderColor: "#3f3f46",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                    backgroundColor: chartTheme.tooltipBg,
+                    borderColor: chartTheme.tooltipBorder,
+                    borderRadius: "10px",
                     fontSize: "12px",
-                    color: "#ffffff",
+                    color: chartTheme.tooltipText,
                   }}
-                  itemStyle={{ color: "#e5e5e5" }}
+                  itemStyle={{ color: chartTheme.tooltipText }}
                 />
                 <Area
                   type="monotone"
                   dataKey="users"
-                  stroke="#38bdf8"
+                  stroke={chartTheme.secondary}
                   strokeWidth={2}
                   fillOpacity={1}
-                  fill="url(#colorUsers)"
+                  fill="url(#adminUsers)"
                   name="Users"
                 />
                 <Area
                   type="monotone"
                   dataKey="bots"
-                  stroke="#2dd4bf"
+                  stroke={chartTheme.tertiary}
                   strokeWidth={2}
                   fillOpacity={1}
-                  fill="url(#colorBots)"
+                  fill="url(#adminBots)"
                   name="Bots"
                 />
                 <Area
                   type="monotone"
                   dataKey="orgs"
-                  stroke="#6366f1"
+                  stroke={chartTheme.primary}
                   strokeWidth={2.5}
                   fillOpacity={1}
-                  fill="url(#colorOrgs)"
+                  fill="url(#adminOrgs)"
                   name="Organizations"
                 />
               </AreaChart>
@@ -324,49 +271,59 @@ export default function AdminOverviewPage() {
           </div>
         </div>
 
-        {/* Right: Top Organizations (5 cols) */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs space-y-4 flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-5 shadow-[var(--shadow-xs)] space-y-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-[#EFE7DC] dark:border-neutral-800">
-              <h3 className="text-sm font-bold text-[#252525] dark:text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">
                 Top Organizations
               </h3>
               <Link
                 href="/admin/organizations"
-                className="text-xs font-semibold text-[#B68A55] hover:text-[#966E3A] dark:hover:text-[#d4af37] flex items-center gap-1 transition-colors"
+                className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
               >
                 <span>View All</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto mt-2">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-500 dark:text-neutral-400 font-semibold text-[11px] border-b border-[#EFE7DC] dark:border-neutral-800">
+                  <tr className="text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wider border-b border-[var(--border-subtle)]">
                     <th className="py-2.5 pr-2">Organization</th>
                     <th className="py-2.5 px-2 text-center">Bots</th>
-                    <th className="py-2.5 px-2 text-center">Conversations</th>
+                    <th className="py-2.5 px-2 text-center">Chats</th>
                     <th className="py-2.5 pl-2 text-right">Users</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#EFE7DC] dark:divide-neutral-800">
-                  {topOrgs.map((org) => (
-                    <tr key={org.name} className="hover:bg-[#FAF9F6] dark:hover:bg-neutral-900/60 transition-colors">
-                      <td className="py-3 pr-2 font-semibold text-[#252525] dark:text-white">
-                        {org.name}
-                      </td>
-                      <td className="py-3 px-2 text-center text-slate-600 dark:text-neutral-300 font-medium">
-                        {org.bots}
-                      </td>
-                      <td className="py-3 px-2 text-center text-slate-600 dark:text-neutral-300 font-medium">
-                        {metrics?.totalConversations ?? org.conversations ?? 0}
-                      </td>
-                      <td className="py-3 pl-2 text-right font-medium text-slate-600 dark:text-neutral-300">
-                        {org.users}
+                <tbody className="divide-y divide-[var(--border-subtle)]">
+                  {topOrgs.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-[var(--text-muted)]">
+                        No organizations recorded yet.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    topOrgs.map((org, idx) => (
+                      <tr
+                        key={org.id || `${org.name}-${idx}`}
+                        className="hover:bg-[var(--bg-subtle)]/40 transition-colors"
+                      >
+                        <td className="py-3 pr-2 font-semibold text-[var(--text-primary)] truncate max-w-[160px]">
+                          {org.name}
+                        </td>
+                        <td className="py-3 px-2 text-center text-[var(--text-secondary)] font-mono tabular-nums">
+                          {org.bots ?? org.botsCount ?? 0}
+                        </td>
+                        <td className="py-3 px-2 text-center text-[var(--text-secondary)] font-mono tabular-nums">
+                          {org.conversations ?? org.conversationsCount ?? 0}
+                        </td>
+                        <td className="py-3 pl-2 text-right font-mono text-[var(--text-secondary)] tabular-nums">
+                          {org.users ?? org.usersCount ?? 1}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

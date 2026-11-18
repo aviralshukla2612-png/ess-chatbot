@@ -121,6 +121,7 @@ const DEFAULT_BOTS = [
 ];
 
 let memoryBotsCache = null;
+let lastBotsMtimeMs = 0;
 
 function loadBotsFromDisk() {
   try {
@@ -131,12 +132,20 @@ function loadBotsFromDisk() {
       }
       fs.writeFileSync(DATA_FILE, JSON.stringify(DEFAULT_BOTS, null, 2), "utf8");
       memoryBotsCache = [...DEFAULT_BOTS];
+      try {
+        lastBotsMtimeMs = fs.statSync(DATA_FILE).mtimeMs;
+      } catch {}
       return memoryBotsCache;
     }
+
+    const stat = fs.statSync(DATA_FILE);
+    if (memoryBotsCache && stat.mtimeMs === lastBotsMtimeMs) {
+      return memoryBotsCache;
+    }
+
     const raw = fs.readFileSync(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      // Filter out legacy dummy bot 'bot_aa' / 'aa' and enforce single official bot
       const sanitized = parsed.filter((b) => b.id !== "bot_aa" && b.name !== "aa");
       if (sanitized.length === 0) {
         sanitized.push(...DEFAULT_BOTS);
@@ -144,16 +153,23 @@ function loadBotsFromDisk() {
       memoryBotsCache = sanitized.map((b) => ({
         ...b,
         organizationId: b.organizationId || DEFAULT_ORG_ID,
-        primaryColor: (!b.primaryColor || b.primaryColor === "#4f46e5" || b.primaryColor === "#6366f1") ? "#B68A55" : b.primaryColor,
+        primaryColor: b.primaryColor || "#4F46E5",
       }));
-      // If disk had dummy bot_aa, persist the sanitized list
       if (sanitized.length !== parsed.length) {
         fs.writeFileSync(DATA_FILE, JSON.stringify(memoryBotsCache, null, 2), "utf8");
+      }
+      try {
+        lastBotsMtimeMs = fs.statSync(DATA_FILE).mtimeMs;
+      } catch {
+        lastBotsMtimeMs = stat.mtimeMs;
       }
       return memoryBotsCache;
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), "utf8");
     memoryBotsCache = [];
+    try {
+      lastBotsMtimeMs = fs.statSync(DATA_FILE).mtimeMs;
+    } catch {}
     return memoryBotsCache;
   } catch (err) {
     console.error("Error reading bots store:", err);
@@ -169,6 +185,9 @@ function saveBotsToDisk(bots) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify(bots, null, 2), "utf8");
+    try {
+      lastBotsMtimeMs = fs.statSync(DATA_FILE).mtimeMs;
+    } catch {}
   } catch (err) {
     console.error("Error saving bots store:", err);
   }
@@ -376,7 +395,7 @@ export const botsStore = {
         year: "numeric",
       }),
       lastActive: "Just now",
-      primaryColor: "#B68A55",
+      primaryColor: "#4F46E5",
       welcomeMessage: `Hello! I am ${botData.name || "AI Assistant"}. How can I help you today?`,
       launcherPosition: "bottom-right",
       launcherAnimation: "none",
@@ -386,6 +405,11 @@ export const botsStore = {
       company: botData.company || null,
       websiteUrl: botData.websiteUrl || null,
       phoneNumber: botData.phoneNumber || botData.phone || null,
+      quickReplies: Array.isArray(botData.quickReplies)
+        ? botData.quickReplies
+        : Array.isArray(botData.starterQuestions)
+        ? botData.starterQuestions
+        : undefined,
       ...botData,
     };
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 
 export async function POST(request, { params }) {
@@ -10,26 +10,19 @@ export async function POST(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
     const isOwnerOrAdmin =
       isSuperAdmin ||
       principal.orgRole === ROLES.ORG_OWNER ||
-      principal.orgRole === ROLES.ORG_ADMIN ||
-      principal.platformRole === "Workspace Owner" ||
-      principal.platformRole === "ORG_ADMIN" ||
-      principal.email?.toLowerCase().includes("aviral");
+      principal.orgRole === ROLES.ORG_ADMIN;
 
-    const targetOrgId = (isSuperAdmin || isOwnerOrAdmin) ? null : principal.organizationId;
+    const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const conv = conversationsStore.getConversation(id, targetOrgId);
     if (!conv) {
       return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 });
     }
 
-    // Check permission: assigned agent or admin/owner can resume
     if (conv.assignedToId && conv.assignedToId !== principal.userId && !isOwnerOrAdmin) {
       return NextResponse.json(
         { success: false, error: "Forbidden: You are not authorized to resume the bot for this conversation." },
@@ -54,4 +47,3 @@ export async function POST(request, { params }) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
-

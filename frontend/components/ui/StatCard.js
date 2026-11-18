@@ -10,40 +10,61 @@ export default function StatCard({
   description,
   icon: Icon,
   colorScheme = "indigo",
+  className = "",
 }) {
   const colorMap = {
-    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-900/50",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/50",
-    amber: "bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/50",
-    rose: "bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/50",
-    violet: "bg-violet-50 text-violet-600 border-violet-100 dark:bg-violet-950/40 dark:text-violet-400 dark:border-violet-900/50",
-    blue: "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/50",
+    indigo:
+      "bg-indigo-50 text-indigo-600 border-indigo-200/70 dark:bg-indigo-500/12 dark:text-indigo-400 dark:border-indigo-500/25",
+    emerald:
+      "bg-emerald-50 text-emerald-600 border-emerald-200/70 dark:bg-emerald-500/12 dark:text-emerald-400 dark:border-emerald-500/25",
+    amber:
+      "bg-amber-50 text-amber-600 border-amber-200/70 dark:bg-amber-500/12 dark:text-amber-400 dark:border-amber-500/25",
+    rose:
+      "bg-rose-50 text-rose-600 border-rose-200/70 dark:bg-rose-500/12 dark:text-rose-400 dark:border-rose-500/25",
+    sky:
+      "bg-sky-50 text-sky-600 border-sky-200/70 dark:bg-sky-500/12 dark:text-sky-400 dark:border-sky-500/25",
+    blue:
+      "bg-sky-50 text-sky-600 border-sky-200/70 dark:bg-sky-500/12 dark:text-sky-400 dark:border-sky-500/25",
+    violet:
+      "bg-indigo-50 text-indigo-600 border-indigo-200/70 dark:bg-indigo-500/12 dark:text-indigo-400 dark:border-indigo-500/25",
+    slate:
+      "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
   };
 
   return (
-    <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200/80 dark:border-neutral-800 shadow-xs hover:shadow-md transition-all duration-200">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+    <div
+      className={cn(
+        "bg-[var(--bg-surface)] rounded-xl p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] hover:border-[var(--border-strong)] transition-all duration-150",
+        className
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
           {title}
         </span>
         {Icon && (
-          <div className={cn("p-2.5 rounded-xl border", colorMap[colorScheme])}>
-            <Icon className="w-5 h-5" />
+          <div
+            className={cn(
+              "w-9 h-9 rounded-lg border flex items-center justify-center shrink-0",
+              colorMap[colorScheme] || colorMap.indigo
+            )}
+          >
+            <Icon className="w-4 h-4" />
           </div>
         )}
       </div>
 
-      <div className="mt-4 flex items-baseline justify-between">
-        <div className="text-2xl lg:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
+      <div className="mt-3 flex items-baseline justify-between gap-2">
+        <div className="text-2xl sm:text-[28px] font-bold tracking-tight tabular-nums text-[var(--text-primary)]">
           {value}
         </div>
         {change && (
-          <div
+          <span
             className={cn(
-              "flex items-center text-xs font-semibold px-2 py-0.5 rounded-full",
+              "inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border",
               isPositive
-                ? "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/50 dark:text-emerald-400"
-                : "text-rose-700 bg-rose-50 dark:bg-rose-950/50 dark:text-rose-400"
+                ? "text-emerald-700 bg-emerald-50 border-emerald-200/80 dark:bg-emerald-500/12 dark:text-emerald-400 dark:border-emerald-500/25"
+                : "text-rose-700 bg-rose-50 border-rose-200/80 dark:bg-rose-500/12 dark:text-rose-400 dark:border-rose-500/25"
             )}
           >
             {isPositive ? (
@@ -52,12 +73,12 @@ export default function StatCard({
               <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
             )}
             {change}
-          </div>
+          </span>
         )}
       </div>
 
       {description && (
-        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-xs text-[var(--text-muted)] leading-relaxed">
           {description}
         </p>
       )}

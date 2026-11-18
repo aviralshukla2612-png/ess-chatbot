@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { conversationsStore } from "@/lib/db/conversationsStore";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, requireOrgRole, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
 
 export async function OPTIONS() {
   const res = new NextResponse(null, { status: 204 });
@@ -17,19 +17,8 @@ export async function GET(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
-    const isOwnerOrAdmin =
-      isSuperAdmin ||
-      principal.orgRole === ROLES.ORG_OWNER ||
-      principal.orgRole === ROLES.ORG_ADMIN ||
-      principal.platformRole === "Workspace Owner" ||
-      principal.platformRole === "ORG_ADMIN" ||
-      principal.email?.toLowerCase().includes("aviral");
-
-    const targetOrgId = (isSuperAdmin || isOwnerOrAdmin) ? null : principal.organizationId;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const conversation = conversationsStore.getConversation(id, targetOrgId);
     if (!conversation) {
@@ -50,27 +39,24 @@ export async function PUT(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
-    const isOwnerOrAdmin =
-      isSuperAdmin ||
-      principal.orgRole === ROLES.ORG_OWNER ||
-      principal.orgRole === ROLES.ORG_ADMIN ||
-      principal.platformRole === "Workspace Owner" ||
-      principal.platformRole === "ORG_ADMIN" ||
-      principal.email?.toLowerCase().includes("aviral");
-
-    const targetOrgId = (isSuperAdmin || isOwnerOrAdmin) ? null : principal.organizationId;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const existing = conversationsStore.getConversation(id, targetOrgId);
     if (!existing) {
       return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 });
     }
 
-    const body = await request.json();
-    const updated = conversationsStore.updateConversation(id, body);
+    const body = await request.json().catch(() => ({}));
+    // Prevent mass assignment over id / organizationId / botId
+    const safeUpdates = {};
+    for (const field of ["visitorName", "visitorEmail", "visitorPhone", "status", "handlingMode", "isLead", "leadScore"]) {
+      if (body[field] !== undefined) {
+        safeUpdates[field] = body[field];
+      }
+    }
+
+    const updated = conversationsStore.updateConversation(id, safeUpdates);
     return NextResponse.json({ success: true, conversation: updated });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -79,25 +65,14 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
     if (!auth.ok) return auth.response;
 
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
-    const isOwnerOrAdmin =
-      isSuperAdmin ||
-      principal.orgRole === ROLES.ORG_OWNER ||
-      principal.orgRole === ROLES.ORG_ADMIN ||
-      principal.platformRole === "Workspace Owner" ||
-      principal.platformRole === "ORG_ADMIN" ||
-      principal.email?.toLowerCase().includes("aviral");
-
-    const targetOrgId = (isSuperAdmin || isOwnerOrAdmin) ? null : principal.organizationId;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const existing = conversationsStore.getConversation(id, targetOrgId);
     if (!existing) {

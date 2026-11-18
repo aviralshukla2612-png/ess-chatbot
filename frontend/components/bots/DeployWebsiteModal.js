@@ -1,31 +1,51 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Globe, ExternalLink, Code2, Check, ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Globe, Code2, Copy, Check, ShieldCheck, ExternalLink } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { botsApi } from "@/lib/api/bots";
 
 export default function DeployWebsiteModal({ isOpen, onClose, bot, onBotUpdated }) {
   const [url, setUrl] = useState("");
+  const [allowedDomains, setAllowedDomains] = useState("");
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (bot) {
       setUrl(bot.websiteUrl || "");
+      const domains = Array.isArray(bot.allowedDomains)
+        ? bot.allowedDomains.join(", ")
+        : bot.allowedDomains || "";
+      setAllowedDomains(domains);
       setError("");
+      setCopied(false);
     }
   }, [bot, isOpen]);
 
   if (!bot) return null;
 
-  const handleSaveAndOpen = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://emperornexus.com";
+  const embedSnippet = `<script src="${origin}/widget.js" data-bot-id="${bot.id}" defer></script>`;
+
+  const handleCopySnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(embedSnippet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const handleSave = async (e) => {
+    e?.preventDefault();
     setError("");
 
     let cleanUrl = (url || "").trim();
     if (!cleanUrl) {
-      setError("Please enter a valid website URL (e.g., https://yourcompany.com)");
+      setError("Please enter a valid website URL (e.g. https://yourcompany.com).");
       return;
     }
 
@@ -33,21 +53,33 @@ export default function DeployWebsiteModal({ isOpen, onClose, bot, onBotUpdated 
       cleanUrl = `https://${cleanUrl}`;
     }
 
+    let parsed;
     try {
-      new URL(cleanUrl);
-    } catch (err) {
-      setError("Please enter a valid URL including domain (e.g. https://yourwebsite.com)");
+      parsed = new URL(cleanUrl);
+    } catch {
+      setError("Please enter a valid URL including domain (e.g. https://yourwebsite.com).");
       return;
+    }
+
+    const parsedDomains = allowedDomains
+      .split(",")
+      .map((d) => d.trim())
+      .filter(Boolean);
+    if (parsedDomains.length === 0 && parsed.hostname) {
+      parsedDomains.push(parsed.hostname);
     }
 
     setSaving(true);
     try {
-      await botsApi.updateBot(bot.id, { websiteUrl: cleanUrl });
-      if (onBotUpdated) onBotUpdated({ ...bot, websiteUrl: cleanUrl });
+      const updated = await botsApi.updateBot(bot.id, {
+        websiteUrl: cleanUrl,
+        allowedDomains: parsedDomains,
+      });
+      onBotUpdated?.(updated || { ...bot, websiteUrl: cleanUrl, allowedDomains: parsedDomains });
       window.open(cleanUrl, "_blank", "noopener,noreferrer");
-      onClose();
+      onClose?.();
     } catch (err) {
-      setError("Failed to save website URL. Please try again.");
+      setError(err.message || "Failed to save deployment settings.");
     } finally {
       setSaving(false);
     }
@@ -57,17 +89,38 @@ export default function DeployWebsiteModal({ isOpen, onClose, bot, onBotUpdated 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Deploy Chatbot to Live Website 🚀"
-      description={`Connect ${bot.name || "your chatbot"} to your official website domain.`}
-      maxWidth="max-w-lg"
+      title="Deploy Chatbot Widget"
+      description={`Configure domain authorization and copy the embed script for ${bot.name || "your chatbot"}.`}
+      maxWidth="max-w-xl"
     >
-      <form onSubmit={handleSaveAndOpen} className="space-y-4">
+      <form onSubmit={handleSave} className="space-y-4 text-xs">
+        {/* Step 1: Embed Script */}
+        <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)]/70 border border-[var(--border-subtle)] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-[var(--text-primary)]">
+              1. Paste before <code className="font-mono">&lt;/body&gt;</code> on your website
+            </span>
+            <button
+              type="button"
+              onClick={handleCopySnippet}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium cursor-pointer"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied" : "Copy Script"}</span>
+            </button>
+          </div>
+          <pre className="p-2.5 rounded-lg bg-slate-950 text-slate-100 font-mono text-[11px] overflow-x-auto">
+            {embedSnippet}
+          </pre>
+        </div>
+
+        {/* Step 2: Target Website URL */}
         <div>
-          <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5">
-            Your Live Website URL
+          <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+            2. Live Website URL
           </label>
           <div className="relative">
-            <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <input
               type="text"
               required
@@ -77,36 +130,55 @@ export default function DeployWebsiteModal({ isOpen, onClose, bot, onBotUpdated 
                 if (error) setError("");
               }}
               placeholder="https://yourwebsite.com"
-              className="w-full pl-10 pr-3.5 py-2.5 text-xs rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-800/40 text-neutral-900 dark:text-white outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              className="w-full h-9 pl-9 pr-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--focus-ring)]"
             />
           </div>
-          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
-            Enter your company or client's website URL. Once saved, clicking <strong>Live Website Deploy</strong> will open this URL with your chatbot active.
+        </div>
+
+        {/* Step 3: Domain Lock Whitelist */}
+        <div>
+          <label className="flex items-center gap-1.5 font-medium text-[var(--text-secondary)] mb-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Authorized Hostnames (CORS & Origin Lock)</span>
+          </label>
+          <input
+            type="text"
+            value={allowedDomains}
+            onChange={(e) => setAllowedDomains(e.target.value)}
+            placeholder="yourwebsite.com, app.yourwebsite.com"
+            className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)] font-mono focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--focus-ring)]"
+          />
+          <p className="text-[11px] text-[var(--text-muted)] mt-1">
+            Comma-separated hostnames permitted to load this widget. Leave blank to auto-authorize the domain above.
           </p>
         </div>
 
         {error && (
-          <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
+          <div
+            role="alert"
+            className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-500/12 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs"
+          >
             {error}
           </div>
         )}
 
-        <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5 justify-end border-t border-neutral-100 dark:border-neutral-800">
-          <a
+        <div className="pt-3 flex flex-col sm:flex-row items-center gap-2.5 justify-end border-t border-[var(--border-subtle)]">
+          <Link
             href={`/bots/${bot.id}/deploy`}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            onClick={onClose}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg text-xs font-medium border border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] transition-colors"
           >
-            <Code2 className="w-3.5 h-3.5 text-indigo-500" />
-            Get Embed Code
-          </a>
+            <Code2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+            <span>Installation Guide & Verification</span>
+          </Link>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
           >
-            <Globe className="w-3.5 h-3.5" />
-            <span>{saving ? "Saving..." : "Save & Open Website 🚀"}</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>{saving ? "Saving..." : "Save & Open Site"}</span>
           </button>
         </div>
       </form>

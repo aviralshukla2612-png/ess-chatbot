@@ -129,10 +129,12 @@ export async function validateUrlForSSRF(rawUrl, options = {}) {
     return { valid: false, error: `Protocol "${parsed.protocol}" is not allowed. Only HTTP and HTTPS are permitted.` };
   }
 
-  const hostname = parsed.hostname.toLowerCase().trim();
+  const rawHostname = parsed.hostname.toLowerCase().trim();
+  // Strip IPv6 brackets (e.g. "[::1]" -> "::1") so net.isIPv6 & BLOCKED_HOSTNAMES always match
+  const hostname = rawHostname.replace(/^\[|\]$/g, "");
 
   // Allow localhost during local development/testing
-  if (allowLocalhost && (hostname === "localhost" || hostname === "127.0.0.1")) {
+  if (allowLocalhost && (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1")) {
     const normalized = `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/+$/, "") || "/"}`;
     return { valid: true, normalizedUrl: normalized, hostname: parsed.hostname };
   }
@@ -180,4 +182,12 @@ export async function validateUrlForSSRF(rawUrl, options = {}) {
   // URL is safe, normalize to lowercase origin + pathname
   const normalized = `${parsed.protocol}//${parsed.host}${parsed.pathname.replace(/\/+$/, "") || "/"}`;
   return { valid: true, normalizedUrl: normalized, hostname: parsed.hostname };
+}
+
+/**
+ * Boolean helper wrapper for crawlerQueue compatibility.
+ */
+export async function isSafePublicWebUrl(rawUrl, options = {}) {
+  const res = await validateUrlForSSRF(rawUrl, options);
+  return res.valid;
 }

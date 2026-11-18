@@ -1,6 +1,9 @@
 import { botsStore } from "@/lib/db/botsStore";
 import { conversationsStore } from "@/lib/db/conversationsStore";
+import { visitorsStore } from "@/lib/db/visitorsStore";
 import { sseBroker } from "@/lib/db/sseBroker";
+import { checkDomainAuthorization } from "@/lib/security/domainGuard";
+import { extractClientIp, enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 function getCorsOrigin(request) {
   if (!request) return "*";
@@ -12,7 +15,7 @@ function getCorsOrigin(request) {
       const u = new URL(referer);
       return u.origin;
     }
-  } catch (e) {}
+  } catch {}
   return "*";
 }
 
@@ -29,6 +32,18 @@ function corsHeaders(request) {
   return headers;
 }
 
+function extractVisitorToken(request, botId) {
+  const cleanId = (botId || "default").replace(/[^a-zA-Z0-9_]/g, "_");
+  const cookieVal = request.cookies?.get?.(`ess_visitor_${cleanId}`)?.value;
+  if (cookieVal && cookieVal.length >= 16) return cookieVal.trim();
+  const headerVal = request.headers.get("x-visitor-token");
+  if (headerVal && headerVal.length >= 16) return headerVal.trim();
+  const { searchParams } = new URL(request.url);
+  const queryToken = searchParams.get("visitorToken");
+  if (queryToken && queryToken.length >= 16) return queryToken.trim();
+  return null;
+}
+
 export async function OPTIONS(request) {
   const headers = corsHeaders(request);
   return new Response(null, { status: 204, headers });
@@ -36,6 +51,11 @@ export async function OPTIONS(request) {
 
 export async function GET(request, { params }) {
   const { botId } = await params;
+
+  const clientIp = extractClientIp(request);
+  const ipCheck = await enforceRateLimit("public_session_ip", `events:${clientIp}:${botId}`);
+  if (!ipCheck.ok) return ipCheck.response;
+
   const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
   const bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
   if (!bot) {
@@ -45,17 +65,53 @@ export async function GET(request, { params }) {
     });
   }
 
+  // Enforce allowedDomains before attaching credentialed CORS headers (SEC-15)
+  const originHeader = request.headers.get("origin") || request.headers.get("referer");
+  const allowedDomains =
+    !bot.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0
+      ? ["*"]
+      : bot.allowedDomains;
+  const domainCheck = checkDomainAuthorization(originHeader, allowedDomains);
+  if (!domainCheck.allowed) {
+    return new Response(
+      JSON.stringify({ error: `Unauthorized domain for widget events.` }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const conversationId = searchParams.get("conversationId");
-  if (!conversationId) {
-    return new Response(JSON.stringify({ error: "conversationId is required" }), {
+  if (!conversationId || conversationId.length > 128) {
+    return new Response(JSON.stringify({ error: "Valid conversationId is required" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  // Resolve conversation if it already exists in store
+  // Verify conversation belongs to this bot & verify visitor token if bound (SEC-15)
   const conv = conversationsStore.getConversation(conversationId);
+  if (conv && conv.botId && conv.botId !== bot.id) {
+    return new Response(JSON.stringify({ error: "Conversation not found for this chatbot" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (conv && conv.visitorId) {
+    const token = extractVisitorToken(request, bot.id);
+    if (token) {
+      const visitor =
+        (await visitorsStore.getVisitorByTokenAsync(bot.id, token)) ||
+        visitorsStore.getVisitorByToken(bot.id, token);
+      if (!visitor || visitor.id !== conv.visitorId) {
+        return new Response(JSON.stringify({ error: "Unauthorized visitor token for conversation" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+  }
+
   const handlingMode = conv?.handlingMode || "AI";
   const status = conv?.status || "AI_ACTIVE";
   const assignedToName = conv?.assignedToName || "";
@@ -67,7 +123,6 @@ export async function GET(request, { params }) {
     start(controller) {
       const encoder = new TextEncoder();
 
-      // Initial connected event for visitor
       const initPayload = JSON.stringify({
         type: "visitor_connected",
         conversationId,
@@ -78,17 +133,15 @@ export async function GET(request, { params }) {
       });
       controller.enqueue(encoder.encode(`event: message\ndata: ${initPayload}\n\n`));
 
-      // Subscribe to sseBroker scoped strictly to this conversationId
       unsubscribe = sseBroker.subscribe(controller, {
         conversationId,
         isVisitor: true,
       });
 
-      // Keep-alive heartbeat every 15 seconds
       heartbeatInterval = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(`: heartbeat ${Date.now()}\n\n`));
-        } catch (e) {
+        } catch {
           clearInterval(heartbeatInterval);
           if (unsubscribe) {
             unsubscribe();
@@ -117,4 +170,3 @@ export async function GET(request, { params }) {
 
   return new Response(stream, { headers: responseHeaders });
 }
-

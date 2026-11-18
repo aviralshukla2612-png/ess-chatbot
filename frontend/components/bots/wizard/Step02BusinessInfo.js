@@ -136,21 +136,21 @@ export default function Step02BusinessInfo({
   return (
     <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
       {/* Header */}
-      <div className="space-y-2 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#55A9FF]/10 border border-[#55A9FF]/30 text-[11px] font-bold text-[#55A9FF] uppercase tracking-wider">
+      <div className="space-y-1.5 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[11px] font-semibold text-[var(--accent-text)] uppercase tracking-wider">
           <Building2 className="w-3.5 h-3.5" />
-          <span>Step 02 · Common Identity</span>
+          <span>Step 02 · Business Identity</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Business Details & Operations
         </h2>
-        <p className="text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-          Provide your core business information. This data forms the foundational profile that your autonomous assistant will rely on for identity, timings, and verified communication.
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+          Provide your core business information so your assistant answers identity, schedule, and contact inquiries accurately.
         </p>
       </div>
 
       {/* Form Fields Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#12121A] border border-white/[0.08] shadow-2xl space-y-6">
+      <div className="p-6 sm:p-8 rounded-2xl bg-[#111827] text-slate-100 border border-slate-800 shadow-lg space-y-6">
         {/* Row 1: Business Name + Tagline */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
@@ -390,7 +390,7 @@ export default function Step02BusinessInfo({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs text-[#9898A6] hover:text-white bg-[#12121A] hover:bg-[#1A1A24] border border-white/10 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 h-10 px-5 rounded-lg font-medium text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] border border-[var(--border-strong)] transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Industry</span>
@@ -399,7 +399,7 @@ export default function Step02BusinessInfo({
         <button
           type="button"
           onClick={handleContinue}
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] to-[#55A9FF] hover:opacity-95 active:scale-[0.98] shadow-lg shadow-[#963DFF]/25 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 h-10 px-6 rounded-lg font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors cursor-pointer"
         >
           <span>Continue to Questionnaire</span>
           <ArrowRight className="w-4 h-4" />

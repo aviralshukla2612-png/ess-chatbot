@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { leadsStore } from "@/lib/db/leadsStore";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, requireOrgRole, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
 
 export async function OPTIONS() {
   const res = new NextResponse(null, { status: 204 });
@@ -17,16 +17,9 @@ export async function GET(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
-    const lead = leadsStore.getLead(id);
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const lead = leadsStore.getLead(id, isSuperAdmin ? null : principal.organizationId);
     if (!lead) {
-      return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
-    }
-
-    if (!isSuperAdmin && (lead.organizationId || "org_ess_default") !== principal.organizationId) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
@@ -44,16 +37,9 @@ export async function PUT(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
-    const lead = leadsStore.getLead(id);
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const lead = leadsStore.getLead(id, isSuperAdmin ? null : principal.organizationId);
     if (!lead) {
-      return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
-    }
-
-    if (!isSuperAdmin && (lead.organizationId || "org_ess_default") !== principal.organizationId) {
       return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
     }
 
@@ -67,24 +53,20 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const auth = await requireAuth(request);
+    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
     if (!auth.ok) return auth.response;
 
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN ||
-      principal.platformRole === "Platform Super Admin" ||
-      principal.platformRole === "SUPER_ADMIN" ||
-      principal.orgRole === "SUPER_ADMIN" ||
-      (principal.email && principal.email.toLowerCase().includes("admin@emperorsmartsolutions.com"));
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const existing = leadsStore.getLead(id, isSuperAdmin ? null : principal.organizationId);
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "Lead not found" }, { status: 404 });
+    }
 
+    // deleteLead already executes scoped Postgres DELETE WHERE id = $1 AND organizationId = $2
     leadsStore.deleteLead(id, isSuperAdmin ? null : principal.organizationId);
-
-    const { queryDb } = await import("@/lib/db/dbPool");
-    await queryDb('DELETE FROM "Lead" WHERE "id" = $1;', [id]).catch(() => {});
 
     return NextResponse.json({ success: true, message: "Lead deleted successfully." });
   } catch (err) {

@@ -1,44 +1,32 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   Globe,
   Plus,
   RefreshCw,
   Trash2,
   ExternalLink,
-  CheckCircle2,
   AlertCircle,
-  Clock,
-  Layers,
   Search,
   X,
-  Play,
-  Pause,
-  ChevronRight,
-  ShieldCheck,
-  FileText,
-  Filter,
-  Check,
-  HelpCircle,
   Send,
-  Bot,
   Sparkles,
 } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Modal from "@/components/ui/Modal";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
 
-export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
+export default function WebsiteKnowledgeManager({ botId = "bot_aa" }) {
   const [websites, setWebsites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeJob, setActiveJob] = useState(null);
 
-  // Add Website Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     baseUrl: "",
-    crawlScope: "entire", // homepage, selected, entire
+    crawlScope: "entire",
     maxPages: 50,
     includePatterns: "",
     excludePatterns: "/admin/*, /cart/*, /login/*",
@@ -48,29 +36,26 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Pages Drawer State
   const [selectedWebsite, setSelectedWebsite] = useState(null);
   const [confirmConfig, setConfirmConfig] = useState(null);
   const [pages, setPages] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const [pageSearch, setPageSearch] = useState("");
 
-  // Test Chat Drawer State
   const [isTestChatOpen, setIsTestChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     {
       role: "assistant",
       content:
-        "Hello! I am ready to answer questions using your imported website content. Ask me anything about your products, services, or FAQs!",
+        "Hello! Ask me any question to verify answers grounded in your indexed website pages.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
-  // Load Connected Websites
   const loadWebsites = async () => {
     try {
-      const res = await fetch(`/api/bots/${botId}/websites`);
+      const res = await fetch(`/api/bots/${encodeURIComponent(botId)}/websites`);
       const data = await res.json();
       if (data.sources) {
         setWebsites(data.sources);
@@ -83,23 +68,29 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
   };
 
   useEffect(() => {
-    loadWebsites();
+    if (botId) loadWebsites();
   }, [botId]);
 
-  // Polling for Active Ingestion Progress
   useEffect(() => {
     const hasActiveCrawl = websites.some(
       (w) => w.status === "Crawling" || w.status === "Pending"
     );
     if (!hasActiveCrawl) return;
-
-    const timer = setInterval(() => {
-      loadWebsites();
-    }, 2000);
+    const timer = setInterval(loadWebsites, 3000);
     return () => clearInterval(timer);
   }, [websites]);
 
-  // Submit Add Website
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setSelectedWebsite(null);
+        setIsTestChatOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
   const handleAddWebsite = async (e) => {
     e.preventDefault();
     setFormError("");
@@ -108,15 +99,14 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
       setFormError("Please enter a valid website URL.");
       return;
     }
-
     if (!formData.permissionConfirmed) {
-      setFormError("Please confirm you have permission to index this website.");
+      setFormError("Please confirm you are authorized to index this website.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/bots/${botId}/websites`, {
+      const res = await fetch(`/api/bots/${encodeURIComponent(botId)}/websites`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -136,7 +126,7 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        setFormError(data.error || "Failed to initiate website crawling.");
+        setFormError(data.error || "Failed to initiate website crawl.");
         setSubmitting(false);
         return;
       }
@@ -160,48 +150,36 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
     }
   };
 
-  // Re-sync Website
   const handleSyncWebsite = async (websiteId) => {
     try {
       await fetch(`/api/websites/${websiteId}/sync`, { method: "POST" });
       loadWebsites();
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
   };
 
-  // Cancel / Pause Crawl
   const handleCancelCrawl = async (websiteId) => {
     try {
       await fetch(`/api/websites/${websiteId}/cancel`, { method: "POST" });
       loadWebsites();
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
   };
 
-  // Delete Website Knowledge
   const handleDeleteWebsite = (websiteId) => {
     const web = websites.find((w) => w.id === websiteId) || { id: websiteId, name: "this website" };
     setConfirmConfig({
-      title: "Delete Website Knowledge?",
-      description: `Are you sure you want to delete "${web.name || web.baseUrl || "this website"}"? All indexed pages, text extractions, and vector embeddings will be permanently removed from this bot.`,
-      confirmText: "Delete Website",
+      title: "Delete Website Source?",
+      description: `Remove "${web.name || web.baseUrl}" and all indexed pages and vector chunks from this chatbot?`,
+      confirmText: "Delete Source",
       badgeText: "Knowledge Base",
       variant: "danger",
       onConfirm: async () => {
-        try {
-          await fetch(`/api/websites/${websiteId}`, { method: "DELETE" });
-          loadWebsites();
-          if (selectedWebsite?.id === websiteId) setSelectedWebsite(null);
-        } catch (e) {
-          console.error(e);
-        }
+        await fetch(`/api/websites/${websiteId}`, { method: "DELETE" });
+        loadWebsites();
+        if (selectedWebsite?.id === websiteId) setSelectedWebsite(null);
       },
     });
   };
 
-  // View Indexed Pages Drawer
   const handleViewPages = async (website) => {
     setSelectedWebsite(website);
     setLoadingPages(true);
@@ -209,14 +187,13 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
       const res = await fetch(`/api/websites/${website.id}/pages`);
       const data = await res.json();
       setPages(data.pages || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      setPages([]);
     } finally {
       setLoadingPages(false);
     }
   };
 
-  // Toggle Page Exclusion
   const handleToggleExclusion = async (pageId, currentStatus) => {
     const willExclude = currentStatus !== "Excluded";
     try {
@@ -230,12 +207,9 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
           p.id === pageId ? { ...p, crawlStatus: willExclude ? "Excluded" : "Indexed" } : p
         )
       );
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
   };
 
-  // Send Test Message
   const handleSendTestMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
@@ -246,7 +220,7 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
     setChatLoading(true);
 
     try {
-      const res = await fetch(`/api/public/chat/${botId}`, {
+      const res = await fetch(`/api/public/chat/${encodeURIComponent(botId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -255,13 +229,15 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
         }),
       });
       const data = await res.json();
-      if (data.reply) {
-        setChatMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: data.reply, sources: data.sources || [] },
-        ]);
-      }
-    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.reply || data.error || "No response received.",
+          sources: data.sources || [],
+        },
+      ]);
+    } catch {
       setChatMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Error querying chatbot knowledge." },
@@ -272,34 +248,36 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-indigo-50/70 via-white to-white border border-indigo-100 shadow-2xs">
+    <div className="space-y-5">
+      {/* Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)]">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-600/30">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[var(--accent-primary)] flex items-center justify-center shrink-0">
             <Globe className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-slate-900">
+            <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
               Website Knowledge Ingestion
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Connect your website URL to auto-extract pages, build vector embeddings, and answer queries.
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              Crawl public web pages, extract clean content, and index vector embeddings automatically.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
+            type="button"
             onClick={() => setIsTestChatOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-xs font-medium transition-colors cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-[#B68A55]" />
-            <span>Test with Website Knowledge</span>
+            <Sparkles className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+            <span>Test Knowledge</span>
           </button>
           <button
+            type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Website</span>
@@ -307,125 +285,124 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
         </div>
       </div>
 
-      {/* Connected Websites List */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+      {/* Connected Websites */}
+      <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] overflow-hidden shadow-[var(--shadow-xs)]">
+        <div className="px-5 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h4 className="font-bold text-sm text-slate-900">
+            <h4 className="font-semibold text-sm text-[var(--text-primary)]">
               Connected Websites
             </h4>
-            <span className="text-xs font-semibold text-slate-400">
+            <span className="text-xs font-medium text-[var(--text-muted)] tabular-nums">
               ({websites.length})
             </span>
           </div>
           <button
+            type="button"
             onClick={loadWebsites}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-            title="Refresh"
+            aria-label="Refresh websites"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {websites.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto">
-              <Globe className="w-6 h-6" />
-            </div>
-            <h5 className="font-bold text-sm text-slate-800">
-              No websites connected yet
-            </h5>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Add your public website URL to crawl documentation, pricing, FAQs, and product catalogs automatically.
-            </p>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Connect Website URL</span>
-            </button>
+          <div className="p-6">
+            <EmptyState
+              icon={Globe}
+              title="No websites connected yet"
+              description="Connect your public website URL to index documentation, service pages, pricing, and FAQs."
+              actionLabel="Connect Website URL"
+              onAction={() => setIsAddModalOpen(true)}
+            />
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[var(--border-subtle)]">
             {websites.map((web) => (
-              <div key={web.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <Globe className="w-5 h-5" />
+              <div
+                key={web.id}
+                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--bg-subtle)]/40 transition-colors"
+              >
+                <div className="flex items-start gap-3.5 min-w-0">
+                  <div className="w-9 h-9 rounded-lg bg-[var(--bg-subtle)] text-[var(--accent-primary)] flex items-center justify-center shrink-0 mt-0.5">
+                    <Globe className="w-4 h-4" />
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-slate-900">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-sm text-[var(--text-primary)] truncate">
                         {web.name}
                       </span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          web.status === "Ready"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : web.status === "Crawling"
-                            ? "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
-                            : web.status === "Failed"
-                            ? "bg-rose-50 text-rose-700 border border-rose-200"
-                            : "bg-slate-100 text-slate-600 border border-slate-200"
-                        }`}
-                      >
-                        {web.status}
-                      </span>
+                      <StatusBadge status={web.status || "Pending"} size="sm" />
                     </div>
 
                     <a
                       href={web.baseUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-slate-500 hover:text-indigo-600 flex items-center gap-1 hover:underline"
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-primary)] inline-flex items-center gap-1 hover:underline max-w-full truncate"
                     >
-                      <span>{web.baseUrl}</span>
-                      <ExternalLink className="w-3 h-3 text-slate-400" />
+                      <span className="truncate">{web.baseUrl}</span>
+                      <ExternalLink className="w-3 h-3 shrink-0" />
                     </a>
 
-                    <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
-                      <span>Indexed: <strong className="text-slate-700">{web.pagesIndexed} pages</strong></span>
-                      <span>•</span>
-                      <span>Discovered: <strong className="text-slate-700">{web.pagesDiscovered}</strong></span>
-                      <span>•</span>
-                      <span>Scope: <strong className="text-slate-700 capitalize">{web.crawlScope}</strong></span>
-                      <span>•</span>
-                      <span>Last Synced: <strong className="text-slate-700">{web.lastSyncedAt ? new Date(web.lastSyncedAt).toLocaleDateString() : "Just now"}</strong></span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] text-[var(--text-muted)] tabular-nums">
+                      <span>
+                        Indexed: <strong className="text-[var(--text-secondary)]">{web.pagesIndexed || 0} pages</strong>
+                      </span>
+                      <span>·</span>
+                      <span>
+                        Discovered: <strong className="text-[var(--text-secondary)]">{web.pagesDiscovered || 0}</strong>
+                      </span>
+                      <span>·</span>
+                      <span>
+                        Scope: <strong className="text-[var(--text-secondary)] capitalize">{web.crawlScope}</strong>
+                      </span>
+                      <span>·</span>
+                      <span>
+                        Synced:{" "}
+                        <strong className="text-[var(--text-secondary)]">
+                          {web.lastSyncedAt ? new Date(web.lastSyncedAt).toLocaleDateString() : "Pending"}
+                        </strong>
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 self-end sm:self-center">
+                <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                   <button
+                    type="button"
                     onClick={() => handleViewPages(web)}
-                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-xs font-medium transition-colors cursor-pointer"
                   >
-                    View Pages
+                    Pages
                   </button>
 
                   {web.status === "Crawling" ? (
                     <button
+                      type="button"
                       onClick={() => handleCancelCrawl(web.id)}
-                      className="px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-semibold transition-colors cursor-pointer"
+                      className="h-8 px-3 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/12 text-amber-800 dark:text-amber-300 text-xs font-medium cursor-pointer"
                     >
-                      Cancel
+                      Stop
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => handleSyncWebsite(web.id)}
-                      className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs transition-colors cursor-pointer"
-                      title="Re-synchronize Knowledge"
+                      aria-label="Re-sync website"
+                      title="Re-sync website"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] transition-colors cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                     </button>
                   )}
 
                   <button
+                    type="button"
                     onClick={() => handleDeleteWebsite(web.id)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Delete Website"
+                    aria-label="Delete website"
+                    title="Delete website"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -436,209 +413,199 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
         )}
       </div>
 
-      {/* MODAL: Add Website Form */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xl max-w-lg w-full overflow-hidden">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Globe className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-base text-slate-900">
-                  Connect Website Knowledge
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* Add Website Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Connect Website Source"
+        description="Crawl and index public web pages into your chatbot's RAG knowledge store."
+      >
+        <form onSubmit={handleAddWebsite} className="space-y-4 text-xs">
+          {formError && (
+            <div
+              role="alert"
+              className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/12 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 flex items-center gap-2 font-medium"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{formError}</span>
             </div>
+          )}
 
-            <form onSubmit={handleAddWebsite} className="p-6 space-y-4 text-xs">
-              {formError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2 font-medium">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{formError}</span>
-                </div>
-              )}
-
-              {/* Website Name */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Website Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., My Company Documentation"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600"
-                />
-              </div>
-
-              {/* Website URL */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Website URL <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://example.com"
-                  value={formData.baseUrl}
-                  onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600 font-mono text-xs"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Protected with SSRF validation. Private IP ranges and localhost are blocked.
-                </p>
-              </div>
-
-              {/* Crawl Scope */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Crawl Scope
-                </label>
-                <select
-                  value={formData.crawlScope}
-                  onChange={(e) => setFormData({ ...formData, crawlScope: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600 cursor-pointer"
-                >
-                  <option value="entire">Entire public website (Follow internal links & sitemap)</option>
-                  <option value="homepage">Homepage only</option>
-                  <option value="selected">Selected URL patterns only</option>
-                </select>
-              </div>
-
-              {/* Maximum Pages */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Maximum Pages
-                  </label>
-                  <select
-                    value={formData.maxPages}
-                    onChange={(e) => setFormData({ ...formData, maxPages: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600 cursor-pointer"
-                  >
-                    <option value={10}>10 pages (Quick test)</option>
-                    <option value={50}>50 pages (Standard)</option>
-                    <option value={100}>100 pages</option>
-                    <option value={250}>250 pages</option>
-                    <option value={500}>500 pages (Enterprise)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Sync Schedule
-                  </label>
-                  <select
-                    value={formData.syncSchedule}
-                    onChange={(e) => setFormData({ ...formData, syncSchedule: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600 cursor-pointer"
-                  >
-                    <option value="manual">Manual only</option>
-                    <option value="daily">Daily automatic sync</option>
-                    <option value="weekly">Weekly automatic sync</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Exclude Patterns */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Exclude URL Patterns
-                </label>
-                <input
-                  type="text"
-                  placeholder="/admin/*, /cart/*, /checkout/*"
-                  value={formData.excludePatterns}
-                  onChange={(e) => setFormData({ ...formData, excludePatterns: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-hidden focus:border-indigo-600 font-mono text-xs"
-                />
-              </div>
-
-              {/* Permission Checkbox */}
-              <div className="pt-2">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.permissionConfirmed}
-                    onChange={(e) => setFormData({ ...formData, permissionConfirmed: e.target.checked })}
-                    className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-[11px] text-slate-600 leading-relaxed">
-                    I confirm that I own or have explicit authorization to index and crawl this public website content for my AI assistant.
-                  </span>
-                </label>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs disabled:opacity-50"
-                >
-                  {submitting ? "Initiating Crawl..." : "Start Crawl & Index"}
-                </button>
-              </div>
-            </form>
+          <div>
+            <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+              Source Label (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Official Product Docs"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)]"
+            />
           </div>
-        </div>
-      )}
 
-      {/* DRAWER: Indexed Pages */}
+          <div>
+            <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+              Website URL <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="url"
+              required
+              placeholder="https://example.com"
+              value={formData.baseUrl}
+              onChange={(e) => setFormData({ ...formData, baseUrl: e.target.value })}
+              className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)] font-mono"
+            />
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">
+              Protected by SSRF validation — loopback and private network addresses are blocked.
+            </p>
+          </div>
+
+          <div>
+            <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+              Crawl Scope
+            </label>
+            <select
+              value={formData.crawlScope}
+              onChange={(e) => setFormData({ ...formData, crawlScope: e.target.value })}
+              className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)]"
+            >
+              <option value="entire">Entire public website (same-origin links & sitemap)</option>
+              <option value="homepage">Single URL / Homepage only</option>
+              <option value="selected">Matching URL patterns only</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+                Max Pages
+              </label>
+              <select
+                value={formData.maxPages}
+                onChange={(e) => setFormData({ ...formData, maxPages: e.target.value })}
+                className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)]"
+              >
+                <option value={10}>10 pages</option>
+                <option value={50}>50 pages</option>
+                <option value={100}>100 pages</option>
+                <option value={250}>250 pages</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+                Sync Schedule
+              </label>
+              <select
+                value={formData.syncSchedule}
+                onChange={(e) => setFormData({ ...formData, syncSchedule: e.target.value })}
+                className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)]"
+              >
+                <option value="manual">Manual</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-medium text-[var(--text-secondary)] mb-1.5">
+              Exclude URL Glob Patterns
+            </label>
+            <input
+              type="text"
+              placeholder="/admin/*, /cart/*, /checkout/*"
+              value={formData.excludePatterns}
+              onChange={(e) => setFormData({ ...formData, excludePatterns: e.target.value })}
+              className="w-full h-9 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)] font-mono"
+            />
+          </div>
+
+          <label className="flex items-start gap-2.5 cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={formData.permissionConfirmed}
+              onChange={(e) => setFormData({ ...formData, permissionConfirmed: e.target.checked })}
+              className="mt-0.5 rounded border-[var(--border-strong)] text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              I confirm that I own or am authorized to crawl and index this public website content.
+            </span>
+          </label>
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[var(--border-subtle)]">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="h-9 px-4 rounded-lg border border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              {submitting ? "Starting Crawl..." : "Start Crawl & Index"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Indexed Pages Drawer */}
       {selectedWebsite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white h-full w-full max-w-xl shadow-2xl flex flex-col border-l border-slate-200 animate-slide-left">
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-end bg-slate-950/55 backdrop-blur-xs animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedWebsite(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Indexed pages"
+            className="bg-[var(--bg-elevated)] h-full w-full max-w-xl shadow-[var(--shadow-modal)] flex flex-col border-l border-[var(--border-subtle)] animate-slide-left"
+          >
+            <div className="px-5 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-sm text-slate-900">
-                  Indexed Pages: {selectedWebsite.name}
+                <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                  Indexed Pages · {selectedWebsite.name}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {pages.length} pages indexed in vector knowledge base
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  {pages.length} pages discovered
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedWebsite(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                aria-label="Close drawer"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Filter Search */}
-            <div className="p-4 border-b border-slate-100">
+            <div className="p-4 border-b border-[var(--border-subtle)]">
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Filter pages by URL or title..."
                   value={pageSearch}
                   onChange={(e) => setPageSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 rounded-xl border border-slate-200 outline-hidden"
+                  className="w-full h-9 pl-8 pr-3 text-xs bg-[var(--bg-subtle)]/70 rounded-lg border border-[var(--border-subtle)] text-[var(--text-primary)]"
                 />
               </div>
             </div>
 
-            {/* Pages List */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
               {loadingPages ? (
-                <div className="p-8 text-center text-xs text-slate-400">Loading indexed pages...</div>
+                <div className="py-12 text-center text-xs text-[var(--text-muted)]">
+                  Loading indexed pages...
+                </div>
               ) : pages.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">
-                  No pages recorded yet. Pages will populate once the crawler completes.
+                <div className="py-12 text-center text-xs text-[var(--text-muted)]">
+                  No pages recorded yet. Pages appear as the crawler completes.
                 </div>
               ) : (
                 pages
@@ -651,40 +618,34 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
                   .map((page) => (
                     <div
                       key={page.id}
-                      className="p-3.5 rounded-xl border border-slate-100 bg-white hover:border-slate-200 shadow-2xs space-y-2"
+                      className="p-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] space-y-2"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-bold text-xs text-slate-800 line-clamp-1">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-xs text-[var(--text-primary)] truncate">
                             {page.title || page.url}
                           </div>
                           <a
                             href={page.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[11px] text-slate-400 hover:text-indigo-600 flex items-center gap-1 hover:underline truncate"
+                            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--accent-primary)] inline-flex items-center gap-1 hover:underline max-w-full truncate"
                           >
-                            <span>{page.url}</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
+                            <span className="truncate">{page.url}</span>
+                            <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                           </a>
                         </div>
-
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            page.crawlStatus === "Indexed"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          {page.crawlStatus}
-                        </span>
+                        <StatusBadge status={page.crawlStatus || "Indexed"} size="sm" />
                       </div>
 
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-50 text-[10px] text-slate-400">
-                        <span>Chunks: <strong className="text-slate-600">{page.chunksCount} vectors</strong></span>
+                      <div className="flex items-center justify-between pt-1.5 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)]">
+                        <span>
+                          Chunks: <strong className="text-[var(--text-secondary)]">{page.chunksCount || 0}</strong>
+                        </span>
                         <button
+                          type="button"
                           onClick={() => handleToggleExclusion(page.id, page.crawlStatus)}
-                          className="font-semibold text-indigo-600 hover:underline cursor-pointer"
+                          className="font-medium text-[var(--accent-primary)] hover:underline cursor-pointer"
                         >
                           {page.crawlStatus === "Excluded" ? "Include in RAG" : "Exclude from RAG"}
                         </button>
@@ -697,49 +658,59 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
         </div>
       )}
 
-      {/* DRAWER: Interactive Website Knowledge Test */}
+      {/* Test Chat Drawer */}
       {isTestChatOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white h-full w-full max-w-md shadow-2xl flex flex-col border-l border-slate-200 animate-slide-left">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-indigo-600 text-white">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-end bg-slate-950/55 backdrop-blur-xs animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsTestChatOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Website knowledge playground"
+            className="bg-[var(--bg-elevated)] h-full w-full max-w-md shadow-[var(--shadow-modal)] flex flex-col border-l border-[var(--border-subtle)] animate-slide-left"
+          >
+            <div className="px-4 py-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between bg-indigo-600 text-white">
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-indigo-200" />
+                <Sparkles className="w-4 h-4 text-indigo-200" />
                 <div>
-                  <h4 className="font-bold text-sm">Website Knowledge Playground</h4>
-                  <p className="text-[11px] text-indigo-200">Live Q&A testing against crawled content</p>
+                  <h4 className="font-semibold text-sm">Knowledge Playground</h4>
+                  <p className="text-[11px] text-indigo-200">Test Q&A against indexed content</p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsTestChatOpen(false)}
-                className="p-1 rounded-lg text-indigo-200 hover:text-white"
+                aria-label="Close playground"
+                className="p-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Chat Messages */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 text-xs">
+            <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[var(--bg-canvas)] text-xs">
               {chatMessages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex flex-col ${
-                    msg.role === "user" ? "items-end" : "items-start"
-                  }`}
+                  className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] p-3.5 rounded-2xl shadow-2xs leading-relaxed ${
+                    className={`max-w-[85%] p-3 rounded-2xl leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-indigo-600 text-white rounded-tr-xs"
-                        : "bg-white text-slate-800 border border-slate-200/80 rounded-tl-xs"
+                        ? "bg-indigo-600 text-white rounded-tr-sm"
+                        : "bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-tl-sm"
                     }`}
                   >
                     <p className="whitespace-pre-line">{msg.content}</p>
-
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-400">
-                        <span>Source: </span>
-                        <span className="font-semibold text-slate-600">
-                          {msg.sources[0].title || msg.sources[0].url}
+                      <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] text-[10px] text-[var(--text-muted)]">
+                        Source:{" "}
+                        <span className="font-semibold text-[var(--text-secondary)]">
+                          {typeof msg.sources[0] === "string"
+                            ? msg.sources[0]
+                            : msg.sources[0].title || msg.sources[0].url}
                         </span>
                       </div>
                     )}
@@ -747,25 +718,28 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
                 </div>
               ))}
               {chatLoading && (
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl text-xs text-slate-400 w-fit">
-                  Searching website knowledge base...
+                <div className="p-3 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl text-xs text-[var(--text-muted)] w-fit">
+                  Searching knowledge base...
                 </div>
               )}
             </div>
 
-            {/* Input Bar */}
-            <form onSubmit={handleSendTestMessage} className="p-3.5 border-t border-slate-200 bg-white flex items-center gap-2">
+            <form
+              onSubmit={handleSendTestMessage}
+              className="p-3 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] flex items-center gap-2"
+            >
               <input
                 type="text"
                 placeholder="Ask a question about your website..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-hidden focus:border-indigo-600"
+                className="flex-1 h-9 px-3 text-xs bg-[var(--bg-subtle)]/70 border border-[var(--border-subtle)] rounded-lg text-[var(--text-primary)]"
               />
               <button
                 type="submit"
                 disabled={chatLoading}
-                className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                aria-label="Send test question"
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -774,7 +748,6 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
         </div>
       )}
 
-      {/* Premium Confirm Modal */}
       <ConfirmModal
         isOpen={Boolean(confirmConfig)}
         onClose={() => setConfirmConfig(null)}
@@ -782,7 +755,7 @@ export default function WebsiteKnowledgeManager({ botId = "bot_sales_01" }) {
         title={confirmConfig?.title}
         description={confirmConfig?.description}
         confirmText={confirmConfig?.confirmText || "Confirm"}
-        badgeText={confirmConfig?.badgeText || "Action Required"}
+        badgeText={confirmConfig?.badgeText}
         variant={confirmConfig?.variant || "danger"}
       />
     </div>

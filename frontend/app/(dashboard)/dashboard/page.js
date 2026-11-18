@@ -1,23 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Sun,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
-  ChevronDown,
-  Calendar,
   MessageSquare,
-  Users,
-  HelpCircle,
   Users2,
-  CheckCircle,
+  HelpCircle,
+  CheckCircle2,
   Clock,
   Bot,
   AlertCircle,
   Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import {
   AreaChart,
@@ -37,18 +32,30 @@ import { leadsApi } from "@/lib/api/leads";
 import { analyticsApi } from "@/lib/api/analytics";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
+import StatCard from "@/components/ui/StatCard";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
+import { StatCardsSkeleton } from "@/components/ui/Skeleton";
+import { DESIGN_TOKENS, getChartTheme } from "@/lib/design/tokens";
 
 export default function DashboardPage() {
-  const [timeView, setTimeView] = useState("daily");
+  const [rangeDays, setRangeDays] = useState(30);
   const [bots, setBots] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [leads, setLeads] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [greeting, setGreeting] = useState("Good morning");
+  const [greeting, setGreeting] = useState("Welcome back");
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
+    const syncDark = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    syncDark();
+    window.addEventListener("theme-change", syncDark);
+
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
@@ -60,6 +67,8 @@ export default function DashboardPage() {
     if (hour < 12) setGreeting("Good morning");
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
+
+    return () => window.removeEventListener("theme-change", syncDark);
   }, []);
 
   const loadData = async () => {
@@ -75,202 +84,311 @@ export default function DashboardPage() {
       setLeads(leadsData || []);
       setAnalytics(analyticsData || null);
     } catch (err) {
-      console.warn("Real-time load error:", err);
+      console.warn("Dashboard load error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Real-time synchronization hook (SSE event stream + background polling)
   const { isLive, lastSync, triggerSync } = useRealtimeSync(loadData, {
-    pollingInterval: 3000,
+    pollingInterval: 5000,
   });
 
+  const filteredConversations = useMemo(() => {
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000;
+    return conversations.filter((c) => {
+      const ts = c.createdAt ? new Date(c.createdAt).getTime() : NaN;
+      return Number.isNaN(ts) ? true : ts >= cutoff;
+    });
+  }, [conversations, rangeDays]);
+
+  const filteredLeads = useMemo(() => {
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000;
+    return leads.filter((l) => {
+      const ts = l.createdAt ? new Date(l.createdAt).getTime() : NaN;
+      return Number.isNaN(ts) ? true : ts >= cutoff;
+    });
+  }, [leads, rangeDays]);
+
   const activeBotsCount = bots.filter((b) => b.status === "Active").length;
-  const totalConvs = conversations.length;
-  const totalLeads = leads.length;
-  const totalQuestions = conversations.reduce(
+  const totalConvs = filteredConversations.length;
+  const totalLeads = filteredLeads.length;
+  const totalQuestions = filteredConversations.reduce(
     (sum, c) => sum + (c.messages?.filter((m) => m.role === "user").length || 0),
     0
   );
-
-  const answeredQuestions = conversations.reduce(
+  const answeredQuestions = filteredConversations.reduce(
     (sum, c) => sum + (c.messages?.filter((m) => m.role === "assistant").length || 0),
     0
   );
-
+  const unansweredCount = Math.max(0, totalQuestions - answeredQuestions);
   const answerRate =
     totalQuestions > 0
-      ? Math.min(100, Math.round((answeredQuestions / totalQuestions) * 100 * 10) / 10)
+      ? Math.min(100, Math.round((answeredQuestions / totalQuestions) * 1000) / 10)
       : 100;
 
-  const kpis = [
-    { title: "Total Conversations", value: totalConvs.toString(), change: totalConvs > 0 ? "+100%" : "0%", pos: true },
-    { title: "Unique Visitors", value: totalConvs.toString(), change: totalConvs > 0 ? "+100%" : "0%", pos: true },
-    { title: "Total Questions", value: totalQuestions.toString(), change: totalQuestions > 0 ? "+100%" : "0%", pos: true },
-    { title: "Leads Generated", value: totalLeads.toString(), change: totalLeads > 0 ? "+100%" : "0%", pos: true },
-    { title: "Answer Rate", value: `${answerRate}%`, change: "0%", pos: true },
-    { title: "Avg. Response Time", value: totalConvs > 0 ? "1.1 sec" : "0 sec", change: "0%", pos: true },
-    { title: "Active Bots", value: activeBotsCount.toString(), change: "0%", pos: true },
-    { title: "Unanswered Questions", value: Math.max(0, totalQuestions - answeredQuestions).toString(), change: "0%", pos: true },
-  ];
+  const timeseriesData = useMemo(() => {
+    if (analytics?.timeseries && analytics.timeseries.length > 0) {
+      return analytics.timeseries.slice(-Math.min(rangeDays, analytics.timeseries.length));
+    }
+    const buckets = [];
+    const points = rangeDays === 7 ? 7 : 6;
+    const stepDays = Math.max(1, Math.floor(rangeDays / points));
+    for (let i = points - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * stepDays * 86400000);
+      const label =
+        i === 0
+          ? "Today"
+          : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      buckets.push({
+        date: label,
+        conversations: i === 0 ? totalConvs : 0,
+      });
+    }
+    return buckets;
+  }, [analytics, rangeDays, totalConvs]);
 
-  const timeseriesData =
-    analytics?.timeseries && analytics.timeseries.length > 0
-      ? analytics.timeseries
-      : [
-          { date: "Oct 1", conversations: 0 },
-          { date: "Oct 5", conversations: 0 },
-          { date: "Oct 10", conversations: 0 },
-          { date: "Oct 15", conversations: 0 },
-          { date: "Oct 20", conversations: 0 },
-          { date: "Oct 25", conversations: 0 },
-          { date: "Today", conversations: totalConvs },
-        ];
-
-  const botDonutData = bots.length > 0
-    ? bots.map((b, idx) => ({
+  const botDonutData = useMemo(() => {
+    if (bots.length === 0) {
+      return [{ name: "No Active Chatbots", value: 1, realCount: 0, color: isDark ? "#334155" : "#CBD5E1" }];
+    }
+    const rows = bots.map((b, idx) => {
+      const count = filteredConversations.filter(
+        (c) => c.botId === b.id || c.botName === b.name
+      ).length;
+      return {
         name: b.name,
-        value: Math.max(1, conversations.filter((c) => c.botId === b.id || c.botName === b.name).length),
-        color: b.primaryColor || ["#4f46e5", "#38bdf8", "#a855f7"][idx % 3],
-      }))
-    : [{ name: "No Active Bots", value: 100, color: "#cbd5e1" }];
+        value: Math.max(1, count),
+        realCount: count,
+        color: b.primaryColor || DESIGN_TOKENS.charts.palette[idx % DESIGN_TOKENS.charts.palette.length],
+      };
+    });
+    return rows;
+  }, [bots, filteredConversations, isDark]);
+
+  const totalBotConvs = botDonutData.reduce((acc, r) => acc + (r.realCount || 0), 0);
+  const chartTheme = getChartTheme(isDark);
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in text-slate-800 dark:text-slate-100 font-sans">
-      {/* Top Greeting Header */}
+    <div className="space-y-6 pb-12 animate-fade-in">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Sun className="w-5 h-5 text-amber-500 fill-amber-400" />
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white dark:!text-white [color:var(--foreground)] tracking-tight">
-              {greeting}, {currentUser?.name?.split(" ")[0] || "there"}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              {greeting}
+              {currentUser?.name ? `, ${currentUser.name.split(" ")[0]}` : ""}
             </h1>
+            <RealtimeBadge isLive={isLive} lastSynced={lastSync} onRefresh={triggerSync} />
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-300 dark:!text-slate-300 mt-0.5">
-            Here&apos;s what&apos;s happening across your live assistants in real-time.
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Real-time operational summary across your AI assistants, visitor sessions, and lead pipeline.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-700 dark:text-slate-200 shadow-2xs font-medium cursor-pointer">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <span>Last 30 days</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div
+            role="group"
+            aria-label="Date range"
+            className="inline-flex items-center p-1 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs font-medium"
+          >
+            {[
+              { days: 7, label: "7d" },
+              { days: 30, label: "30d" },
+              { days: 90, label: "90d" },
+            ].map((opt) => (
+              <button
+                key={opt.days}
+                type="button"
+                onClick={() => setRangeDays(opt.days)}
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                  rangeDays === opt.days
+                    ? "bg-[var(--bg-surface)] text-[var(--text-primary)] font-semibold shadow-2xs"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
 
           <Link
             href="/bots/create"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Create AI Bot</span>
+            <span>New Chatbot</span>
           </Link>
         </div>
       </div>
 
-      {/* 8 Top KPI Cards (Grid of 4 x 2) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
-        {kpis.map((kpi, idx) => (
-          <div
-            key={idx}
-            className="bg-white dark:bg-[#0D0D0D] rounded-xl p-3 sm:p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs hover:shadow-xs transition-shadow min-w-0"
-          >
-            <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-neutral-400 block truncate">
-              {kpi.title}
-            </span>
-            <div className="mt-1.5 sm:mt-2 flex items-baseline justify-between gap-1">
-              <span className="text-lg sm:text-2xl font-bold text-[#252525] dark:text-white truncate">
-                {kpi.value}
-              </span>
-              <span
-                className={`text-[10px] sm:text-[11px] font-semibold flex items-center shrink-0 ${
-                  kpi.pos ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                }`}
+      {/* KPI Cards */}
+      {loading ? (
+        <StatCardsSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard
+            title="Conversations"
+            value={totalConvs}
+            description={`Sessions in the last ${rangeDays} days`}
+            icon={MessageSquare}
+            colorScheme="indigo"
+          />
+          <StatCard
+            title="Leads Captured"
+            value={totalLeads}
+            description="Qualified contacts extracted"
+            icon={Users2}
+            colorScheme="emerald"
+          />
+          <StatCard
+            title="Answer Rate"
+            value={`${answerRate}%`}
+            description={`${answeredQuestions} replies · ${unansweredCount} pending`}
+            icon={CheckCircle2}
+            colorScheme="sky"
+          />
+          <StatCard
+            title="Active Chatbots"
+            value={activeBotsCount}
+            description={`${bots.length} total configured in workspace`}
+            icon={Bot}
+            colorScheme="amber"
+          />
+        </div>
+      )}
+
+      {/* Secondary Metrics Strip */}
+      {!loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Visitor Questions", value: totalQuestions, icon: HelpCircle },
+            { label: "Unanswered Queries", value: unansweredCount, icon: AlertCircle },
+            { label: "Avg. Response Latency", value: totalConvs > 0 ? "1.1s" : "—", icon: Clock },
+            {
+              label: "Lead Conversion",
+              value: totalConvs > 0 ? `${Math.min(100, Math.round((totalLeads / totalConvs) * 100))}%` : "0%",
+              icon: Sparkles,
+            },
+          ].map((m) => {
+            const Icon = m.icon;
+            return (
+              <div
+                key={m.label}
+                className="px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-between gap-3"
               >
-                {kpi.pos ? (
-                  <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                )}
-                {kpi.change}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+                <div>
+                  <span className="text-[11px] font-medium text-[var(--text-muted)] block">
+                    {m.label}
+                  </span>
+                  <span className="text-base font-bold tabular-nums text-[var(--text-primary)] mt-0.5 block">
+                    {m.value}
+                  </span>
+                </div>
+                <Icon className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-        {/* Conversations Over Time (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between min-w-0 overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Conversation Volume Trend */}
+        <div className="lg:col-span-2 bg-[var(--bg-surface)] rounded-xl p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex flex-col justify-between min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-4">
             <div>
-              <h3 className="font-bold text-sm text-[#252525] dark:text-white">
-                Conversations Over Time
-              </h3>
+              <h2 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+                Conversation Volume
+              </h2>
+              <p className="text-xs text-[var(--text-muted)]">
+                Visitor engagement trend across active channels
+              </p>
             </div>
-
-            <div className="flex items-center gap-1 bg-[#FAF9F6] dark:bg-[#1A1A1A] p-0.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-neutral-300 self-start sm:self-auto">
-              {["daily", "weekly", "monthly"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTimeView(t)}
-                  className={`px-2.5 py-1 rounded-md capitalize transition-all cursor-pointer ${
-                    timeView === t ? "bg-white dark:bg-[#0D0D0D] text-[#B68A55] dark:text-[#B68A55] font-bold shadow-2xs" : "hover:text-[#252525] dark:hover:text-white"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            <Link
+              href="/analytics"
+              className="text-xs font-medium text-[var(--accent-primary)] hover:underline inline-flex items-center gap-1"
+            >
+              <span>Full analytics</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          <div className="h-52 sm:h-60 w-full min-w-0">
+          <div className="h-60 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={timeseriesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={timeseriesData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="chartIndigo" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                  <linearGradient id="dashIndigoFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartTheme.primaryStroke} stopOpacity={0.22} />
+                    <stop offset="95%" stopColor={chartTheme.primaryStroke} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.25} />
-                <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#94a3b8" }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartTheme.gridStroke} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: chartTheme.axisColor }}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: chartTheme.axisColor }}
+                />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg border border-slate-700">
-                          <p className="font-bold">{payload[0].payload.date}, 2026</p>
-                          <p className="text-indigo-300 font-semibold">{payload[0].value} conversations</p>
+                        <div
+                          className="text-xs px-3 py-2 rounded-lg shadow-md border"
+                          style={{
+                            backgroundColor: chartTheme.tooltipBg,
+                            borderColor: chartTheme.tooltipBorder,
+                            color: chartTheme.tooltipText,
+                          }}
+                        >
+                          <p className="font-semibold">{payload[0].payload.date}</p>
+                          <p className="text-[var(--accent-primary)] font-medium mt-0.5">
+                            {payload[0].value} conversations
+                          </p>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Area type="monotone" dataKey="conversations" stroke="#4f46e5" strokeWidth={2.5} fill="url(#chartIndigo)" />
+                <Area
+                  type="monotone"
+                  dataKey="conversations"
+                  stroke={chartTheme.primaryStroke}
+                  strokeWidth={2}
+                  fill="url(#dashIndigoFill)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Questions by Bot (1 col) */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs flex flex-col justify-between min-w-0 overflow-hidden">
-          <h3 className="font-bold text-sm text-[#252525] dark:text-white mb-2">
-            Questions by Bot
-          </h3>
+        {/* Share by Chatbot */}
+        <div className="bg-[var(--bg-surface)] rounded-xl p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex flex-col justify-between min-w-0">
+          <div>
+            <h2 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+              Traffic by Chatbot
+            </h2>
+            <p className="text-xs text-[var(--text-muted)]">
+              Distribution of sessions across assistants
+            </p>
+          </div>
 
-          <div className="relative h-44 flex items-center justify-center">
+          <div className="relative h-44 flex items-center justify-center my-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={botDonutData}
-                  innerRadius={50}
-                  outerRadius={68}
-                  paddingAngle={4}
+                  innerRadius={52}
+                  outerRadius={70}
+                  paddingAngle={3}
                   dataKey="value"
                 >
                   {botDonutData.map((entry, index) => (
@@ -279,114 +397,145 @@ export default function DashboardPage() {
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            <div className="absolute text-center">
-              <span className="text-lg font-bold text-[#252525] dark:text-white block leading-tight">
-                {totalQuestions}
+            <div className="absolute text-center pointer-events-none">
+              <span className="text-xl font-bold tabular-nums text-[var(--text-primary)] block leading-tight">
+                {totalConvs}
               </span>
-              <span className="text-[10px] text-slate-400">Questions</span>
+              <span className="text-[11px] text-[var(--text-muted)]">Sessions</span>
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-2 border-t border-[#EFE7DC] dark:border-neutral-800 text-xs">
-            {botDonutData.map((b, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: b.color }} />
-                  <span className="text-slate-600 dark:text-neutral-400 truncate max-w-[140px]">{b.name}</span>
+          <div className="space-y-2 pt-3 border-t border-[var(--border-subtle)] text-xs">
+            {botDonutData.slice(0, 4).map((b, i) => {
+              const pct =
+                totalBotConvs > 0 ? Math.round(((b.realCount || 0) / totalBotConvs) * 100) : 0;
+              return (
+                <div key={i} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: b.color }}
+                    />
+                    <span className="text-[var(--text-secondary)] truncate">{b.name}</span>
+                  </div>
+                  <span className="font-semibold tabular-nums text-[var(--text-primary)] shrink-0">
+                    {b.realCount || 0} ({pct}%)
+                  </span>
                 </div>
-                <span className="font-semibold text-[#252525] dark:text-white shrink-0 ml-2">{b.value > 0 ? `${Math.round(b.value)}%` : "0%"}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {/* Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+      {/* Recent Activity Lists */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Recent Conversations */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs min-w-0">
+        <div className="bg-[var(--bg-surface)] rounded-xl p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm text-[#252525] dark:text-white">
-              Recent Conversations
-            </h3>
-            <Link href="/conversations" className="text-xs font-semibold text-[#B68A55] hover:underline">
-              View all
+            <div>
+              <h2 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+                Recent Conversations
+              </h2>
+              <p className="text-xs text-[var(--text-muted)]">Latest live visitor threads</p>
+            </div>
+            <Link
+              href="/conversations"
+              className="text-xs font-medium text-[var(--accent-primary)] hover:underline"
+            >
+              Open inbox →
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {conversations.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs space-y-1.5">
-                <MessageSquare className="w-6 h-6 mx-auto text-slate-400" />
-                <p className="font-medium text-[#252525] dark:text-neutral-300">No conversations yet</p>
-                <p className="text-[11px] text-slate-500 dark:text-neutral-400">When visitors chat with your AI assistant, sessions will appear here.</p>
-              </div>
-            ) : (
-              conversations.slice(0, 4).map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] transition-colors gap-2 min-w-0">
-                  <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden min-w-0 flex-1">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1A1A1A] text-[#252525] dark:text-neutral-200 font-bold text-xs flex items-center justify-center shrink-0">
-                      {c.visitorName?.charAt(0) || "U"}
+          {filteredConversations.length === 0 ? (
+            <EmptyState
+              icon={MessageSquare}
+              title="No conversations yet"
+              description="Visitor conversations from your embedded widget or Playground appear here in real time."
+              className="py-8 border-none bg-[var(--bg-subtle)]/40"
+            />
+          ) : (
+            <div className="divide-y divide-[var(--border-subtle)]">
+              {filteredConversations.slice(0, 5).map((c) => (
+                <Link
+                  key={c.id}
+                  href="/conversations"
+                  className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-subtle)]/60 transition-colors gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)] font-semibold text-xs flex items-center justify-center shrink-0">
+                      {(c.visitorName || "V").charAt(0).toUpperCase()}
                     </div>
-                    <div className="truncate min-w-0 flex-1">
-                      <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{c.visitorName}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate">{c.lastMessage}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                        {c.visitorName || "Website Visitor"}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] truncate">
+                        {c.lastMessage || "Started a conversation"}
+                      </p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-right">
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap">{c.startedAt || "Recently"}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
-                      {c.status}
-                    </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusBadge status={c.status || "AI_ACTIVE"} size="sm" />
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-xl p-4 sm:p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs min-w-0">
+        <div className="bg-[var(--bg-surface)] rounded-xl p-5 border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] min-w-0">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-sm text-[#252525] dark:text-white">
-              Recent Leads
-            </h3>
-            <Link href="/leads" className="text-xs font-semibold text-[#B68A55] hover:underline">
-              View all
+            <div>
+              <h2 className="font-semibold text-sm sm:text-base text-[var(--text-primary)]">
+                Recent Leads
+              </h2>
+              <p className="text-xs text-[var(--text-muted)]">Prospects captured by AI qualification</p>
+            </div>
+            <Link
+              href="/leads"
+              className="text-xs font-medium text-[var(--accent-primary)] hover:underline"
+            >
+              View pipeline →
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {leads.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-xs space-y-1.5">
-                <Users2 className="w-6 h-6 mx-auto text-slate-400" />
-                <p className="font-medium text-[#252525] dark:text-slate-300">No leads captured yet</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Prospects captured by your chatbot will automatically appear here.</p>
-              </div>
-            ) : (
-              leads.slice(0, 4).map((l) => (
-                <div key={l.id} className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 transition-colors gap-2 min-w-0">
-                  <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden min-w-0 flex-1">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[#252525] dark:text-slate-200 font-bold text-xs flex items-center justify-center shrink-0">
-                      {l.name?.charAt(0) || "L"}
+          {filteredLeads.length === 0 ? (
+            <EmptyState
+              icon={Users2}
+              title="No leads captured yet"
+              description="Qualified visitor contacts with email or phone details are automatically recorded here."
+              className="py-8 border-none bg-[var(--bg-subtle)]/40"
+            />
+          ) : (
+            <div className="divide-y divide-[var(--border-subtle)]">
+              {filteredLeads.slice(0, 5).map((l) => (
+                <Link
+                  key={l.id}
+                  href="/leads"
+                  className="flex items-center justify-between py-3 px-2 -mx-2 rounded-lg hover:bg-[var(--bg-subtle)]/60 transition-colors gap-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 font-semibold text-xs flex items-center justify-center shrink-0">
+                      {(l.name || "L").charAt(0).toUpperCase()}
                     </div>
-                    <div className="truncate min-w-0 flex-1">
-                      <p className="text-xs font-bold text-[#252525] dark:text-white truncate">{l.name}</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{l.email || l.phone}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                        {l.name || "Prospect"}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] truncate">
+                        {l.email || l.phone || l.inquiry || "Inbound inquiry"}
+                      </p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-right">
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap">{l.created}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 whitespace-nowrap">
-                      {l.score || "High"}
-                    </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <StatusBadge status={l.score || "High"} size="sm" />
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

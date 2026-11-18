@@ -97,10 +97,40 @@ const SAMPLE_PROFILE = {
   ],
 };
 
-const inputClass =
-  "company-profile-input w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-hidden transition-all shadow-2xs placeholder:text-neutral-400 dark:placeholder:text-neutral-500";
+const EMPTY_PROFILE = {
+  companyName: "",
+  tagline: "",
+  industry: "",
+  founders: "",
+  description: "",
+  workingDays: "Monday to Saturday",
+  openingTime: "09:30 AM",
+  closingTime: "06:30 PM",
+  timezone: "IST (UTC+5:30)",
+  weekendPolicy: "Closed on Sundays.",
+  holidayNote: "Closed on public holidays.",
+  services: [
+    { id: "s1", name: "", description: "", timeline: "", pricing: "" },
+  ],
+  startingPrice: "",
+  pricingTiers: "",
+  paymentTerms: "",
+  freeConsultation: "",
+  officeAddress: "",
+  serviceAreas: "",
+  phone: "",
+  whatsapp: "",
+  email: "",
+  website: "",
+  faqs: [
+    { id: "f1", question: "", answer: "" },
+  ],
+};
 
-const labelClass = "font-bold text-xs text-slate-800 dark:text-neutral-200 block mb-1.5";
+const inputClass =
+  "w-full px-3.5 py-2 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-primary)] text-xs font-medium focus:ring-2 focus:ring-[var(--focus-ring)] focus:border-[var(--accent-primary)] transition-colors placeholder:text-[var(--text-muted)]";
+
+const labelClass = "font-semibold text-xs text-[var(--text-secondary)] block mb-1.5";
 
 export default function CompanyKnowledgeBuilder({
   initialBotId = "",
@@ -109,7 +139,8 @@ export default function CompanyKnowledgeBuilder({
 }) {
   const [bots, setBots] = useState([]);
   const [selectedBotId, setSelectedBotId] = useState(initialBotId || "");
-  const [form, setForm] = useState(SAMPLE_PROFILE);
+  const [form, setForm] = useState(EMPTY_PROFILE);
+  const [formError, setFormError] = useState("");
   const [step, setStep] = useState("form"); // "form" | "review" | "success"
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -125,8 +156,16 @@ export default function CompanyKnowledgeBuilder({
         const list = await botsApi.getBots();
         if (Array.isArray(list) && list.length > 0) {
           setBots(list);
-          const matched = list.find((b) => b.id === initialBotId || b.name === initialBotId);
-          setSelectedBotId(matched ? matched.id : list[0].id);
+          const matched = list.find((b) => b.id === initialBotId || b.name === initialBotId) || list[0];
+          setSelectedBotId(matched.id);
+          setForm((prev) => ({
+            ...prev,
+            companyName: prev.companyName || matched.company || matched.name || "",
+            industry: prev.industry || matched.industry || "",
+            description: prev.description || matched.description || "",
+            website: prev.website || matched.websiteUrl || "",
+            phone: prev.phone || matched.phoneNumber || "",
+          }));
         } else {
           setSelectedBotId(initialBotId || "bot_aa");
         }
@@ -191,8 +230,9 @@ export default function CompanyKnowledgeBuilder({
   // Step 2: Compile and Generate PDF for Review
   const handleProceedToReview = async (e) => {
     if (e) e.preventDefault();
+    setFormError("");
     if (!form.companyName.trim()) {
-      alert("Please provide at least a Company Name.");
+      setFormError("Please enter your Company / Organization Name before continuing.");
       return;
     }
 
@@ -211,7 +251,7 @@ export default function CompanyKnowledgeBuilder({
       setStep("review");
     } catch (err) {
       console.error("PDF generation error:", err);
-      alert("Error compiling PDF: " + err.message);
+      setFormError("Error compiling knowledge profile: " + err.message);
     } finally {
       setGeneratingPdf(false);
     }
@@ -279,24 +319,23 @@ export default function CompanyKnowledgeBuilder({
       )}
 
       {/* Top Banner */}
-      <div className="bg-[#0D0D0D] text-white rounded-2xl p-6 shadow-xl border border-neutral-800">
+      <div className="bg-[var(--bg-surface)] text-[var(--text-primary)] rounded-xl p-6 shadow-[var(--shadow-xs)] border border-[var(--border-subtle)]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#B68A55]/15 border border-[#B68A55]/30 flex items-center justify-center text-[#B68A55] shadow-inner shrink-0 mt-0.5">
-              <Building2 className="w-6 h-6 text-[#B68A55]" />
+            <div className="w-11 h-11 rounded-xl bg-[var(--accent-soft)] border border-[var(--accent-border)] flex items-center justify-center text-[var(--accent-primary)] shrink-0 mt-0.5">
+              <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold tracking-tight">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
                   Company Knowledge Profile & AI Training
                 </h2>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  Step-by-Step Intake
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/12 dark:text-emerald-300 dark:border-emerald-500/25">
+                  Structured Intake
                 </span>
               </div>
-              <p className="text-xs text-indigo-200/80 mt-1 max-w-2xl leading-relaxed">
-                Provide your company hours, services, pricing, office address, and common FAQs.
-                The system compiles an official corporate PDF dossier, lets you <strong>review and approve</strong> it, then automatically trains your chatbot!
+              <p className="text-xs text-[var(--text-muted)] mt-1 max-w-2xl leading-relaxed">
+                Enter your business hours, services, pricing, location, and FAQs. Review and approve the compiled dossier before indexing into your chatbot.
               </p>
             </div>
           </div>
@@ -306,57 +345,67 @@ export default function CompanyKnowledgeBuilder({
               <button
                 type="button"
                 onClick={() => setForm(SAMPLE_PROFILE)}
-                className="px-3.5 py-2 rounded-xl bg-indigo-600/40 hover:bg-indigo-600/60 border border-indigo-400/30 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="h-9 px-3.5 rounded-lg bg-[var(--bg-subtle)] hover:bg-[var(--bg-muted)] border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Fill Sample Data</span>
+                <Sparkles className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <span>Load Sample Template</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Progress Stepper */}
-        <div className="mt-6 pt-5 border-t border-indigo-800/40 grid grid-cols-3 gap-3 text-xs">
+        <div className="mt-5 pt-4 border-t border-[var(--border-subtle)] grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
           <div
-            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all ${
               step === "form"
-                ? "bg-indigo-500/20 border-indigo-400 text-white font-bold"
-                : "border-indigo-900/50 text-indigo-300/70"
+                ? "bg-[var(--accent-soft)] border-[var(--accent-border)] text-[var(--accent-text)] font-semibold"
+                : "border-[var(--border-subtle)] text-[var(--text-muted)]"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">
               1
             </span>
-            <span>1. Fill Company Form</span>
+            <span>1. Company Details</span>
           </div>
 
           <div
-            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all ${
               step === "review"
-                ? "bg-amber-500/20 border-amber-400 text-white font-bold"
-                : "border-indigo-900/50 text-indigo-300/70"
+                ? "bg-amber-50 dark:bg-amber-500/12 border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 font-semibold"
+                : "border-[var(--border-subtle)] text-[var(--text-muted)]"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[10px] font-bold text-slate-950">
+            <span className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-[10px] font-bold text-white">
               2
             </span>
-            <span>2. Review & Approve PDF</span>
+            <span>2. Review & Approve Dossier</span>
           </div>
 
           <div
-            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${
+            className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all ${
               step === "success"
-                ? "bg-emerald-500/20 border-emerald-400 text-white font-bold"
-                : "border-indigo-900/50 text-indigo-300/70"
+                ? "bg-emerald-50 dark:bg-emerald-500/12 border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-semibold"
+                : "border-[var(--border-subtle)] text-[var(--text-muted)]"
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">
+            <span className="w-5 h-5 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-bold text-white">
               3
             </span>
-            <span>3. Chatbot Live & Trained</span>
+            <span>3. Indexed & Ready</span>
           </div>
         </div>
       </div>
+
+      {formError && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/12 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2"
+        >
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{formError}</span>
+        </div>
+      )}
 
       {/* STEP 1: Interactive Intake Form */}
       {step === "form" && (

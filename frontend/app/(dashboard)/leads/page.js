@@ -14,18 +14,23 @@ import {
   Building2,
   Calendar,
   Bot,
-  Sparkles,
   X,
   ChevronDown,
   Trash2,
-  Loader2,
 } from "lucide-react";
-import Link from "next/link";
 import { leadsApi } from "@/lib/api/leads";
+import { botsApi } from "@/lib/api/bots";
 import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
 import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
+import StatusBadge from "@/components/ui/StatusBadge";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
+import { StatCardsSkeleton, TableSkeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 
 const ANSWER_LABELS = {
   is_business: "For Business",
@@ -67,12 +72,15 @@ function formatAnswerValue(val) {
 
 function getLeadEffectiveAnswers(lead) {
   if (!lead) return {};
-  const directAnswers = lead.answers && Object.keys(lead.answers).length > 0 ? lead.answers : null;
-  const qualAnswers = lead.qualification?.answers && Object.keys(lead.qualification.answers).length > 0 ? lead.qualification.answers : null;
+  const directAnswers =
+    lead.answers && Object.keys(lead.answers).length > 0 ? lead.answers : null;
+  const qualAnswers =
+    lead.qualification?.answers && Object.keys(lead.qualification.answers).length > 0
+      ? lead.qualification.answers
+      : null;
   if (directAnswers || qualAnswers) {
     return { ...(qualAnswers || {}), ...(directAnswers || {}) };
   }
-  // Fallback: parse from inquiry string if present
   if (lead.inquiry && lead.inquiry.includes(":")) {
     const parsed = {};
     const parts = lead.inquiry.split("|").map((p) => p.trim());
@@ -91,8 +99,25 @@ function getLeadEffectiveAnswers(lead) {
   return {};
 }
 
+function matchesTimeWindow(lead, timeFilter) {
+  if (!timeFilter || timeFilter === "All Time") return true;
+  const rawDate = lead.createdAt || lead.created;
+  if (!rawDate) return true;
+  if (timeFilter === "Today" && String(rawDate).toLowerCase().includes("today")) return true;
+
+  const parsed = new Date(rawDate);
+  if (Number.isNaN(parsed.getTime())) return true;
+  const diffDays = (Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24);
+  if (timeFilter === "Today") return diffDays <= 1;
+  if (timeFilter === "This Week") return diffDays <= 7;
+  if (timeFilter === "This Month") return diffDays <= 31;
+  return true;
+}
+
 export default function LeadsPage() {
+  const { toast } = useToast();
   const [leads, setLeads] = useState([]);
+  const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [botFilter, setBotFilter] = useState("All Bots");
@@ -105,10 +130,25 @@ export default function LeadsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Reset to page 1 whenever search or filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, botFilter, statusFilter, timeFilter]);
+
+  useEffect(() => {
+    botsApi
+      .getBots()
+      .then((list) => setBots(Array.isArray(list) ? list : []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!selectedLead) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setSelectedLead(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedLead]);
 
   const loadLeads = async () => {
     try {
@@ -121,10 +161,16 @@ export default function LeadsPage() {
     }
   };
 
-  // Real-time synchronization hook (SSE event stream + background polling)
   const { isLive, lastSync, triggerSync } = useRealtimeSync(loadLeads, {
-    pollingInterval: 3000,
+    pollingInterval: 4000,
   });
+
+  const botOptions = Array.from(
+    new Set([
+      ...bots.map((b) => b.name).filter(Boolean),
+      ...leads.map((l) => l.bot || l.botName).filter(Boolean),
+    ])
+  );
 
   const filteredLeads = leads.filter((item) => {
     const q = search.toLowerCase();
@@ -136,10 +182,13 @@ export default function LeadsPage() {
       item.phone?.toLowerCase().includes(q) ||
       item.inquiry?.toLowerCase().includes(q);
     const matchesBot =
-      botFilter === "All Bots" || item.bot === botFilter || item.botId === botFilter;
-    const matchesStatus =
-      statusFilter === "All Status" || item.status === statusFilter;
-    return matchesSearch && matchesBot && matchesStatus;
+      botFilter === "All Bots" ||
+      item.bot === botFilter ||
+      item.botName === botFilter ||
+      item.botId === botFilter;
+    const matchesStatus = statusFilter === "All Status" || item.status === statusFilter;
+    const matchesTime = matchesTimeWindow(item, timeFilter);
+    return matchesSearch && matchesBot && matchesStatus && matchesTime;
   });
 
   const totalLeads = leads.length;
@@ -156,7 +205,8 @@ export default function LeadsPage() {
 
   const toggleSelectAll = () => {
     const pageIds = paginatedLeads.map((l) => l.id);
-    const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
+    const allPageSelected =
+      pageIds.length > 0 && pageIds.every((id) => selectedIds.includes(id));
     if (allPageSelected) {
       setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
     } else {
@@ -165,15 +215,14 @@ export default function LeadsPage() {
   };
 
   const toggleSelect = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter((item) => item !== id));
-    } else {
-      setSelectedIds([...selectedIds, id]);
-    }
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   const updateStatus = async (id, newStatus) => {
     await leadsApi.updateLeadStatus(id, newStatus);
+    toast({ title: `Lead marked ${newStatus}`, variant: "success" });
     loadLeads();
     if (selectedLead?.id === id) {
       setSelectedLead((prev) => ({ ...prev, status: newStatus }));
@@ -183,7 +232,11 @@ export default function LeadsPage() {
   const handleExportLeads = () => {
     const listToExport = filteredLeads.length > 0 ? filteredLeads : leads;
     if (!listToExport || listToExport.length === 0) {
-      alert("No leads captured yet to export.");
+      toast({
+        title: "Nothing to export",
+        message: "No leads have been captured yet.",
+        variant: "warning",
+      });
       return;
     }
 
@@ -213,11 +266,11 @@ export default function LeadsPage() {
       escapeCsv(l.email),
       escapeCsv(l.phone),
       escapeCsv(l.company),
-      escapeCsv(l.bot || l.botName || "Emperor AI Assistant"),
+      escapeCsv(l.bot || l.botName || "AI Assistant"),
       escapeCsv(l.score || "High"),
       escapeCsv(l.status || "New"),
       escapeCsv(l.inquiry || ""),
-      escapeCsv(l.budget || "₹50,000+"),
+      escapeCsv(l.budget || ""),
       escapeCsv(l.created || l.createdAt || ""),
     ]);
 
@@ -228,13 +281,11 @@ export default function LeadsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `leads_export_${new Date().toISOString().slice(0, 10)}.csv`
-    );
+    link.setAttribute("download", `leads_export_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast({ title: "CSV exported", message: `${listToExport.length} lead records downloaded.`, variant: "success" });
   };
 
   const handleClearAllLeads = async () => {
@@ -242,6 +293,7 @@ export default function LeadsPage() {
     setSelectedLead(null);
     setSelectedIds([]);
     setShowClearModal(false);
+    toast({ title: "Leads cleared", variant: "info" });
     await loadLeads();
   };
 
@@ -254,273 +306,228 @@ export default function LeadsPage() {
       if (selectedLead && selectedIds.includes(selectedLead.id)) {
         setSelectedLead(null);
       }
+      toast({ title: "Selected leads deleted", variant: "info" });
     } else {
       await leadsApi.deleteLead(deleteLeadTarget.id);
       setSelectedIds((prev) => prev.filter((id) => id !== deleteLeadTarget.id));
       if (selectedLead?.id === deleteLeadTarget.id) {
         setSelectedLead(null);
       }
+      toast({ title: "Lead deleted", variant: "info" });
     }
     setDeleteLeadTarget(null);
     await loadLeads();
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in font-sans text-slate-800">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
-            Leads & Pipeline CRM
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Real-time inbound lead capture generated automatically by your live chatbots.
-          </p>
-        </div>
+    <div className="space-y-6 pb-12 animate-fade-in">
+      <PageHeader
+        badge="Inbound Pipeline"
+        title="Leads & Qualification CRM"
+        description="Qualified visitor contacts, project scopes, and intent signals captured automatically across your deployed chatbots."
+        actions={
+          <div className="flex flex-wrap items-center gap-2.5">
+            <RealtimeBadge isLive={isLive} lastSynced={lastSync} onRefresh={triggerSync} />
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <RealtimeBadge isLive={isLive} lastSync={lastSync} onRefresh={triggerSync} />
+            {selectedIds.length > 0 && (
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={() => setDeleteLeadTarget({ type: "batch", count: selectedIds.length })}
+              >
+                Delete Selected ({selectedIds.length})
+              </Button>
+            )}
 
-          {selectedIds.length > 0 && (
-            <button
-              onClick={() => setDeleteLeadTarget({ type: "batch", count: selectedIds.length })}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Selected ({selectedIds.length})</span>
-            </button>
-          )}
+            {leads.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setShowClearModal(true)}>
+                Clear All
+              </Button>
+            )}
 
-          {leads.length > 0 && (
-            <button
-              onClick={() => setShowClearModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-            >
-              <span>Clear All</span>
-            </button>
-          )}
-          <button
-            onClick={handleExportLeads}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-neutral-200 text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer w-fit"
-          >
-            <Download className="w-4 h-4 text-slate-500 dark:text-neutral-400" />
-            <span>Export</span>
-          </button>
-        </div>
-      </div>
+            <Button variant="secondary" size="sm" icon={Download} onClick={handleExportLeads}>
+              Export CSV
+            </Button>
+          </div>
+        }
+      />
 
       {/* 4 Top KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Leads */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {totalLeads}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Total Leads
-            </div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100/60 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <Users2 className="w-6 h-6" />
-          </div>
+      {loading ? (
+        <StatCardsSkeleton count={4} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <StatCard title="Total Leads" value={totalLeads} icon={Users2} colorScheme="indigo" />
+          <StatCard title="New Leads" value={newLeads} icon={Flame} colorScheme="rose" />
+          <StatCard title="Contacted" value={contactedLeads} icon={PhoneCall} colorScheme="amber" />
+          <StatCard title="Converted" value={convertedLeads} icon={CheckCircle2} colorScheme="emerald" />
         </div>
-
-        {/* Card 2: New Leads */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {newLeads}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              New Leads
-            </div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100/60 dark:border-rose-800/40 flex items-center justify-center text-rose-500 dark:text-rose-400">
-            <Flame className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Card 3: Contacted */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {contactedLeads}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Contacted
-            </div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100/60 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <PhoneCall className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Card 4: Converted */}
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-5 shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-3xl font-extrabold text-[#252525] dark:text-white tracking-tight">
-              {convertedLeads}
-            </div>
-            <div className="text-xs font-medium text-slate-500 dark:text-neutral-400 mt-1">
-              Converted
-            </div>
-          </div>
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100/60 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Filter Toolbar */}
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-3.5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-        {/* Search Input */}
+      <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-3.5 shadow-[var(--shadow-xs)] flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search leads..."
-            className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/70 dark:hover:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-900 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 text-[#252525] dark:text-white placeholder:text-slate-400 transition-colors"
+            placeholder="Search name, email, phone, company..."
+            className="w-full pl-9 pr-3.5 py-2 text-xs bg-[var(--bg-subtle)]/50 focus:bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg outline-hidden focus:border-indigo-500 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
           />
         </div>
 
-        {/* Filter Dropdowns */}
         <div className="flex items-center gap-2.5 w-full md:w-auto justify-end overflow-x-auto text-xs">
           <div className="relative">
             <select
               value={botFilter}
               onChange={(e) => setBotFilter(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl text-xs font-medium text-[#252525] dark:text-slate-300 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 cursor-pointer"
+              aria-label="Filter by chatbot"
+              className="appearance-none pl-3 pr-8 py-2 bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--text-secondary)] outline-hidden focus:border-indigo-500 cursor-pointer"
             >
               <option value="All Bots">All Bots</option>
+              {botOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           <div className="relative">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl text-xs font-medium text-[#252525] dark:text-slate-300 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 cursor-pointer"
+              aria-label="Filter by lead status"
+              className="appearance-none pl-3 pr-8 py-2 bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--text-secondary)] outline-hidden focus:border-indigo-500 cursor-pointer"
             >
               <option value="All Status">All Status</option>
               <option value="New">New</option>
               <option value="Contacted">Contacted</option>
               <option value="Converted">Converted</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           <div className="relative">
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-[#EFE7DC] dark:border-slate-700/80 rounded-xl text-xs font-medium text-[#252525] dark:text-slate-300 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500 cursor-pointer"
+              aria-label="Filter by time period"
+              className="appearance-none pl-3 pr-8 py-2 bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-xs font-medium text-[var(--text-secondary)] outline-hidden focus:border-indigo-500 cursor-pointer"
             >
               <option value="All Time">All Time</option>
               <option value="Today">Today</option>
               <option value="This Week">This Week</option>
               <option value="This Month">This Month</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
       </div>
 
-      {/* Leads Table Container */}
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 shadow-xs overflow-hidden">
-        {!loading && filteredLeads.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto">
-              <Users2 className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-base text-[#252525] dark:text-white">
-              No leads captured yet
-            </h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              When visitors interact with your chatbots and show purchase or booking intent, their details will automatically be qualified and saved here.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+      {/* Leads Table */}
+      {loading ? (
+        <TableSkeleton rows={6} cols={7} />
+      ) : filteredLeads.length === 0 ? (
+        <EmptyState
+          icon={Users2}
+          title={leads.length === 0 ? "No leads captured yet" : "No leads match your filters"}
+          description={
+            leads.length === 0
+              ? "When website visitors share their phone number, email, or project inquiry in chat, qualified lead records appear here automatically."
+              : "Try clearing your search query or adjusting the status and date filters."
+          }
+          actionLabel={leads.length > 0 ? "Reset Filters" : undefined}
+          onAction={
+            leads.length > 0
+              ? () => {
+                  setSearch("");
+                  setBotFilter("All Bots");
+                  setStatusFilter("All Status");
+                  setTimeFilter("All Time");
+                }
+              : undefined
+          }
+        />
+      ) : (
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-[#EFE7DC] dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
+                <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-subtle)]/60 text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider">
                   <th className="py-3.5 pl-5 pr-2 w-10">
                     <input
                       type="checkbox"
+                      aria-label="Select all leads on page"
                       checked={
                         paginatedLeads.length > 0 &&
                         paginatedLeads.every((l) => selectedIds.includes(l.id))
                       }
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded text-indigo-600 border-[var(--border-strong)] focus:ring-indigo-500 cursor-pointer"
                     />
                   </th>
-                  <th className="py-3.5 px-4">Name</th>
-                  <th className="py-3.5 px-4">Email / Phone</th>
+                  <th className="py-3.5 px-4">Lead & Inquiry</th>
+                  <th className="py-3.5 px-4">Contact</th>
                   <th className="py-3.5 px-4">Company</th>
-                  <th className="py-3.5 px-4">Bot</th>
-                  <th className="py-3.5 px-4">Score</th>
+                  <th className="py-3.5 px-4">Chatbot</th>
+                  <th className="py-3.5 px-4">Intent</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Created</th>
                   <th className="py-3.5 pr-5 pl-2 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EFE7DC] dark:divide-slate-800 text-[#252525] dark:text-slate-300">
+              <tbody className="divide-y divide-[var(--border-subtle)] text-[var(--text-secondary)]">
                 {paginatedLeads.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
                   return (
                     <tr
                       key={item.id}
                       onClick={() => setSelectedLead(item)}
-                      className={`hover:bg-[#FAF9F6] dark:hover:bg-slate-800/60 cursor-pointer transition-colors ${
-                        isSelected ? "bg-amber-50/40 dark:bg-indigo-950/40" : ""
+                      className={`hover:bg-[var(--bg-subtle)]/50 cursor-pointer transition-colors ${
+                        isSelected ? "bg-indigo-50/50 dark:bg-indigo-500/10" : ""
                       }`}
                     >
-                      <td
-                        className="py-4 pl-5 pr-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="py-4 pl-5 pr-2" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
+                          aria-label={`Select ${item.name}`}
                           checked={isSelected}
                           onChange={() => toggleSelect(item.id)}
-                          className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                          className="w-4 h-4 rounded text-indigo-600 border-[var(--border-strong)] focus:ring-indigo-500 cursor-pointer"
                         />
                       </td>
                       <td className="py-4 px-4">
-                        <p className="font-semibold text-[#252525] dark:text-white">{item.name}</p>
-                        {item.inquiry && item.inquiry !== "Inquired via live chat widget" && !item.inquiry.startsWith("Visitor introduced") && (
-                          <p className="text-[11px] text-[#B68A55] dark:text-indigo-400 font-medium truncate max-w-xs mt-0.5">
-                            {item.inquiry}
-                          </p>
+                        <p className="font-semibold text-[var(--text-primary)]">{item.name}</p>
+                        {item.inquiry &&
+                          item.inquiry !== "Inquired via live chat widget" &&
+                          !item.inquiry.startsWith("Visitor introduced") && (
+                            <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium truncate max-w-xs mt-0.5">
+                              {item.inquiry}
+                            </p>
+                          )}
+                      </td>
+                      <td className="py-4 px-4 text-[var(--text-secondary)]">
+                        <div>{item.email || "—"}</div>
+                        {item.phone && (
+                          <div className="text-[11px] text-[var(--text-muted)] font-mono">
+                            {item.phone}
+                          </div>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-slate-600 dark:text-slate-400">
-                        {item.email || item.phone}
-                      </td>
-                      <td className="py-4 px-4 text-slate-600 dark:text-slate-400 font-medium">
-                        {item.company}
-                      </td>
-                      <td className="py-4 px-4 text-slate-600 dark:text-slate-400 font-medium">
-                        {item.bot}
+                      <td className="py-4 px-4 font-medium">{item.company || "—"}</td>
+                      <td className="py-4 px-4 font-medium">{item.bot || item.botName || "—"}</td>
+                      <td className="py-4 px-4">
+                        <StatusBadge status={item.score || "High"} size="sm" />
                       </td>
                       <td className="py-4 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/40">
-                          {item.score || "High"}
-                        </span>
+                        <StatusBadge status={item.status || "New"} size="sm" />
                       </td>
-                      <td className="py-4 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-slate-500 dark:text-slate-400 font-medium">
-                        {item.created}
+                      <td className="py-4 px-4 text-[var(--text-muted)] tabular-nums">
+                        {item.created || item.createdAt || "—"}
                       </td>
                       <td
                         className="py-4 pr-5 pl-2 text-right"
@@ -530,7 +537,8 @@ export default function LeadsPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedLead(item)}
-                            className="p-1.5 hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-[#252525] dark:hover:text-white transition-colors cursor-pointer"
+                            className="p-1.5 hover:bg-[var(--bg-subtle)] rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                            aria-label="Inspect lead"
                             title="View Lead Details"
                           >
                             <MoreVertical className="w-4 h-4" />
@@ -538,7 +546,8 @@ export default function LeadsPage() {
                           <button
                             type="button"
                             onClick={() => setDeleteLeadTarget(item)}
-                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                            className="p-1.5 hover:bg-rose-500/10 rounded-lg text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                            aria-label="Delete lead"
                             title="Delete Lead"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -552,58 +561,71 @@ export default function LeadsPage() {
             </table>
           </div>
 
-            <Pagination
-              currentPage={safeCurrentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={(page) => setCurrentPage(page)}
-              onPageSizeChange={(size) => setPageSize(size)}
-              pageSizeOptions={[5, 10, 20, 50]}
-              itemLabel="leads"
-            />
-          </>
-        )}
-      </div>
+          <Pagination
+            currentPage={safeCurrentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => setPageSize(size)}
+            pageSizeOptions={[5, 10, 20, 50]}
+            itemLabel="leads"
+          />
+        </div>
+      )}
 
       {/* Lead Profile Drawer */}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="w-full max-w-md bg-white dark:bg-[#0D0D0D] h-full shadow-2xl border-l border-[#EFE7DC] dark:border-neutral-800 p-6 flex flex-col justify-between overflow-y-auto animate-slide-left text-[#252525] dark:text-neutral-200">
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-slate-950/55 backdrop-blur-xs animate-fade-in"
+          onClick={() => setSelectedLead(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Lead profile details"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-[var(--bg-surface)] h-full shadow-2xl border-l border-[var(--border-subtle)] p-6 flex flex-col justify-between overflow-y-auto animate-slide-left text-[var(--text-primary)]"
+          >
             <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-[#EFE7DC] dark:border-slate-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
-                    {selectedLead.name?.charAt(0) || "P"}
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                    {selectedLead.name?.charAt(0)?.toUpperCase() || "L"}
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-[#252525] dark:text-white">
+                    <h2 className="text-base font-bold text-[var(--text-primary)]">
                       {selectedLead.name}
                     </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{selectedLead.company}</p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {selectedLead.company || "Inbound Prospect"}
+                    </p>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedLead(null)}
-                  className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-[#252525] dark:hover:text-white transition-colors"
+                  aria-label="Close drawer"
+                  className="p-1.5 rounded-lg hover:bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Update Lead Status
+                <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                  Pipeline Stage
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {["New", "Contacted", "Converted"].map((st) => (
                     <button
                       key={st}
+                      type="button"
                       onClick={() => updateStatus(selectedLead.id, st)}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
                         selectedLead.status === st
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                          : "bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-[#252525] dark:text-slate-300 border-[#EFE7DC] dark:border-slate-800"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+                          : "bg-[var(--bg-subtle)]/60 hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] border-[var(--border-subtle)]"
                       }`}
                     >
                       {st}
@@ -612,48 +634,47 @@ export default function LeadsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 p-4 bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl border border-[#EFE7DC] dark:border-slate-800">
-                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
-                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-medium">{selectedLead.email || "No email"}</span>
+              <div className="space-y-3 p-4 bg-[var(--bg-subtle)]/50 rounded-xl border border-[var(--border-subtle)] text-xs">
+                <div className="flex items-center gap-3 text-[var(--text-secondary)]">
+                  <Mail className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  <span className="font-medium break-all">{selectedLead.email || "No email provided"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
-                  <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-medium">{selectedLead.phone || "No phone"}</span>
+                <div className="flex items-center gap-3 text-[var(--text-secondary)]">
+                  <Phone className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  <span className="font-medium font-mono">{selectedLead.phone || "No phone provided"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
-                  <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-medium">{selectedLead.company}</span>
+                <div className="flex items-center gap-3 text-[var(--text-secondary)]">
+                  <Building2 className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  <span className="font-medium">{selectedLead.company || "Not specified"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
-                  <Bot className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-medium">Origin: {selectedLead.bot}</span>
+                <div className="flex items-center gap-3 text-[var(--text-secondary)]">
+                  <Bot className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  <span className="font-medium">Origin: {selectedLead.bot || selectedLead.botName || "AI Bot"}</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-[#252525] dark:text-slate-300">
-                  <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span className="font-medium">Created: {selectedLead.created}</span>
+                <div className="flex items-center gap-3 text-[var(--text-secondary)]">
+                  <Calendar className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  <span className="font-medium">Created: {selectedLead.created || selectedLead.createdAt || "—"}</span>
                 </div>
               </div>
 
-              {/* Project Requirements & Scoping Answers Section */}
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Project Scope & Answers
+                  <label className="block text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                    Project Scope & Qualification
                   </label>
                   {selectedLead.budget && (
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-[#B68A55] border border-amber-500/30">
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                       Budget: {selectedLead.budget}
                     </span>
                   )}
                 </div>
 
                 {selectedLead.inquiry && (
-                  <div className="p-3.5 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-2xl border border-indigo-100/80 dark:border-indigo-800/60 space-y-1">
-                    <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                  <div className="p-3.5 bg-indigo-500/8 rounded-xl border border-indigo-500/20 space-y-1">
+                    <p className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
                       Requirements Summary
                     </p>
-                    <p className="text-xs text-indigo-950 dark:text-indigo-200 font-medium leading-relaxed">
+                    <p className="text-xs text-[var(--text-primary)] font-medium leading-relaxed">
                       {selectedLead.inquiry}
                     </p>
                   </div>
@@ -664,32 +685,31 @@ export default function LeadsPage() {
                   const entries = Object.entries(effectiveAnswers);
                   if (entries.length === 0) {
                     return (
-                      <div className="p-4 bg-slate-50/60 dark:bg-slate-900/60 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 text-center text-xs text-slate-400">
-                        No scoping questions answered yet.
+                      <div className="p-4 bg-[var(--bg-subtle)]/40 rounded-xl border border-[var(--border-subtle)] text-center text-xs text-[var(--text-muted)]">
+                        No structured scoping questions recorded yet.
                       </div>
                     );
                   }
                   return (
-                    <div className="p-4 bg-slate-50/80 dark:bg-slate-900/60 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 space-y-2">
-                      <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                        Customer Answers Breakdown
-                      </p>
+                    <div className="p-4 bg-[var(--bg-subtle)]/50 rounded-xl border border-[var(--border-subtle)] space-y-2">
                       {entries.map(([k, rawVal]) => {
-                        const label = ANSWER_LABELS[k] || k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+                        const label =
+                          ANSWER_LABELS[k] ||
+                          k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
                         const { text, type } = formatAnswerValue(rawVal);
                         return (
                           <div
                             key={k}
-                            className="flex items-center justify-between py-1.5 border-b border-[#EFE7DC] dark:border-slate-800 last:border-0 text-xs"
+                            className="flex items-center justify-between py-1.5 border-b border-[var(--border-subtle)] last:border-0 text-xs gap-2"
                           >
-                            <span className="text-slate-600 dark:text-slate-300 font-medium">{label}</span>
+                            <span className="text-[var(--text-secondary)] font-medium">{label}</span>
                             <span
-                              className={`font-semibold px-2.5 py-0.5 rounded-md text-[11px] ${
+                              className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
                                 type === "yes"
-                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                  ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400"
                                   : type === "no"
-                                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                                  : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                                  ? "bg-rose-500/12 text-rose-700 dark:text-rose-400"
+                                  : "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300"
                               }`}
                             >
                               {text}
@@ -703,62 +723,62 @@ export default function LeadsPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-[#EFE7DC] dark:border-slate-800 flex items-center gap-3">
-              <button
-                type="button"
+            <div className="pt-4 mt-6 border-t border-[var(--border-subtle)] flex items-center gap-3">
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                className="flex-1"
                 onClick={() => setDeleteLeadTarget(selectedLead)}
-                className="flex-1 py-2.5 px-4 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs rounded-xl transition-colors cursor-pointer border border-rose-500/30 flex items-center justify-center gap-1.5"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete Lead</span>
-              </button>
-              <button
-                type="button"
+                Delete Lead
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1"
                 onClick={() => setSelectedLead(null)}
-                className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#252525] dark:text-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer border border-[#EFE7DC] dark:border-slate-700"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Premium Confirm Modal for Clearing All Leads */}
       <ConfirmModal
         isOpen={showClearModal}
         onClose={() => setShowClearModal(false)}
         onConfirm={handleClearAllLeads}
         title="Clear All Leads?"
-        description="Are you sure you want to clear all leads? All captured customer contact info, inquiry records, and qualification responses will be permanently removed."
+        description="Are you sure you want to clear all leads in this workspace? All captured contact details and qualification records will be permanently removed."
         confirmText="Clear All Leads"
         cancelText="Cancel"
-        loadingText="Clearing Leads..."
+        loadingText="Clearing..."
         variant="danger"
         badgeText="Permanent Action"
         count={leads.length}
       />
 
-      {/* Premium Confirm Modal for Single / Batch Lead Deletion */}
       <ConfirmModal
         isOpen={Boolean(deleteLeadTarget)}
         onClose={() => setDeleteLeadTarget(null)}
         onConfirm={handleDeleteLeadConfirm}
-        title={deleteLeadTarget?.type === "batch" ? `Delete ${deleteLeadTarget.count} Leads?` : "Delete Lead?"}
+        title={
+          deleteLeadTarget?.type === "batch"
+            ? `Delete ${deleteLeadTarget.count} Leads?`
+            : "Delete Lead?"
+        }
         description={
           deleteLeadTarget?.type === "batch"
-            ? `Are you sure you want to permanently delete the ${deleteLeadTarget.count} selected leads? All contact and inquiry history will be removed.`
-            : `Are you sure you want to delete ${
-                deleteLeadTarget?.name &&
-                deleteLeadTarget.name !== "Website Prospect" &&
-                deleteLeadTarget.name !== "Website Visitor"
-                  ? `"${deleteLeadTarget.name}"`
-                  : deleteLeadTarget?.phone
-                  ? `client (${deleteLeadTarget.phone})`
-                  : deleteLeadTarget?.email || "this lead"
-              }? All contact details and qualification history will be permanently removed.`
+            ? `Permanently delete the ${deleteLeadTarget.count} selected lead records?`
+            : `Permanently delete ${deleteLeadTarget?.name || deleteLeadTarget?.email || "this lead"}?`
         }
-        confirmText={deleteLeadTarget?.type === "batch" ? `Delete ${deleteLeadTarget.count} Leads` : "Delete Lead"}
+        confirmText={
+          deleteLeadTarget?.type === "batch"
+            ? `Delete ${deleteLeadTarget.count} Leads`
+            : "Delete Lead"
+        }
         cancelText="Cancel"
         loadingText="Deleting..."
         variant="danger"

@@ -2,215 +2,94 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ==========================================================================
+   EMPEROR NEXUS — CENTRALIZED ENTERPRISE SAAS DESIGN TOKEN SYSTEM
+   Visual Language: "Nexus Slate & Royal Indigo" (WCAG 2.2 AA Compliant)
+   ========================================================================== */
+
 :root {
-  --font-geist-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --background: #050507;
-  --foreground: #F5F5F7;
-  --card: #0D0D0D;
-  --card-border: #222222;
-  --accent: #963DFF;
-  --beige: #1A1A24;
-  color-scheme: dark !important;
-}
+  /* Typography */
+  --font-geist-sans: "Inter", "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-geist-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-bebas: "Bebas Neue", Impact, "Arial Narrow", sans-serif;
+  --font-syne: "Syne", sans-serif;
+  --font-jakarta: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --font-playfair: "Playfair Display", Georgia, serif;
+  --font-inter: "Inter", system-ui, -apple-system, sans-serif;
+  --font-space-mono: "Space Mono", ui-monospace, monospace;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Light Theme — Crisp Alabaster Slate & Pure Surfaces */
+  --bg-canvas: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --bg-muted: #E2E8F0;
 
-body {
-  background: #050507 !important;
-  color: #F5F5F7 !important;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --text-inverse: #FFFFFF;
 
-.dark {
-  --background: #050507;
-  --foreground: #F5F5F7;
-  --card: #0D0D0D;
-  --card-border: #222222;
-  --accent: #963DFF;
-  --beige: #1A1A24;
-}
+  --border-subtle: #E2E8F0;
+  --border-strong: #CBD5E1;
 
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6 {
-  color: #F8FAFC;
-}
+  /* Single Primary Brand Accent — Enterprise Royal Indigo */
+  --accent-primary: #4F46E5;
+  --accent-hover: #4338CA;
+  --accent-active: #3730A3;
+  --accent-soft: #EEF2FF;
+  --accent-border: #C7D2FE;
+  --accent-text: #4338CA;
+  --focus-ring: rgba(79, 70, 229, 0.25);
 
-/* Specific guarantee for wave card top elements: deep jewel tone top with pure white headings */
-.card-wave-top h3,
-.card-wave-top h3.font-headline {
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
-}
+  /* Semantic Status Tokens */
+  --status-success: #059669;
+  --status-success-bg: #ECFDF5;
+  --status-success-border: #A7F3D0;
+  --status-success-text: #047857;
 
-/* Specific guarantee for dark featured cards: crisp bold white headings */
-.featured-card h3,
-.featured-card h3.font-headline,
-.dark .featured-card h3,
-.dark .featured-card h3.font-headline {
-  color: #FFFFFF !important;
-  -webkit-text-fill-color: #FFFFFF !important;
-}
+  --status-warning: #D97706;
+  --status-warning-bg: #FFFBEB;
+  --status-warning-border: #FDE68A;
+  --status-warning-text: #B45309;
 
-/* Scoped strictly to .dark class so light mode is pure Ivory & Charcoal */
-.dark input,
-.dark select,
-.dark textarea {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  background-color: #18181b !important;
-  border-color: #3f3f46 !important;
-}
+  --status-danger: #E11D48;
+  --status-danger-bg: #FFF1F2;
+  --status-danger-border: #FECDD3;
+  --status-danger-text: #BE123C;
 
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #a1a1aa !important;
-  -webkit-text-fill-color: #a1a1aa !important;
-  opacity: 1 !important;
-}
+  --status-info: #0284C7;
+  --status-info-bg: #F0F9FF;
+  --status-info-border: #BAE6FD;
+  --status-info-text: #0369A1;
 
-.dark select option {
-  background-color: #18181b;
-  color: #ffffff;
-}
+  /* Radii, Shadows, Dimensions & Transitions */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
 
-.dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover,
-.dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #ffffff !important;
-  -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
-  transition: background-color 5000s ease-in-out 0s;
-}
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 28px -6px rgba(15, 23, 42, 0.12), 0 4px 10px -4px rgba(15, 23, 42, 0.06);
+  --shadow-modal: 0 24px 56px -12px rgba(15, 23, 42, 0.24);
 
-/* Dedicated company profile input high-contrast styles */
-.company-profile-input {
-  color: #252525;
-}
+  --sidebar-width: 260px;
+  --header-height: 60px;
+  --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 
-.dark .company-profile-input {
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-  background-color: #18181b !important;
-}
+  /* Compatibility aliases */
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-border: var(--border-subtle);
+  --accent: var(--accent-primary);
 
-.dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover,
-.dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f8fafc !important;
-  -webkit-box-shadow: 0 0 0px 1000px #18181b inset !important;
-}
-
-/* Color scheme dark mode binding for native OS controls */
-html,
-html.dark,
-.dark {
-  background-color: #050507 !important;
-  color: #F5F5F7 !important;
-  color-scheme: dark !important;
-}
-
-html:not(.dark) .text-neutral-300,
-html:not(.dark) .text-neutral-200,
-html:not(.dark) .text-zinc-300,
-html:not(.dark) .text-zinc-200 {
-  color: #334155 !important;
-}
-
-html:not(.dark) .text-neutral-500,
-html:not(.dark) .text-zinc-500 {
-  color: #94A3B8 !important;
-}
-
-/* Inputs, selects, and textareas */
-html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
-html:not(.dark) select,
-html:not(.dark) textarea {
-  color: #252525 !important;
-  -webkit-text-fill-color: #252525 !important;
-  background-color: #FFFFFF !important;
-  border-color: #EFE7DC !important;
-}
-
-html:not(.dark) input::placeholder,
-html:not(.dark) textarea::placeholder {
-  color: #94A3B8 !important;
-  -webkit-text-fill-color: #94A3B8 !important;
-  opacity: 1 !important;
-}
-
-html:not(.dark) select option {
-  background-color: #FFFFFF !important;
-  color: #252525 !important;
-}
-
-/* Buttons or badges with solid vibrant backgrounds must keep crisp white text in both themes */
-html:not(.dark) button.text-white,
-html:not(.dark) a.text-white,
-html:not(.dark) [class*="bg-rose-600"] .text-white,
-html:not(.dark) [class*="bg-emerald-600"] .text-white,
-html:not(.dark) [class*="bg-indigo-600"] .text-white,
-html:not(.dark) [class*="bg-[#B68A55]"] .text-white,
-html:not(.dark) [class*="bg-[#252525]"] .text-white,
-html:not(.dark) .bg-\[\#B68A55\],
-html:not(.dark) .bg-\[\#252525\],
-html:not(.dark) .bg-rose-600,
-html:not(.dark) .bg-emerald-600,
-html:not(.dark) .bg-indigo-600 {
-  color: #FFFFFF !important;
-}
-
-/* Universal complete removal of all browser scrollbars (Chromium, Firefox, Safari, Edge) */
-html,
-body,
-*,
-*::before,
-*::after {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-::-webkit-scrollbar,
-*::-webkit-scrollbar,
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none !important;
-  width: 0px !important;
-  height: 0px !important;
-  background: transparent !important;
-  opacity: 0 !important;
-}
-
-/* Specific utilities */
-.sidebar-scroll,
-.no-scrollbar,
-.scrollbar-none {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
-}
-
-.sidebar-scroll::-webkit-scrollbar,
-.no-scrollbar::-webkit-scrollbar,
-.scrollbar-none::-webkit-scrollbar {
-  display: none !important;
-  width: 0px !important;
-  height: 0px !important;
-  background: transparent !important;
-}
-
-/* ============================================================
-   EMPEROR NEXUS GLOBAL DESIGN SYSTEM TOKENS & UTILITIES
-   ============================================================ */
-:root {
+  /* Marketing showcase tokens (preserved for `/` landing page) */
   --color-nexus-bg: #050507;
   --color-nexus-bg-sec: #0B0B10;
   --color-nexus-surface: #12121A;
@@ -222,14 +101,239 @@ body::-webkit-scrollbar {
   --color-nexus-deep-purple: #5318A8;
   --color-nexus-blue: #55A9FF;
   --gradient-nexus-primary: linear-gradient(135deg, #963DFF 0%, #7928CA 45%, #55A9FF 100%);
-  --font-bebas: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
-  --font-syne: 'Syne', sans-serif;
-  --font-jakarta: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-playfair: 'Playfair Display', Georgia, Cambria, 'Times New Roman', serif;
-  --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-space-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  color-scheme: light;
 }
 
+.dark {
+  /* Dark Theme — Deep Slate Obsidian & Elevated Surfaces */
+  --bg-canvas: #090D16;
+  --bg-surface: #111827;
+  --bg-elevated: #161F30;
+  --bg-subtle: #1E293B;
+  --bg-muted: #334155;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-inverse: #0F172A;
+
+  --border-subtle: #1E293B;
+  --border-strong: #334155;
+
+  --accent-primary: #6366F1;
+  --accent-hover: #4F46E5;
+  --accent-active: #4338CA;
+  --accent-soft: rgba(99, 102, 241, 0.14);
+  --accent-border: rgba(99, 102, 241, 0.32);
+  --accent-text: #818CF8;
+  --focus-ring: rgba(99, 102, 241, 0.35);
+
+  --status-success: #10B981;
+  --status-success-bg: rgba(16, 185, 129, 0.12);
+  --status-success-border: rgba(16, 185, 129, 0.28);
+  --status-success-text: #34D399;
+
+  --status-warning: #F59E0B;
+  --status-warning-bg: rgba(245, 158, 11, 0.12);
+  --status-warning-border: rgba(245, 158, 11, 0.28);
+  --status-warning-text: #FBBF24;
+
+  --status-danger: #F43F5E;
+  --status-danger-bg: rgba(244, 63, 94, 0.12);
+  --status-danger-border: rgba(244, 63, 94, 0.28);
+  --status-danger-text: #FB7185;
+
+  --status-info: #38BDF8;
+  --status-info-bg: rgba(56, 189, 248, 0.12);
+  --status-info-border: rgba(56, 189, 248, 0.28);
+  --status-info-text: #7DD3FC;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 16px -4px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 14px 32px -8px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  --background: var(--bg-canvas);
+  --foreground: var(--text-primary);
+  --card: var(--bg-surface);
+  --card-border: var(--border-subtle);
+  --accent: var(--accent-primary);
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--bg-canvas);
+  --color-foreground: var(--text-primary);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-subtle: var(--bg-subtle);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-brand: var(--accent-primary);
+  --color-brand-hover: var(--accent-hover);
+  --color-brand-soft: var(--accent-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  html {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-geist-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-geist-sans);
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  /* Accessible keyboard focus indicator */
+  :focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+  }
+
+  /* Native select option readability */
+  select option {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBLE SUBTLE SCROLLBARS + OPT-IN HIDDEN SCROLLBAR UTILITIES
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.24);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.42);
+}
+
+.sidebar-scroll,
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.sidebar-scroll::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* ==========================================================================
+   SHARED MOTION & SKELETON UTILITIES
+   ========================================================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes curtainDrop {
+  0% {
+    opacity: 0;
+    clip-path: inset(0% 0% 100% 0% round 14px);
+    transform: translateY(-6px) scaleY(0.95);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0% 0% 0% 0% round 14px);
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-left {
+  animation: slideLeft 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-curtain-drop {
+  animation: curtainDrop 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY & MARKETING SHOWCASE UTILITIES (Landing Page `/` Parity)
+   ========================================================================== */
 .font-headline {
   font-family: var(--font-bebas);
   letter-spacing: 0.03em;
@@ -241,19 +345,24 @@ body::-webkit-scrollbar {
 
 .font-sans,
 .font-body {
-  font-family: var(--font-jakarta);
+  font-family: var(--font-geist-sans);
 }
 
 .font-playfair {
-  font-family: var(--font-playfair) !important;
+  font-family: var(--font-playfair);
 }
 
 .font-inter {
-  font-family: var(--font-inter) !important;
+  font-family: var(--font-inter);
 }
 
 .font-space-mono {
-  font-family: var(--font-space-mono) !important;
+  font-family: var(--font-space-mono);
+}
+
+.card-wave-top h3,
+.featured-card h3 {
+  color: #FFFFFF;
 }
 
 .nexus-grid-overlay {
@@ -332,364 +441,120 @@ body::-webkit-scrollbar {
   transform: translateY(-1px);
 }
 
-/* ============================================================
-   CHATBOT LAUNCHER BUTTON ANIMATIONS (Font Awesome Parity)
-   ============================================================ */
+/* ==========================================================================
+   CHATBOT LAUNCHER BUTTON ANIMATIONS
+   ========================================================================== */
 @keyframes fa-beat {
-
-  0%,
-  90% {
-    transform: scale(1);
-  }
-
-  45% {
-    transform: scale(1.18);
-  }
+  0%, 90% { transform: scale(1); }
+  45% { transform: scale(1.18); }
 }
 
 @keyframes fa-beat-fade {
-
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
 }
 
 @keyframes fa-fade {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.35;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 @keyframes fa-bounce {
-
-  0%,
-  15%,
-  100% {
-    transform: translateY(0);
-  }
-
-  35% {
-    transform: translateY(-12px);
-  }
-
-  55% {
-    transform: translateY(0);
-  }
-
-  70% {
-    transform: translateY(-6px);
-  }
-
-  85% {
-    transform: translateY(0);
-  }
+  0%, 15%, 100% { transform: translateY(0); }
+  35% { transform: translateY(-12px); }
+  55% { transform: translateY(0); }
+  70% { transform: translateY(-6px); }
+  85% { transform: translateY(0); }
 }
 
 @keyframes fa-flip {
-  0% {
-    transform: perspective(400px) rotateY(0deg);
-  }
-
-  50% {
-    transform: perspective(400px) rotateY(180deg);
-  }
-
-  100% {
-    transform: perspective(400px) rotateY(0deg);
-  }
+  0% { transform: perspective(400px) rotateY(0deg); }
+  50% { transform: perspective(400px) rotateY(180deg); }
+  100% { transform: perspective(400px) rotateY(0deg); }
 }
 
 @keyframes fa-flip-360 {
-  0% {
-    transform: perspective(400px) rotateY(0deg);
-  }
-
-  100% {
-    transform: perspective(400px) rotateY(360deg);
-  }
+  0% { transform: perspective(400px) rotateY(0deg); }
+  100% { transform: perspective(400px) rotateY(360deg); }
 }
 
 @keyframes fa-shake {
-
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-
-  15% {
-    transform: rotate(-12deg);
-  }
-
-  30% {
-    transform: rotate(10deg);
-  }
-
-  45% {
-    transform: rotate(-8deg);
-  }
-
-  60% {
-    transform: rotate(6deg);
-  }
-
-  75% {
-    transform: rotate(-3deg);
-  }
-
-  85% {
-    transform: rotate(0deg);
-  }
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-12deg); }
+  30% { transform: rotate(10deg); }
+  45% { transform: rotate(-8deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+  85% { transform: rotate(0deg); }
 }
 
 @keyframes fa-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes fa-spin-reverse {
-  0% {
-    transform: rotate(360deg);
-  }
-
-  100% {
-    transform: rotate(0deg);
-  }
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
 }
 
 @keyframes fa-buzz {
-
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-
-  10% {
-    transform: translate(-2px, -1px);
-  }
-
-  20% {
-    transform: translate(2px, 1px);
-  }
-
-  30% {
-    transform: translate(-2px, 1px);
-  }
-
-  40% {
-    transform: translate(2px, -1px);
-  }
-
-  50% {
-    transform: translate(-1px, 1px);
-  }
-
-  60% {
-    transform: translate(1px, -1px);
-  }
-
-  70% {
-    transform: translate(-1px, -1px);
-  }
-
-  80% {
-    transform: translate(1px, 1px);
-  }
-
-  90% {
-    transform: translate(0, 0);
-  }
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2px, -1px); }
+  20% { transform: translate(2px, 1px); }
+  30% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  50% { transform: translate(-1px, 1px); }
+  60% { transform: translate(1px, -1px); }
+  70% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+  90% { transform: translate(0, 0); }
 }
 
 @keyframes fa-float {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes fa-jello {
-
-  0%,
-  100% {
-    transform: scale3d(1, 1, 1);
-  }
-
-  30% {
-    transform: scale3d(1.18, 0.82, 1);
-  }
-
-  40% {
-    transform: scale3d(0.82, 1.18, 1);
-  }
-
-  50% {
-    transform: scale3d(1.1, 0.9, 1);
-  }
-
-  65% {
-    transform: scale3d(0.95, 1.05, 1);
-  }
-
-  75% {
-    transform: scale3d(1.02, 0.98, 1);
-  }
+  0%, 100% { transform: scale3d(1, 1, 1); }
+  30% { transform: scale3d(1.18, 0.82, 1); }
+  40% { transform: scale3d(0.82, 1.18, 1); }
+  50% { transform: scale3d(1.1, 0.9, 1); }
+  65% { transform: scale3d(0.95, 1.05, 1); }
+  75% { transform: scale3d(1.02, 0.98, 1); }
 }
 
 @keyframes fa-swing {
-  20% {
-    transform: rotate(15deg);
-  }
-
-  40% {
-    transform: rotate(-10deg);
-  }
-
-  60% {
-    transform: rotate(5deg);
-  }
-
-  80% {
-    transform: rotate(-5deg);
-  }
-
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
+  20% { transform: rotate(15deg); }
+  40% { transform: rotate(-10deg); }
+  60% { transform: rotate(5deg); }
+  80% { transform: rotate(-5deg); }
+  0%, 100% { transform: rotate(0deg); }
 }
 
 @keyframes fa-wag {
-
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-
-  25% {
-    transform: rotate(14deg);
-  }
-
-  75% {
-    transform: rotate(-14deg);
-  }
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(14deg); }
+  75% { transform: rotate(-14deg); }
 }
 
-.fa-anim-none {
-  animation: none !important;
-}
-
-.fa-anim-beat {
-  animation: fa-beat 1.4s ease-in-out infinite !important;
-}
-
-.fa-anim-beat-fade {
-  animation: fa-beat-fade 1.6s ease-in-out infinite !important;
-}
-
-.fa-anim-fade {
-  animation: fa-fade 2s ease-in-out infinite !important;
-}
-
-.fa-anim-bounce {
-  animation: fa-bounce 1.8s ease infinite !important;
-}
-
-.fa-anim-flip {
-  animation: fa-flip 2.4s ease-in-out infinite !important;
-}
-
-.fa-anim-flip-360 {
-  animation: fa-flip-360 2s ease-in-out infinite !important;
-}
-
-.fa-anim-shake {
-  animation: fa-shake 2.2s ease-in-out infinite !important;
-}
-
-.fa-anim-spin {
-  animation: fa-spin 2s linear infinite !important;
-}
-
-.fa-anim-spin-reverse {
-  animation: fa-spin-reverse 2s linear infinite !important;
-}
-
-.fa-anim-spin-pulse {
-  animation: fa-spin 1.2s steps(8) infinite !important;
-}
-
-.fa-anim-spin-snap {
-  animation: fa-spin 1.4s steps(2) infinite !important;
-}
-
-.fa-anim-spin-snap-4 {
-  animation: fa-spin 1.6s steps(4) infinite !important;
-}
-
-.fa-anim-spin-snap-8 {
-  animation: fa-spin 1.6s steps(8) infinite !important;
-}
-
-.fa-anim-buzz {
-  animation: fa-buzz 1.8s ease-in-out infinite !important;
-}
-
-.fa-anim-float {
-  animation: fa-float 2.6s ease-in-out infinite !important;
-}
-
-.fa-anim-jello {
-  animation: fa-jello 2s ease-in-out infinite !important;
-}
-
-.fa-anim-swing {
-  transform-origin: top center !important;
-  animation: fa-swing 2.2s ease-in-out infinite !important;
-}
-
-.fa-anim-wag {
-  transform-origin: bottom center !important;
-  animation: fa-wag 1.8s ease-in-out infinite !important;
-}
-
-@keyframes curtainDrop {
-  0% {
-    opacity: 0;
-    clip-path: inset(0% 0% 100% 0% round 16px);
-    transform: translateY(-8px) scaleY(0.9);
-  }
-  100% {
-    opacity: 1;
-    clip-path: inset(0% 0% 0% 0% round 16px);
-    transform: translateY(0) scaleY(1);
-  }
-}
-
-.animate-curtain-drop {
-  animation: curtainDrop 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  transform-origin: top center;
-  will-change: clip-path, transform, opacity;
-}
+.fa-anim-none { animation: none; }
+.fa-anim-beat, .fa-anim-pulse { animation: fa-beat 1.4s ease-in-out infinite; }
+.fa-anim-beat-fade { animation: fa-beat-fade 1.6s ease-in-out infinite; }
+.fa-anim-fade { animation: fa-fade 2s ease-in-out infinite; }
+.fa-anim-bounce { animation: fa-bounce 1.8s ease infinite; }
+.fa-anim-flip { animation: fa-flip 2.4s ease-in-out infinite; }
+.fa-anim-flip-360 { animation: fa-flip-360 2s ease-in-out infinite; }
+.fa-anim-shake { animation: fa-shake 2.2s ease-in-out infinite; }
+.fa-anim-spin { animation: fa-spin 2s linear infinite; }
+.fa-anim-spin-reverse { animation: fa-spin-reverse 2s linear infinite; }
+.fa-anim-spin-pulse { animation: fa-spin 1.2s steps(8) infinite; }
+.fa-anim-spin-snap { animation: fa-spin 1.4s steps(2) infinite; }
+.fa-anim-spin-snap-4 { animation: fa-spin 1.6s steps(4) infinite; }
+.fa-anim-spin-snap-8 { animation: fa-spin 1.6s steps(8) infinite; }
+.fa-anim-buzz { animation: fa-buzz 1.8s ease-in-out infinite; }
+.fa-anim-float { animation: fa-float 2.6s ease-in-out infinite; }
+.fa-anim-jello { animation: fa-jello 2s ease-in-out infinite; }
+.fa-anim-swing { transform-origin: top center; animation: fa-swing 2.2s ease-in-out infinite; }
+.fa-anim-wag { transform-origin: bottom center; animation: fa-wag 1.8s ease-in-out infinite; }

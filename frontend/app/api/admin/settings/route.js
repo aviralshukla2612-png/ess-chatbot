@@ -81,11 +81,28 @@ export async function POST(req) {
     if (!auth.ok) return auth.response;
 
     const body = await req.json();
+    if (body.leadWebhookUrl && typeof body.leadWebhookUrl === "string" && body.leadWebhookUrl.trim()) {
+      const { validateUrlForSSRF } = await import("@/lib/security/ssrf");
+      const whCheck = await validateUrlForSSRF(body.leadWebhookUrl.trim());
+      if (!whCheck.valid) {
+        return NextResponse.json({ ok: false, error: `Invalid lead webhook URL: ${whCheck.error}` }, { status: 400 });
+      }
+      body.leadWebhookUrl = whCheck.normalizedUrl;
+    }
+
     const result = savePlatformSettings(body);
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
     }
-    return NextResponse.json({ ok: true, message: "Settings saved successfully", settings: result.settings });
+    const { groqApiKey: _redactedKey, ...safeSettings } = result.settings || {};
+    return NextResponse.json({
+      ok: true,
+      message: "Settings saved successfully",
+      settings: {
+        ...safeSettings,
+        groqApiKeyConfigured: Boolean(result.settings?.groqApiKey && !result.settings.groqApiKey.includes("your_groq")),
+      },
+    });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 400 });
   }

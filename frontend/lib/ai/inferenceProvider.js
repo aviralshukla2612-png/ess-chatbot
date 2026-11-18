@@ -12,7 +12,7 @@ class ConcurrencyLimiter {
     this.queue = [];
   }
 
-  async acquire() {
+  async acquire(waitTimeoutMs = 15000) {
     if (this.activeCount < this.maxConcurrent) {
       this.activeCount++;
       return () => this.release();
@@ -20,11 +20,25 @@ class ConcurrencyLimiter {
     if (this.queue.length >= this.maxQueue) {
       throw new Error("Provider overloaded: concurrency limit and queue capacity reached.");
     }
-    return new Promise((resolve) => {
-      this.queue.push(() => {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        const idx = this.queue.indexOf(entry);
+        if (idx >= 0) this.queue.splice(idx, 1);
+        reject(new Error("Inference queue wait timeout exceeded. Please retry shortly."));
+      }, waitTimeoutMs);
+      if (typeof timer.unref === "function") timer.unref();
+
+      const entry = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
         this.activeCount++;
         resolve(() => this.release());
-      });
+      };
+      this.queue.push(entry);
     });
   }
 
@@ -313,7 +327,7 @@ export class InferenceProvider {
           options: {
             temperature,
             num_predict: maxTokens,
-            num_ctx: 2048,
+            num_ctx: 4096,
             stop: stops,
           },
         }),

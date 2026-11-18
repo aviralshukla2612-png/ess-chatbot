@@ -128,27 +128,40 @@ export default function Step03Questionnaire({
     }
   };
 
-  // File upload helper
+  // File upload helper (reads plain text or extracts readable text from PDFs without corrupting RAG with base64)
   const handleFileChange = (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
+    Array.from(files).forEach(async (file) => {
+      try {
+        let extractedContent = "";
+        if (
+          file.type.startsWith("text/") ||
+          /\.(txt|md|csv|json)$/i.test(file.name)
+        ) {
+          extractedContent = await file.text();
+        } else {
+          const buf = await file.arrayBuffer();
+          const latin = new TextDecoder("latin1").decode(buf);
+          const matches = latin.match(/\(([^()\\]{3,})\)/g) || [];
+          extractedContent = matches
+            .map((m) => m.slice(1, -1))
+            .join(" ")
+            .replace(/[^\x20-\x7E\n]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!extractedContent || extractedContent.length < 20) {
+            extractedContent = `Uploaded reference file: ${file.name}`;
+          }
+        }
         onAddDocument({
           id: `file_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           name: file.name,
           size: (file.size / 1024).toFixed(1) + " KB",
-          content: typeof reader.result === "string" ? reader.result : "",
-          type: file.type || "Document",
+          content: extractedContent.slice(0, 150000),
+          type: file.name.split(".").pop()?.toUpperCase() || "Document",
         });
-      };
-      if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".md")) {
-        reader.readAsText(file);
-      } else {
-        // Mock text for PDFs/binary in browser preview
-        reader.readAsDataURL(file);
-      }
+      } catch {}
     });
   };
 
@@ -167,7 +180,7 @@ export default function Step03Questionnaire({
             >
               {ind.name} Questionnaire
             </span>
-            <span className="text-xs text-[#9898A6]">
+            <span className="text-xs text-[var(--text-muted)]">
               Question {currentQuestionIdx + 1} of {questions.length}
             </span>
           </div>
@@ -175,17 +188,17 @@ export default function Step03Questionnaire({
           <button
             type="button"
             onClick={() => setShowEnrichmentPanel(!showEnrichmentPanel)}
-            className="text-xs font-semibold text-[#55A9FF] hover:underline flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+            className="text-xs font-semibold text-[var(--accent-primary)] hover:underline flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>Optional: Upload Brochures / PDFs ({uploadedDocuments?.length || 0})</span>
+            <span>Optional: Attach Brochures / Docs ({uploadedDocuments?.length || 0})</span>
           </button>
         </div>
 
         {/* Visual Progress Bar */}
-        <div className="w-full bg-[#1A1A24] h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-[var(--bg-muted)] h-2 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#963DFF] to-[#55A9FF] transition-all duration-300 rounded-full"
+            className="h-full bg-indigo-600 transition-all duration-300 rounded-full"
             style={{
               width: `${Math.round(((currentQuestionIdx + 1) / questions.length) * 100)}%`,
             }}

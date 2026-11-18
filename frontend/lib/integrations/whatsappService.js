@@ -14,7 +14,17 @@ import { leadsStore } from "../db/leadsStore.js";
 import { botsStore } from "../db/botsStore.js";
 
 const DEFAULT_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || (process.env.NODE_ENV === "production" ? "" : "ess_whatsapp_verify_token_default");
+const MAX_PROCESSED_WA_IDS = 5000;
 const processedWhatsAppMessages = new Set();
+
+function rememberWhatsAppMessageId(id) {
+  if (!id) return;
+  if (processedWhatsAppMessages.size >= MAX_PROCESSED_WA_IDS) {
+    const oldest = processedWhatsAppMessages.values().next().value;
+    if (oldest !== undefined) processedWhatsAppMessages.delete(oldest);
+  }
+  processedWhatsAppMessages.add(id);
+}
 
 export const whatsappService = {
   _resetMemoryStore() {
@@ -90,23 +100,25 @@ export const whatsappService = {
   /**
    * Process incoming message, run sales state machine, capture lead, and return reply.
    */
-  async handleInboundMessage({ senderPhone, messageId, text, phoneNumberId, organizationId = "org_ess_default", botId = "bot_aa" }) {
+  async handleInboundMessage({ senderPhone, messageId, text, phoneNumberId, organizationId = "org_ess_01", botId = "bot_aa" }) {
     // Idempotency check
-    if (processedWhatsAppMessages.has(messageId)) {
+    if (messageId && processedWhatsAppMessages.has(messageId)) {
       return { status: "duplicate_skipped", duplicate: true };
     }
-    processedWhatsAppMessages.add(messageId);
+    rememberWhatsAppMessageId(messageId);
 
-    const bot = botsStore.getBot(botId, organizationId) || botsStore.getBot("bot_aa");
-    const sessionId = `wa_${senderPhone}`;
+    const bot = botsStore.getBot(botId, organizationId) || (botId === "bot_aa" ? botsStore.getBot("bot_aa") : null);
+    const resolvedOrgId = bot?.organizationId || organizationId;
+    const resolvedBotId = bot?.id || botId;
+    const sessionId = `wa_${resolvedBotId}_${senderPhone}`;
 
     // 1. Resolve or create conversation
-    let conv = conversationsStore.getConversation(sessionId, organizationId);
+    let conv = conversationsStore.getConversation(sessionId, resolvedOrgId);
     if (!conv) {
       conv = conversationsStore.createConversation({
         id: sessionId,
-        organizationId,
-        botId: bot?.id || "bot_aa",
+        organizationId: resolvedOrgId,
+        botId: resolvedBotId,
         botName: bot?.name || "WhatsApp Assistant",
         visitorPhone: senderPhone,
         visitorName: "WhatsApp Lead",
@@ -152,10 +164,10 @@ export const whatsappService = {
         { role: "user", content: text },
       ]);
 
-      if (extracted?.hasLeadInfo) {
+      if (extracted?.hasLeadData || extracted?.hasLeadInfo) {
         leadsStore.createLead({
-          organizationId,
-          botId: bot?.id || "bot_aa",
+          organizationId: resolvedOrgId,
+          botId: resolvedBotId,
           name: extracted.name || conv.visitorName || "WhatsApp Lead",
           email: extracted.email || null,
           phone: extracted.phone || senderPhone,
@@ -168,8 +180,16 @@ export const whatsappService = {
     }
 
     // Record turn in conversation
-    conversationsStore.addMessage(sessionId, "user", text);
-    conversationsStore.addMessage(sessionId, "assistant", replyText);
+    conversationsStore.addMessage(
+      sessionId,
+      { role: "user", content: text },
+      { organizationId: resolvedOrgId, botId: resolvedBotId }
+    );
+    conversationsStore.addMessage(
+      sessionId,
+      { role: "assistant", content: replyText },
+      { organizationId: resolvedOrgId, botId: resolvedBotId }
+    );
 
     return {
       status: "success",

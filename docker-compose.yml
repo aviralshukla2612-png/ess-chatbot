@@ -12,8 +12,8 @@ services:
     container_name: ess-frontend
     restart: unless-stopped
     ports:
-      # Expose on port 3300 for direct browser access and reverse proxy
-      - "3300:3000"
+      # Bind exclusively to loopback; reverse proxy (Nginx) exposes HTTPS publicly
+      - "127.0.0.1:3300:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000

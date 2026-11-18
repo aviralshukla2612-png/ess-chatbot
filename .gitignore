@@ -129,3 +129,5 @@ htmlcov/
 !frontend/data/
 *.persistent.json
 frontend/data/*.persistent.json
+frontend/data/uploads/
+frontend/data/sms_dlr_history.json

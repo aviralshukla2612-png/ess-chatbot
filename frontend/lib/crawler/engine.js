@@ -91,33 +91,42 @@ function chunkText(text, chunkSize = 500, overlap = 80) {
   return chunks;
 }
 
+let ollamaEmbedOfflineUntil = 0;
+
 /**
- * Generates embeddings via Ollama nomic-embed-text with robust fallback
+ * Generates embeddings via Ollama nomic-embed-text with fast circuit-breaker fallback
  */
 async function generateEmbedding(text) {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+  const now = Date.now();
+  if (now >= ollamaEmbedOfflineUntil) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
 
-    const res = await fetch(`${OLLAMA_URL}/api/embed`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: EMBED_MODEL,
-        input: text.slice(0, 1024),
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+      const res = await fetch(`${OLLAMA_URL}/api/embed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: EMBED_MODEL,
+          input: text.slice(0, 1024),
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.embeddings && data.embeddings[0]) {
-        return data.embeddings[0];
+      if (res.ok) {
+        const data = await res.json();
+        if (data.embeddings && data.embeddings[0]) {
+          ollamaEmbedOfflineUntil = 0;
+          return data.embeddings[0];
+        }
+      } else {
+        ollamaEmbedOfflineUntil = now + 60000;
       }
+    } catch {
+      // Circuit-break for 60s when Ollama embed endpoint is unreachable so chat never stalls 6s per message
+      ollamaEmbedOfflineUntil = now + 60000;
     }
-  } catch (e) {
-    // Ollama unreachable
   }
 
   // If in test environment without Ollama container running, return deterministic test vector
@@ -152,7 +161,7 @@ async function discoverUrls(baseUrl, scope, maxPages = 50, includePatterns = [],
     if (ssrfCheck.valid) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(sitemapUrl, { signal: controller.signal });
+      const res = await fetch(sitemapUrl, { redirect: "error", signal: controller.signal });
       clearTimeout(timeout);
 
       if (res.ok) {
@@ -161,9 +170,11 @@ async function discoverUrls(baseUrl, scope, maxPages = 50, includePatterns = [],
         for (const match of locMatches) {
           if (discovered.size >= maxPages) break;
           const u = match[1].trim();
-          if (u.startsWith(origin)) {
-            discovered.add(u);
-          }
+          try {
+            if (new URL(u).origin === origin) {
+              discovered.add(u);
+            }
+          } catch {}
         }
       }
     }
@@ -178,6 +189,7 @@ async function discoverUrls(baseUrl, scope, maxPages = 50, includePatterns = [],
       const timeout = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(baseUrl, {
         headers: { "User-Agent": "NexusAI-KnowledgeBot/1.0" },
+        redirect: "error",
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -189,8 +201,9 @@ async function discoverUrls(baseUrl, scope, maxPages = 50, includePatterns = [],
           if (discovered.size >= maxPages) break;
           try {
             const rawHref = match[1];
-            const resolved = new URL(rawHref, baseUrl).href;
-            if (resolved.startsWith(origin)) {
+            const parsedUrl = new URL(rawHref, baseUrl);
+            const resolved = parsedUrl.href;
+            if (parsedUrl.origin === origin) {
               // Apply exclude patterns
               const isExcluded = excludePatterns.some((pattern) => resolved.includes(pattern));
               if (!isExcluded) {
@@ -442,12 +455,19 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
     console.warn("[KNOWLEDGE_DOC_SEARCH_WARN]", err.message);
   }
 
-  // 2. Search PostgreSQL pgvector KnowledgeChunk table for this botId
-  let dbResults = [];
+  // 2. Compute query embedding AT MOST ONCE across pgvector + in-memory points
+  let sharedQueryVec = null;
   try {
-    const queryVec = await generateEmbedding(query);
-    if (queryVec && Array.isArray(queryVec)) {
-      const vectorStr = `[${queryVec.join(",")}]`;
+    sharedQueryVec = await generateEmbedding(query);
+  } catch {
+    sharedQueryVec = null;
+  }
+
+  // 3. Search PostgreSQL pgvector KnowledgeChunk table for this botId
+  let dbResults = [];
+  if (sharedQueryVec && Array.isArray(sharedQueryVec)) {
+    try {
+      const vectorStr = `[${sharedQueryVec.join(",")}]`;
       const res = await queryDb(
         `SELECT "id", "botId", "organizationId", "content", "sourceUrl", "pageTitle",
                 (1 - ("embedding" <=> $1::vector)) AS score
@@ -465,9 +485,11 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
           score: Number(r.score) || 0,
         }));
       }
-    }
-  } catch (dbErr) {
-    // Vector search error, try keyword search on PostgreSQL KnowledgeChunk
+    } catch {}
+  }
+
+  if (dbResults.length === 0) {
+    // Keyword search fallback on PostgreSQL KnowledgeChunk
     try {
       const keywords = query.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 2);
       if (keywords.length > 0) {
@@ -488,33 +510,30 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
           }));
         }
       }
-    } catch (kwErr) {}
+    } catch {}
   }
 
-  // 3. Search in-memory crawled website vector store for this botId
+  // 4. Search in-memory crawled website vector store for this botId using sharedQueryVec
   const botPoints = vectorStorePoints.filter((p) => p.botId === botId);
   let websiteResults = [];
 
-  if (botPoints.length > 0) {
+  if (botPoints.length > 0 && sharedQueryVec) {
     try {
-      const queryVec = await generateEmbedding(query);
-      if (queryVec) {
-        websiteResults = botPoints.map((point) => {
-          let dot = 0;
-          let normA = 0;
-          let normB = 0;
-          for (let i = 0; i < 768; i++) {
-            const a = queryVec[i] || 0;
-            const b = point.embedding?.[i] || 0;
-            dot += a * b;
-            normA += a * a;
-            normB += b * b;
-          }
-          const score = dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
-          return { ...point, score };
-        });
-        websiteResults.sort((a, b) => b.score - a.score);
-      }
+      websiteResults = botPoints.map((point) => {
+        let dot = 0;
+        let normA = 0;
+        let normB = 0;
+        for (let i = 0; i < 768; i++) {
+          const a = sharedQueryVec[i] || 0;
+          const b = point.embedding?.[i] || 0;
+          dot += a * b;
+          normA += a * a;
+          normB += b * b;
+        }
+        const score = dot / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+        return { ...point, score };
+      });
+      websiteResults.sort((a, b) => b.score - a.score);
     } catch (e) {
       console.warn("[KNOWLEDGE_WEBSITE_SEARCH_WARN]", e.message);
     }

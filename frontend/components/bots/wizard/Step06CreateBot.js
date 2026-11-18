@@ -44,16 +44,16 @@ export default function Step06CreateBot({
   return (
     <div className="space-y-8 animate-fade-in max-w-3xl mx-auto">
       {/* Header */}
-      <div className="space-y-2 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D98B]/10 border border-[#00D98B]/30 text-[11px] font-bold text-[#00D98B] uppercase tracking-wider">
+      <div className="space-y-1.5 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/12 border border-emerald-200 dark:border-emerald-500/25 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Step 06 · Activation</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Launch Your Autonomous Assistant
         </h2>
-        <p className="text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-          Ready to deploy. Emperor Nexus will synthesize your approved business questionnaire into a vector-ready knowledge base and activate your AI assistant.
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+          Ready to deploy. Emperor Nexus will synthesize your approved business profile into a vector-indexed knowledge base and activate your chatbot.
         </p>
       </div>
 
@@ -290,7 +290,7 @@ export default function Step06CreateBot({
             <button
               type="button"
               onClick={onConfirmCreate}
-              className="inline-flex items-center gap-2 px-9 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] via-[#7B2CBF] to-[#55A9FF] hover:opacity-95 active:scale-[0.98] shadow-xl shadow-[#963DFF]/30 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 h-11 px-7 rounded-xl font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition-colors cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>Confirm & Create Assistant</span>

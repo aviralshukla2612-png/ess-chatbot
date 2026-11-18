@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
 import RedesignBotModal from "@/components/bots/RedesignBotModal";
+import { useToast } from "@/components/ui/Toast";
 
 const LAUNCHER_ANIMATIONS = [
   { id: "none", label: "No Animation", desc: "Static button", icon: Ban },
@@ -74,13 +75,14 @@ const LAUNCHER_ANIMATIONS = [
 
 function DeployBotContent() {
   const routeParams = useParams();
-  const botId = routeParams?.botId || "bot_1791618269632";
+  const botId = routeParams?.botId || "bot_aa";
+  const { toast } = useToast();
 
   const [bot, setBot] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Widget Customizer State
-  const [widgetColor, setWidgetColor] = useState("#B68A55");
+  const [widgetColor, setWidgetColor] = useState("#4F46E5");
   const [welcomeMessage, setWelcomeMessage] = useState("Hello! How can I help you today?");
   const [launcherPosition, setLauncherPosition] = useState("bottom-right");
   const [launcherShape, setLauncherShape] = useState("circle"); // circle | squircle | pill
@@ -263,13 +265,26 @@ function DeployBotContent() {
       if (data && data.success) {
         setAppearanceSaved(true);
         if (data.bot) setBot(data.bot);
+        toast({
+          variant: "success",
+          title: "Appearance saved",
+          message: "Your live widget styling has been updated.",
+        });
         setTimeout(() => setAppearanceSaved(false), 3000);
       } else {
-        alert(data.error || "Failed to save launcher appearance.");
+        toast({
+          variant: "error",
+          title: "Save failed",
+          message: data.error || "Failed to save launcher appearance.",
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to communicate with server.");
+      toast({
+        variant: "error",
+        title: "Network error",
+        message: "Failed to communicate with server.",
+      });
     } finally {
       setSavingAppearance(false);
     }
@@ -411,36 +426,37 @@ function DeployBotContent() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-16 font-sans text-slate-800">
+    <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-16 font-sans text-[var(--text-primary)]">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
             href={`/bots/${botId}`}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+            aria-label="Back to chatbot"
+            className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
                 Deploy Website Chatbot
               </h1>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/12 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/25">
                 Ready to Embed
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Embed your AI chatbot on any website, preview it live on your target domain, and verify installation.
+            <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
+              Embed your AI chatbot on any website, preview it live, and verify installation.
             </p>
           </div>
         </div>
 
         <Link
           href={`/bots/${botId}/knowledge/websites`}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors"
+          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-xs font-medium transition-colors"
         >
-          <Globe className="w-4 h-4 text-indigo-600" />
+          <Globe className="w-4 h-4 text-[var(--accent-primary)]" />
           <span>Manage Website Knowledge</span>
         </Link>
       </div>
@@ -483,12 +499,16 @@ function DeployBotContent() {
                 onClick={(e) => {
                   if (!verifyUrl) {
                     e.preventDefault();
-                    alert("Please enter your website URL first.");
+                    toast({
+                      variant: "warning",
+                      title: "Website URL required",
+                      message: "Enter your target website URL first to launch the preview.",
+                    });
                   }
                 }}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-xl bg-[#B68A55] hover:bg-[#9F7645] text-white font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md flex items-center justify-center gap-2 transition-colors shrink-0 cursor-pointer"
               >
                 <Globe className="w-4 h-4" />
                 <span>Launch Live Mirror 🚀</span>
@@ -929,8 +949,8 @@ function DeployBotContent() {
                     <label className="block text-[11px] font-bold text-slate-800">
                       Brand Logo Image (Upload from Computer or URL)
                     </label>
-                    <span className="text-[10px] text-[#B68A55] font-semibold">
-                      PNG, WEBP, SVG
+                    <span className="text-[10px] text-indigo-600 font-semibold">
+                      PNG, JPG, WEBP, GIF
                     </span>
                   </div>
 
@@ -938,7 +958,7 @@ function DeployBotContent() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     className="hidden"
                     onChange={handleFileUpload}
                   />

@@ -1,27 +1,66 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { authStore } from "@/lib/db/authStore";
 import { signSessionToken } from "@/lib/auth/session";
 
+function resolveSafeBaseUrl(request) {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/+$/, "");
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.replace(/\/+$/, "");
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  const proto = request.headers.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
+  const host = request.headers.get("host") || "localhost:3000";
+  return `${proto}://${host}`;
+}
+
+function sanitizeRedirectPath(raw) {
+  if (!raw || typeof raw !== "string") return "/dashboard";
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.includes("\\")) {
+    return "/dashboard";
+  }
+  return trimmed;
+}
+
 /**
  * GET /api/auth/google/callback
- * Handles Google OAuth 2.0 authorization code exchange and logs in user
+ * Handles Google OAuth 2.0 authorization code exchange, verifies CSRF state & email_verified, and logs in user.
  */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
     const error = searchParams.get("error");
-    const state = searchParams.get("state") || "/dashboard";
+    const rawState = searchParams.get("state") || "";
 
-    const proto = request.headers.get("x-forwarded-proto") || "https";
-    const host = request.headers.get("host") || "localhost:3000";
-    const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || `${proto}://${host}`;
+    const baseUrl = resolveSafeBaseUrl(request);
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     if (error || !code) {
       return NextResponse.redirect(
         `${baseUrl}/login?error=${encodeURIComponent(error || "Google sign-in was cancelled")}`
       );
+    }
+
+    // Verify OAuth CSRF state cookie
+    const stateCookie = request.cookies.get("ess_oauth_state")?.value || "";
+    let redirectTarget = "/dashboard";
+    let stateNonce = "";
+
+    try {
+      const parsedState = JSON.parse(Buffer.from(rawState, "base64url").toString("utf8"));
+      stateNonce = parsedState?.nonce || "";
+      redirectTarget = sanitizeRedirectPath(parsedState?.redirect || "/dashboard");
+    } catch {
+      return NextResponse.redirect(`${baseUrl}/login?error=Invalid+OAuth+state+parameter`);
+    }
+
+    if (
+      !stateCookie ||
+      !stateNonce ||
+      stateCookie.length !== stateNonce.length ||
+      !crypto.timingSafeEqual(Buffer.from(stateCookie), Buffer.from(stateNonce))
+    ) {
+      return NextResponse.redirect(`${baseUrl}/login?error=OAuth+session+expired+or+CSRF+mismatch`);
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -42,22 +81,24 @@ export async function GET(request) {
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }),
+      signal: AbortSignal.timeout(8000),
     });
 
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok || !tokenData.access_token) {
-      console.error("[GOOGLE_TOKEN_EXCHANGE_ERROR]", tokenData);
+      console.error("[GOOGLE_TOKEN_EXCHANGE_ERROR]", tokenData?.error || "token_exchange_failed");
       return NextResponse.redirect(`${baseUrl}/login?error=Google+token+exchange+failed`);
     }
 
     // Fetch verified user profile from Google
     const userinfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      signal: AbortSignal.timeout(8000),
     });
 
     const profile = await userinfoRes.json();
-    if (!profile.email) {
-      return NextResponse.redirect(`${baseUrl}/login?error=Could+not+retrieve+Google+account+email`);
+    if (!profile.email || profile.email_verified !== true) {
+      return NextResponse.redirect(`${baseUrl}/login?error=Verified+Google+account+email+is+required`);
     }
 
     // Authenticate or auto-provision workspace for user
@@ -72,6 +113,7 @@ export async function GET(request) {
 
     const token = signSessionToken({
       userId: user.id,
+      name: user.name,
       email: user.email,
       role: user.role,
       organizationId,
@@ -79,10 +121,19 @@ export async function GET(request) {
     });
 
     const isSuper = user.role === "SUPER_ADMIN" || orgRole === "SUPER_ADMIN";
-    const targetPath = state.startsWith("/") ? state : `/${state}`;
-    const destination = isSuper ? `${baseUrl}/admin` : `${baseUrl}${targetPath}`;
+    const destination = isSuper ? `${baseUrl}/admin` : `${baseUrl}${redirectTarget}`;
+    const isHttps = baseUrl.startsWith("https://") || process.env.NODE_ENV === "production";
 
     const response = NextResponse.redirect(destination);
+    response.cookies.set({
+      name: "ess_oauth_state",
+      value: "",
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 0,
+      secure: isHttps,
+    });
     response.cookies.set({
       name: "ess_session",
       value: token,
@@ -90,7 +141,7 @@ export async function GET(request) {
       httpOnly: true,
       sameSite: "lax",
       maxAge: 7 * 24 * 3600,
-      secure: proto === "https",
+      secure: isHttps,
     });
 
     return response;
@@ -99,7 +150,7 @@ export async function GET(request) {
       throw err;
     }
     console.error("[GOOGLE_CALLBACK_ERROR]", err);
-    const host = request.headers.get("host") || "localhost:3000";
-    return NextResponse.redirect(`https://${host}/login?error=Authentication+exception`);
+    const baseUrl = resolveSafeBaseUrl(request);
+    return NextResponse.redirect(`${baseUrl}/login?error=Authentication+exception`);
   }
 }

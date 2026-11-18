@@ -1,25 +1,19 @@
 import { sseBroker } from "@/lib/db/sseBroker";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, isPlatformSuperAdmin } from "@/lib/auth/guard";
 
 export async function GET(request) {
   const auth = await requireAuth(request);
   if (!auth.ok) return auth.response;
 
   const { principal } = auth;
-  const isSuperAdmin =
-    principal.platformRole === ROLES.SUPER_ADMIN ||
-    principal.orgRole === ROLES.SUPER_ADMIN ||
-    principal.orgRole === ROLES.ORG_OWNER ||
-    principal.orgRole === ROLES.ORG_ADMIN ||
-    principal.platformRole === "Workspace Owner" ||
-    principal.email?.toLowerCase().includes("aviral");
+  const isSuperAdmin = isPlatformSuperAdmin(principal);
 
   let unsubscribe;
   let heartbeatInterval;
 
   const stream = new ReadableStream({
     start(controller) {
-      // 1. Send initial connected event scoped to user's org
+      // 1. Send initial connected event scoped strictly to caller's organization
       const initialPayload = JSON.stringify({
         type: "connected",
         message: "Real-time SSE event stream connected",
@@ -29,7 +23,7 @@ export async function GET(request) {
       });
       controller.enqueue(new TextEncoder().encode(`event: message\ndata: ${initialPayload}\n\n`));
 
-      // 2. Subscribe controller to global broker with tenant isolation metadata
+      // 2. Subscribe controller to global broker with strict tenant isolation metadata
       unsubscribe = sseBroker.subscribe(controller, {
         organizationId: principal.organizationId,
         isSuperAdmin,
@@ -39,7 +33,7 @@ export async function GET(request) {
       heartbeatInterval = setInterval(() => {
         try {
           controller.enqueue(new TextEncoder().encode(`: heartbeat ${Date.now()}\n\n`));
-        } catch (e) {
+        } catch {
           clearInterval(heartbeatInterval);
           if (unsubscribe) {
             unsubscribe();

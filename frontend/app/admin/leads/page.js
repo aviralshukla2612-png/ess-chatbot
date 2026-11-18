@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Users2,
   Mail,
@@ -8,25 +8,29 @@ import {
   Building,
   Sparkles,
   Search,
-  Filter,
   Flame,
   CheckCircle2,
   X,
   Copy,
   Check,
-  MessageSquare,
   Bot,
   Globe,
-  ExternalLink,
   ChevronRight,
-  TrendingUp,
   Trash2,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { leadsApi } from "@/lib/api/leads";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
+import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
+import { leadsApi } from "@/lib/api/leads";
 
 function stripMarkdown(text) {
   if (!text) return "";
@@ -34,6 +38,7 @@ function stripMarkdown(text) {
 }
 
 export default function AdminLeadsPage() {
+  const { toast } = useToast();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [purging, setPurging] = useState(false);
@@ -50,7 +55,7 @@ export default function AdminLeadsPage() {
     setCurrentPage(1);
   }, [search, scoreFilter, statusFilter]);
 
-  const loadLeads = React.useCallback(async () => {
+  const loadLeads = useCallback(async () => {
     setLoading(true);
     try {
       const data = await leadsApi.getLeads();
@@ -66,95 +71,16 @@ export default function AdminLeadsPage() {
     loadLeads();
   }, [loadLeads]);
 
-  const handleDeleteLead = (e, leadId) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    const lead = leads.find((l) => l.id === leadId) || { id: leadId, name: "this lead" };
-    const leadLabel =
-      lead.name && lead.name !== "Website Prospect" && lead.name !== "Website Visitor"
-        ? `"${lead.name}"`
-        : lead.phone
-        ? `client (${lead.phone})`
-        : lead.email || "this lead";
-
-    setConfirmConfig({
-      title: "Delete Lead?",
-      description: `Are you sure you want to delete ${leadLabel}? All contact details, qualification answers, and activity logs will be permanently removed.`,
-      confirmText: "Delete Lead",
-      variant: "danger",
-      onConfirm: async () => {
-        try {
-          const res = await fetch(`/api/leads?id=${leadId}`, { method: "DELETE" });
-          if (res.ok) {
-            setLeads((prev) => prev.filter((l) => l.id !== leadId));
-            if (selectedLead?.id === leadId) setSelectedLead(null);
-          } else {
-            const data = await res.json().catch(() => ({}));
-            console.error("Failed to delete lead:", data.error);
-          }
-        } catch (err) {
-          console.error("Error deleting lead:", err);
-        }
-      },
-    });
-  };
-
-  const handlePurgeDummyLeads = () => {
-    setConfirmConfig({
-      title: "Purge All Test & Dummy Leads?",
-      description: "Purge all dummy and incomplete test leads from the database and storage? Verified live customer leads will remain untouched.",
-      confirmText: "Purge Dummy Leads",
-      badgeText: "Admin Cleanup",
-      variant: "danger",
-      onConfirm: async () => {
-        setPurging(true);
-        try {
-          const res = await fetch("/api/leads?purgeDummy=true", { method: "DELETE" });
-          const data = await res.json().catch(() => ({}));
-          if (data.success) {
-            await loadLeads();
-          }
-        } catch (err) {
-          console.error("Error purging dummy leads:", err);
-        } finally {
-          setPurging(false);
-        }
-      },
-    });
-  };
-
-  const copyToClipboard = (text, field) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  // Metrics
-  const stats = useMemo(() => {
-    const total = leads.length;
-    const hotOrHigh = leads.filter(
-      (l) => ["HOT", "HIGH"].includes((l.score || "").toUpperCase())
-    ).length;
-    const qualified = leads.filter(
-      (l) => ["QUALIFIED", "CONVERTED"].includes((l.status || "").toUpperCase())
-    ).length;
-    const newLeads = leads.filter(
-      (l) => (l.status || "").toUpperCase() === "NEW"
-    ).length;
-    return { total, hotOrHigh, qualified, newLeads };
-  }, [leads]);
-
-  // Filtered leads
   const filteredLeads = useMemo(() => {
     return leads.filter((l) => {
       const q = search.toLowerCase();
       const matchesSearch =
         !search ||
-        (l.name && l.name.toLowerCase().includes(q)) ||
-        (l.phone && l.phone.includes(q)) ||
-        (l.email && l.email.toLowerCase().includes(q)) ||
-        (l.company && l.company.toLowerCase().includes(q)) ||
-        (l.inquiry && l.inquiry.toLowerCase().includes(q));
+        l.name?.toLowerCase().includes(q) ||
+        l.phone?.includes(q) ||
+        l.email?.toLowerCase().includes(q) ||
+        l.company?.toLowerCase().includes(q) ||
+        l.inquiry?.toLowerCase().includes(q);
 
       const matchesScore =
         scoreFilter === "All" ||
@@ -168,214 +94,229 @@ export default function AdminLeadsPage() {
     });
   }, [leads, search, scoreFilter, statusFilter]);
 
+  const stats = useMemo(() => {
+    const total = leads.length;
+    const hotOrHigh = leads.filter((l) =>
+      ["HOT", "HIGH"].includes((l.score || "").toUpperCase())
+    ).length;
+    const qualified = leads.filter((l) =>
+      ["QUALIFIED", "CONVERTED"].includes((l.status || "").toUpperCase())
+    ).length;
+    const newLeads = leads.filter((l) => (l.status || "").toUpperCase() === "NEW").length;
+    return { total, hotOrHigh, qualified, newLeads };
+  }, [leads]);
+
+  const handleExportCsv = () => {
+    if (filteredLeads.length === 0) {
+      toast({ title: "No leads to export", variant: "warning" });
+      return;
+    }
+    const escapeCsv = (v) => `"${String(v ?? "").replace(/"/g, '""').replace(/\r?\n/g, " ")}"`;
+    const headers = ["ID", "Name", "Phone", "Email", "Company", "Organization", "Bot", "Score", "Status", "Inquiry", "Created"];
+    const rows = filteredLeads.map((l) => [
+      escapeCsv(l.id),
+      escapeCsv(l.name),
+      escapeCsv(l.phone),
+      escapeCsv(l.email),
+      escapeCsv(l.company),
+      escapeCsv(l.organizationId),
+      escapeCsv(l.bot || l.botName),
+      escapeCsv(l.score),
+      escapeCsv(l.status),
+      escapeCsv(stripMarkdown(l.inquiry)),
+      escapeCsv(l.created || l.createdAt),
+    ]);
+    const csv = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csv));
+    link.setAttribute("download", `platform_leads_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "CSV downloaded", message: `${filteredLeads.length} leads exported.`, variant: "success" });
+  };
+
+  const handleDeleteLead = (e, leadId) => {
+    e?.stopPropagation?.();
+    const lead = leads.find((l) => l.id === leadId) || { id: leadId, name: "this lead" };
+    setConfirmConfig({
+      title: "Delete Lead?",
+      description: `Permanently delete "${lead.name || lead.phone || lead.email || "this lead"}"?`,
+      confirmText: "Delete Lead",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/leads?id=${encodeURIComponent(leadId)}`, { method: "DELETE" });
+          if (res.ok) {
+            setLeads((prev) => prev.filter((l) => l.id !== leadId));
+            if (selectedLead?.id === leadId) setSelectedLead(null);
+            toast({ title: "Lead deleted", variant: "info" });
+          }
+        } finally {
+          setConfirmConfig(null);
+        }
+      },
+    });
+  };
+
+  const handlePurgeDummyLeads = () => {
+    setConfirmConfig({
+      title: "Purge Test & Dummy Leads?",
+      description:
+        "Remove incomplete/dummy test leads while keeping verified customer leads intact?",
+      confirmText: "Purge Dummy Leads",
+      badgeText: "Admin Cleanup",
+      variant: "danger",
+      onConfirm: async () => {
+        setPurging(true);
+        try {
+          const res = await fetch("/api/leads?purgeDummy=true", { method: "DELETE" });
+          const data = await res.json().catch(() => ({}));
+          if (data.success) {
+            toast({ title: "Dummy leads purged", variant: "success" });
+            await loadLeads();
+          }
+        } finally {
+          setPurging(false);
+          setConfirmConfig(null);
+        }
+      },
+    });
+  };
+
+  const copyToClipboard = (text, field) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const totalItems = filteredLeads.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const startIndex = (safeCurrentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalItems);
-  const paginatedLeads = filteredLeads.slice(startIndex, endIndex);
+  const paginatedLeads = filteredLeads.slice(
+    (safeCurrentPage - 1) * pageSize,
+    safeCurrentPage * pageSize
+  );
 
   return (
-    <div className="space-y-6 animate-fade-in pb-16 font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
-              <Users2 className="w-5 h-5" />
-            </span>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
-                Global Generated Leads
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-0.5">
-                High-commercial-intent leads captured by all customer assistants across all tenants.
-              </p>
-            </div>
+    <div className="space-y-6 pb-16 animate-fade-in">
+      <PageHeader
+        badge="Cross-Tenant Pipeline"
+        title="Global Generated Leads"
+        description="Qualified commercial leads captured by customer assistants across all tenant workspaces."
+        actions={
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Button variant="secondary" size="sm" icon={Download} onClick={handleExportCsv}>
+              Export CSV
+            </Button>
+            <Button variant="secondary" size="sm" icon={RefreshCw} onClick={loadLeads}>
+              Refresh
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              icon={Trash2}
+              loading={purging}
+              onClick={handlePurgeDummyLeads}
+            >
+              Purge Dummy Leads
+            </Button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={loadLeads}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-[#252525] dark:text-neutral-200 bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 rounded-xl shadow-xs transition-colors cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-slate-400 dark:text-neutral-400"}`} />
-            <span>Refresh</span>
-          </button>
-          <button
-            onClick={handlePurgeDummyLeads}
-            disabled={purging}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl shadow-xs transition-colors cursor-pointer"
-            title="Purge dummy and test leads"
-          >
-            <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-            <span>{purging ? "Purging..." : "Purge Dummy Leads"}</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-              Total Leads
-            </span>
-            <span className="p-1.5 rounded-lg bg-[#FAF9F6] dark:bg-neutral-900 text-slate-700 dark:text-neutral-300 border border-[#EFE7DC] dark:border-neutral-800">
-              <Users2 className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-[#252525] dark:text-white">{stats.total}</span>
-            <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">All-time</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-              Hot / High Intent
-            </span>
-            <span className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-              <Flame className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-rose-600 dark:text-rose-400">{stats.hotOrHigh}</span>
-            <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">Priority</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-              Qualified
-            </span>
-            <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <CheckCircle2 className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{stats.qualified}</span>
-            <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">Verified intent</span>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl p-4 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-              New Leads
-            </span>
-            <span className="p-1.5 rounded-lg bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
-              <Sparkles className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold text-[#B68A55]">{stats.newLeads}</span>
-            <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">Needs action</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard title="Total Leads" value={stats.total} icon={Users2} colorScheme="indigo" />
+        <StatCard title="Hot / High Intent" value={stats.hotOrHigh} icon={Flame} colorScheme="rose" />
+        <StatCard title="Qualified / Converted" value={stats.qualified} icon={CheckCircle2} colorScheme="emerald" />
+        <StatCard title="New Actionable" value={stats.newLeads} icon={Sparkles} colorScheme="amber" />
       </div>
 
-      {/* Search & Filter Toolbar */}
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      {/* Filter Toolbar */}
+      <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-4 shadow-[var(--shadow-xs)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search leads by name, phone, email, or inquiry..."
-            className="w-full pl-9 pr-3.5 py-2 text-xs bg-white dark:bg-[#121212] hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 rounded-xl outline-hidden focus:border-[#B68A55] text-[#252525] dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-colors shadow-2xs"
+            className="w-full pl-9 pr-8 py-2 text-xs bg-[var(--bg-subtle)]/50 focus:bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg outline-hidden focus:border-indigo-500 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
           />
           {search && (
             <button
+              type="button"
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[#252525] dark:hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+              aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Score Filter */}
-          <div className="flex items-center gap-1.5 bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl px-2.5 py-1 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400">Score:</span>
-            <select
-              value={scoreFilter}
-              onChange={(e) => setScoreFilter(e.target.value)}
-              className="text-xs bg-transparent border-0 outline-hidden font-medium text-[#252525] dark:text-white cursor-pointer"
-            >
-              <option value="All" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">All Scores</option>
-              <option value="Hot" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Hot</option>
-              <option value="High" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">High</option>
-              <option value="Medium" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Medium</option>
-              <option value="Low" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Low</option>
-            </select>
-          </div>
+        <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          <select
+            value={scoreFilter}
+            onChange={(e) => setScoreFilter(e.target.value)}
+            aria-label="Filter by lead score"
+            className="px-3 py-2 bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-[var(--text-secondary)] outline-hidden cursor-pointer"
+          >
+            <option value="All">All Scores</option>
+            <option value="Hot">Hot</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5 bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl px-2.5 py-1 shadow-2xs">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-neutral-400">Status:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs bg-transparent border-0 outline-hidden font-medium text-[#252525] dark:text-white cursor-pointer"
-            >
-              <option value="All" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">All Status</option>
-              <option value="New" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">New</option>
-              <option value="Contacted" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Contacted</option>
-              <option value="Qualified" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Qualified</option>
-              <option value="Converted" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Converted</option>
-              <option value="Lost" className="bg-white dark:bg-[#121212] text-[#252525] dark:text-white">Lost</option>
-            </select>
-          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            aria-label="Filter by lead status"
+            className="px-3 py-2 bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-[var(--text-secondary)] outline-hidden cursor-pointer"
+          >
+            <option value="All">All Statuses</option>
+            <option value="New">New</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Qualified">Qualified</option>
+            <option value="Converted">Converted</option>
+            <option value="Lost">Lost</option>
+          </select>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#FAF9F6] dark:bg-[#0A0A0A] text-slate-500 dark:text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-[#EFE7DC] dark:border-neutral-800">
-              <tr>
-                <th className="p-4 min-w-[220px]">Lead Contact</th>
-                <th className="p-4 min-w-[140px]">Customer / Tenant</th>
-                <th className="p-4 min-w-[110px]">Assisting Bot</th>
-                <th className="p-4 min-w-[120px]">Commercial Score</th>
-                <th className="p-4 min-w-[110px]">Channel</th>
-                <th className="p-4 min-w-[110px]">Pipeline Status</th>
-                <th className="p-4 text-right min-w-[100px]">Created</th>
-                <th className="p-4 text-center w-12">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EFE7DC] dark:divide-neutral-800/60">
-              {loading ? (
+      {loading ? (
+        <TableSkeleton rows={6} cols={8} />
+      ) : filteredLeads.length === 0 ? (
+        <EmptyState
+          icon={Users2}
+          title="No leads matched"
+          description={
+            leads.length === 0
+              ? "Leads captured by tenant chatbots will appear here automatically."
+              : "Try adjusting your search or score/status filters."
+          }
+        />
+      ) : (
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] overflow-hidden shadow-[var(--shadow-xs)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-[var(--bg-subtle)]/60 text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wider border-b border-[var(--border-subtle)]">
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-500 dark:text-neutral-500">
-                    <div className="inline-flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-[#B68A55] border-t-transparent rounded-full animate-spin" />
-                      <span>Loading platform leads...</span>
-                    </div>
-                  </td>
+                  <th className="p-4">Lead Contact</th>
+                  <th className="p-4">Customer / Tenant</th>
+                  <th className="p-4">Assisting Bot</th>
+                  <th className="p-4">Score</th>
+                  <th className="p-4">Channel</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Created</th>
+                  <th className="p-4 text-center w-16">Actions</th>
                 </tr>
-              ) : filteredLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-500 dark:text-neutral-500">
-                    <Users2 className="w-8 h-8 text-neutral-400 dark:text-neutral-600 mx-auto mb-2" />
-                    <p className="font-semibold text-slate-700 dark:text-neutral-300">No matching leads found</p>
-                    <p className="text-xs text-slate-500 dark:text-neutral-500 mt-0.5">
-                      {leads.length === 0
-                        ? "Leads captured by customer chatbots will appear here in real time."
-                        : "Try adjusting your search query or filters."}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedLeads.map((l) => {
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)]">
+                {paginatedLeads.map((l) => {
                   const cleanedInquiry = stripMarkdown(l.inquiry);
                   const isRealInquiry =
                     cleanedInquiry &&
@@ -386,154 +327,129 @@ export default function AdminLeadsPage() {
                     <tr
                       key={l.id}
                       onClick={() => setSelectedLead(l)}
-                      className="hover:bg-[#FAF9F6] dark:hover:bg-neutral-900/60 transition-colors cursor-pointer group"
+                      className="hover:bg-[var(--bg-subtle)]/40 transition-colors cursor-pointer group"
                     >
-                      {/* Lead Contact */}
                       <td className="p-4">
-                        <div className="font-bold text-[#252525] dark:text-white group-hover:text-[#B68A55] transition-colors">
+                        <div className="font-semibold text-[var(--text-primary)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {l.name || "Website Prospect"}
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5">
+                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5">
                           {l.phone ? (
-                            <span className="inline-flex items-center gap-1 font-mono text-slate-700 dark:text-neutral-300">
-                              <Phone className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
+                            <span className="inline-flex items-center gap-1 font-mono">
+                              <Phone className="w-3 h-3" />
                               {l.phone}
                             </span>
                           ) : l.email ? (
-                            <span className="inline-flex items-center gap-1 text-slate-700 dark:text-neutral-300">
-                              <Mail className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
+                            <span className="inline-flex items-center gap-1">
+                              <Mail className="w-3 h-3" />
                               {l.email}
                             </span>
                           ) : (
-                            <span className="text-slate-400 dark:text-neutral-500 italic">No contact shared yet</span>
+                            <span className="italic">No contact shared</span>
                           )}
                         </div>
                         {isRealInquiry && (
-                          <p
-                            className="text-[11px] text-[#B68A55] font-medium truncate max-w-sm mt-1 bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 px-2 py-0.5 rounded-md"
-                            title={cleanedInquiry}
-                          >
+                          <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium truncate max-w-sm mt-1">
                             {cleanedInquiry}
                           </p>
                         )}
                       </td>
 
-                      {/* Customer / Tenant */}
                       <td className="p-4">
-                        <div className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-neutral-200">
-                          <Building className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 shrink-0" />
-                          <span className="truncate max-w-[130px]">{l.company || "Direct Inbound"}</span>
+                        <div className="flex items-center gap-1.5 font-medium text-[var(--text-secondary)]">
+                          <Building className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
+                          <span className="truncate max-w-[130px]">
+                            {l.company || "Direct Inbound"}
+                          </span>
                         </div>
                         {l.organizationId && (
-                          <span className="text-[10px] font-mono text-slate-400 dark:text-neutral-500 block mt-0.5 truncate max-w-[130px]">
+                          <span className="text-[10px] font-mono text-[var(--text-muted)] block mt-0.5 truncate max-w-[130px]">
                             {l.organizationId}
                           </span>
                         )}
                       </td>
 
-                      {/* Assisting Bot */}
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FAF9F6] dark:bg-neutral-900 text-[#252525] dark:text-neutral-200 font-medium text-xs border border-[#EFE7DC] dark:border-neutral-800 shadow-2xs">
-                          <Bot className="w-3.5 h-3.5 text-[#B68A55]" />
-                          <span>{l.bot || l.botName || "aa"}</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-subtle)] text-[var(--text-primary)] font-medium text-xs border border-[var(--border-subtle)]">
+                          <Bot className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>{l.bot || l.botName || "AI Bot"}</span>
                         </span>
                       </td>
 
-                      {/* Commercial Score */}
                       <td className="p-4">
                         <StatusBadge status={l.score || "Medium"} size="sm" />
                       </td>
 
-                      {/* Channel */}
                       <td className="p-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF9F6] dark:bg-neutral-900 text-slate-700 dark:text-neutral-300 text-[11px] font-medium border border-[#EFE7DC] dark:border-neutral-800 whitespace-nowrap">
-                          <Globe className="w-3 h-3 text-slate-400 dark:text-neutral-500" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-[11px] font-medium border border-[var(--border-subtle)] whitespace-nowrap">
+                          <Globe className="w-3 h-3" />
                           <span>{l.source || "Web Widget"}</span>
                         </span>
                       </td>
 
-                      {/* Pipeline Status */}
                       <td className="p-4">
                         <StatusBadge status={l.status || "New"} size="sm" />
                       </td>
 
-                      {/* Created */}
-                      <td className="p-4 text-right text-slate-500 dark:text-neutral-400 whitespace-nowrap text-[11px] font-mono">
-                        {l.created || (l.createdAt ? l.createdAt.split("T")[0] : "Just now")}
+                      <td className="p-4 text-right text-[var(--text-muted)] whitespace-nowrap text-[11px] font-mono">
+                        {l.created || (l.createdAt ? l.createdAt.split("T")[0] : "Recently")}
                       </td>
 
-                      {/* Action Chevron & Delete */}
                       <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center justify-center gap-1">
                           <button
+                            type="button"
                             onClick={(e) => handleDeleteLead(e, l.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                            title="Delete Lead"
+                            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            aria-label="Delete lead"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <span className="p-1 rounded-lg text-slate-400 dark:text-neutral-500 group-hover:text-[#B68A55] group-hover:bg-[#FAF9F6] dark:group-hover:bg-neutral-800 transition-colors inline-block">
-                            <ChevronRight className="w-4 h-4" />
-                          </span>
+                          <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
                         </div>
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            currentPage={safeCurrentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+            onPageSizeChange={(size) => setPageSize(size)}
+            pageSizeOptions={[5, 10, 20, 50]}
+            itemLabel="leads"
+          />
         </div>
+      )}
 
-        <Pagination
-          currentPage={safeCurrentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={(page) => setCurrentPage(page)}
-          onPageSizeChange={(size) => setPageSize(size)}
-          pageSizeOptions={[5, 10, 20, 50]}
-          itemLabel="leads"
-        />
-      </div>
-
-      {/* Lead Detail Slide-over Modal */}
-      {selectedLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 max-w-lg w-full p-6 shadow-xl space-y-5 animate-scale-up text-[#252525] dark:text-white">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-[#252525] dark:text-white">
-                    {selectedLead.name || "Website Prospect"}
-                  </h3>
-                  <StatusBadge status={selectedLead.score || "Medium"} size="sm" />
-                </div>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                  Captured on {selectedLead.created || selectedLead.createdAt || "Recent session"}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedLead(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Contact details */}
-            <div className="bg-[#FAF9F6] dark:bg-[#121212] rounded-xl p-4 border border-[#EFE7DC] dark:border-neutral-800 space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500" /> Phone:
+      {/* Lead Detail Modal */}
+      <Modal
+        isOpen={Boolean(selectedLead)}
+        onClose={() => setSelectedLead(null)}
+        title={selectedLead?.name || "Website Prospect"}
+        description={`Captured on ${selectedLead?.created || selectedLead?.createdAt || "Recent session"}`}
+      >
+        {selectedLead && (
+          <div className="space-y-4 text-xs">
+            <div className="bg-[var(--bg-subtle)]/60 rounded-xl p-4 border border-[var(--border-subtle)] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--text-muted)] font-medium flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5" /> Phone
                 </span>
-                <div className="flex items-center gap-2 font-mono font-semibold text-[#252525] dark:text-white">
+                <div className="flex items-center gap-2 font-mono font-semibold text-[var(--text-primary)]">
                   <span>{selectedLead.phone || "Not provided"}</span>
                   {selectedLead.phone && (
                     <button
+                      type="button"
                       onClick={() => copyToClipboard(selectedLead.phone, "phone")}
-                      className="text-slate-400 hover:text-[#B68A55] cursor-pointer"
-                      title="Copy phone"
+                      className="text-[var(--text-muted)] hover:text-indigo-600 cursor-pointer"
+                      aria-label="Copy phone"
                     >
                       {copiedField === "phone" ? (
                         <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -545,17 +461,18 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500" /> Email:
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--text-muted)] font-medium flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5" /> Email
                 </span>
-                <div className="flex items-center gap-2 font-semibold text-[#252525] dark:text-white">
+                <div className="flex items-center gap-2 font-semibold text-[var(--text-primary)]">
                   <span>{selectedLead.email || "Not provided"}</span>
                   {selectedLead.email && (
                     <button
+                      type="button"
                       onClick={() => copyToClipboard(selectedLead.email, "email")}
-                      className="text-slate-400 hover:text-[#B68A55] cursor-pointer"
-                      title="Copy email"
+                      className="text-[var(--text-muted)] hover:text-indigo-600 cursor-pointer"
+                      aria-label="Copy email"
                     >
                       {copiedField === "email" ? (
                         <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -567,53 +484,51 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-                  <Building className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500" /> Company / Tenant:
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--text-muted)] font-medium flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5" /> Company
                 </span>
-                <span className="font-semibold text-slate-800 dark:text-neutral-200">
+                <span className="font-semibold text-[var(--text-primary)]">
                   {selectedLead.company || "Direct Inbound"}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-neutral-400 font-medium flex items-center gap-1.5">
-                  <Bot className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500" /> Assisting Bot:
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--text-muted)] font-medium flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5" /> Assisting Bot
                 </span>
-                <span className="font-semibold text-[#B68A55]">
-                  {selectedLead.bot || selectedLead.botName || "aa"}
+                <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                  {selectedLead.bot || selectedLead.botName || "AI Bot"}
                 </span>
               </div>
             </div>
 
-            {/* Requirement / Inquiry */}
             {selectedLead.inquiry && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Lead Requirement & Inquiry
+                <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Requirement & Inquiry
                 </label>
-                <div className="p-3 bg-[#FAF9F6] dark:bg-neutral-950 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 text-xs text-slate-800 dark:text-neutral-200 leading-relaxed">
+                <div className="p-3 bg-[var(--bg-subtle)]/50 rounded-xl border border-[var(--border-subtle)] text-[var(--text-primary)] leading-relaxed">
                   {stripMarkdown(selectedLead.inquiry)}
                 </div>
               </div>
             )}
 
-            {/* Answers Breakdown if present */}
             {selectedLead.answers && Object.keys(selectedLead.answers).length > 0 && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
+                <label className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                   Qualification Answers
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                   {Object.entries(selectedLead.answers).map(([k, v]) => (
                     <div
                       key={k}
-                      className="bg-[#FAF9F6] dark:bg-neutral-950 border border-[#EFE7DC] dark:border-neutral-800 rounded-lg p-2 text-xs"
+                      className="bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg p-2"
                     >
-                      <span className="text-[10px] text-slate-500 dark:text-neutral-500 uppercase font-semibold block">
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold block">
                         {k.replace(/_/g, " ")}
                       </span>
-                      <span className="font-medium text-[#252525] dark:text-white">{String(v)}</span>
+                      <span className="font-medium text-[var(--text-primary)]">{String(v)}</span>
                     </div>
                   ))}
                 </div>
@@ -621,27 +536,22 @@ export default function AdminLeadsPage() {
             )}
 
             <div className="pt-2 flex items-center justify-between">
-              <button
-                onClick={(e) => {
-                  handleDeleteLead(e, selectedLead.id);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl transition-colors cursor-pointer"
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={(e) => handleDeleteLead(e, selectedLead.id)}
               >
-                <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-                <span>Delete Lead</span>
-              </button>
-              <button
-                onClick={() => setSelectedLead(null)}
-                className="px-4 py-2 text-xs font-semibold bg-[#B68A55] text-white rounded-xl hover:bg-[#966E3A] transition-colors cursor-pointer"
-              >
+                Delete Lead
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setSelectedLead(null)}>
                 Close
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* Premium Confirm Modal */}
       <ConfirmModal
         isOpen={Boolean(confirmConfig)}
         onClose={() => setConfirmConfig(null)}

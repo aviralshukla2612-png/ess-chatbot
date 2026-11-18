@@ -1,40 +1,110 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Send,
-  Sparkles,
-  Bot,
-  User,
-  CheckCircle2,
   FileText,
-  Minimize2,
-  Maximize2,
   RefreshCw,
+  Copy,
+  Check,
+  RotateCcw,
+  Clock,
 } from "lucide-react";
+
+function CodeBlock({ language, code }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  };
+
+  return (
+    <div className="my-2 rounded-lg overflow-hidden border border-slate-700 bg-slate-950 text-slate-100 text-[11px] font-mono">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[10px] text-slate-400">
+        <span>{language || "code"}</span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="inline-flex items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer"
+        >
+          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
+      </div>
+      <pre className="p-3 overflow-x-auto leading-relaxed">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function FormattedMessage({ content }) {
+  if (!content) return null;
+  const parts = String(content).split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div className="space-y-1.5 leading-relaxed break-words">
+      {parts.map((part, idx) => {
+        if (part.startsWith("```") && part.endsWith("```")) {
+          const inner = part.slice(3, -3);
+          const firstNewline = inner.indexOf("\n");
+          const lang = firstNewline > -1 ? inner.slice(0, firstNewline).trim() : "";
+          const code = firstNewline > -1 ? inner.slice(firstNewline + 1) : inner;
+          return <CodeBlock key={idx} language={lang} code={code.trimEnd()} />;
+        }
+
+        return (
+          <div key={idx} className="whitespace-pre-line">
+            {part.split(/(`[^`\n]+`|\*\*[^*\n]+\*\*)/g).map((token, tIdx) => {
+              if (token.startsWith("`") && token.endsWith("`") && token.length > 2) {
+                return (
+                  <code
+                    key={tIdx}
+                    className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px] text-indigo-700 dark:text-indigo-300"
+                  >
+                    {token.slice(1, -1)}
+                  </code>
+                );
+              }
+              if (token.startsWith("**") && token.endsWith("**") && token.length > 4) {
+                return <strong key={tIdx} className="font-semibold">{token.slice(2, -2)}</strong>;
+              }
+              return <React.Fragment key={tIdx}>{token}</React.Fragment>;
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function BotPreviewWidget({
   botId = null,
-  botName = "AI Sales Executive",
-  avatar = "💼",
-  primaryColor: rawPrimaryColor = "#B68A55",
+  botName = "AI Sales Assistant",
+  avatar = "🤖",
+  primaryColor: rawPrimaryColor = "#4F46E5",
   welcomeMessage = "Hello! Welcome to our workspace. How can I help you today?",
   placeholderText = "Ask a question...",
-  position = "right",
+  starterQuestions = [],
   showLeadForm = false,
 }) {
   const sanitizeColor = (c) => {
-    if (!c || typeof c !== "string" || !c.trim()) return "#B68A55";
+    if (!c || typeof c !== "string" || !c.trim()) return "#4F46E5";
     const trimmed = c.trim();
     return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
   };
   const primaryColor = sanitizeColor(rawPrimaryColor);
+
   const [messages, setMessages] = useState([
     {
       id: "w_1",
       role: "assistant",
       content: welcomeMessage,
-      quickReplies: [],
+      quickReplies: Array.isArray(starterQuestions) ? starterQuestions.slice(0, 4) : [],
       sources: [],
     },
   ]);
@@ -44,8 +114,8 @@ export default function BotPreviewWidget({
   const [leadData, setLeadData] = useState({ name: "", email: "", phone: "" });
   const [showPromptLead, setShowPromptLead] = useState(false);
   const [sessionId, setSessionId] = useState("");
+  const messagesEndRef = useRef(null);
 
-  // Isolate conversation session when botId changes
   useEffect(() => {
     setSessionId(`session_preview_${botId || "bot"}_${Date.now()}`);
     setMessages([
@@ -53,7 +123,7 @@ export default function BotPreviewWidget({
         id: `w_1_${botId || "default"}`,
         role: "assistant",
         content: welcomeMessage || `Hello! I am ${botName}. How can I help you today?`,
-        quickReplies: [],
+        quickReplies: Array.isArray(starterQuestions) ? starterQuestions.slice(0, 4) : [],
         sources: [],
       },
     ]);
@@ -62,10 +132,20 @@ export default function BotPreviewWidget({
     setIsTyping(false);
   }, [botId, welcomeMessage, botName]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [messages, isTyping]);
+
   const handleSend = async (e, explicitText) => {
     e?.preventDefault();
+    if (isTyping) return;
     const userText = (typeof explicitText === "string" ? explicitText : inputText).trim();
     if (!userText) return;
+
+    const historySnapshot = messages
+      .filter((m) => !m.isError && m.content)
+      .slice(-6)
+      .map((m) => ({ role: m.role, content: m.content }));
 
     const userMsg = {
       id: `w_u_${Date.now()}`,
@@ -82,7 +162,9 @@ export default function BotPreviewWidget({
         {
           id: `w_err_${Date.now()}`,
           role: "assistant",
-          content: "⚠️ No valid Bot ID provided. Please select or configure a chatbot to preview.",
+          isError: true,
+          retryText: userText,
+          content: "No valid Bot ID provided. Select or save a chatbot first to test live responses.",
           quickReplies: [],
           sources: [],
         },
@@ -91,47 +173,38 @@ export default function BotPreviewWidget({
       return;
     }
 
-    // Try live Next.js API endpoint with 30s timeout for local LLM inference
+    const startedAt = Date.now();
+    const assistantMsgId = `w_a_${startedAt}`;
+
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 32000);
       const res = await fetch(`/api/public/chat/${encodeURIComponent(botId)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userText,
-          history: messages.slice(-4),
+          history: historySnapshot,
           visitor: leadCaptured ? leadData : {},
           sessionId,
+          stream: true,
         }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.reply) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `w_a_${Date.now()}`,
-              role: "assistant",
-              content: data.reply,
-              quickReplies: data.quickReplies || [],
-              sources: data.sources || ["Verified Knowledge"],
-            },
-          ]);
-          setIsTyping(false);
-          return;
-        }
-      } else {
+      if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         setMessages((prev) => [
           ...prev,
           {
             id: `w_err_${Date.now()}`,
             role: "assistant",
-            content: errorData.error || `⚠️ Chatbot service returned an error (HTTP ${res.status}). Please try again.`,
+            isError: true,
+            retryText: userText,
+            content:
+              errorData.error ||
+              `Chatbot service returned HTTP ${res.status}. Please retry in a moment.`,
             quickReplies: [],
             sources: [],
           },
@@ -139,6 +212,87 @@ export default function BotPreviewWidget({
         setIsTyping(false);
         return;
       }
+
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("text/event-stream") && res.body) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantMsgId,
+            role: "assistant",
+            content: "",
+            quickReplies: [],
+            sources: [],
+          },
+        ]);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let accumulated = "";
+        let finalMeta = {};
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line.startsWith("data:")) continue;
+            const jsonStr = line.slice(5).trim();
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+            try {
+              const evt = JSON.parse(jsonStr);
+              if (typeof evt.token === "string") {
+                accumulated += evt.token;
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === assistantMsgId ? { ...m, content: accumulated } : m))
+                );
+              }
+              if (evt.done || evt.reply) {
+                if (evt.reply && !accumulated) accumulated = evt.reply;
+                finalMeta = evt;
+              }
+            } catch {}
+          }
+        }
+
+        const latencyMs = Date.now() - startedAt;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? {
+                  ...m,
+                  content: accumulated || finalMeta.reply || "How else can I assist you?",
+                  quickReplies: finalMeta.quickReplies || [],
+                  sources: finalMeta.sources || [],
+                  latencyMs,
+                }
+              : m
+          )
+        );
+        setIsTyping(false);
+        return;
+      }
+
+      // Standard JSON response fallback
+      const data = await res.json();
+      const latencyMs = Date.now() - startedAt;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMsgId,
+          role: "assistant",
+          content: data?.reply || "How else can I help you?",
+          quickReplies: data?.quickReplies || [],
+          sources: data?.sources || [],
+          latencyMs,
+        },
+      ]);
+      setIsTyping(false);
     } catch (err) {
       const isTimeout = err.name === "AbortError";
       setMessages((prev) => [
@@ -146,15 +300,16 @@ export default function BotPreviewWidget({
         {
           id: `w_err_${Date.now()}`,
           role: "assistant",
+          isError: true,
+          retryText: userText,
           content: isTimeout
-            ? "⚠️ The request took longer than 30 seconds to complete. Please try again."
-            : "⚠️ Unable to reach the chatbot service right now. Please verify that the chatbot service is online and try again.",
+            ? "The response timed out after 30 seconds. Click Retry to send again."
+            : "Unable to reach the chatbot endpoint right now. Check your connection and retry.",
           quickReplies: [],
           sources: [],
         },
       ]);
       setIsTyping(false);
-      return;
     }
   };
 
@@ -168,98 +323,122 @@ export default function BotPreviewWidget({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          botId,
           name: leadData.name || "Preview Prospect",
           email: leadData.email || "",
           phone: leadData.phone || "",
-          company: "Interactive Widget Preview",
+          company: "Playground Test",
           bot: botName,
           score: "High",
-          inquiry: messages[messages.length - 1]?.content || "Inquiry from preview widget",
-          source: "Interactive Bot Preview",
+          inquiry: messages[messages.length - 1]?.content || "Inquiry from playground",
+          source: "Bot Playground",
         }),
       });
-    } catch (err) {}
+    } catch {}
 
     setMessages((prev) => [
       ...prev,
       {
         id: `w_lead_${Date.now()}`,
         role: "assistant",
-        content: `Thank you, ${leadData.name || "friend"}! Our engineering and sales team has received your inquiry and will contact you at ${leadData.email || "your email"} within 2 business hours.`,
+        content: `Thank you, ${leadData.name || "there"}! Our team has received your details and will reach out at ${leadData.email || "your contact"} shortly.`,
         sources: [],
       },
     ]);
   };
 
+  const handleRestart = async () => {
+    try {
+      await fetch(`/api/public/chat/${encodeURIComponent(botId || "bot_aa")}/session`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch {}
+    setMessages([
+      {
+        id: `w_reset_${Date.now()}`,
+        role: "assistant",
+        content: welcomeMessage,
+        quickReplies: Array.isArray(starterQuestions) ? starterQuestions.slice(0, 4) : [],
+        sources: [],
+      },
+    ]);
+    setShowPromptLead(false);
+    setLeadCaptured(false);
+    setSessionId(`session_preview_${botId || "bot"}_${Date.now()}`);
+  };
+
   return (
-    <div className="w-full max-w-sm sm:max-w-md mx-auto bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex flex-col h-[520px]">
+    <div className="w-full max-w-sm sm:max-w-md mx-auto bg-[var(--bg-surface)] rounded-2xl shadow-[var(--shadow-lg)] border border-[var(--border-subtle)] overflow-hidden flex flex-col h-[540px]">
       {/* Widget Header */}
       <div
-        className="p-4 text-white flex items-center justify-between shadow-xs transition-colors"
+        className="px-4 py-3.5 text-white flex items-center justify-between shrink-0"
         style={{ backgroundColor: primaryColor }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg shadow-inner">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg shrink-0">
             {avatar}
           </div>
-          <div>
-            <h4 className="font-semibold text-sm leading-tight flex items-center gap-1.5">
-              {botName}
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="min-w-0">
+            <h4 className="font-semibold text-sm leading-tight flex items-center gap-1.5 truncate">
+              <span className="truncate">{botName}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-300 shrink-0" />
             </h4>
-            <p className="text-[11px] opacity-80">Instant AI Knowledge Assistant</p>
+            <p className="text-[11px] text-white/80 truncate">AI Knowledge Assistant</p>
           </div>
         </div>
 
         <button
-          onClick={async () => {
-            try {
-              await fetch(`/api/public/chat/${encodeURIComponent(botId || "bot_aa")}/session`, {
-                method: "DELETE",
-                credentials: "include",
-              });
-            } catch (e) {}
-            setMessages([{ id: "w_1", role: "assistant", content: welcomeMessage, sources: [] }]);
-            setShowPromptLead(false);
-            setLeadCaptured(false);
-            setSessionId(`session_preview_${Date.now()}`);
-          }}
-          title="Restart Conversation"
-          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/80 hover:text-white"
+          type="button"
+          onClick={handleRestart}
+          aria-label="Reset conversation"
+          title="Reset conversation"
+          className="p-1.5 rounded-lg hover:bg-white/15 transition-colors text-white/85 hover:text-white cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-neutral-50/60 dark:bg-neutral-950/40 text-xs">
+      {/* Messages Transcript */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[var(--bg-canvas)] text-xs">
         {messages.map((m, idx) => (
           <div
             key={m.id}
-            className={`flex flex-col ${
-              m.role === "user" ? "items-end" : "items-start"
-            }`}
+            className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl p-3 shadow-2xs ${
+              className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 ${
                 m.role === "user"
-                  ? "text-white rounded-tr-xs shadow-md"
-                  : "bg-white dark:bg-[#141414] text-neutral-800 dark:text-neutral-100 border border-neutral-200/70 dark:border-[#262626] rounded-tl-xs whitespace-pre-line"
+                  ? "text-white rounded-tr-sm shadow-xs"
+                  : m.isError
+                  ? "bg-rose-50 dark:bg-rose-500/12 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-500/30 rounded-tl-sm"
+                  : "bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-tl-sm shadow-2xs"
               }`}
               style={m.role === "user" ? { backgroundColor: primaryColor } : {}}
             >
-              {m.content}
+              <FormattedMessage content={m.content} />
+
+              {m.isError && m.retryText && (
+                <button
+                  type="button"
+                  onClick={() => handleSend(null, m.retryText)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300 hover:underline cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Retry message</span>
+                </button>
+              )}
             </div>
 
-            {/* Quick Replies Interactive Options */}
-            {m.quickReplies && m.quickReplies.length > 0 && idx === messages.length - 1 && (
-              <div className="mt-2 flex flex-wrap gap-1.5 max-w-[85%]">
+            {/* Starter / Quick Reply Chips */}
+            {m.quickReplies && m.quickReplies.length > 0 && idx === messages.length - 1 && !isTyping && (
+              <div className="mt-2 flex flex-wrap gap-1.5 max-w-[88%]">
                 {m.quickReplies.map((qr, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => handleSend(null, qr)}
-                    className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 bg-white dark:bg-[#161616] hover:border-[#B68A55] hover:text-[#B68A55] hover:bg-[#B68A55]/10 dark:hover:border-[#B68A55] dark:hover:text-[#B68A55] dark:hover:bg-[#B68A55]/15 transition-all shadow-xs cursor-pointer"
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-[var(--border-strong)] text-[var(--text-secondary)] bg-[var(--bg-surface)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer"
                   >
                     {qr}
                   </button>
@@ -267,81 +446,93 @@ export default function BotPreviewWidget({
               </div>
             )}
 
-            {/* Citations if available */}
-            {m.sources && m.sources.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1 max-w-[85%]">
-                {m.sources.map((src, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center gap-1 text-[10px] bg-neutral-200/70 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-1.5 py-0.5 rounded-sm"
-                  >
-                    <FileText className="w-2.5 h-2.5 text-[#B68A55]" />
-                    {src}
+            {/* Citations & Latency Metadata */}
+            {(m.latencyMs || (m.sources && m.sources.length > 0)) && (
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 max-w-[86%]">
+                {m.sources &&
+                  m.sources.slice(0, 2).map((src, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 text-[10px] bg-[var(--bg-subtle)] text-[var(--text-muted)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]"
+                    >
+                      <FileText className="w-2.5 h-2.5 text-[var(--accent-primary)]" />
+                      {typeof src === "string" ? src : src.title || src.url || "Knowledge"}
+                    </span>
+                  ))}
+                {m.latencyMs && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-[var(--text-muted)] tabular-nums">
+                    <Clock className="w-2.5 h-2.5" />
+                    {m.latencyMs < 1000 ? `${m.latencyMs}ms` : `${(m.latencyMs / 1000).toFixed(1)}s`}
                   </span>
-                ))}
+                )}
               </div>
             )}
           </div>
         ))}
 
         {isTyping && (
-          <div className="flex items-center gap-1.5 p-2 rounded-xl bg-white dark:bg-[#141414] border border-neutral-200 dark:border-[#262626] w-16">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] animate-bounce" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] animate-bounce [animation-delay:0.2s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] animate-bounce [animation-delay:0.4s]" />
+          <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] w-16 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.18s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.36s]" />
           </div>
         )}
 
-        {/* Lead Capture Interactive Trigger */}
-        {showPromptLead && !leadCaptured && (
-          <div className="mt-2 p-3 bg-neutral-100 dark:bg-[#161616] border border-neutral-200 dark:border-[#262626] rounded-xl text-neutral-800 dark:text-neutral-200">
-            <p className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 mb-1.5">
-              Request Founder Consultation:
+        {showPromptLead && !leadCaptured && showLeadForm && (
+          <div className="mt-2 p-3 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl">
+            <p className="font-semibold text-xs text-[var(--text-primary)] mb-2">
+              Share your contact details:
             </p>
-            <form onSubmit={handleLeadSubmit} className="space-y-1.5">
+            <form onSubmit={handleLeadSubmit} className="space-y-2">
               <input
                 type="text"
-                placeholder="Full Name"
+                placeholder="Full name"
                 required
                 value={leadData.name}
                 onChange={(e) => setLeadData({ ...leadData, name: e.target.value })}
-                className="w-full px-2.5 py-1.5 bg-white dark:bg-[#1F1F1F] rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs outline-hidden text-neutral-900 dark:text-white"
+                className="w-full px-2.5 py-1.5 bg-[var(--bg-canvas)] rounded-lg border border-[var(--border-strong)] text-xs text-[var(--text-primary)]"
               />
               <input
                 type="email"
-                placeholder="Business Email"
+                placeholder="Work email"
                 required
                 value={leadData.email}
                 onChange={(e) => setLeadData({ ...leadData, email: e.target.value })}
-                className="w-full px-2.5 py-1.5 bg-white dark:bg-[#1F1F1F] rounded-lg border border-neutral-200 dark:border-neutral-700 text-xs outline-hidden text-neutral-900 dark:text-white"
+                className="w-full px-2.5 py-1.5 bg-[var(--bg-canvas)] rounded-lg border border-[var(--border-strong)] text-xs text-[var(--text-primary)]"
               />
               <button
                 type="submit"
-                className="w-full py-1.5 text-white rounded-lg font-semibold text-xs shadow-xs transition-colors hover:brightness-110"
+                className="w-full py-1.5 text-white rounded-lg font-medium text-xs transition-opacity hover:opacity-95 cursor-pointer"
                 style={{ backgroundColor: primaryColor }}
               >
-                Submit & Connect
+                Submit
               </button>
             </form>
           </div>
         )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form */}
+      {/* Input Composer */}
       <form
         onSubmit={handleSend}
-        className="p-3 bg-white dark:bg-[#0D0D0D] border-t border-neutral-200 dark:border-[#1F1F1F] flex items-center gap-2"
+        className="p-3 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] flex items-center gap-2 shrink-0"
       >
         <input
           type="text"
           value={inputText}
+          disabled={isTyping}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder={placeholderText}
-          className="flex-1 px-3 py-2 text-xs bg-neutral-100 dark:bg-[#141414] rounded-xl border border-transparent focus:border-[#B68A55] outline-hidden text-neutral-900 dark:text-white placeholder:text-neutral-400"
+          placeholder={isTyping ? "Generating response..." : placeholderText}
+          aria-label="Type a test message"
+          className="flex-1 h-9 px-3 text-xs bg-[var(--bg-subtle)]/70 focus:bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] disabled:opacity-60 transition-colors"
         />
         <button
           type="submit"
-          className="p-2 rounded-xl text-white shadow-xs transition-all hover:scale-105"
+          disabled={isTyping || !inputText.trim()}
+          aria-label="Send message"
+          className="w-9 h-9 rounded-xl text-white flex items-center justify-center shadow-xs transition-opacity hover:opacity-95 disabled:opacity-45 cursor-pointer shrink-0"
           style={{ backgroundColor: primaryColor }}
         >
           <Send className="w-4 h-4" />

@@ -1,35 +1,35 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedPrincipal } from "@/lib/auth/guard";
+import { requireOrgRole, ROLES } from "@/lib/auth/guard";
 import { billingService } from "@/lib/billing/billingService";
+import { enforceRateLimit, applyRateLimitHeaders } from "@/lib/security/rateLimitPolicy";
 
 export async function POST(request) {
   try {
-    const principal = await getAuthenticatedPrincipal(request);
-    let organizationId = "org_ess_default";
-    let customerEmail = "customer@vardaansmartsolutions.com";
+    const auth = await requireOrgRole(request, [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]);
+    if (!auth.ok) return auth.response;
 
-    if (principal && principal.authenticated) {
-      organizationId = principal.organizationId || organizationId;
-      customerEmail = principal.email || customerEmail;
-    }
+    const { principal } = auth;
+    const rateCheck = await enforceRateLimit("billing_checkout", principal.organizationId || principal.userId);
+    if (!rateCheck.ok) return rateCheck.response;
 
     const body = await request.json().catch(() => ({}));
-    const { planId = "monthly", isTrial = false, email, name, phone } = body;
-
-    if (email) customerEmail = email;
+    const { planId = "STARTER", isTrial = false, email, name } = body;
 
     const checkout = await billingService.createSubscriptionCheckout({
-      organizationId,
+      organizationId: principal.organizationId,
       planId,
-      customerEmail,
-      customerName: name,
-      isTrial: false,
+      customerEmail: email || principal.email,
+      customerName: name || principal.name,
+      isTrial: Boolean(isTrial),
     });
 
-    return NextResponse.json({
-      success: true,
-      checkout,
-    });
+    return applyRateLimitHeaders(
+      NextResponse.json({
+        success: true,
+        checkout,
+      }),
+      rateCheck.result
+    );
   } catch (err) {
     if (err.code === "TRIAL_ALREADY_USED") {
       return NextResponse.json(

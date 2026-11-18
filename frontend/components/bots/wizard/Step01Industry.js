@@ -36,23 +36,21 @@ export default function Step01Industry({
   onNext,
 }) {
   return (
-    <div className="space-y-8 animate-fade-in max-w-6xl mx-auto">
-      {/* Step Header */}
-      <div className="space-y-2 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#963DFF]/10 border border-[#963DFF]/30 text-[11px] font-bold text-[#C28AFF] uppercase tracking-wider">
+    <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
+      <div className="space-y-1.5 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[11px] font-semibold text-[var(--accent-text)] uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Step 01 · Business Sector</span>
+          <span>Step 01 · Industry Template</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Select Your Business Industry
         </h2>
-        <p className="text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-          Choose the industry that best matches your organization. Emperor Nexus will automatically tailor intelligent questions, verified workflows, and autonomous assistant behaviors.
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+          Choose the sector that best fits your business to pre-configure domain questions, workflows, and assistant behavior.
         </p>
       </div>
 
-      {/* 9 Industry Cards Grid (Shutterstock-inspired Layout: 01 watermark, top bar, centered icon, title, description, bottom accent button) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {INDUSTRIES.map((ind, idx) => {
           const Icon = ICON_MAP[ind.iconName] || Sparkles;
           const isSelected = selectedIndustry === ind.id;
@@ -63,117 +61,73 @@ export default function Step01Industry({
               key={ind.id}
               type="button"
               onClick={() => onSelectIndustry(ind.id)}
-              className={`group relative text-left p-6 sm:p-7 rounded-3xl transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden ${
+              className={`group relative text-left p-5 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col justify-between ${
                 isSelected
-                  ? "bg-[#0E0E18] border-2 shadow-[0_16px_50px_rgba(0,0,0,0.9)] scale-[1.01]"
-                  : "bg-[#0B0B12] hover:bg-[#10101A] border border-white/10 hover:border-white/20 shadow-lg hover:-translate-y-1"
+                  ? "bg-[var(--bg-surface)] border-[var(--accent-primary)] ring-2 ring-[var(--focus-ring)] shadow-[var(--shadow-md)]"
+                  : "bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)]/40 border-[var(--border-subtle)] hover:border-[var(--border-strong)] shadow-[var(--shadow-xs)]"
               }`}
-              style={{
-                borderColor: isSelected ? ind.accentColor : undefined,
-                boxShadow: isSelected
-                  ? `0 0 35px ${ind.accentColor}35, 0 16px 50px rgba(0,0,0,0.9)`
-                  : undefined,
-              }}
             >
-              {/* Top Row: Left Watermark Number + Right Colored Accent Bar */}
-              <div className="flex items-center justify-between w-full mb-3">
-                <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white/20 group-hover:text-white/35 transition-colors select-none">
-                  {numberStr}
-                </span>
-
-                <div
-                  className="w-12 sm:w-14 h-2 rounded-full transition-transform duration-300 group-hover:scale-x-110 shadow-xs"
-                  style={{ backgroundColor: ind.accentColor }}
-                />
-              </div>
-
-              {/* Upper Center: Prominent Line-Art Outline Icon */}
-              <div className="my-4 sm:my-5 flex justify-center w-full">
-                <div
-                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transition-all duration-300 ${
-                    isSelected ? "scale-110 shadow-lg" : "group-hover:scale-105"
-                  }`}
-                  style={{
-                    backgroundColor: `${ind.accentColor}15`,
-                    border: `1.5px solid ${ind.accentColor}50`,
-                    color: ind.accentColor,
-                    boxShadow: isSelected ? `0 0 25px ${ind.accentColor}40` : undefined,
-                  }}
-                >
-                  <Icon className="w-8 h-8 sm:w-9 sm:h-9 stroke-[1.8]" />
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors ${
+                      isSelected
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-[var(--bg-subtle)] text-[var(--accent-primary)] border-[var(--border-subtle)]"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-mono font-semibold text-[var(--text-muted)]">
+                    {numberStr}
+                  </span>
                 </div>
-              </div>
 
-              {/* Middle: Centered Heading & Structured Description */}
-              <div className="text-center space-y-2 mb-6 flex-1 flex flex-col justify-center">
-                <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight group-hover:text-white">
+                <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)] tracking-tight">
                   {ind.name}
                 </h3>
-                <p className="text-xs text-[#9898A6] leading-relaxed line-clamp-3 px-1">
+                <p className="text-xs text-[var(--text-muted)] leading-relaxed mt-1.5 line-clamp-3">
                   {ind.description}
                 </p>
               </div>
 
-              {/* Bottom: Solid Colored Button Matching the Top Accent Bar */}
-              <div className="w-full pt-2 mt-auto">
-                <div
-                  className={`w-full py-2.5 sm:py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 shadow-md ${
-                    isSelected
-                      ? "text-white shadow-lg"
-                      : "text-white/90 group-hover:brightness-110"
-                  }`}
-                  style={{
-                    backgroundColor: ind.accentColor,
-                    boxShadow: isSelected
-                      ? `0 4px 20px ${ind.accentColor}60`
-                      : `0 2px 10px ${ind.accentColor}25`,
-                  }}
-                >
-                  {isSelected ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      <span>Selected Sector</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Select Industry</span>
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </>
-                  )}
-                </div>
+              <div className="pt-4 mt-4 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs font-semibold">
+                <span className={isSelected ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}>
+                  {isSelected ? "Selected" : "Select sector"}
+                </span>
+                {isSelected ? (
+                  <Check className="w-4 h-4 text-[var(--accent-primary)]" />
+                ) : (
+                  <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:translate-x-0.5 transition-transform" />
+                )}
               </div>
             </button>
           );
         })}
       </div>
 
-      {/* If "Other" is selected, ask for custom description */}
       {selectedIndustry === "other" && (
-        <div className="p-6 rounded-2xl bg-[#0B0B14] border border-[#963DFF]/40 shadow-lg space-y-3 animate-fade-in max-w-2xl mx-auto">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#C28AFF] uppercase tracking-wider">
+        <div className="p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] space-y-2.5 max-w-2xl mx-auto">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[var(--accent-text)]">
             <Sparkles className="w-4 h-4" />
-            <span>Tell Us About Your Specific Business</span>
+            <span>Describe Your Business Sector</span>
           </div>
-          <p className="text-xs text-[#9898A6]">
-            Since you selected <strong>Other</strong>, please describe your business model, products, and services so we can tailor the questionnaire accordingly.
-          </p>
           <textarea
             value={customIndustryDesc || ""}
             onChange={(e) => onChangeCustomDesc(e.target.value)}
             rows={3}
-            placeholder="e.g. We are an artisanal leather goods manufacturing workshop offering bespoke corporate gifts and customized personal accessories..."
-            className="w-full px-4 py-3 rounded-xl bg-[#06060A] border border-white/10 text-white placeholder-white/30 text-xs focus:outline-none focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] transition-all resize-none shadow-inner"
+            placeholder="Describe your products, target audience, and typical customer questions..."
+            className="w-full px-3.5 py-2.5 rounded-lg bg-[var(--bg-canvas)] border border-[var(--border-strong)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-xs focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--focus-ring)] resize-none"
           />
         </div>
       )}
 
-      {/* Action Bar */}
-      <div className="pt-4 flex items-center justify-end">
+      <div className="pt-2 flex items-center justify-end">
         <button
           type="button"
           onClick={onNext}
           disabled={!selectedIndustry}
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] to-[#55A9FF] hover:opacity-95 active:scale-[0.98] shadow-lg shadow-[#963DFF]/25 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-10 px-6 rounded-lg font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
         >
           <span>Continue to Business Info</span>
           <ArrowRight className="w-4 h-4" />

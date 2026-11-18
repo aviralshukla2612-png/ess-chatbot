@@ -7,9 +7,13 @@ DB_HOST = os.getenv("DB_HOST", "postgres")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME", "rag_db")
 DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASS = os.getenv("DB_PASS", "postgrespassword")
+DB_PASS = os.getenv("DB_PASS", "")
+IS_PROD = os.getenv("ENV", os.getenv("NODE_ENV", "development")) == "production"
 
 def get_connection():
+    if IS_PROD and (not DB_PASS or DB_PASS == "postgrespassword"):
+        raise RuntimeError("DB_PASS must be explicitly configured with a strong secret in production.")
+    effective_pass = DB_PASS or "postgrespassword"
     max_retries = 5
     for i in range(max_retries):
         try:
@@ -18,7 +22,7 @@ def get_connection():
                 port=DB_PORT,
                 dbname=DB_NAME,
                 user=DB_USER,
-                password=DB_PASS
+                password=effective_pass
             )
             register_vector(conn)
             return conn

@@ -2,26 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Plus,
-  Search,
-  ChevronDown,
   Play,
   Share2,
-  BarChart2,
   ExternalLink,
-  MoreVertical,
   Bot,
   Trash2,
-  Sparkles,
-  ArrowRight,
   Copy,
   Check,
   Code,
   Globe,
-  X,
   Download,
-  ShieldCheck,
   BookOpen,
   Building2,
   Palette,
@@ -32,21 +25,27 @@ import RealtimeBadge from "@/components/ui/RealtimeBadge";
 import DeployWebsiteModal from "@/components/bots/DeployWebsiteModal";
 import RedesignBotModal from "@/components/bots/RedesignBotModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Modal from "@/components/ui/Modal";
+import StatusBadge from "@/components/ui/StatusBadge";
+import SearchInput from "@/components/ui/SearchInput";
+import Tabs from "@/components/ui/Tabs";
+import EmptyState from "@/components/ui/EmptyState";
+import { CardGridSkeleton } from "@/components/ui/Skeleton";
 
 export default function BotsPage() {
+  const router = useRouter();
   const [bots, setBots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState("All");
   const [search, setSearch] = useState("");
 
-  // Instant Deploy Modal State
   const [deployModalBot, setDeployModalBot] = useState(null);
   const [deployWebsiteBot, setDeployWebsiteBot] = useState(null);
   const [redesignModalBot, setRedesignModalBot] = useState(null);
   const [deleteTargetBot, setDeleteTargetBot] = useState(null);
   const [copiedScript, setCopiedScript] = useState(false);
   const [copiedConsole, setCopiedConsole] = useState(false);
-  const [modalEmbedTab, setModalEmbedTab] = useState("html"); // "html" | "console"
+  const [modalEmbedTab, setModalEmbedTab] = useState("html");
   const [modalCmsTab, setModalCmsTab] = useState("html");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
@@ -66,25 +65,15 @@ export default function BotsPage() {
       const data = await botsApi.getBots();
       setBots(data || []);
     } catch (err) {
-      console.warn("Bots real-time sync error:", err);
+      console.warn("Bots sync error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Real-time synchronization hook (SSE event stream + adaptive background polling)
   const { isLive, lastSync, triggerSync } = useRealtimeSync(loadBots, {
-    pollingInterval: 3500,
+    pollingInterval: 5000,
   });
-
-  const handleDeleteBot = (idOrBot, e) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    const target =
-      typeof idOrBot === "object" && idOrBot !== null
-        ? idOrBot
-        : bots.find((b) => b.id === idOrBot) || { id: idOrBot, name: "this bot" };
-    setDeleteTargetBot(target);
-  };
 
   const handleConfirmDeleteBot = async () => {
     if (!deleteTargetBot) return;
@@ -95,49 +84,50 @@ export default function BotsPage() {
     await loadBots();
   };
 
+  const activeCount = bots.filter((b) => b.status === "Active").length;
+  const draftCount = bots.filter((b) => b.status === "Draft").length;
+  const disabledCount = bots.filter((b) => b.status === "Disabled" || b.status === "Inactive").length;
+
   const filtered = bots.filter((b) => {
     if (filterTab === "Active" && b.status !== "Active") return false;
     if (filterTab === "Draft" && b.status !== "Draft") return false;
-    if (filterTab === "Disabled" && b.status !== "Disabled") return false;
-    if (search && !b.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterTab === "Disabled" && b.status !== "Disabled" && b.status !== "Inactive") return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const hay = `${b.name || ""} ${b.company || ""} ${b.description || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 
-  const activeCount = bots.filter((b) => b.status === "Active").length;
-  const draftCount = bots.filter((b) => b.status === "Draft").length;
-
   const appOrigin =
-    typeof window !== "undefined" ? window.location.origin : "https://ess-chatbot.vardaansmartsolutions.com";
+    typeof window !== "undefined" ? window.location.origin : "https://emperornexus.com";
 
   const getEmbedSnippet = (bot) => {
     if (!bot) return "";
-    const idToUse = bot.id || "bot_1791618269632";
-    return `<script src="${appOrigin}/widget.js" data-bot-id="${idToUse}" defer></script>`;
+    return `<script src="${appOrigin}/widget.js" data-bot-id="${bot.id}" defer></script>`;
   };
 
   const getConsoleSnippet = (bot) => {
     if (!bot) return "";
-    const idToUse = bot.id || "bot_1791618269632";
     return `(() => {
   const s = document.createElement("script");
   s.src = "${appOrigin}/widget.js";
-  s.setAttribute("data-bot-id", "${idToUse}");
-  s.setAttribute("data-color", "${(!bot.primaryColor || bot.primaryColor === "#4f46e5" || bot.primaryColor === "#6366f1") ? "#B68A55" : bot.primaryColor}");
+  s.setAttribute("data-bot-id", "${bot.id}");
+  s.setAttribute("data-color", "${bot.primaryColor || "#4F46E5"}");
   s.setAttribute("data-position", "${bot.launcherPosition || "bottom-right"}");
   document.body.appendChild(s);
 })();`;
   };
 
   const handleCopyScript = (bot) => {
-    const code = getEmbedSnippet(bot);
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(getEmbedSnippet(bot));
     setCopiedScript(true);
     setTimeout(() => setCopiedScript(false), 2000);
   };
 
   const handleCopyConsole = (bot) => {
-    const code = getConsoleSnippet(bot);
-    navigator.clipboard.writeText(code);
+    navigator.clipboard.writeText(getConsoleSnippet(bot));
     setCopiedConsole(true);
     setTimeout(() => setCopiedConsole(false), 2000);
   };
@@ -152,33 +142,16 @@ export default function BotsPage() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${bot.name} - Chatbot Live Embed</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      padding: 40px;
-      line-height: 1.6;
-    }
-    .card {
-      max-width: 650px;
-      margin: 40px auto;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 20px;
-      padding: 32px;
-      box-shadow: 0 16px 36px rgba(0,0,0,0.3);
-    }
-    h1 { margin-bottom: 8px; color: #ffffff; }
-    p { color: #94a3b8; font-size: 14px; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #0f172a; padding: 48px; }
+    .card { max-width: 640px; margin: 40px auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; box-shadow: 0 4px 12px rgba(15,23,42,0.06); }
+    p { color: #64748b; font-size: 14px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Hello from ${bot.name}!</h1>
-    <p>This is a test page. Your AI chatbot assistant is active in the bottom-right corner.</p>
+    <h1>${bot.name} — Live Widget Demo</h1>
+    <p>Your AI assistant launcher is active in the corner of this page.</p>
   </div>
-
-  <!-- NexusAI Embed Script -->
   ${code}
 </body>
 </html>`;
@@ -187,7 +160,7 @@ export default function BotsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `nexusai-${bot.name.toLowerCase().replace(/\s+/g, "-")}-test.html`;
+    a.download = `emperor-nexus-${bot.name.toLowerCase().replace(/\s+/g, "-")}-demo.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -195,528 +168,395 @@ export default function BotsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in text-slate-800 font-sans">
-      {/* Header */}
+    <div className="space-y-6 pb-12 animate-fade-in">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            Bots
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Create and manage your AI assistants.
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight">
+              Chatbots
+            </h1>
+            <RealtimeBadge isLive={isLive} lastSynced={lastSync} onRefresh={triggerSync} />
+          </div>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Configure, train, test, and deploy your workspace AI assistants.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {!loading && !isSuperAdmin && bots.length >= 1 ? (
-            <div
-              title="User and Sub-Admin accounts are restricted to creating 1 bot."
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold cursor-not-allowed select-none"
+            <span
+              title="Standard workspaces include 1 active chatbot."
+              className="inline-flex items-center gap-2 h-9 px-3.5 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-muted)] text-xs font-medium select-none"
             >
               <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span>Limit Reached (1/1 Bot)</span>
-            </div>
+              <span>Workspace Limit (1/1 Chatbot)</span>
+            </span>
           ) : (
             <Link
               href="/bots/create"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white text-xs font-semibold shadow-md shadow-[#B68A55]/20 transition-all w-fit cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span>Create AI Bot</span>
+              <span>Create Chatbot</span>
             </Link>
           )}
         </div>
       </div>
 
-      {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-        <div className="flex items-center gap-2 sm:gap-4 text-xs font-semibold border-b sm:border-b-0 border-[#EFE7DC] dark:border-slate-800 pb-2 sm:pb-0 w-full sm:w-auto overflow-x-auto no-scrollbar whitespace-nowrap">
-          {[
-            { id: "All", label: `All Bots (${bots.length})` },
-            { id: "Active", label: `Active (${activeCount})` },
-            { id: "Draft", label: `Draft (${draftCount})` },
-            { id: "Disabled", label: "Disabled (0)" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterTab(tab.id)}
-              className={`pb-1 transition-colors relative cursor-pointer shrink-0 ${
-                filterTab === tab.id
-                  ? "text-[#B68A55] border-b-2 border-[#B68A55] dark:text-indigo-400 dark:border-indigo-500 font-bold"
-                  : "text-slate-500 hover:text-[#252525] dark:text-slate-400 dark:hover:text-white"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Toolbar: Status Tabs + Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Tabs
+          activeTab={filterTab}
+          onChange={setFilterTab}
+          tabs={[
+            { id: "All", label: "All", count: bots.length },
+            { id: "Active", label: "Active", count: activeCount },
+            { id: "Draft", label: "Draft", count: draftCount },
+            { id: "Disabled", label: "Disabled", count: disabledCount },
+          ]}
+        />
 
-        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-60 min-w-0">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search bots..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-[#EFE7DC] dark:border-slate-700/80 bg-white dark:bg-slate-900/90 text-xs text-[#252525] dark:text-white placeholder:text-slate-400 outline-hidden focus:border-[#B68A55] dark:focus:border-indigo-500"
-            />
-          </div>
-
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#EFE7DC] dark:border-slate-700/80 bg-white dark:bg-slate-900/90 text-xs text-[#252525] dark:text-slate-300 shrink-0">
-            <span>Last Updated</span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-          </div>
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search chatbots..."
+          className="w-full sm:w-64"
+        />
       </div>
 
-      {/* Empty State when no bots exist */}
-      {!loading && bots.length === 0 && (
-        <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-dashed border-[#EFE7DC] dark:border-neutral-800 p-12 text-center space-y-4 max-w-xl mx-auto shadow-xs my-8">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 dark:bg-[#B68A55]/15 border border-[#EFE7DC] dark:border-[#B68A55]/30 flex items-center justify-center text-[#B68A55] mx-auto shadow-sm">
-            <Bot className="w-8 h-8" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-[#252525] dark:text-white">
-              No AI bots created yet
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 max-w-md mx-auto">
-              Get started by creating your first AI assistant. You can give it a name, upload documents, and configure its personality in a few simple steps.
-            </p>
-          </div>
+      {/* Loading State */}
+      {loading && <CardGridSkeleton count={2} />}
 
-          <div className="pt-2">
-            <Link
-              href="/bots/create"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white text-xs font-semibold shadow-md transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Your First Bot</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
+      {/* Zero State */}
+      {!loading && bots.length === 0 && (
+        <EmptyState
+          icon={Bot}
+          title="No chatbots created yet"
+          description="Launch the guided setup wizard to configure your assistant's industry profile, knowledge base, and website launcher."
+          actionLabel="Create Your First Chatbot"
+          onAction={() => router.push("/bots/create")}
+        />
       )}
 
-      {/* Bot Cards List */}
-      {!loading && bots.length > 0 && (
-        <div className="space-y-4">
-          {filtered.map((bot) => (
-            <div
-              key={bot.id}
-              className="bg-white dark:bg-[#0D0D0D] rounded-2xl p-5 border border-[#EFE7DC] dark:border-neutral-800 shadow-xs hover:border-[#B68A55]/40 transition-all space-y-4"
-            >
-              {/* Top row: Avatar, Name, Status, Description */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs"
-                    style={{
-                      backgroundColor: bot.primaryColor ? `${bot.primaryColor}25` : "#1e1b4b",
-                      color: bot.primaryColor || "#818cf8",
-                    }}
-                  >
-                    {bot.avatar || "🤖"}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <h3 className="text-base font-bold text-[#252525] dark:text-white">
-                        {bot.name}
-                      </h3>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          bot.status === "Active"
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                            : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                        }`}
-                      >
-                        {bot.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      {bot.description || "Custom AI chatbot assistant."}
-                    </p>
-                  </div>
-                </div>
+      {/* Search Empty State */}
+      {!loading && bots.length > 0 && filtered.length === 0 && (
+        <EmptyState
+          icon={Bot}
+          title="No matching chatbots"
+          description="No chatbots matched your current filter or search query."
+          actionLabel="Reset Filters"
+          onAction={() => {
+            setFilterTab("All");
+            setSearch("");
+          }}
+        />
+      )}
 
-                <div className="flex items-center gap-1">
+      {/* Bot Cards */}
+      {!loading && filtered.length > 0 && (
+        <div className="space-y-4">
+          {filtered.map((bot) => {
+            const accentHex = bot.primaryColor || "#4F46E5";
+            return (
+              <div
+                key={bot.id}
+                className="bg-[var(--bg-surface)] rounded-xl p-5 border border-[var(--border-subtle)] hover:border-[var(--border-strong)] shadow-[var(--shadow-xs)] transition-all space-y-4"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 border"
+                      style={{
+                        backgroundColor: `${accentHex}18`,
+                        borderColor: `${accentHex}38`,
+                      }}
+                    >
+                      {bot.avatar || "🤖"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link
+                          href={`/bots/${bot.id}`}
+                          className="text-base font-semibold text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors truncate"
+                        >
+                          {bot.name}
+                        </Link>
+                        <StatusBadge status={bot.status || "Active"} size="sm" />
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-1">
+                        {bot.description || bot.company || "Enterprise AI assistant"}
+                      </p>
+                    </div>
+                  </div>
+
                   <button
-                    onClick={(e) => handleDeleteBot(bot.id, e)}
-                    className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                    title="Delete Bot"
+                    type="button"
+                    onClick={() => setDeleteTargetBot(bot)}
+                    aria-label={`Delete ${bot.name}`}
+                    title="Delete chatbot"
+                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <button className="p-1 text-slate-400 hover:text-[#252525] dark:hover:text-slate-200 rounded-lg cursor-pointer">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Middle row: 3 metrics + Last active */}
-              <div className="grid grid-cols-4 gap-2 sm:flex sm:items-center sm:justify-between sm:gap-6 py-2.5 border-t border-[#EFE7DC] dark:border-slate-800/80 text-xs">
-                <div className="min-w-0">
-                  <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight truncate">
-                    {bot.conversationsCount || 0}
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Conversations</span>
-                </div>
-                <div className="min-w-0">
-                  <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight truncate">
-                    {bot.questionsCount || 0}
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Questions</span>
-                </div>
-                <div className="min-w-0">
-                  <span className="text-base font-bold text-[#252525] dark:text-white block leading-tight truncate">
-                    {bot.leadsCount || 0}
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Leads</span>
                 </div>
 
-                <div className="text-right sm:text-right min-w-0">
-                  <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate">Last active</span>
-                  <span className="font-semibold text-[10px] sm:text-[11px] text-[#252525] dark:text-slate-200 block truncate">
-                    {bot.lastActive || "Just now"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Bottom row: Clean Organized Action Buttons */}
-              <div className="pt-3 border-t border-[#EFE7DC] dark:border-neutral-800 space-y-2.5 text-xs">
-                {/* Main Action Bar */}
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2">
-                  <Link
-                    href={`/bots/${bot.id}`}
-                    className="px-3.5 py-2 sm:py-1.5 rounded-xl bg-[#B68A55] hover:bg-[#966E3A] text-white font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shadow-[#B68A55]/20 text-center"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">Open</span>
-                  </Link>
-
-                  {/* Prominent Redesign & Launcher Button */}
-                  <button
-                    type="button"
-                    onClick={() => setRedesignModalBot(bot)}
-                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-[#B68A55]/50 bg-[#B68A55]/15 hover:bg-[#B68A55]/25 text-[#B68A55] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
-                    title="Customize chat button circle shape, logo, colors, and styling"
-                  >
-                    <Palette className="w-3.5 h-3.5 shrink-0 text-[#B68A55]" />
-                    <span className="truncate">Redesign 🎨</span>
-                  </button>
-
-                  {/* Direct Live Website Deploy Button */}
-                  <button
-                    type="button"
-                    onClick={() => setDeployWebsiteBot(bot)}
-                    className="px-3.5 py-2 sm:py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs shadow-emerald-600/20 text-center"
-                    title="Configure and open live website with chatbot active"
-                  >
-                    <Globe className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">Live Deploy 🚀</span>
-                  </button>
-
-                  {/* Instant Deploy / Embed Code Modal Trigger */}
-                  <button
-                    type="button"
-                    onClick={() => setDeployModalBot(bot)}
-                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
-                  >
-                    <Share2 className="w-3.5 h-3.5 shrink-0 text-[#B68A55] dark:text-[#B68A55]" />
-                    <span className="truncate">Embed Code</span>
-                  </button>
-
-                  <Link
-                    href={`/bots/${bot.id}`}
-                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                  >
-                    <Play className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                    <span className="truncate">Test</span>
-                  </Link>
-
-                  <Link
-                    href="/analytics"
-                    className="px-3.5 py-2 sm:py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                  >
-                    <BarChart2 className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                    <span className="truncate">Analytics</span>
-                  </Link>
-
-                  {/* Explicit Direct Delete Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleDeleteBot(bot.id, e)}
-                    className="col-span-2 sm:col-span-1 sm:ml-auto px-3.5 py-2 sm:py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 hover:border-rose-300 dark:hover:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
-                    title="Permanently delete this bot"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 shrink-0 text-rose-500 dark:text-rose-400" />
-                    <span className="truncate">Delete Bot</span>
-                  </button>
+                {/* Metrics Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-y border-[var(--border-subtle)] text-xs">
+                  <div>
+                    <span className="text-[11px] text-[var(--text-muted)] block">Conversations</span>
+                    <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">
+                      {bot.conversationsCount || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-[var(--text-muted)] block">Questions</span>
+                    <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">
+                      {bot.questionsCount || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-[var(--text-muted)] block">Leads Captured</span>
+                    <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">
+                      {bot.leadsCount || 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-[var(--text-muted)] block">Last Active</span>
+                    <span className="text-xs font-medium text-[var(--text-secondary)] mt-0.5 block">
+                      {bot.lastActive || "Online"}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Sub-row: Setup & Knowledge Inputs */}
-                <div className="pt-2 border-t border-neutral-200/50 dark:border-neutral-800/60 flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                    Setup & Knowledge:
-                  </span>
-                  <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
-                    {/* Mandatory Company Profile Intake Form Button */}
+                {/* Action Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Link
-                      href={`/bots/${bot.id}?tab=company-profile`}
-                      className="px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
-                      title="Complete mandatory Company Profile Intake & Business Hours form"
+                      href={`/bots/${bot.id}`}
+                      className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-2xs transition-colors"
                     >
-                      <Building2 className="w-3.5 h-3.5 shrink-0 text-[#B68A55]" />
-                      <span className="truncate">Company Profile</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open Workspace</span>
                     </Link>
 
-                    {/* Direct Add Information / Knowledge Button */}
+                    <Link
+                      href={`/bots/${bot.id}?tab=test`}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] font-medium transition-colors"
+                    >
+                      <Play className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                      <span>Playground</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => setRedesignModalBot(bot)}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] font-medium transition-colors cursor-pointer"
+                    >
+                      <Palette className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                      <span>Appearance</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeployModalBot(bot)}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] font-medium transition-colors cursor-pointer"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                      <span>Embed Code</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeployWebsiteBot(bot)}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/12 hover:opacity-90 text-emerald-700 dark:text-emerald-300 font-medium transition-opacity cursor-pointer"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Deploy Live</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/bots/${bot.id}?tab=company-profile`}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--bg-subtle)] hover:bg-[var(--bg-muted)] text-[var(--text-secondary)] font-medium transition-colors"
+                    >
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span>Company Profile</span>
+                    </Link>
+
                     <Link
                       href={`/bots/${bot.id}?tab=knowledge`}
-                      className="px-3 py-1.5 rounded-lg bg-[#B68A55]/15 hover:bg-[#B68A55]/25 border border-[#B68A55]/40 text-[#B68A55] font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
-                      title="Add website URLs, documents, Q&A pairs, or training information"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)] hover:opacity-90 font-medium transition-opacity"
                     >
-                      <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">+ Knowledge</span>
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Knowledge Base</span>
                     </Link>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* INSTANT DEPLOY MODAL */}
-      {deployModalBot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl max-w-2xl w-full border border-[#EFE7DC] dark:border-neutral-800 shadow-2xl overflow-hidden space-y-0 text-[#252525] dark:text-white animate-scale-in max-h-[92vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between bg-[#FAF9F6] dark:bg-[#121212] shrink-0">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-xs shrink-0"
-                  style={{
-                    backgroundColor: `${deployModalBot.primaryColor || "#B68A55"}20`,
-                    color: deployModalBot.primaryColor || "#B68A55",
-                  }}
-                >
-                  {deployModalBot.avatar || "🤖"}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm sm:text-base font-bold text-[#252525] dark:text-white truncate">
-                      Deploy "{deployModalBot.name}"
-                    </h3>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                      Ready
-                    </span>
-                  </div>
-                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate sm:whitespace-normal">
-                    Copy the embed code snippet below and paste it into any website HTML.
-                  </p>
-                </div>
-              </div>
-
+      {/* Quick Embed Code Modal */}
+      <Modal
+        isOpen={Boolean(deployModalBot)}
+        onClose={() => setDeployModalBot(null)}
+        title={deployModalBot ? `Embed "${deployModalBot.name}"` : "Embed Chatbot"}
+        description="Copy the script tag below and paste it right before the closing </body> tag of your website."
+        maxWidth="max-w-2xl"
+      >
+        {deployModalBot && (
+          <div className="space-y-4 text-xs">
+            <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2.5">
               <button
-                onClick={() => setDeployModalBot(null)}
-                className="p-1.5 sm:p-2 text-slate-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer shrink-0"
+                type="button"
+                onClick={() => setModalEmbedTab("html")}
+                className={`h-8 px-3 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  modalEmbedTab === "html"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
+                }`}
               >
-                <X className="w-5 h-5" />
+                <Code className="w-3.5 h-3.5" />
+                <span>HTML Embed Tag</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalEmbedTab("console")}
+                className={`h-8 px-3 rounded-lg font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  modalEmbedTab === "console"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
+                }`}
+              >
+                <span>DevTools Console Test (JS)</span>
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 text-xs overflow-y-auto flex-1">
-              {/* Embed Code Snippet Card */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 border-b border-[#EFE7DC] dark:border-slate-800 pb-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setModalEmbedTab("html")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                      modalEmbedTab === "html"
-                        ? "bg-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:text-white"
-                        : "bg-[#FAF9F6] dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#EFE7DC]/50 dark:hover:bg-slate-700 border border-[#EFE7DC] dark:border-transparent"
-                    }`}
-                  >
-                    <Code className="w-3.5 h-3.5" />
-                    <span>HTML Embed Tag</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setModalEmbedTab("console")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                      modalEmbedTab === "console"
-                        ? "bg-[#252525] text-white shadow-xs dark:bg-[#B68A55] dark:text-white"
-                        : "bg-[#FAF9F6] dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-[#EFE7DC]/50 dark:hover:bg-slate-700 border border-[#EFE7DC] dark:border-transparent"
-                    }`}
-                  >
-                    <span>🖥️</span>
-                    <span>DevTools Console Test (JS)</span>
-                  </button>
-                </div>
-
-                {modalEmbedTab === "html" ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                      <span>Add to website source code:</span>
-                      <span>Paste before closing <code className="bg-[#FAF9F6] dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">&lt;/body&gt;</code></span>
-                    </div>
-                    <div className="relative">
-                      <pre className="p-4 rounded-2xl bg-[#FAF9F6] dark:bg-black/60 text-[#252525] dark:text-slate-100 font-mono text-xs overflow-x-auto border border-[#EFE7DC] dark:border-slate-800 leading-relaxed shadow-inner">
-                        {getEmbedSnippet(deployModalBot)}
-                      </pre>
-                      <button
-                        onClick={() => handleCopyScript(deployModalBot)}
-                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-[#B68A55] dark:hover:bg-[#a07746] text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                      >
-                        {copiedScript ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-300" />
-                            <span>Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-[#B68A55] dark:text-white" />
-                            <span>Copy HTML</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="p-2.5 bg-amber-500/10 dark:bg-amber-950/40 rounded-xl border border-amber-500/20 dark:border-amber-800/60 text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
-                      <strong>💡 Quick Console Testing:</strong> Open any website, press <kbd className="bg-white dark:bg-slate-900 px-1 py-0.5 rounded border border-amber-300 dark:border-amber-700 font-mono font-bold text-amber-700 dark:text-amber-300">F12</kbd> (Console), paste this JS code and press <kbd className="bg-white dark:bg-slate-900 px-1 py-0.5 rounded border border-amber-300 dark:border-amber-700 font-mono font-bold text-amber-700 dark:text-amber-300">Enter</kbd>.
-                    </div>
-                    <div className="relative">
-                      <pre className="p-4 rounded-2xl bg-[#FAF9F6] dark:bg-black/60 text-[#252525] dark:text-slate-100 font-mono text-xs overflow-x-auto border border-[#EFE7DC] dark:border-slate-800 leading-relaxed shadow-inner">
-                        {getConsoleSnippet(deployModalBot)}
-                      </pre>
-                      <button
-                        onClick={() => handleCopyConsole(deployModalBot)}
-                        className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer border border-[#252525] dark:border-slate-700"
-                      >
-                        {copiedConsole ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-300" />
-                            <span>Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Copy JS Code</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Quick Actions Bar */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <a
-                  href="/test-embed.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3.5 rounded-2xl border border-[#EFE7DC] dark:border-indigo-900/50 bg-[#FAF9F6] dark:bg-indigo-950/40 hover:bg-[#EFE7DC]/50 dark:hover:bg-indigo-900/40 text-[#252525] dark:text-indigo-200 flex items-center justify-between transition-colors group cursor-pointer shadow-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-[#B68A55] text-white flex items-center justify-center shrink-0">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="font-bold block text-xs text-[#252525] dark:text-white">Test on Live Demo Website</span>
-                      <span className="text-[11px] text-[#B68A55] dark:text-indigo-300">See widget floating in action</span>
-                    </div>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-[#252525] dark:group-hover:text-indigo-300" />
-                </a>
-
+            {modalEmbedTab === "html" ? (
+              <div className="relative">
+                <pre className="p-4 rounded-xl bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800">
+                  {getEmbedSnippet(deployModalBot)}
+                </pre>
                 <button
                   type="button"
-                  onClick={() => handleDownloadSampleHtml(deployModalBot)}
-                  className="p-3.5 rounded-2xl border border-[#EFE7DC] dark:border-slate-800 bg-[#FAF9F6] dark:bg-slate-900/60 hover:bg-[#EFE7DC]/50 dark:hover:bg-slate-800 text-[#252525] dark:text-slate-200 flex items-center justify-between transition-colors group cursor-pointer shadow-xs"
+                  onClick={() => handleCopyScript(deployModalBot)}
+                  className="absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium cursor-pointer"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-white border border-[#EFE7DC] text-[#252525] dark:bg-slate-800 dark:border-slate-700 dark:text-white flex items-center justify-center shrink-0">
-                      <Download className="w-4 h-4" />
-                    </div>
-                    <div className="text-left">
-                      <span className="font-bold block text-xs text-[#252525] dark:text-white">Download HTML File</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Ready-to-open local sample</span>
-                    </div>
-                  </div>
-                  <Download className="w-4 h-4 text-slate-400 group-hover:text-[#252525] dark:group-hover:text-slate-200" />
+                  {copiedScript ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedScript ? "Copied" : "Copy HTML"}</span>
                 </button>
               </div>
-
-              {/* Platform Guides */}
-              <div className="border border-[#EFE7DC] dark:border-slate-800 rounded-2xl p-4 bg-[#FAF9F6] dark:bg-slate-900/40 space-y-3">
-                <div className="flex items-center gap-2 border-b border-[#EFE7DC] dark:border-slate-800 pb-2">
-                  <span className="font-bold text-slate-600 dark:text-slate-300 text-xs">Platform Guide:</span>
-                  {["html", "wordpress", "shopify", "webflow"].map((plat) => (
-                    <button
-                      key={plat}
-                      type="button"
-                      onClick={() => setModalCmsTab(plat)}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
-                        modalCmsTab === plat
-                          ? "bg-[#252525] text-white dark:bg-[#B68A55]"
-                          : "text-slate-600 dark:text-slate-400 hover:bg-[#EFE7DC]/60 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      {plat.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {modalCmsTab === "html" && (
-                    <p>
-                      Open your website's <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">index.html</code>. Paste the script tag right above the closing <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">&lt;/body&gt;</code> tag and save.
-                    </p>
-                  )}
-                  {modalCmsTab === "wordpress" && (
-                    <p>
-                      In WordPress Admin, install WPCode / Header & Footer plugin. Navigate to <strong>Code Snippets &rarr; Header & Footer</strong>, paste the snippet into <strong>Footer</strong>, and click <strong>Save</strong>.
-                    </p>
-                  )}
-                  {modalCmsTab === "shopify" && (
-                    <p>
-                      In Shopify Admin, go to <strong>Online Store &rarr; Themes &rarr; Actions &rarr; Edit code</strong>. Open <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">theme.liquid</code> and paste before <code className="bg-white dark:bg-slate-800 px-1 py-0.5 rounded font-mono text-[#252525] dark:text-slate-200 border border-[#EFE7DC] dark:border-transparent">&lt;/body&gt;</code>.
-                    </p>
-                  )}
-                  {modalCmsTab === "webflow" && (
-                    <p>
-                      In Webflow Project Settings &rarr; <strong>Custom Code</strong> &rarr; <strong>Footer Code</strong>. Paste snippet and click <strong>Publish</strong>.
-                    </p>
-                  )}
-                </div>
+            ) : (
+              <div className="relative">
+                <pre className="p-4 rounded-xl bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-800">
+                  {getConsoleSnippet(deployModalBot)}
+                </pre>
+                <button
+                  type="button"
+                  onClick={() => handleCopyConsole(deployModalBot)}
+                  className="absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium cursor-pointer"
+                >
+                  {copiedConsole ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedConsole ? "Copied" : "Copy JS"}</span>
+                </button>
               </div>
-            </div>
+            )}
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-[#FAF9F6] dark:bg-slate-900/80 border-t border-[#EFE7DC] dark:border-slate-800 flex items-center justify-between">
-              <Link
-                href={`/bots/${deployModalBot.id}/deploy`}
-                className="inline-flex items-center gap-1.5 text-[#B68A55] dark:text-indigo-400 hover:underline font-semibold text-xs cursor-pointer"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <a
+                href="/test-embed.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-subtle)]/50 hover:bg-[var(--bg-subtle)] flex items-center justify-between transition-colors"
               >
-                <span>Open Full Customization Studio &rarr;</span>
-              </Link>
+                <div className="flex items-center gap-2.5">
+                  <Globe className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <div>
+                    <span className="font-semibold block text-[var(--text-primary)]">
+                      Open Demo Page
+                    </span>
+                    <span className="text-[11px] text-[var(--text-muted)]">
+                      Test floating widget live
+                    </span>
+                  </div>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </a>
 
               <button
+                type="button"
+                onClick={() => handleDownloadSampleHtml(deployModalBot)}
+                className="p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-subtle)]/50 hover:bg-[var(--bg-subtle)] flex items-center justify-between transition-colors cursor-pointer text-left"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Download className="w-4 h-4 text-[var(--text-secondary)]" />
+                  <div>
+                    <span className="font-semibold block text-[var(--text-primary)]">
+                      Download Sample HTML
+                    </span>
+                    <span className="text-[11px] text-[var(--text-muted)]">
+                      Local test page
+                    </span>
+                  </div>
+                </div>
+                <Download className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </button>
+            </div>
+
+            <div className="border border-[var(--border-subtle)] rounded-xl p-3.5 bg-[var(--bg-subtle)]/40 space-y-2.5">
+              <div className="flex flex-wrap items-center gap-1.5 border-b border-[var(--border-subtle)] pb-2">
+                <span className="font-semibold text-[var(--text-secondary)] mr-1">CMS Guide:</span>
+                {["html", "wordpress", "shopify", "webflow"].map((plat) => (
+                  <button
+                    key={plat}
+                    type="button"
+                    onClick={() => setModalCmsTab(plat)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer ${
+                      modalCmsTab === plat
+                        ? "bg-indigo-600 text-white"
+                        : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {plat.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[var(--text-secondary)] leading-relaxed">
+                {modalCmsTab === "html" &&
+                  "Open your HTML layout template and paste the script tag right before the closing </body> tag."}
+                {modalCmsTab === "wordpress" &&
+                  "Install WPCode (Insert Headers and Footers), navigate to Code Snippets → Header & Footer, paste into Footer, and save."}
+                {modalCmsTab === "shopify" &&
+                  "In Shopify Admin → Online Store → Themes → Edit code, open theme.liquid and paste above </body>."}
+                {modalCmsTab === "webflow" &&
+                  "In Webflow Project Settings → Custom Code → Footer Code, paste the script tag and publish."}
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between border-t border-[var(--border-subtle)]">
+              <Link
+                href={`/bots/${deployModalBot.id}/deploy`}
                 onClick={() => setDeployModalBot(null)}
-                className="px-4 py-2 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold transition-colors cursor-pointer border border-[#252525] dark:border-slate-700 shadow-xs"
+                className="text-[var(--accent-primary)] hover:underline font-medium"
+              >
+                Open Deployment & Verification Studio →
+              </Link>
+              <button
+                type="button"
+                onClick={() => setDeployModalBot(null)}
+                className="h-8 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium cursor-pointer"
               >
                 Done
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {deployWebsiteBot && (
         <DeployWebsiteModal
@@ -724,7 +564,7 @@ export default function BotsPage() {
           onClose={() => setDeployWebsiteBot(null)}
           bot={deployWebsiteBot}
           onBotUpdated={(updated) => {
-            setBots((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+            setBots((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
           }}
         />
       )}
@@ -743,16 +583,15 @@ export default function BotsPage() {
         />
       )}
 
-      {/* Premium Confirm Modal for Deleting Bot */}
       <ConfirmModal
         isOpen={Boolean(deleteTargetBot)}
         onClose={() => setDeleteTargetBot(null)}
         onConfirm={handleConfirmDeleteBot}
         title="Delete Chatbot?"
-        description={`Are you sure you want to permanently delete "${deleteTargetBot?.name || "this bot"}"? This will remove all bot configurations, knowledge base training, and embed integrations.`}
-        confirmText="Delete Bot"
+        description={`Permanently delete "${deleteTargetBot?.name || "this chatbot"}" and its knowledge sources and widget configuration?`}
+        confirmText="Delete Chatbot"
         cancelText="Cancel"
-        loadingText="Deleting Bot..."
+        loadingText="Deleting..."
         variant="danger"
         badgeText="Permanent Action"
       />

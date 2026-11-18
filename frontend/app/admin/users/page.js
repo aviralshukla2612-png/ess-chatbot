@@ -3,61 +3,34 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Users,
-  Mail,
-  Building2,
-  Shield,
   Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
   RefreshCw,
   UserCheck,
   Ban,
   ShieldCheck,
+  Activity,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { adminApi } from "@/lib/api/admin";
-import { useRealtimeSync } from "@/lib/hooks/useRealtimeSync";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
+import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
+import { adminApi } from "@/lib/api/admin";
 
 export default function AdminUsersPage() {
+  const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirmConfig, setConfirmConfig] = useState(null);
 
-  const handleToggleBlockUser = (userId, currentStatus, userName) => {
-    const isBlocked = String(currentStatus).toUpperCase() === "BLOCKED";
-    const nextStatus = isBlocked ? "ACTIVE" : "BLOCKED";
-    setConfirmConfig({
-      title: isBlocked ? "Unblock User Account?" : "Block User Account?",
-      description: isBlocked
-        ? `Are you sure you want to unblock "${userName || userId}"? They will regain complete access to their account and chatbots.`
-        : `Are you sure you want to BLOCK "${userName || userId}"? They will immediately be denied access across the entire platform.`,
-      confirmText: isBlocked ? "Unblock User" : "Block User",
-      badgeText: isBlocked ? "Access Restored" : "Security Action",
-      variant: isBlocked ? "gold" : "warning",
-      onConfirm: async () => {
-        try {
-          const res = await fetch("/api/admin/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, action: isBlocked ? "unblock" : "block" }),
-          });
-          const data = await res.json().catch(() => ({}));
-          if (data.success) {
-            setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u)));
-          }
-        } catch (err) {
-          console.error("Error updating user status:", err);
-        }
-      },
-    });
-  };
-
-  // Pagination & Filtering state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [pagination, setPagination] = useState({
@@ -73,18 +46,26 @@ export default function AdminUsersPage() {
     onlineNow: 1,
   });
 
-  const loadData = useCallback(async (targetPage = page, search = searchTerm, role = roleFilter, status = statusFilter, limit = pageSize) => {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(1);
+    }, 280);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await adminApi.getUsers({
-        page: targetPage,
-        limit,
-        search,
-        role,
-        status,
+        page,
+        limit: pageSize,
+        search: debouncedSearch,
+        role: roleFilter,
+        status: statusFilter,
       });
 
-      if (res && res.success) {
+      if (res?.success) {
         setUsers(res.data || []);
         if (res.pagination) setPagination(res.pagination);
         if (res.stats) setStats(res.stats);
@@ -94,72 +75,114 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, roleFilter, statusFilter, pageSize]);
+  }, [page, pageSize, debouncedSearch, roleFilter, statusFilter]);
 
   useEffect(() => {
-    loadData(page, searchTerm, roleFilter, statusFilter, pageSize);
-  }, [page, roleFilter, statusFilter, pageSize, loadData]);
+    loadData();
+  }, [loadData]);
 
-  // Debounced search
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setPage(1);
-      loadData(1, searchTerm, roleFilter, statusFilter, pageSize);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchTerm, roleFilter, statusFilter, pageSize, loadData]);
+  const handleToggleBlockUser = (userId, currentStatus, userName) => {
+    const isBlocked = String(currentStatus).toUpperCase() === "BLOCKED";
+    const nextStatus = isBlocked ? "ACTIVE" : "BLOCKED";
+    setConfirmConfig({
+      title: isBlocked ? "Unblock User Account?" : "Block User Account?",
+      description: isBlocked
+        ? `Restore full platform access for "${userName || userId}"?`
+        : `Block "${userName || userId}" from signing in or accessing workspace endpoints?`,
+      confirmText: isBlocked ? "Unblock User" : "Block User",
+      badgeText: isBlocked ? "Access Restored" : "Security Action",
+      variant: isBlocked ? "info" : "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch("/api/admin/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, action: isBlocked ? "unblock" : "block" }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (data.success) {
+            setUsers((prev) =>
+              prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u))
+            );
+            toast({
+              title: isBlocked ? "User unblocked" : "User blocked",
+              variant: "success",
+            });
+          } else {
+            toast({ title: "Action failed", message: data.error, variant: "error" });
+          }
+        } catch (err) {
+          toast({ title: "Error", message: err.message, variant: "error" });
+        } finally {
+          setConfirmConfig(null);
+        }
+      },
+    });
+  };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12 font-sans">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
-            User Directory & Access Control
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Audit user accounts, organization assignments, and permission roles across all tenant domains.
-          </p>
-        </div>
+    <div className="space-y-6 pb-12 animate-fade-in">
+      <PageHeader
+        badge="Identity Governance"
+        title="User Directory & Access Control"
+        description="Audit registered user accounts, organization memberships, roles, and account block states."
+        actions={
+          <Button variant="secondary" size="sm" icon={RefreshCw} onClick={loadData}>
+            Refresh
+          </Button>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/20 dark:border-emerald-800/50 px-2.5 py-1 rounded-full font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Realtime Live</span>
-          </span>
-          <button
-            onClick={() => loadData(page, searchTerm, roleFilter, statusFilter, pageSize)}
-            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#252525] dark:text-neutral-300 bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-[#161616] rounded-xl shadow-xs transition-colors self-start md:self-auto cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-slate-400"}`} />
-            <span>Refresh</span>
-          </button>
-        </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Users"
+          value={(stats.totalUsers || pagination.totalCount || users.length).toLocaleString()}
+          icon={Users}
+          colorScheme="indigo"
+        />
+        <StatCard
+          title="Active Accounts"
+          value={(stats.activeUsers || users.filter((u) => String(u.status).toUpperCase() !== "BLOCKED").length).toLocaleString()}
+          icon={UserCheck}
+          colorScheme="emerald"
+        />
+        <StatCard
+          title="Blocked Accounts"
+          value={(stats.blockedUsers || users.filter((u) => String(u.status).toUpperCase() === "BLOCKED").length).toLocaleString()}
+          icon={Ban}
+          colorScheme="rose"
+        />
+        <StatCard
+          title="Active Sessions"
+          value={stats.onlineNow || 1}
+          icon={Activity}
+          colorScheme="sky"
+        />
       </div>
 
-      {/* Control Bar: Search & Role Filters */}
-      <div className="bg-white dark:bg-[#0D0D0D] p-4 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Search */}
+      {/* Filter Bar */}
+      <div className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search thousands of users by name, email, or organization..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl outline-hidden focus:border-[#B68A55] text-[#252525] dark:text-white transition-all placeholder:text-neutral-400 dark:placeholder:text-neutral-500 shadow-2xs"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search users by name, email, or organization..."
+            className="w-full pl-10 pr-4 py-2 text-xs bg-[var(--bg-subtle)]/50 focus:bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg outline-hidden focus:border-indigo-500 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Role Filter */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           <select
             value={roleFilter}
             onChange={(e) => {
               setRoleFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl text-[#252525] dark:text-neutral-200 outline-hidden cursor-pointer"
+            aria-label="Filter by user role"
+            className="px-3 py-2 text-xs bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-[var(--text-secondary)] outline-hidden cursor-pointer"
           >
             <option value="ALL">All Roles</option>
             <option value="OWNER">Workspace Owners</option>
@@ -167,169 +190,135 @@ export default function AdminUsersPage() {
             <option value="MEMBER">Team Members</option>
           </select>
 
-          {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl text-[#252525] dark:text-neutral-200 outline-hidden cursor-pointer"
+            aria-label="Filter by account status"
+            className="px-3 py-2 text-xs bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-[var(--text-secondary)] outline-hidden cursor-pointer"
           >
             <option value="ALL">All Statuses</option>
             <option value="ACTIVE">Active</option>
+            <option value="BLOCKED">Blocked</option>
             <option value="INACTIVE">Inactive</option>
           </select>
+        </div>
+      </div>
 
-          {/* Page Size */}
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
+      {/* Users Table */}
+      {loading ? (
+        <TableSkeleton rows={6} cols={8} />
+      ) : users.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No users found"
+          description="No user records matched your current search or role filter."
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSearchInput("");
+            setRoleFilter("ALL");
+            setStatusFilter("ALL");
+          }}
+        />
+      ) : (
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] overflow-hidden shadow-[var(--shadow-xs)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[var(--bg-subtle)]/60 text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wider border-b border-[var(--border-subtle)]">
+                <tr>
+                  <th className="p-4">Name</th>
+                  <th className="p-4">Email</th>
+                  <th className="p-4">Organization</th>
+                  <th className="p-4">Role</th>
+                  <th className="p-4">Bots</th>
+                  <th className="p-4">Last Login</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)]">
+                {users.map((u) => {
+                  const isProtected =
+                    u.role === "Platform Super Admin" ||
+                    u.role === "SUPER_ADMIN" ||
+                    u.email === "admin@emperorsmartsolutions.com";
+                  const isBlocked = String(u.status).toUpperCase() === "BLOCKED";
+
+                  return (
+                    <tr key={u.id} className="hover:bg-[var(--bg-subtle)]/40 transition-colors">
+                      <td className="p-4 font-semibold text-[var(--text-primary)]">{u.name}</td>
+                      <td className="p-4 text-[var(--text-secondary)]">{u.email}</td>
+                      <td className="p-4 text-[var(--text-secondary)] font-medium">
+                        {u.organization}
+                      </td>
+                      <td className="p-4">
+                        <span className="font-mono text-[11px] px-2.5 py-0.5 rounded-md bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] font-semibold">
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="p-4 font-mono font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                        {u.bots ?? 0}
+                      </td>
+                      <td className="p-4 text-[var(--text-muted)]">{u.lastLogin || "—"}</td>
+                      <td className="p-4">
+                        <StatusBadge status={u.status} size="sm" />
+                      </td>
+                      <td className="p-4 text-right">
+                        {isProtected ? (
+                          <span className="text-[11px] font-medium text-[var(--text-muted)] italic">
+                            Protected
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleToggleBlockUser(u.id, u.status, u.name || u.email)
+                            }
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+                              isBlocked
+                                ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/25"
+                                : "text-rose-700 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border-rose-500/25"
+                            }`}
+                          >
+                            {isBlocked ? (
+                              <>
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                <span>Unblock</span>
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="w-3.5 h-3.5" />
+                                <span>Block</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            currentPage={pagination.page || page}
+            totalPages={Math.max(1, pagination.totalPages || 1)}
+            totalItems={pagination.totalCount || users.length}
+            pageSize={pageSize}
+            onPageChange={(next) => setPage(next)}
+            onPageSizeChange={(sz) => {
+              setPageSize(sz);
               setPage(1);
             }}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl text-[#252525] dark:text-neutral-200 outline-hidden cursor-pointer"
-          >
-            <option value={10}>10 / page</option>
-            <option value={25}>25 / page</option>
-            <option value={50}>50 / page</option>
-            <option value={100}>100 / page</option>
-          </select>
+            pageSizeOptions={[10, 25, 50, 100]}
+            itemLabel="users"
+          />
         </div>
-      </div>
+      )}
 
-      {/* Table */}
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] dark:bg-[#0A0A0A] text-slate-500 dark:text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-[#EFE7DC] dark:border-neutral-800">
-              <tr>
-                <th className="p-4">Name</th>
-                <th className="p-4">Email</th>
-                <th className="p-4">Organization</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Bots</th>
-                <th className="p-4">Last Login</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EFE7DC] dark:divide-neutral-800">
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 dark:text-neutral-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#B68A55]" />
-                      <span>Loading users...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 dark:text-neutral-400">
-                    <p className="font-semibold text-sm text-[#252525] dark:text-white">No users found</p>
-                    <p className="text-xs text-slate-500 dark:text-neutral-500 mt-1">
-                      No matching records for "{searchTerm}".
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                users.map((u) => (
-                  <tr key={u.id} className="hover:bg-[#FAF9F6] dark:hover:bg-neutral-900/60 transition-colors">
-                    <td className="p-4 font-bold text-[#252525] dark:text-white">{u.name}</td>
-                    <td className="p-4 text-slate-600 dark:text-neutral-300">{u.email}</td>
-                    <td className="p-4 text-slate-700 dark:text-neutral-300 font-medium">{u.organization}</td>
-                    <td className="p-4">
-                      <span className="font-mono text-[11px] px-2.5 py-0.5 rounded-md bg-[#FAF9F6] dark:bg-neutral-800 border border-[#EFE7DC] dark:border-neutral-700 text-[#252525] dark:text-neutral-200 font-semibold shadow-2xs">
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="p-4 font-mono font-bold text-[#B68A55]">{u.bots}</td>
-                    <td className="p-4 text-slate-500 dark:text-neutral-400">{u.lastLogin}</td>
-                    <td className="p-4">
-                      <StatusBadge status={u.status} size="sm" />
-                    </td>
-                    <td className="p-4 text-right">
-                      {u.role === "Platform Super Admin" ||
-                      u.role === "SUPER_ADMIN" ||
-                      u.email === "admin@emperorsmartsolutions.com" ? (
-                        <span className="text-[11px] font-medium text-slate-400 dark:text-neutral-500 italic">
-                          Protected
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleToggleBlockUser(u.id, u.status, u.name || u.email)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                            String(u.status).toUpperCase() === "BLOCKED"
-                              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-950/40 hover:bg-emerald-500/20 dark:hover:bg-emerald-900/50 border border-emerald-500/30 dark:border-emerald-800/50"
-                              : "text-rose-600 dark:text-rose-400 bg-rose-500/10 dark:bg-rose-950/40 hover:bg-rose-500/20 dark:hover:bg-rose-900/50 border border-rose-500/30 dark:border-rose-800/50"
-                          }`}
-                          title={String(u.status).toUpperCase() === "BLOCKED" ? "Unblock User" : "Block User"}
-                        >
-                          {String(u.status).toUpperCase() === "BLOCKED" ? (
-                            <>
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-                              <span>Unblock</span>
-                            </>
-                          ) : (
-                            <>
-                              <Ban className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
-                              <span>Block</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Server-Side Pagination Bar */}
-        <div className="p-4 border-t border-[#EFE7DC] dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-neutral-400">
-          <div>
-            Showing{" "}
-            <span className="font-semibold text-[#252525] dark:text-white">
-              {pagination.totalCount === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}
-            </span>{" "}
-            to{" "}
-            <span className="font-semibold text-[#252525] dark:text-white">
-              {Math.min(pagination.page * pagination.limit, pagination.totalCount)}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-[#252525] dark:text-white">
-              {pagination.totalCount.toLocaleString()}
-            </span>{" "}
-            users
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={pagination.page <= 1 || loading}
-              className="p-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 text-[#252525] dark:text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            <span className="px-3 py-1 font-semibold text-[#252525] dark:text-neutral-200 bg-[#FAF9F6] dark:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 rounded-lg">
-              Page {pagination.page} of {pagination.totalPages}
-            </span>
-
-            <button
-              onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
-              disabled={pagination.page >= pagination.totalPages || loading}
-              className="p-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 text-[#252525] dark:text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Premium Confirm Modal */}
       <ConfirmModal
         isOpen={Boolean(confirmConfig)}
         onClose={() => setConfirmConfig(null)}

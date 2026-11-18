@@ -54,16 +54,16 @@ export default function Step04Review({
   return (
     <div className="space-y-8 animate-fade-in max-w-4xl mx-auto">
       {/* Header */}
-      <div className="space-y-2 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D98B]/10 border border-[#00D98B]/30 text-[11px] font-bold text-[#00D98B] uppercase tracking-wider">
+      <div className="space-y-1.5 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/12 border border-emerald-200 dark:border-emerald-500/25 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>Step 04 · Verification</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Review Your Business Knowledge
         </h2>
-        <p className="text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-          Verify your business information before proceeding to assistant configuration. Your assistant will answer customer questions strictly based on this approved knowledge.
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+          Verify your business details before configuring appearance. Your assistant will answer customer questions strictly based on this approved knowledge.
         </p>
       </div>
 
@@ -333,7 +333,7 @@ export default function Step04Review({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs text-[#9898A6] hover:text-white bg-[#12121A] hover:bg-[#1A1A24] border border-white/10 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 h-10 px-5 rounded-lg font-medium text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] border border-[var(--border-strong)] transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Questionnaire</span>
@@ -343,7 +343,7 @@ export default function Step04Review({
           type="button"
           onClick={onNext}
           disabled={!confirmed}
-          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] to-[#55A9FF] hover:opacity-95 active:scale-[0.98] shadow-lg shadow-[#963DFF]/25 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-10 px-6 rounded-lg font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
         >
           <span>Continue to Assistant Config</span>
           <ArrowRight className="w-4 h-4" />

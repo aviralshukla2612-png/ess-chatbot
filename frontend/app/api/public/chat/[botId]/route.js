@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { searchWebsiteKnowledge } from "@/lib/crawler/engine";
 import { botsStore } from "@/lib/db/botsStore";
@@ -22,7 +23,12 @@ import {
 import { WebhookDispatcher } from "@/lib/integrations/webhookDispatcher";
 import { checkDomainAuthorization } from "@/lib/security/domainGuard";
 import { InferenceProvider } from "@/lib/ai/inferenceProvider";
-import { checkDistributedRateLimit } from "@/lib/security/distributedRateLimit";
+import {
+  extractClientIp,
+  enforceRateLimit,
+  applyRateLimitHeaders,
+  validateChatPayloadAndBudget,
+} from "@/lib/security/rateLimitPolicy";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 
@@ -143,7 +149,7 @@ function resolveCookieName(botId) {
 
 function extractVisitorToken(request, botId, body = null) {
   const cookieName = resolveCookieName(botId);
-  const cookieVal = request.cookies.get(cookieName)?.value;
+  const cookieVal = request.cookies?.get?.(cookieName)?.value;
   if (cookieVal && cookieVal.length >= 16) return cookieVal.trim();
 
   const headerVal = request.headers.get("x-visitor-token");
@@ -156,6 +162,7 @@ function extractVisitorToken(request, botId, body = null) {
 }
 
 function setVisitorCookie(response, botId, rawToken) {
+  if (!response?.cookies?.set) return;
   const cookieName = resolveCookieName(botId);
   const isProd = process.env.NODE_ENV === "production";
   response.cookies.set({
@@ -177,27 +184,44 @@ export async function POST(request, { params }) {
   try {
     const { botId } = await params;
 
-    // --- PHASE 4: DISTRIBUTED RATE LIMITING (Redis + Sliding Window) ---
-    const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "global_client";
-    const rateCheck = await checkDistributedRateLimit(`${clientIp}_${botId}`, 40, 60000);
-    if (!rateCheck.ok) {
-      return corsResponse(
-        NextResponse.json(
-          { error: `Too many requests. Please wait ${rateCheck.retrySec} seconds.` },
-          { status: 429, headers: { "Retry-After": String(rateCheck.retrySec) } }
-        )
-      );
+    // --- PHASE 5: ANTI-SPOOFING MULTI-LAYER RATE LIMITING (Redis Atomic Sliding Window + Standard Headers) ---
+    const clientIp = extractClientIp(request);
+    const ipRateCheck = await enforceRateLimit("chat_ip", `${clientIp}:${botId}`);
+    if (!ipRateCheck.ok) {
+      return corsResponse(ipRateCheck.response, request);
     }
 
-    const body = await request.json();
-    const { message, history = [], visitor = {}, sessionId, stream: requestStream } = body;
-
-    if (!message || typeof message !== "string") {
+    let rawBody;
+    try {
+      rawBody = await request.json();
+    } catch {
       return corsResponse(
-        NextResponse.json({ error: "Message content is required" }, { status: 400 }),
+        applyRateLimitHeaders(
+          NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 }),
+          ipRateCheck.result
+        ),
         request
       );
     }
+
+    // --- PHASE 5: AI PAYLOAD, MESSAGE LENGTH, CONTEXT & TOKEN BUDGET GUARD ---
+    const payloadGuard = validateChatPayloadAndBudget(request, rawBody);
+    if (!payloadGuard.ok) {
+      return corsResponse(
+        applyRateLimitHeaders(
+          NextResponse.json(
+            { error: payloadGuard.error, code: payloadGuard.code },
+            { status: payloadGuard.status }
+          ),
+          ipRateCheck.result
+        ),
+        request
+      );
+    }
+
+    const message = payloadGuard.message;
+    const history = payloadGuard.sanitizedHistory;
+    const { visitor = {}, sessionId, stream: requestStream } = rawBody;
 
     // 1. Resolve Bot & Enforce Status (Strict: Never fall back to other bots)
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
@@ -206,29 +230,40 @@ export async function POST(request, { params }) {
       console.warn(`[PUBLIC_CHAT_404] Bot not found, inactive, or blocked. botId='${botId}', resolved='${resolvedBotId}', found=${Boolean(bot)}, status='${bot?.status}'`);
       const isBlocked = bot?.status === "Blocked" || bot?.status === "Suspended";
       return corsResponse(
-        NextResponse.json(
-          { error: isBlocked ? "This chatbot assistant has been blocked by system administration." : "Chatbot not found or inactive" },
-          { status: isBlocked ? 403 : 404 }
+        applyRateLimitHeaders(
+          NextResponse.json(
+            { error: isBlocked ? "This chatbot assistant has been blocked by system administration." : "Chatbot not found or inactive" },
+            { status: isBlocked ? 403 : 404 }
+          ),
+          ipRateCheck.result
         ),
         request
       );
     }
 
-    // --- PHASE 4: DOMAIN WHITELISTS ---
+    // --- PHASE 4: DOMAIN WHITELISTS (Reject BEFORE setting credentialed CORS headers — SEC-15) ---
     const originHeader = request.headers.get("origin") || request.headers.get("referer");
     const allowedDomains = (!bot?.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0)
       ? ["*"]
       : bot.allowedDomains;
     const domainCheck = checkDomainAuthorization(originHeader, allowedDomains);
     if (!domainCheck.allowed) {
-      return corsResponse(
+      return applyRateLimitHeaders(
         NextResponse.json(
           { error: `Unauthorized domain. This chatbot cannot be embedded on ${domainCheck.host || "this origin"}.` },
           { status: 403 }
         ),
-        request
+        ipRateCheck.result
       );
     }
+
+    // --- PHASE 5: TENANT / ORGANIZATION AGGREGATE BURST LIMIT ---
+    const tenantOrgCheck = await enforceRateLimit("chat_org", bot.organizationId || bot.id);
+    if (!tenantOrgCheck.ok) {
+      return corsResponse(tenantOrgCheck.response, request);
+    }
+
+    const body = rawBody;
 
     const botName = bot?.name || "AI Assistant";
     const businessName =
@@ -318,7 +353,7 @@ export async function POST(request, { params }) {
     }
 
     if (!currentSessionId) {
-      currentSessionId = `session_${botId}_${Date.now()}`;
+      currentSessionId = `session_${botId}_${crypto.randomUUID()}`;
     }
 
     // --- PHASE 6 & 12: GLOBAL BOT CHECK ---
@@ -1524,6 +1559,7 @@ Here are our official contact details to speak with our engineering leadership:
           } else {
             conversationsStore.createConversation({
               id: currentSessionId,
+              organizationId: bot?.organizationId || "org_ess_default",
               visitorId: persistentVisitor?.id || null,
               botId: bot?.id || botId,
               botName: botName,
@@ -1615,23 +1651,13 @@ Here are our official contact details to speak with our engineering leadership:
           triggerLeadWebhookAsync(bot, leadData);
         }
 
-        // Record real-time dynamic token usage for deterministic / sales qualification turn
-        try {
-          const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
-          const wordCount = (deterministicReply || "").split(/\s+/).length;
-          const promptTokens = (message || "").split(/\s+/).length;
-          // Enterprise conversational AI context: base prompt & persona (~750 tokens) + prompt + completion tokens
-          const turnTokens = Math.max(350, 750 + Math.round((wordCount + promptTokens) * 1.35));
-          GroqKeyPoolManager.recordSuccess("primary", turnTokens);
-        } catch (poolErr) {}
-
         let streamPayload = `data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`;
         streamPayload += `data: ${JSON.stringify({ token: deterministicReply })}\n\n`;
         if (quickReplies && quickReplies.length > 0) {
           streamPayload += `data: ${JSON.stringify({ quickReplies })}\n\n`;
         }
         streamPayload += `data: [DONE]\n\n`;
-        return sseResponse(streamPayload, request);
+        return applyRateLimitHeaders(sseResponse(streamPayload, request), ipRateCheck.result);
       }
 
       const responseStream = new TransformStream();
@@ -1790,7 +1816,7 @@ Here are our official contact details to speak with our engineering leadership:
         }
       })();
 
-      return sseResponse(responseStream.readable, request);
+      return applyRateLimitHeaders(sseResponse(responseStream.readable, request), ipRateCheck.result);
     }
 
     // --- STANDARD JSON RESPONSE PIPELINE ---
@@ -1799,7 +1825,7 @@ Here are our official contact details to speak with our engineering leadership:
       botReply = await executeChatInference({
         messages: llmMessages,
         temperature: 0.3,
-        num_predict: 512,
+        num_predict: payloadGuard.maxOutputTokens || 512,
       });
 
       botReply = validateOutput(botReply, businessName, lang, botName, resolvedName);
@@ -1815,16 +1841,6 @@ Here are our official contact details to speak with our engineering leadership:
           botReply += leadAsk;
         }
       }
-    } else {
-      // Record real-time dynamic token usage for non-streaming deterministic turn
-      try {
-        const { GroqKeyPoolManager } = await import("@/lib/ai/groqKeyPool");
-        const wordCount = (botReply || "").split(/\s+/).length;
-        const promptTokens = (message || "").split(/\s+/).length;
-        // Enterprise conversational AI context: base prompt & persona (~750 tokens) + prompt + completion tokens
-        const turnTokens = Math.max(350, 750 + Math.round((wordCount + promptTokens) * 1.35));
-        GroqKeyPoolManager.recordSuccess("primary", turnTokens);
-      } catch (poolErr) {}
     }
 
     // Capture Lead: require email or phone before creating a CRM lead
@@ -1901,6 +1917,7 @@ Here are our official contact details to speak with our engineering leadership:
     } else {
       conversationsStore.createConversation({
         id: currentSessionId,
+        organizationId: bot?.organizationId || "org_ess_default",
         visitorId: persistentVisitor?.id || null,
         botId: bot.id,
         botName: botName,
@@ -1928,15 +1945,18 @@ Here are our official contact details to speak with our engineering leadership:
       }
     }
 
-    const finalRes = corsResponse(
-      NextResponse.json({
-        success: true,
-        reply: botReply,
-        quickReplies: quickReplies || [],
-        sources: [],
-        sessionId: currentSessionId,
-      }),
-      request
+    const finalRes = applyRateLimitHeaders(
+      corsResponse(
+        NextResponse.json({
+          success: true,
+          reply: botReply,
+          quickReplies: quickReplies || [],
+          sources: relevantChunks.map((c) => c.pageTitle || c.pageUrl).filter(Boolean),
+          sessionId: currentSessionId,
+        }),
+        request
+      ),
+      ipRateCheck.result
     );
 
     if (isNewVisitorTokenIssued && rawTokenToSet) {

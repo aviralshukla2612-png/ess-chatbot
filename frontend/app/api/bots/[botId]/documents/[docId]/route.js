@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { documentsStore } from "@/lib/db/documentsStore";
 import { botsStore } from "@/lib/db/botsStore";
-import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { requireAuth, requireOrgRole, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
+import { validateProhibitedContent } from "@/lib/security/contentModeration";
+import { getAiResourceLimits } from "@/lib/security/rateLimitPolicy";
 
 export async function OPTIONS() {
   const res = new NextResponse(null, { status: 204 });
@@ -17,22 +19,15 @@ export async function GET(request, { params }) {
 
     const { principal } = auth;
     const { botId, docId } = await params;
-
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
 
     const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
-    if (!bot) {
-      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
-    }
-
-    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
+    if (!bot || (!isSuperAdmin && bot.organizationId !== principal.organizationId)) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
     const doc = documentsStore.getDocumentById(docId);
-    if (!doc || doc.botId !== botId) {
+    if (!doc || doc.botId !== bot.id) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
 
@@ -49,22 +44,15 @@ export async function PUT(request, { params }) {
 
     const { principal } = auth;
     const { botId, docId } = await params;
-
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
 
     const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
-    if (!bot) {
-      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
-    }
-
-    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
+    if (!bot || (!isSuperAdmin && bot.organizationId !== principal.organizationId)) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
     const existing = documentsStore.getDocumentById(docId);
-    if (!existing || existing.botId !== botId) {
+    if (!existing || existing.botId !== bot.id) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
 
@@ -73,6 +61,27 @@ export async function PUT(request, { params }) {
 
     if (content !== undefined && (!content || !content.trim())) {
       return NextResponse.json({ success: false, error: "Document content cannot be empty" }, { status: 400 });
+    }
+
+    const { maxDocumentBytes } = getAiResourceLimits();
+    if (content !== undefined && Buffer.byteLength(String(content), "utf8") > maxDocumentBytes) {
+      return NextResponse.json({ success: false, error: "Document exceeds maximum size limit." }, { status: 413 });
+    }
+
+    const modCheck = validateProhibitedContent({
+      name: name ?? existing.name,
+      content: content ?? existing.content,
+    });
+    if (!modCheck.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: modCheck.error,
+          code: "PROHIBITED_CATEGORY_VIOLATION",
+          category: modCheck.violation,
+        },
+        { status: 400 }
+      );
     }
 
     const updated = documentsStore.updateDocument(docId, {
@@ -94,22 +103,15 @@ export async function DELETE(request, { params }) {
 
     const { principal } = auth;
     const { botId, docId } = await params;
-
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
 
     const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
-    if (!bot) {
-      return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
-    }
-
-    if (!isSuperAdmin && bot.organizationId !== principal.organizationId) {
+    if (!bot || (!isSuperAdmin && bot.organizationId !== principal.organizationId)) {
       return NextResponse.json({ success: false, error: "Bot not found" }, { status: 404 });
     }
 
     const existing = documentsStore.getDocumentById(docId);
-    if (existing && existing.botId !== botId && !isSuperAdmin) {
+    if (!existing || (existing.botId !== bot.id && !isSuperAdmin)) {
       return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
     }
 

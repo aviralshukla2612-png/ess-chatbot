@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 import { authStore } from "@/lib/db/authStore";
 
@@ -11,19 +11,14 @@ export async function POST(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
     const isOwnerOrAdmin =
       isSuperAdmin ||
       principal.orgRole === ROLES.ORG_OWNER ||
-      principal.orgRole === ROLES.ORG_ADMIN ||
-      principal.platformRole === "Workspace Owner" ||
-      principal.platformRole === "ORG_ADMIN" ||
-      principal.email?.toLowerCase().includes("aviral");
+      principal.orgRole === ROLES.ORG_ADMIN;
 
-    const targetOrgId = (isSuperAdmin || isOwnerOrAdmin) ? null : principal.organizationId;
+    // Strict tenant isolation: ORG_OWNER/ORG_ADMIN can manage within THEIR org only
+    const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const conv = conversationsStore.getConversation(id, targetOrgId);
     if (!conv) {
@@ -34,12 +29,10 @@ export async function POST(request, { params }) {
     let targetUserId = body.targetUserId;
     let targetUserName = body.targetUserName;
 
-    // Self-assignment
     if (body.assignToMe || !targetUserId) {
       targetUserId = principal.userId;
       targetUserName = principal.name || principal.email.split("@")[0];
     } else {
-      // Assigning to someone else requires Admin or Owner
       if (!isOwnerOrAdmin && targetUserId !== principal.userId) {
         return NextResponse.json(
           { success: false, error: "Forbidden: Only administrators can assign conversations to other team members." },
@@ -73,4 +66,3 @@ export async function POST(request, { params }) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
-

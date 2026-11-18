@@ -5,7 +5,6 @@ import {
   Sparkles,
   ShieldCheck,
   CheckCircle2,
-  Calendar,
   CreditCard,
   ArrowRight,
   Loader2,
@@ -13,8 +12,8 @@ import {
   X,
   AlertCircle,
   Check,
-  Zap,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function TrialOnboardingModal({
   isOpen,
@@ -33,10 +32,11 @@ export default function TrialOnboardingModal({
   const timeoutRef = useRef(null);
 
   useEffect(() => {
-    if (hasUsedTrial) setIsTrialExhausted(true);
+    setIsTrialExhausted(Boolean(hasUsedTrial));
   }, [hasUsedTrial]);
 
   useEffect(() => {
+    if (!isOpen) return;
     fetch("/api/billing/plans")
       .then((r) => r.json())
       .then((d) => {
@@ -49,7 +49,7 @@ export default function TrialOnboardingModal({
       .catch(() => {});
 
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && onClose) {
+      if (e.key === "Escape" && !isMandatory && onClose) {
         onClose();
       }
     };
@@ -59,7 +59,7 @@ export default function TrialOnboardingModal({
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [isOpen, isMandatory, onClose]);
 
   if (!isOpen) return null;
 
@@ -67,26 +67,24 @@ export default function TrialOnboardingModal({
   const trialDays = selectedPlan?.trialDays ?? 7;
   const recurringAmountText = selectedPlan
     ? `${selectedPlan.priceMonthly} ${selectedPlan.periodLabel || "per month"}`
-    : "₹2,500 per month";
+    : "₹2,499 per month";
 
   const handleStartTrial = async () => {
     setLoading(true);
     setError("");
 
-    // Safety timeout: Never leave the user stuck on loading if an external script hangs
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setLoading((curr) => {
         if (curr) {
-          setError("Gateway response timed out. Please try again or contact support.");
+          setError("Payment gateway timed out. Please try again.");
           return false;
         }
         return false;
       });
-    }, 12000);
+    }, 15000);
 
     try {
-      // 1. Create checkout with trial and future start_at on backend
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,16 +99,14 @@ export default function TrialOnboardingModal({
         if (data.code === "TRIAL_ALREADY_USED") {
           setIsTrialExhausted(true);
         }
-        throw new Error(data.error || "Failed to initiate trial checkout");
+        throw new Error(data.error || "Failed to initiate checkout");
       }
 
       const { checkout } = data;
-
-      // 2. LIVE Razorpay Gateway Mode (Opens Razorpay Checkout for subscription mandate or verification order)
       const isLiveGateway = Boolean(
         checkout?.keyId &&
-        checkout?.keyId !== "rzp_test_sandbox" &&
-        (checkout?.orderId || checkout?.mode === "live")
+          checkout?.keyId !== "rzp_test_sandbox" &&
+          (checkout?.orderId || checkout?.mode === "live")
       );
 
       if (isLiveGateway && typeof window !== "undefined") {
@@ -129,15 +125,18 @@ export default function TrialOnboardingModal({
           ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
           name: "Emperor Smart Solutions",
           description: checkout.isTrial
-            ? `${selectedPlan?.name || "Starter"} - 7-Day Free Trial (₹1 Verification)`
-            : `${selectedPlan?.name || "Starter"} Plan (${selectedPlan?.priceMonthly || "₹2,500"})`,
+            ? `${selectedPlan?.name || "Starter"} - 7-Day Free Trial`
+            : `${selectedPlan?.name || "Starter"} Plan (${selectedPlan?.priceMonthly || "₹2,499"})`,
           handler: async function (response) {
             try {
               const verifyRes = await fetch("/api/billing/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  subscriptionId: response.razorpay_subscription_id || checkout.subscriptionId || `sub_order_${response.razorpay_order_id || Date.now()}`,
+                  subscriptionId:
+                    response.razorpay_subscription_id ||
+                    checkout.subscriptionId ||
+                    `sub_order_${response.razorpay_order_id || Date.now()}`,
                   paymentId: response.razorpay_payment_id || "",
                   orderId: response.razorpay_order_id || checkout.orderId || "",
                   signature: response.razorpay_signature || "",
@@ -148,20 +147,26 @@ export default function TrialOnboardingModal({
               const verifyData = await verifyRes.json();
               if (verifyData.success) {
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                if (onActivated) onActivated(verifyData.subscription);
-                if (onClose) onClose();
+                onActivated?.(verifyData.subscription);
+                onClose?.();
 
-                // If not already on /bots/create, redirect to /bots/create with auto-selected industry
                 try {
-                  const savedInd = typeof window !== "undefined" ? localStorage.getItem("nexus_selected_industry") : null;
-                  if (savedInd && typeof window !== "undefined" && !window.location.pathname.includes("/bots/create")) {
+                  const savedInd =
+                    typeof window !== "undefined"
+                      ? localStorage.getItem("nexus_selected_industry")
+                      : null;
+                  if (
+                    savedInd &&
+                    typeof window !== "undefined" &&
+                    !window.location.pathname.includes("/bots/create")
+                  ) {
                     window.location.href = `/bots/create?industry=${encodeURIComponent(savedInd)}`;
                   }
-                } catch (e) {}
+                } catch {}
               } else {
                 setError(verifyData.error || "Payment verification failed.");
               }
-            } catch (err) {
+            } catch {
               setError("Payment verification request failed. Please check your connection.");
             } finally {
               setLoading(false);
@@ -172,7 +177,7 @@ export default function TrialOnboardingModal({
             name: userName || "",
           },
           theme: {
-            color: "#4f46e5",
+            color: "#4F46E5",
           },
           modal: {
             ondismiss: function () {
@@ -192,14 +197,14 @@ export default function TrialOnboardingModal({
         return;
       }
 
-      // 3. Fallback Instant Trial Activation (Sandbox or Test environment)
+      // Sandbox / instant verification mode
       const verifyRes = await fetch("/api/billing/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscriptionId: checkout.subscriptionId,
           planId: selectedPlan?.id || planId,
-          isTrial: true,
+          isTrial: !isTrialExhausted,
         }),
       });
 
@@ -207,17 +212,10 @@ export default function TrialOnboardingModal({
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       if (verifyData.success) {
-        if (onActivated) onActivated(verifyData.subscription);
-        if (onClose) onClose();
-
-        try {
-          const savedInd = typeof window !== "undefined" ? localStorage.getItem("nexus_selected_industry") : null;
-          if (savedInd && typeof window !== "undefined" && !window.location.pathname.includes("/bots/create")) {
-            window.location.href = `/bots/create?industry=${encodeURIComponent(savedInd)}`;
-          }
-        } catch (e) {}
+        onActivated?.(verifyData.subscription);
+        onClose?.();
       } else {
-        throw new Error(verifyData.error || "Instant trial verification failed");
+        throw new Error(verifyData.error || "Subscription verification failed");
       }
     } catch (err) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -229,95 +227,84 @@ export default function TrialOnboardingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto"
-      onClick={() => {
-        if (onClose) onClose();
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/65 backdrop-blur-xs animate-fade-in overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isMandatory && onClose) onClose();
       }}
     >
       <div
-        className="relative w-full max-w-xl bg-[#0b0f19] border border-slate-800 rounded-3xl shadow-2xl overflow-hidden text-slate-100 my-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trial-modal-title"
+        className="relative w-full max-w-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl shadow-[var(--shadow-modal)] overflow-hidden text-[var(--text-primary)] my-6 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header */}
-        <div className="relative bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 p-6 border-b border-indigo-500/20">
-          <div className="absolute top-0 right-0 w-64 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Close (X) button - Always visible and clickable */}
+        <div className="relative bg-[var(--bg-surface)] px-6 py-5 border-b border-[var(--border-subtle)]">
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close modal"
-              className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer z-30 border border-slate-700/80 shadow-md group"
-              title="Close modal (Esc)"
+              aria-label="Close billing dialog"
+              className="absolute top-4 right-4 p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5 transition-transform group-hover:scale-110" />
+              <X className="w-4 h-4" />
             </button>
           )}
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2.5">
-            {isTrialExhausted ? <Lock className="w-3.5 h-3.5 text-amber-400" /> : isMandatory ? <Lock className="w-3.5 h-3.5 text-indigo-400" /> : <Sparkles className="w-3.5 h-3.5 text-indigo-400" />}
-            <span>{isTrialExhausted ? "1-Time Free Trial Already Used • Subscribe to Continue" : "7-Day Free Trial • ₹0 Charged Today"}</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[11px] font-semibold text-[var(--accent-text)] mb-2.5">
+            {isTrialExhausted ? (
+              <Lock className="w-3.5 h-3.5" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            <span>
+              {isTrialExhausted
+                ? "Subscription Required"
+                : "7-Day Free Trial · ₹0 Charged Today"}
+            </span>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            {isTrialExhausted ? "Choose a Plan to Activate Chatbot" : isMandatory ? "Activate 7-Day Free Trial (₹0 Today)" : "Start Your Free Trial with Autopay"}
-          </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-lg leading-relaxed">
+          <h2
+            id="trial-modal-title"
+            className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight pr-8"
+          >
             {isTrialExhausted
-              ? "Your 1-time 7-day free trial has expired or was cancelled. Select a plan below to unlock your bot and resume live chat."
-              : isMandatory
-              ? "Set up your Razorpay autopay mandate to create and deploy your AI chatbots. No money is deducted from your account today."
-              : "Unlock full AI conversation and lead qualification capabilities. Zero charges today."}
+              ? "Choose a Plan to Activate Your Chatbot"
+              : "Start Your 7-Day Free Trial with Autopay"}
+          </h2>
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1 leading-relaxed">
+            {isTrialExhausted
+              ? "Your one-time 7-day free trial has already been used. Select a billing interval below to activate your workspace."
+              : "Configure your Razorpay mandate to create and deploy AI chatbots. You will not be charged today."}
           </p>
         </div>
 
-        {/* Content Body */}
-        <div className="p-5 sm:p-6 space-y-4 text-xs">
+        <div className="p-6 space-y-4 text-xs">
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-900/80 text-rose-300 flex items-start gap-2.5 text-xs animate-shake">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/12 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-200 flex items-start gap-2.5"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
               <div className="flex-1">
                 <p className="font-semibold">{error}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <p className="text-[11px] text-amber-400">
-                    {isTrialExhausted
-                      ? "Choose a subscription plan below to unlock your bot creation."
-                      : "Please check your payment details or try again."}
-                  </p>
-                  {isTrialExhausted && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch("/api/billing/reset-trial", { method: "POST" });
-                          const d = await res.json();
-                          if (d.success) {
-                            setIsTrialExhausted(false);
-                            setError("");
-                          }
-                        } catch (e) {
-                          console.error(e);
-                        }
-                      }}
-                      className="text-[10px] text-indigo-400 hover:text-indigo-300 underline font-semibold cursor-pointer"
-                    >
-                      🔄 Reset Trial (Testing Mode)
-                    </button>
-                  )}
-                </div>
+                <p className="text-[11px] opacity-85 mt-0.5">
+                  {isTrialExhausted
+                    ? "Select a paid plan below to unlock chatbot deployment."
+                    : "Please verify your payment method or try again."}
+                </p>
               </div>
             </div>
           )}
 
-          {/* Plan Selector Grid */}
+          {/* Plan Selector */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-300 text-[11px] uppercase tracking-wider">
-                Select Your Plan & Billing Interval
+              <span className="font-semibold text-[var(--text-secondary)] text-[11px] uppercase tracking-wider">
+                Select Billing Interval
               </span>
-              <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                {isTrialExhausted ? (selectedPlan?.priceMonthly || "Paid Plan") : "₹0 Today"}
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/12 dark:text-emerald-300 dark:border-emerald-500/25">
+                {isTrialExhausted ? selectedPlan?.priceMonthly || "Paid Plan" : "₹0 Today"}
               </span>
             </div>
 
@@ -332,29 +319,30 @@ export default function TrialOnboardingModal({
                     type="button"
                     key={p.id}
                     onClick={() => setPlanId(p.id)}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                    className={cn(
+                      "p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between",
                       isSelected
-                        ? "border-[#B68A55] bg-[#121212] ring-2 ring-[#B68A55]/40 shadow-lg"
-                        : "border-neutral-800 bg-[#0D0D0D] hover:bg-[#1A1A1A] hover:border-neutral-700"
-                    }`}
+                        ? "border-[var(--accent-primary)] bg-[var(--accent-soft)]/60 ring-2 ring-[var(--focus-ring)]"
+                        : "border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--border-strong)]"
+                    )}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="font-bold text-xs text-white truncate">
+                        <span className="font-semibold text-xs text-[var(--text-primary)] truncate">
                           {p.name}
                         </span>
                         {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-[#B68A55] text-white flex items-center justify-center shrink-0">
+                          <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0">
                             <Check className="w-2.5 h-2.5" />
-                          </div>
+                          </span>
                         )}
                       </div>
 
                       <div className="flex items-baseline gap-1 mt-1">
-                        <span className="text-base font-black text-indigo-300">
+                        <span className="text-base font-bold tabular-nums text-[var(--text-primary)]">
                           {p.priceMonthly}
                         </span>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-[var(--text-muted)]">
                           /{p.periodLabel?.replace(/^per\s+/i, "") || "mo"}
                         </span>
                       </div>
@@ -362,15 +350,15 @@ export default function TrialOnboardingModal({
 
                     <div className="mt-2.5">
                       {isSixMonths ? (
-                        <span className="inline-block text-[9px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded-md">
+                        <span className="inline-block text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded">
                           Best Value (6-Mo)
                         </span>
                       ) : isAnnual ? (
-                        <span className="inline-block text-[9px] font-bold text-violet-400 bg-violet-950/80 border border-violet-500/30 px-1.5 py-0.5 rounded-md">
-                          VIP Annual Pass
+                        <span className="inline-block text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 px-1.5 py-0.5 rounded">
+                          Annual Pass
                         </span>
                       ) : (
-                        <span className="inline-block text-[9px] font-medium text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded-md">
+                        <span className="inline-block text-[10px] font-medium text-[var(--text-muted)] bg-[var(--bg-subtle)] px-1.5 py-0.5 rounded">
                           Monthly Flexible
                         </span>
                       )}
@@ -381,30 +369,35 @@ export default function TrialOnboardingModal({
             </div>
           </div>
 
-          {/* Autopay Schedule Breakdown */}
-          <div className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800/80 space-y-2">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
-              <span className="text-slate-400">Due Today</span>
-              <span className="text-sm font-extrabold text-emerald-400 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                {isTrialExhausted ? `${selectedPlan?.priceMonthly || "₹2,500"} (Paid Subscription)` : "₹0 (Zero Charged Today)"}
+          {/* Schedule Breakdown */}
+          <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)]/70 border border-[var(--border-subtle)] space-y-2">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--text-muted)]">Due Today</span>
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                {isTrialExhausted
+                  ? `${selectedPlan?.priceMonthly || "₹2,499"}`
+                  : "₹0 (Zero Charged Today)"}
               </span>
             </div>
             {!isTrialExhausted ? (
               <>
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
-                  <span className="text-slate-400">Trial Access</span>
-                  <span className="font-semibold text-slate-200">{trialDays} Full Days Unlimited</span>
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                  <span className="text-[var(--text-muted)]">Trial Access</span>
+                  <span className="font-semibold text-[var(--text-primary)]">
+                    {trialDays} Full Days Included
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Recurring Billing Starts</span>
-                  <span className="font-bold text-indigo-400">Day {trialDays + 1} ({recurringAmountText})</span>
+                  <span className="text-[var(--text-muted)]">Recurring Billing Starts</span>
+                  <span className="font-semibold text-[var(--accent-text)]">
+                    Day {trialDays + 1} ({recurringAmountText})
+                  </span>
                 </div>
               </>
             ) : (
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Billing Term</span>
-                <span className="font-bold text-emerald-400">
+                <span className="text-[var(--text-muted)]">Billing Term</span>
+                <span className="font-semibold text-[var(--text-primary)]">
                   {selectedPlan?.name} ({selectedPlan?.periodLabel || "per month"})
                 </span>
               </div>
@@ -412,44 +405,37 @@ export default function TrialOnboardingModal({
           </div>
 
           {/* Feature Checklist */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Full AI Bot creation & training</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Unlimited customer sales messages</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Full website & PDF scraping</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Automated CRM lead extraction</span>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[var(--text-secondary)]">
+            {[
+              "AI Chatbot creation & custom persona",
+              "Website & document RAG indexing",
+              "Real-time inbox & human handoff",
+              "Automated CRM lead qualification",
+            ].map((feat) => (
+              <div key={feat} className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>{feat}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Guarantee / Cancel info */}
-          <div className="flex items-center gap-2.5 text-[11px] text-slate-300 bg-[#B68A55]/10 border border-[#B68A55]/20 p-2.5 rounded-xl">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-secondary)] bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] p-2.5 rounded-xl">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>
-              <strong>1-Click Cancel Guarantee:</strong> Cancel anytime in Settings before Day {trialDays}. Zero money will ever be deducted from your account.
+              <strong>Cancel anytime:</strong> Cancel in Billing before Day {trialDays} with zero charges.
             </span>
           </div>
 
-          {/* Action Button */}
           <button
             type="button"
             onClick={handleStartTrial}
             disabled={loading}
-            className="w-full py-3.5 px-4 rounded-xl bg-[#B68A55] hover:bg-[#9F7645] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            className="w-full h-11 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Connecting to Razorpay Autopay...</span>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Connecting to Razorpay...</span>
               </>
             ) : (
               <>
@@ -457,21 +443,18 @@ export default function TrialOnboardingModal({
                 <span>
                   {isTrialExhausted
                     ? `Subscribe to ${selectedPlan?.name || "Starter"} (${selectedPlan?.priceMonthly || "₹2,499"})`
-                    : isMandatory
-                    ? "Set Up Autopay (₹0 Today) & Unlock Bot Creation"
-                    : "Set Up Autopay & Start 7-Day Free Trial"}
+                    : "Continue to Razorpay Autopay (₹0 Today)"}
                 </span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </>
             )}
           </button>
 
-          <p className="text-[10px] text-center text-slate-500">
-            🔒 Secured with 256-bit encryption • Supports UPI Autopay (Google Pay, PhonePe, Paytm), Debit & Credit Cards
+          <p className="text-[11px] text-center text-[var(--text-muted)]">
+            256-bit TLS encrypted · Supports UPI Autopay, Debit & Credit Cards via Razorpay
           </p>
         </div>
       </div>
     </div>
   );
 }
-

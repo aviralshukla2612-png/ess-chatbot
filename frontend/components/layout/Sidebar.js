@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Bot,
@@ -20,7 +20,6 @@ import {
   Globe,
   LogOut,
   X,
-  ShieldAlert,
   Share2,
   CreditCard,
   ArrowRight,
@@ -34,37 +33,43 @@ import {
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Bots", href: "/bots", icon: Bot },
-  { name: "Knowledge", href: "/knowledge", icon: BookOpen },
-  { name: "Live Conversations", href: "/conversations", icon: MessageSquare },
+  { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Chatbots", href: "/bots", icon: Bot },
+  { name: "Knowledge Base", href: "/knowledge", icon: BookOpen },
+  { name: "Conversations", href: "/conversations", icon: MessageSquare },
   { name: "Leads", href: "/leads", icon: Users2 },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Integrations", href: "/integrations", icon: Puzzle },
   { name: "Team", href: "/team", icon: UserPlus },
   { name: "Billing & Plans", href: "/billing", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export default function Sidebar({ isOpen, onClose, subscription: initialSub, onOpenCheckout }) {
+export default function Sidebar({
+  isOpen,
+  onClose,
+  currentUser,
+  memberships = [],
+  subscription,
+  subMeta,
+  onSwitchWorkspace,
+  onOpenCheckout,
+}) {
   const pathname = usePathname();
-  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
-  const [currentOrg, setCurrentOrg] = useState("My Workspace");
-  const [orgList, setOrgList] = useState(["My Workspace"]);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [subData, setSubData] = useState(null);
-  const [convCounts, setConvCounts] = useState({ unread: 0, unassigned: 0, assignedToMe: 0, resolved: 0, all: 0 });
-  const orgDropdownRef = React.useRef(null);
+  const searchParams = useSearchParams();
+  const activeTabParam = searchParams?.get("tab") || "";
+  const activeViewParam = searchParams?.get("view") || "";
 
-  const fetchSubscription = () => {
-    fetch("/api/billing/subscription", { cache: "no-store", headers: { Pragma: "no-cache" } })
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.success) {
-          setSubData(d);
-        }
-      })
-      .catch(() => {});
-  };
+  const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
+  const [switchingOrg, setSwitchingOrg] = useState(false);
+  const [convCounts, setConvCounts] = useState({
+    unread: 0,
+    unassigned: 0,
+    assignedToMe: 0,
+    resolved: 0,
+    all: 0,
+  });
+  const orgDropdownRef = useRef(null);
 
   const fetchConvCounts = () => {
     fetch("/api/conversations?limit=1", { cache: "no-store" })
@@ -77,7 +82,7 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
       .catch(() => {});
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     function handleClickOutside(event) {
       if (orgDropdownRef.current && !orgDropdownRef.current.contains(event.target)) {
         setOrgDropdownOpen(false);
@@ -89,444 +94,464 @@ export default function Sidebar({ isOpen, onClose, subscription: initialSub, onO
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [orgDropdownOpen]);
 
-  React.useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.success && d?.user) {
-          setCurrentUser(d.user);
-          const userName = d.user.name || d.user.email?.split("@")[0] || "User";
-          const userWorkspace = `${userName}'s Workspace`;
-
-          const realOrgs = [userWorkspace];
-          if (Array.isArray(d.memberships) && d.memberships.length > 0) {
-            d.memberships.forEach((m) => {
-              const name = m.orgName || m.name;
-              if (name && !realOrgs.includes(name)) realOrgs.push(name);
-            });
-          }
-          if (d.user.organization && !realOrgs.includes(d.user.organization)) {
-            realOrgs.push(d.user.organization);
-          }
-
-          setOrgList(realOrgs);
-          setCurrentOrg(userWorkspace);
-        }
-      })
-      .catch(() => {});
-
-    fetchSubscription();
+  useEffect(() => {
     fetchConvCounts();
-
-    const handleSubUpdate = () => fetchSubscription();
     const handleConvUpdate = () => fetchConvCounts();
-    window.addEventListener("subscription-updated", handleSubUpdate);
     window.addEventListener("conversation-updated", handleConvUpdate);
-
-    const convInterval = setInterval(fetchConvCounts, 15000);
-
+    const convInterval = setInterval(fetchConvCounts, 20000);
     return () => {
-      window.removeEventListener("subscription-updated", handleSubUpdate);
       window.removeEventListener("conversation-updated", handleConvUpdate);
       clearInterval(convInterval);
     };
   }, []);
 
-  React.useEffect(() => {
-    if (initialSub) {
-      setSubData((prev) => ({
-        ...prev,
-        subscription: initialSub,
-        hasActiveSubscription: Boolean(initialSub.hasAutopay),
-        isTrial: initialSub.status === "trialing",
+  const workspaceOptions = React.useMemo(() => {
+    if (Array.isArray(memberships) && memberships.length > 0) {
+      return memberships.map((m) => ({
+        id: m.organizationId || m.orgId || m.id,
+        name: m.orgName || m.name || "Workspace",
+        role: m.role || "MEMBER",
       }));
     }
-  }, [initialSub]);
+    const fallbackName =
+      currentUser?.organization ||
+      (currentUser?.name ? `${currentUser.name}'s Workspace` : "Workspace");
+    return [
+      {
+        id: currentUser?.organizationId || "default",
+        name: fallbackName,
+        role: currentUser?.orgRole || "ORG_OWNER",
+      },
+    ];
+  }, [memberships, currentUser]);
+
+  const activeWorkspace =
+    workspaceOptions.find((w) => w.id === currentUser?.organizationId) ||
+    workspaceOptions[0];
+
+  const handleSelectWorkspace = async (org) => {
+    setOrgDropdownOpen(false);
+    if (!org?.id || org.id === currentUser?.organizationId || switchingOrg) return;
+    setSwitchingOrg(true);
+    try {
+      const res = await fetch("/api/auth/switch-org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizationId: org.id }),
+      });
+      if (res.ok) {
+        onSwitchWorkspace?.();
+        window.location.reload();
+      }
+    } catch {
+      // Ignore transient network failures
+    } finally {
+      setSwitchingOrg(false);
+    }
+  };
+
+  const botMatch = pathname.match(/^\/bots\/([^/?]+)/);
+  const activeBotId = botMatch && botMatch[1] !== "create" ? botMatch[1] : null;
+
+  const isTrial = subscription?.status === "trialing" || subMeta?.isTrial;
+  const hasActiveSub = Boolean(subscription?.hasAutopay || subMeta?.hasActiveSubscription);
+  const planPriceLabel = subscription?.plan?.priceMonthly || "₹2,499/mo";
+  const isSuperAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.platformRole === "SUPER_ADMIN";
+
+  const userInitials = currentUser?.name
+    ? currentUser.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : currentUser?.email
+    ? currentUser.email.slice(0, 2).toUpperCase()
+    : "WS";
 
   return (
     <>
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs lg:hidden"
         />
       )}
 
       <aside
+        aria-label="Primary sidebar navigation"
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#FAF9F6] dark:bg-[#0A0A0A] text-[#252525] dark:text-neutral-300 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 border-r border-[#EFE7DC] dark:border-neutral-800 shrink-0 select-none",
+          "fixed top-0 bottom-0 left-0 z-50 w-[260px] bg-[var(--bg-surface)] text-[var(--text-secondary)] flex flex-col transition-transform duration-200 ease-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-40 border-r border-[var(--border-subtle)] shrink-0 select-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Brand & Organization */}
-        <div className="p-5 border-b border-[#EFE7DC] dark:border-neutral-800">
+        {/* Brand & Workspace Switcher */}
+        <div className="px-4 pt-4 pb-3.5 border-b border-[var(--border-subtle)]">
           <div className="flex items-center justify-between">
-            <Link href="/dashboard" className="flex items-center">
-              <img
-                src="/logo.png"
-                alt="Emperor Nexus"
-                className="h-8 sm:h-9 w-auto max-w-[170px] object-contain"
-              />
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-800 border border-slate-800 dark:border-slate-700 flex items-center justify-center p-1 shrink-0">
+                <img
+                  src="/favicon.svg"
+                  alt=""
+                  className="w-5 h-5 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </div>
+              <div className="min-w-0">
+                <span className="block text-sm font-bold tracking-tight text-[var(--text-primary)] leading-none">
+                  Emperor Nexus
+                </span>
+                <span className="block text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+                  AI Sales & Support
+                </span>
+              </div>
             </Link>
             <button
+              type="button"
               onClick={onClose}
-              className="lg:hidden p-1.5 text-slate-400 hover:text-[#252525] dark:hover:text-white"
+              aria-label="Close navigation menu"
+              className="lg:hidden p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Org Selector */}
-          <div className="mt-4 relative" ref={orgDropdownRef}>
+          <div className="mt-3.5 relative" ref={orgDropdownRef}>
             <button
               type="button"
-              onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#121212] hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 transition-colors text-left shadow-xs"
+              onClick={() => setOrgDropdownOpen((o) => !o)}
+              aria-expanded={orgDropdownOpen}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-subtle)]/70 hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] transition-colors text-left cursor-pointer"
             >
-              <div className="flex items-center gap-2.5 overflow-hidden">
-                <div className="w-7 h-7 rounded-lg bg-[#B68A55]/15 border border-[#B68A55]/30 flex items-center justify-center shrink-0">
-                  <Building2 className="w-4 h-4 text-[#B68A55]" />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-[var(--accent-soft)] border border-[var(--accent-border)] flex items-center justify-center shrink-0">
+                  <Building2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 </div>
-                <div className="truncate">
-                  <p className="text-xs font-semibold text-[#252525] dark:text-white truncate">
-                    {currentOrg}
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                    {switchingOrg ? "Switching..." : activeWorkspace?.name}
                   </p>
-                  <p className="text-[10px] text-slate-500 dark:text-neutral-400">Organization</p>
+                  <p className="text-[11px] text-[var(--text-muted)] truncate">
+                    {activeWorkspace?.role?.replace("ORG_", "") || "Workspace"}
+                  </p>
                 </div>
               </div>
-              <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200", orgDropdownOpen && "rotate-180")} />
+              <ChevronDown
+                className={cn(
+                  "w-3.5 h-3.5 text-[var(--text-muted)] shrink-0 transition-transform duration-150",
+                  orgDropdownOpen && "rotate-180"
+                )}
+              />
             </button>
 
             {orgDropdownOpen && (
-              <div className="absolute top-full left-[-6px] right-[-6px] mt-2 z-50 bg-white dark:bg-[#0D0D0D] backdrop-blur-xl border border-[#EFE7DC] dark:border-neutral-800 rounded-xl shadow-2xl p-1.5 text-xs animate-in fade-in-0 zoom-in-95 duration-100">
-                <div className="px-2.5 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl shadow-[var(--shadow-lg)] p-1.5 text-xs animate-fade-in">
+                <div className="px-2.5 py-1 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                   Workspaces
                 </div>
-                {orgList.map((org) => (
-                  <button
-                    key={org}
-                    type="button"
-                    onClick={() => {
-                      setCurrentOrg(org);
-                      setOrgDropdownOpen(false);
-                    }}
-                    className={cn(
-                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 hover:text-[#252525] dark:hover:text-white transition-colors",
-                      org === currentOrg && "text-[#B68A55] font-semibold bg-[#B68A55]/15 border border-[#B68A55]/30"
-                    )}
-                  >
-                    <span className="truncate">{org}</span>
-                    {org === currentOrg && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B68A55] shrink-0 shadow-xs" />
-                    )}
-                  </button>
-                ))}
+                {workspaceOptions.map((org) => {
+                  const selected = org.id === activeWorkspace?.id;
+                  return (
+                    <button
+                      key={org.id}
+                      type="button"
+                      onClick={() => handleSelectWorkspace(org)}
+                      className={cn(
+                        "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-lg transition-colors cursor-pointer",
+                        selected
+                          ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-semibold"
+                          : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                      )}
+                    >
+                      <span className="truncate">{org.name}</span>
+                      {selected && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 no-scrollbar sidebar-scroll flex flex-col">
-          {(() => {
-            const botMatch = pathname.match(/^\/bots\/([^/?]+)/);
-            const activeBotId = botMatch && botMatch[1] !== "create" ? botMatch[1] : null;
+        {/* Navigation Links */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5 sidebar-scroll flex flex-col">
+          <div className="space-y-0.5">
+            {navItems.map((item) => {
+              const isBotsItem = item.href === "/bots";
+              const isConversationsItem = item.href === "/conversations";
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              const Icon = item.icon;
 
-            return (
-              <>
-                <div className="space-y-1">
-                  {navItems.map((item) => {
-                    const isBotsItem = item.href === "/bots";
-                    const isConversationsItem = item.href === "/conversations";
-                    const isActive =
-                      pathname === item.href ||
-                      (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                    const Icon = item.icon;
-
-                    return (
-                      <div key={item.name} className="space-y-1">
-                        <Link
-                          href={item.href}
-                          onClick={onClose}
-                          className={cn(
-                            "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all group",
-                            isActive
-                              ? "bg-[#252525] text-white shadow-sm font-semibold dark:bg-[#B68A55] dark:text-white"
-                              : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-white dark:hover:bg-neutral-900"
-                          )}
-                        >
-                          <Icon
-                            className={cn(
-                              "w-4 h-4 transition-transform group-hover:scale-105",
-                              isActive ? "text-white" : "text-slate-500 dark:text-neutral-400"
-                            )}
-                          />
-                          <span className="flex-1">{item.name}</span>
-                          {isBotsItem && activeBotId && (
-                            <span className="text-[9px] bg-[#B68A55]/15 text-[#B68A55] px-1.5 py-0.5 rounded-md font-mono font-semibold">
-                              Open
-                            </span>
-                          )}
-                          {isConversationsItem && convCounts.unread > 0 && (
-                            <span className="text-[9.5px] bg-purple-500/20 text-purple-400 border border-purple-500/30 px-1.5 py-0.2 rounded-full font-bold">
-                              {convCounts.unread}
-                            </span>
-                          )}
-                          {isConversationsItem && convCounts.unassigned > 0 && (
-                            <span className="text-[9.5px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded-full font-bold">
-                              {convCounts.unassigned}
-                            </span>
-                          )}
-                        </Link>
-
-                        {/* When inside Live Conversations, show dedicated Phase 3 sub-navigation */}
-                        {isConversationsItem && pathname.startsWith("/conversations") && (
-                          <div className="ml-5 pl-2.5 border-l border-[#B68A55]/30 space-y-1 my-1.5 py-1">
-                            {[
-                              { name: "Live Inbox", href: "/conversations", icon: MessageSquare, count: convCounts.all },
-                              { name: "Assigned to Me", href: "/conversations?view=assigned_to_me", icon: UserCheck, count: convCounts.assignedToMe },
-                              { name: "Unassigned", href: "/conversations?view=unassigned", icon: Inbox, count: convCounts.unassigned },
-                              { name: "Resolved", href: "/conversations?view=resolved", icon: CheckCircle2, count: convCounts.resolved },
-                              { name: "Team Activity", href: "/conversations?view=team_activity", icon: Activity },
-                              { name: "Bot Controls", href: "/conversations?view=bot_controls", icon: SlidersHorizontal },
-                            ].map((sub) => {
-                              const SubIcon = sub.icon;
-                              return (
-                                <Link
-                                  key={sub.name}
-                                  href={sub.href}
-                                  onClick={onClose}
-                                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-all"
-                                >
-                                  <div className="flex items-center gap-2 truncate">
-                                    <SubIcon className="w-3.5 h-3.5 shrink-0 opacity-80" />
-                                    <span className="truncate">{sub.name}</span>
-                                  </div>
-                                  {typeof sub.count === "number" && sub.count > 0 && (
-                                    <span className="text-[9.5px] px-1.5 py-0.2 rounded-full font-bold bg-neutral-200 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300">
-                                      {sub.count}
-                                    </span>
-                                  )}
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* When inside a Bot, show nested Bot Sub-navigation */}
-                        {isBotsItem && activeBotId && (
-                          <div className="ml-5 pl-2.5 border-l border-indigo-500/30 space-y-1 my-1.5 py-1">
-                            {[
-                              { name: "Overview", href: `/bots/${activeBotId}`, icon: BarChart3 },
-                              { name: "Knowledge Base", href: `/bots/${activeBotId}?tab=knowledge`, icon: BookOpen },
-                              { name: "Playground", href: `/bots/${activeBotId}?tab=test`, icon: Sparkles },
-                              { name: "Deploy Widget", href: `/bots/${activeBotId}/deploy`, icon: Share2 },
-                              { name: "Bot Settings", href: `/bots/${activeBotId}?tab=settings`, icon: Settings },
-                            ].map((sub) => {
-                              const SubIcon = sub.icon;
-                              const isSubActive = pathname === sub.href;
-
-                              return (
-                                <Link
-                                  key={sub.name}
-                                  href={sub.href}
-                                  onClick={onClose}
-                                  className={cn(
-                                    "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all",
-                                    isSubActive
-                                      ? "bg-[#B68A55]/20 text-[#B68A55] font-semibold"
-                                      : "text-slate-400 hover:text-slate-200 hover:bg-neutral-800/60"
-                                  )}
-                                >
-                                  <SubIcon className="w-3.5 h-3.5 shrink-0 opacity-80" />
-                                  <span>{sub.name}</span>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex-1 min-h-4" />
-
-                {/* Razorpay Subscription Widget for Sub Admin */}
-                <div className="pt-2">
-                  <div className="p-3 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs relative overflow-hidden group">
-                    <div
+              return (
+                <div key={item.name} className="space-y-0.5">
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors group",
+                      isActive
+                        ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-semibold"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
+                    )}
+                  >
+                    <Icon
                       className={cn(
-                        "absolute -top-8 -right-8 w-20 h-20 rounded-full blur-xl pointer-events-none transition-opacity",
-                        subData?.hasActiveSubscription
-                          ? "bg-[#B68A55]/20 group-hover:bg-[#B68A55]/30"
-                          : "bg-rose-500/20 group-hover:bg-rose-500/30"
+                        "w-4 h-4 shrink-0 transition-colors",
+                        isActive
+                          ? "text-[var(--accent-primary)]"
+                          : "text-[var(--text-muted)] group-hover:text-[var(--text-primary)]"
                       )}
                     />
+                    <span className="flex-1 truncate">{item.name}</span>
 
-                    {/* Header: Razorpay & Status */}
-                    <div className="flex items-center justify-between gap-1 mb-2 relative z-10">
-                      <div className="flex items-center gap-1.5">
-                        <CreditCard className="w-3.5 h-3.5 text-[#B68A55]" />
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-[#252525] dark:text-neutral-300">
-                          Razorpay Plan
-                        </span>
-                      </div>
-                      {subData?.isTrial ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          {subData.trialDaysRemaining ?? 7}d Trial
-                        </span>
-                      ) : subData?.hasActiveSubscription ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Active Plan
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          Action Req
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Plan Details */}
-                    <div className="mb-2.5 relative z-10">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#252525] dark:text-white truncate">
-                          {subData?.isTrial
-                            ? "Starter (7-Day Trial)"
-                            : subData?.subscription?.plan?.name
-                            ? `${subData.subscription.plan.name} Plan`
-                            : "No Active Plan"}
-                        </span>
-                        <span className="text-[10px] font-mono text-[#B68A55] font-semibold shrink-0 ml-1">
-                          {subData?.isTrial
-                            ? "₹0 upfront"
-                            : subData?.hasActiveSubscription
-                            ? "₹2,499/mo"
-                            : "₹2,499/mo"}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 dark:text-neutral-400 mt-1 leading-snug">
-                        {subData?.isTrial
-                          ? `Autopay kicks in ${subData?.autopayDate || "Day 8"}. Cancel anytime.`
-                          : subData?.hasActiveSubscription
-                          ? "Unlimited bots, lead capture & vector search active."
-                          : "Autopay inactive. Subscribe to unlock and keep AI bots online."}
-                      </p>
-                    </div>
-
-                    {/* Action Button */}
-                    <div className="relative z-10">
-                      {subData?.hasActiveSubscription ? (
-                        <Link
-                          href="/billing"
-                          onClick={onClose}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#FAF9F6] hover:bg-[#EFE7DC]/60 dark:bg-neutral-800 dark:hover:bg-neutral-700 border border-[#EFE7DC] dark:border-neutral-700 text-[#252525] dark:text-neutral-200 text-[11px] font-semibold transition-colors"
-                        >
-                          <span>Manage Subscription</span>
-                          <ArrowRight className="w-3 h-3 text-slate-400" />
-                        </Link>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            if (onOpenCheckout) {
-                              onOpenCheckout();
-                            } else {
-                              window.dispatchEvent(new CustomEvent("open-subscription-modal"));
-                            }
-                            if (onClose) onClose();
-                          }}
-                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white text-[11px] font-bold shadow-xs transition-all cursor-pointer group-hover:scale-[1.01]"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-white" />
-                          <span>Subscribe Now 🚀</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Workspace / Bot status card */}
-                <div className="pt-2">
-                  <div className="p-2 rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 flex items-center justify-between text-[11px] shadow-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="font-medium text-slate-700 dark:text-neutral-300 text-[10px]">
-                        {activeBotId ? "Bot Console Active" : "AI Platform Online"}
+                    {isBotsItem && activeBotId && (
+                      <span className="text-[10px] bg-[var(--accent-soft)] text-[var(--accent-text)] border border-[var(--accent-border)] px-1.5 py-0.5 rounded font-semibold">
+                        Active
                       </span>
+                    )}
+                    {isConversationsItem && convCounts.unread > 0 && (
+                      <span className="text-[11px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-full font-semibold tabular-nums">
+                        {convCounts.unread}
+                      </span>
+                    )}
+                    {isConversationsItem && convCounts.unread === 0 && convCounts.unassigned > 0 && (
+                      <span className="text-[11px] bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-semibold tabular-nums">
+                        {convCounts.unassigned}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* Conversations Sub-Navigation */}
+                  {isConversationsItem && pathname.startsWith("/conversations") && (
+                    <div className="ml-4 pl-3 border-l border-[var(--border-subtle)] space-y-0.5 my-1 py-0.5">
+                      {[
+                        { name: "All Inbox", view: "", href: "/conversations", icon: MessageSquare, count: convCounts.all },
+                        { name: "Assigned to Me", view: "assigned_to_me", href: "/conversations?view=assigned_to_me", icon: UserCheck, count: convCounts.assignedToMe },
+                        { name: "Unassigned", view: "unassigned", href: "/conversations?view=unassigned", icon: Inbox, count: convCounts.unassigned },
+                        { name: "Resolved", view: "resolved", href: "/conversations?view=resolved", icon: CheckCircle2, count: convCounts.resolved },
+                        { name: "Team Activity", view: "team_activity", href: "/conversations?view=team_activity", icon: Activity },
+                        { name: "Bot Controls", view: "bot_controls", href: "/conversations?view=bot_controls", icon: SlidersHorizontal },
+                      ].map((sub) => {
+                        const SubIcon = sub.icon;
+                        const subActive = activeViewParam === sub.view;
+                        return (
+                          <Link
+                            key={sub.name}
+                            href={sub.href}
+                            onClick={onClose}
+                            className={cn(
+                              "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors",
+                              subActive
+                                ? "bg-[var(--bg-subtle)] text-[var(--text-primary)] font-semibold"
+                                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]/60"
+                            )}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{sub.name}</span>
+                            </div>
+                            {typeof sub.count === "number" && sub.count > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold tabular-nums bg-[var(--bg-subtle)] text-[var(--text-secondary)]">
+                                {sub.count}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
                     </div>
-                    <span className="text-[9px] font-mono text-[#B68A55] bg-[#B68A55]/15 px-1 py-0.2 rounded border border-[#B68A55]/30">
-                      LIVE
-                    </span>
-                  </div>
+                  )}
+
+                  {/* Active Chatbot Sub-Navigation */}
+                  {isBotsItem && activeBotId && (
+                    <div className="ml-4 pl-3 border-l border-[var(--border-subtle)] space-y-0.5 my-1 py-0.5">
+                      {[
+                        { name: "Overview", tab: "overview", href: `/bots/${activeBotId}`, icon: BarChart3 },
+                        { name: "Knowledge Base", tab: "knowledge", href: `/bots/${activeBotId}?tab=knowledge`, icon: BookOpen },
+                        { name: "Playground", tab: "test", href: `/bots/${activeBotId}?tab=test`, icon: Sparkles },
+                        { name: "Deploy Widget", tab: "deploy_route", href: `/bots/${activeBotId}/deploy`, icon: Share2 },
+                        { name: "Bot Settings", tab: "settings", href: `/bots/${activeBotId}?tab=settings`, icon: Settings },
+                      ].map((sub) => {
+                        const SubIcon = sub.icon;
+                        const isDeployRoute = pathname === `/bots/${activeBotId}/deploy`;
+                        const isSubActive =
+                          sub.tab === "deploy_route"
+                            ? isDeployRoute
+                            : !isDeployRoute &&
+                              ((sub.tab === "overview" && (!activeTabParam || activeTabParam === "overview")) ||
+                                activeTabParam === sub.tab);
+
+                        return (
+                          <Link
+                            key={sub.name}
+                            href={sub.href}
+                            onClick={onClose}
+                            className={cn(
+                              "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs transition-colors",
+                              isSubActive
+                                ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-semibold"
+                                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]/60"
+                            )}
+                          >
+                            <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{sub.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </>
-            );
-          })()}
-        </div>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 min-h-4" />
+
+          {/* Plan Summary Card */}
+          <div className="pt-2">
+            <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)]/60 border border-[var(--border-subtle)]">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+                  <CreditCard className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                  <span>Subscription</span>
+                </div>
+                {isTrial ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                    {subMeta?.trialDaysRemaining ?? 7}d trial
+                  </span>
+                ) : hasActiveSub ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    Active
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300">
+                    Setup needed
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-baseline justify-between gap-1 mb-1">
+                <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                  {isTrial
+                    ? "Starter Trial"
+                    : subscription?.plan?.name
+                    ? `${subscription.plan.name}`
+                    : "Starter Plan"}
+                </span>
+                <span className="text-[11px] font-mono font-medium text-[var(--text-muted)] shrink-0">
+                  {isTrial ? "₹0 today" : planPriceLabel}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-[var(--text-muted)] leading-snug mb-2.5">
+                {isTrial
+                  ? `Autopay scheduled ${subMeta?.autopayDate || "Day 8"}. Cancel anytime.`
+                  : hasActiveSub
+                  ? "Live chat, vector RAG & lead capture active."
+                  : "Activate trial autopay to deploy chatbots."}
+              </p>
+
+              {hasActiveSub ? (
+                <Link
+                  href="/billing"
+                  onClick={onClose}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs font-medium transition-colors"
+                >
+                  <span>Manage Plan</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--text-muted)]" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenCheckout) onOpenCheckout();
+                    else window.dispatchEvent(new CustomEvent("open-subscription-modal"));
+                    onClose?.();
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Activate Plan</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-[#EFE7DC] dark:border-neutral-800 space-y-2">
-          {/* Public Website Link */}
-          <Link
-            href="/"
-            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-emerald-800 dark:text-emerald-300/90 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Public Website</span>
-            </div>
-            <span className="text-[9px] font-mono bg-emerald-500/20 px-1 rounded-sm">
-              LIVE
-            </span>
-          </Link>
-
-          {/* Help link */}
-          <Link
-            href="/support"
-            className={cn(
-              "flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors rounded-xl",
-              pathname === "/support"
-                ? "bg-[#252525]/10 text-[#252525] font-semibold dark:bg-[#B68A55]/20 dark:text-[#B68A55]"
-                : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-neutral-200"
-            )}
-          >
-            <HelpCircle className={cn("w-4 h-4", pathname === "/support" ? "text-[#B68A55]" : "text-slate-400 dark:text-neutral-500")} />
-            <span>Help & Support</span>
-          </Link>
-
-          {/* User Profile */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-7 h-7 rounded-full bg-[#252525] dark:bg-[#B68A55] text-[#FAF9F6] font-bold text-xs flex items-center justify-center shrink-0">
-                {currentUser?.name
-                  ? currentUser.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-                  : currentUser?.email
-                  ? currentUser.email.slice(0, 2).toUpperCase()
-                  : "U"}
+        <div className="p-3 border-t border-[var(--border-subtle)] space-y-1.5">
+          {isSuperAdmin && (
+            <Link
+              href="/admin"
+              onClick={onClose}
+              className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--accent-text)] bg-[var(--accent-soft)] hover:opacity-90 transition-opacity"
+            >
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Platform Admin</span>
               </div>
-              <div className="truncate">
-                <p className="text-xs font-semibold text-[#252525] dark:text-white truncate">
-                  {currentUser?.name || "Administrator"}
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          )}
+
+          <div className="flex items-center justify-between gap-1">
+            <Link
+              href="/support"
+              onClick={onClose}
+              className={cn(
+                "flex-1 flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors",
+                pathname === "/support"
+                  ? "bg-[var(--accent-soft)] text-[var(--accent-text)] font-semibold"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
+              )}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Support</span>
+            </Link>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors"
+              title="Open public website"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Website</span>
+            </Link>
+          </div>
+
+          <div className="flex items-center justify-between p-2 rounded-xl bg-[var(--bg-subtle)]/60 border border-[var(--border-subtle)]">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-semibold text-xs flex items-center justify-center shrink-0">
+                {userInitials}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                  {currentUser?.name || "Workspace User"}
                 </p>
-                <p className="text-[10px] text-[#B68A55] font-medium truncate">
-                  {currentUser?.email || "Workspace Owner"}
+                <p className="text-[11px] text-[var(--text-muted)] truncate">
+                  {currentUser?.email || "Authenticated"}
                 </p>
               </div>
             </div>
             <button
+              type="button"
               onClick={async () => {
                 try {
                   await fetch("/api/auth/logout", { method: "POST" });
                 } catch {}
                 window.location.replace("/login");
               }}
-              title="Sign Out"
-              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+              aria-label="Sign out"
+              title="Sign out"
+              className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-[var(--bg-surface)] transition-colors cursor-pointer shrink-0"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>

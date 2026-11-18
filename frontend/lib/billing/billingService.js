@@ -97,8 +97,8 @@ export const billingService = {
     const trialDays = isTrial ? 7 : 0;
     const startAt = isTrial ? Math.floor(Date.now() / 1000) + (trialDays * 24 * 60 * 60) : undefined;
 
-    const keyId = process.env.RAZORPAY_KEY_ID || RAZORPAY_KEY_ID || "rzp_test_S7dlJIqMvrpcaj";
-    const keySecret = process.env.RAZORPAY_KEY_SECRET || RAZORPAY_KEY_SECRET || "ongR1rNVsrzSoVyjGx6VY9Zm";
+    const keyId = process.env.RAZORPAY_KEY_ID || RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || RAZORPAY_KEY_SECRET;
 
     if (keyId && keySecret) {
       try {
@@ -210,6 +210,36 @@ export const billingService = {
     await queryDb('UPDATE "Organization" SET "plan" = $1 WHERE "id" = $2;', [isTrial ? `${plan.name} (7-Day Trial)` : plan.name, organizationId]);
 
     return { success: true, subscription: subRecord };
+  },
+
+  /**
+   * Verify Razorpay Checkout Payment / Subscription HMAC SHA-256 signature.
+   */
+  verifyPaymentSignature({ orderId, subscriptionId, paymentId, signature, secret = process.env.RAZORPAY_KEY_SECRET }) {
+    if (!secret) {
+      // Sandbox fallback allowed ONLY when live RAZORPAY_KEY_SECRET is not configured in non-production
+      return process.env.NODE_ENV !== "production";
+    }
+    if (!paymentId || !signature || (!orderId && !subscriptionId)) return false;
+
+    const candidates = [];
+    if (orderId) candidates.push(`${orderId}|${paymentId}`);
+    if (subscriptionId) {
+      candidates.push(`${paymentId}|${subscriptionId}`);
+      candidates.push(`${subscriptionId}|${paymentId}`);
+    }
+
+    const sigBuffer = Buffer.from(String(signature));
+    for (const payload of candidates) {
+      try {
+        const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+        const expBuffer = Buffer.from(expected);
+        if (sigBuffer.length === expBuffer.length && crypto.timingSafeEqual(sigBuffer, expBuffer)) {
+          return true;
+        }
+      } catch {}
+    }
+    return false;
   },
 
   /**

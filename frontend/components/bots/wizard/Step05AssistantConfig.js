@@ -46,14 +46,14 @@ const PERSONALITY_OPTIONS = [
 ];
 
 const COLOR_SWATCHES = [
-  "#963DFF", // Emperor Purple
-  "#55A9FF", // Electric Blue
-  "#00D98B", // Emerald
-  "#FF7849", // Sunset Orange
-  "#00E5FF", // Cyan
-  "#B68A55", // Champagne Gold
-  "#C28AFF", // Lavender
-  "#EC4899", // Rose Pink
+  "#4F46E5", // Royal Indigo
+  "#2563EB", // Enterprise Blue
+  "#059669", // Emerald
+  "#0EA5E9", // Sky
+  "#0F172A", // Slate Charcoal
+  "#7C3AED", // Violet
+  "#D97706", // Amber
+  "#E11D48", // Rose
 ];
 
 const AVATAR_OPTIONS = [
@@ -68,9 +68,9 @@ const LAUNCHER_SHAPES = [
 
 const LAUNCHER_ANIMATIONS = [
   { id: "none", label: "Static", sub: "Clean & subtle" },
-  { id: "pulse", label: "Subtle Pulse", sub: "Gentle ring expand" },
+  { id: "beat", label: "Subtle Pulse", sub: "Gentle heartbeat scale" },
   { id: "bounce", label: "Soft Bounce", sub: "Catch visitor attention" },
-  { id: "glow", label: "Beacon Glow", sub: "Ambient glowing effect" },
+  { id: "float", label: "Gentle Float", sub: "Smooth vertical hover" },
 ];
 
 export default function Step05AssistantConfig({
@@ -105,21 +105,21 @@ export default function Step05AssistantConfig({
     update("starterQuestions", list);
   };
 
-  const activeColor = assistantConfig.primaryColor || "#963DFF";
+  const activeColor = assistantConfig.primaryColor || "#4F46E5";
 
   return (
     <div className="space-y-8 animate-fade-in max-w-5xl mx-auto">
       {/* Header */}
-      <div className="space-y-2 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#963DFF]/10 border border-[#963DFF]/30 text-[11px] font-bold text-[#C28AFF] uppercase tracking-wider">
+      <div className="space-y-1.5 text-center max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[11px] font-semibold text-[var(--accent-text)] uppercase tracking-wider">
           <Palette className="w-3.5 h-3.5" />
-          <span>Step 05 · Presentation</span>
+          <span>Step 05 · Appearance & Persona</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
           Assistant Persona & Branding
         </h2>
-        <p className="text-xs sm:text-sm text-[#9898A6] leading-relaxed">
-          Customize your assistant&apos;s identity, conversational tone, brand primary color, launcher widget shape, and starter prompts.
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+          Customize your assistant&apos;s identity, conversational tone, brand color, launcher shape, and starter prompts.
         </p>
       </div>
 
@@ -389,12 +389,12 @@ export default function Step05AssistantConfig({
 
         {/* Right Column: Live Interactive Widget Preview (5 cols) */}
         <div className="lg:col-span-5 sticky top-24 space-y-4">
-          <div className="flex items-center justify-between text-xs font-bold text-white uppercase tracking-wider px-1">
+          <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider px-1">
             <span className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Live Widget Preview</span>
             </span>
-            <span className="text-[10px] text-[#9898A6] font-mono font-normal">Real-time styling</span>
+            <span className="text-[10px] text-[var(--text-muted)] font-mono font-normal">Real-time styling</span>
           </div>
 
           {/* Interactive Widget Mockup */}
@@ -480,6 +480,10 @@ export default function Step05AssistantConfig({
               <div className="flex items-center gap-2">
                 <div
                   className={`flex items-center justify-center text-white shadow-lg cursor-pointer ${
+                    assistantConfig.launcherAnimation && assistantConfig.launcherAnimation !== "none"
+                      ? `fa-anim-${assistantConfig.launcherAnimation}`
+                      : ""
+                  } ${
                     assistantConfig.launcherShape === "circle"
                       ? "w-9 h-9 rounded-full"
                       : assistantConfig.launcherShape === "pill"
@@ -500,11 +504,11 @@ export default function Step05AssistantConfig({
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex items-center justify-between pt-6 border-t border-white/[0.06]">
+      <div className="flex items-center justify-between pt-6 border-t border-[var(--border-subtle)]">
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs text-[#9898A6] hover:text-white bg-[#12121A] hover:bg-[#1A1A24] border border-white/10 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 h-10 px-5 rounded-lg font-medium text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] border border-[var(--border-strong)] transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Review</span>
@@ -513,9 +517,9 @@ export default function Step05AssistantConfig({
         <button
           type="button"
           onClick={onNext}
-          className="inline-flex items-center gap-2 px-9 py-3.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-[#963DFF] to-[#55A9FF] hover:opacity-95 active:scale-[0.98] shadow-lg shadow-[#963DFF]/25 transition-all cursor-pointer"
+          className="inline-flex items-center gap-2 h-10 px-6 rounded-lg font-semibold text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors cursor-pointer"
         >
-          <span>Continue to Final Step</span>
+          <span>Continue to Launch</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>

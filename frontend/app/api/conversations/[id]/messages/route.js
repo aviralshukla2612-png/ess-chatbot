@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { conversationsStore } from "@/lib/db/conversationsStore";
-import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { requireAuth, isPlatformSuperAdmin } from "@/lib/auth/guard";
 
 export async function OPTIONS() {
   const res = new NextResponse(null, { status: 204 });
@@ -17,33 +17,27 @@ export async function POST(request, { params }) {
     const { principal } = auth;
     const { id } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
-
-    const isOwnerOrAdmin =
-      isSuperAdmin ||
-      principal.orgRole === ROLES.ORG_OWNER ||
-      principal.orgRole === ROLES.ORG_ADMIN ||
-      principal.platformRole === "Workspace Owner" ||
-      principal.platformRole === "ORG_ADMIN" ||
-      principal.email?.toLowerCase().includes("aviral");
-
-    const targetOrgId = (isSuperAdmin || isOwnerOrAdmin) ? null : principal.organizationId;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
+    const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const existing = conversationsStore.getConversation(id, targetOrgId);
     if (!existing) {
       return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 });
     }
 
-    const body = await request.json();
-    if (!body.content && !body.text) {
+    const body = await request.json().catch(() => ({}));
+    const rawContent = (body.content || body.text || "").toString().trim();
+    if (!rawContent) {
       return NextResponse.json({ success: false, error: "Message content is required" }, { status: 400 });
     }
+    if (rawContent.length > 8000) {
+      return NextResponse.json({ success: false, error: "Agent message exceeds 8,000 character limit" }, { status: 400 });
+    }
 
-    const agentName = principal.name || principal.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const agentName =
+      principal.name ||
+      principal.email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-    // When an agent replies, ensure conversation is in HUMAN handling mode and assigned to them if unassigned
     if (existing.handlingMode !== "HUMAN") {
       conversationsStore.takeoverConversation(id, {
         id: principal.userId,
@@ -59,12 +53,13 @@ export async function POST(request, { params }) {
         senderType: "human",
         senderId: principal.userId,
         senderName: agentName,
-        content: body.content || body.text,
-        sources: body.sources || [],
+        content: rawContent,
+        sources: Array.isArray(body.sources) ? body.sources : [],
       },
       {
         agentId: principal.userId,
         agentName,
+        organizationId: existing.organizationId,
       }
     );
 

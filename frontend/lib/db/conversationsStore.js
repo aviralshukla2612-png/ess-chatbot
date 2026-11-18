@@ -14,6 +14,8 @@ function resolveDataFile() {
 
 const SEED_CONVERSATIONS = [];
 let memoryCache = null;
+let lastLoadedMtimeMs = 0;
+let lastLoadedPath = null;
 
 const DEFAULT_HISTORY_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 Hours
 
@@ -25,16 +27,22 @@ function loadFromDisk() {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(dataFile, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
       memoryCache = [...SEED_CONVERSATIONS];
+      lastLoadedPath = dataFile;
+      try {
+        lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+      } catch {}
       return memoryCache;
     }
-    const raw = fs.readFileSync(dataFile, "utf8");
 
+    const stat = fs.statSync(dataFile);
+    if (memoryCache && lastLoadedPath === dataFile && stat.mtimeMs === lastLoadedMtimeMs) {
+      return memoryCache;
+    }
+
+    const raw = fs.readFileSync(dataFile, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      // Normalize any legacy conversations referencing bot_aa or generic 'Website Visitor' to Indian Standard
-      let hasChanges = false;
       memoryCache = parsed.map((c) => {
-        let isChanged = false;
         let botId = c.botId;
         let botName = c.botName;
         let visitorName = c.visitorName;
@@ -42,11 +50,9 @@ function loadFromDisk() {
 
         if (botId === "bot_aa" || !botId) {
           botId = "bot_1791618269632";
-          isChanged = true;
         }
         if (botName === "aa" || !botName) {
           botName = "Emperor AI Assistant";
-          isChanged = true;
         }
         if (!visitorName || visitorName === "Website Visitor" || visitorName === "Client Inquiry" || visitorName.startsWith("Client (")) {
           if (c.visitorEmail) {
@@ -54,14 +60,11 @@ function loadFromDisk() {
           } else {
             visitorName = "";
           }
-          isChanged = true;
         }
         if (!visitorLocation || visitorLocation === "Direct Session") {
-          visitorLocation = "Ahmedabad, Gujarat (India)";
-          isChanged = true;
+          visitorLocation = "Online Session";
         }
 
-        if (isChanged) hasChanges = true;
         return {
           ...c,
           botId,
@@ -70,15 +73,16 @@ function loadFromDisk() {
           visitorLocation,
         };
       });
-      if (hasChanges) {
-        try {
-          fs.writeFileSync(dataFile, JSON.stringify(memoryCache, null, 2), "utf8");
-        } catch (e) {}
-      }
+      lastLoadedPath = dataFile;
+      lastLoadedMtimeMs = stat.mtimeMs;
       return memoryCache;
     }
     fs.writeFileSync(dataFile, JSON.stringify(SEED_CONVERSATIONS, null, 2), "utf8");
     memoryCache = [...SEED_CONVERSATIONS];
+    lastLoadedPath = dataFile;
+    try {
+      lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+    } catch {}
     return memoryCache;
   } catch (err) {
     console.error("Error loading conversations store:", err);
@@ -93,6 +97,10 @@ function saveToDisk(data) {
     const dir = path.dirname(dataFile);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf8");
+    lastLoadedPath = dataFile;
+    try {
+      lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+    } catch {}
   } catch (err) {
     console.error("Error saving conversations store:", err);
   }
@@ -102,12 +110,7 @@ export const conversationsStore = {
   getConversations(filters = {}) {
     let list = loadFromDisk();
     if (filters.organizationId) {
-      list = list.filter((c) => 
-        !c.organizationId || 
-        c.organizationId === "org_ess_default" || 
-        c.organizationId === "org_default" ||
-        c.organizationId === filters.organizationId
-      );
+      list = list.filter((c) => (c.organizationId || "org_ess_default") === filters.organizationId);
     }
     if (filters.botId && filters.botId !== "All") {
       list = list.filter((c) => c.botId === filters.botId || c.botName === filters.botId);
@@ -177,13 +180,7 @@ export const conversationsStore = {
       if (c.id !== id) return false;
       if (!organizationId) return true;
       const cOrg = c.organizationId || "org_ess_default";
-      return (
-        cOrg === organizationId ||
-        cOrg === "org_ess_default" ||
-        organizationId === "org_ess_default" ||
-        cOrg === "org_default" ||
-        organizationId === "org_default"
-      );
+      return cOrg === organizationId;
     }) || null;
   },
 
@@ -1044,14 +1041,31 @@ export const conversationsStore = {
     return conv?.notes || [];
   },
 
-  clearAll() {
-    saveToDisk([]);
-    sseBroker.broadcast("conversations_cleared", {});
+  clearAll(organizationId = null) {
+    if (!organizationId) {
+      saveToDisk([]);
+      sseBroker.broadcast("conversations_cleared", {});
+      try {
+        queryDb('DELETE FROM "Message";').catch(() => {});
+        queryDb('DELETE FROM "InternalNote";').catch(() => {});
+        queryDb('DELETE FROM "ConversationAssignment";').catch(() => {});
+        queryDb('DELETE FROM "Conversation";').catch(() => {});
+      } catch (e) {}
+      return { success: true };
+    }
+
+    const list = loadFromDisk();
+    const remaining = list.filter((c) => (c.organizationId || "org_ess_default") !== organizationId);
+    saveToDisk(remaining);
+    sseBroker.broadcast("conversations_cleared", { organizationId });
     try {
-      queryDb('DELETE FROM "Message";').catch(() => {});
-      queryDb('DELETE FROM "InternalNote";').catch(() => {});
-      queryDb('DELETE FROM "ConversationAssignment";').catch(() => {});
-      queryDb('DELETE FROM "Conversation";').catch(() => {});
+      queryDb(
+        'DELETE FROM "Message" WHERE "conversationId" IN (SELECT "id" FROM "Conversation" WHERE "organizationId" = $1);',
+        [organizationId]
+      ).catch(() => {});
+      queryDb('DELETE FROM "InternalNote" WHERE "organizationId" = $1;', [organizationId]).catch(() => {});
+      queryDb('DELETE FROM "ConversationAssignment" WHERE "organizationId" = $1;', [organizationId]).catch(() => {});
+      queryDb('DELETE FROM "Conversation" WHERE "organizationId" = $1;', [organizationId]).catch(() => {});
     } catch (e) {}
     return { success: true };
   },

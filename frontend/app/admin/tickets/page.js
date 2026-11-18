@@ -4,38 +4,34 @@ import React, { useState, useEffect } from "react";
 import {
   LifeBuoy,
   Search,
-  Filter,
-  CheckCircle2,
   Clock,
-  AlertCircle,
   MessageSquare,
   Mail,
   User,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-  X,
-  Send,
-  Loader2,
   Trash2,
-  Sparkles,
   ShieldCheck,
   Building2,
 } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Modal from "@/components/ui/Modal";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { InlineAlert, useToast } from "@/components/ui/Toast";
 
 export default function AdminTicketsPage() {
+  const { toast } = useToast();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [confirmConfig, setConfirmConfig] = useState(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // Selected Ticket for Details/Notes Drawer
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [updating, setUpdating] = useState(false);
@@ -74,17 +70,16 @@ export default function AdminTicketsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSuccessMsg(`Ticket #${ticketId} status updated to ${newStatus}.`);
+        toast({ title: `Ticket #${ticketId} updated`, message: `Status: ${newStatus}`, variant: "success" });
         fetchTickets();
         if (selectedTicket && selectedTicket.id === ticketId) {
           setSelectedTicket(data.ticket);
         }
-        setTimeout(() => setSuccessMsg(""), 3500);
       } else {
-        alert(data.error || "Failed to update ticket status");
+        toast({ title: "Update failed", message: data.error, variant: "error" });
       }
     } catch {
-      alert("Error updating ticket status");
+      toast({ title: "Network error", variant: "error" });
     } finally {
       setUpdating(false);
     }
@@ -93,7 +88,7 @@ export default function AdminTicketsPage() {
   const handleDeleteTicket = (ticketId) => {
     setConfirmConfig({
       title: "Delete Support Ticket?",
-      description: `Are you sure you want to permanently delete Ticket #${ticketId}? The client message history and support logs will be erased.`,
+      description: `Permanently delete Ticket #${ticketId} and its message log?`,
       confirmText: "Delete Ticket",
       badgeText: "Permanent Action",
       variant: "danger",
@@ -102,133 +97,92 @@ export default function AdminTicketsPage() {
           const res = await fetch(`/api/admin/tickets/${ticketId}`, { method: "DELETE" });
           const data = await res.json();
           if (data.success) {
-            setSuccessMsg(`Ticket #${ticketId} deleted.`);
+            toast({ title: `Ticket #${ticketId} deleted`, variant: "info" });
             fetchTickets();
             if (selectedTicket?.id === ticketId) setSelectedTicket(null);
-            setTimeout(() => setSuccessMsg(""), 3000);
-          } else {
-            console.error(data.error || "Failed to delete ticket");
           }
-        } catch {
-          console.error("Error deleting ticket");
+        } finally {
+          setConfirmConfig(null);
         }
       },
     });
   };
 
+  const categories = Array.from(new Set(tickets.map((t) => t.category).filter(Boolean)));
+
   const filteredTickets = tickets.filter((t) => {
+    const q = search.toLowerCase();
     const matchesSearch =
-      t.id.toLowerCase().includes(search.toLowerCase()) ||
-      t.subject.toLowerCase().includes(search.toLowerCase()) ||
-      t.userName.toLowerCase().includes(search.toLowerCase()) ||
-      t.userEmail.toLowerCase().includes(search.toLowerCase()) ||
-      t.message.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      t.id?.toLowerCase().includes(q) ||
+      t.subject?.toLowerCase().includes(q) ||
+      t.userName?.toLowerCase().includes(q) ||
+      t.userEmail?.toLowerCase().includes(q) ||
+      t.message?.toLowerCase().includes(q);
 
     const matchesStatus = statusFilter === "all" || t.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || t.category === categoryFilter;
-
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
   const openTicketsCount = tickets.filter((t) => t.status === "OPEN").length;
   const inProgressCount = tickets.filter((t) => t.status === "IN_PROGRESS").length;
-  const resolvedCount = tickets.filter((t) => t.status === "RESOLVED" || t.status === "CLOSED").length;
+  const resolvedCount = tickets.filter(
+    (t) => t.status === "RESOLVED" || t.status === "CLOSED"
+  ).length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#B68A55]/10 border border-[#B68A55]/20 text-[#B68A55] text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            Customer Support Central
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#252525] dark:text-white">
-            Helpdesk & Support Tickets
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-            Manage incoming customer support requests, billing queries, and WhatsApp integration inquiries.
-          </p>
-        </div>
-
-        <button
-          onClick={fetchTickets}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#EFE7DC] dark:border-neutral-800 bg-white dark:bg-[#0D0D0D] hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 text-[#252525] dark:text-neutral-200 text-xs font-semibold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <LifeBuoy className="w-4 h-4 text-[#B68A55]" />
-          <span>Refresh Tickets</span>
-        </button>
-      </div>
-
-      {/* Notifications */}
-      {successMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
+    <div className="space-y-6 pb-16 animate-fade-in">
+      <PageHeader
+        badge="Customer Support Central"
+        title="Helpdesk & Support Tickets"
+        description="Triage incoming tenant support tickets, billing inquiries, and deployment assistance requests."
+        actions={
+          <Button variant="secondary" size="sm" icon={LifeBuoy} onClick={fetchTickets}>
+            Refresh Tickets
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>{error}</span>
-        </div>
+        <InlineAlert
+          variant="error"
+          title="Tickets Error"
+          message={error}
+          onDismiss={() => setError("")}
+        />
       )}
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
-              Open & Pending
-            </span>
-            <span className="text-2xl font-extrabold text-amber-400 mt-1 block">
-              {openTicketsCount}
-            </span>
-            <span className="text-[11px] text-neutral-500 font-medium">Requires immediate response</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <Clock className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
-              In Progress
-            </span>
-            <span className="text-2xl font-extrabold text-[#B68A55] mt-1 block">
-              {inProgressCount}
-            </span>
-            <span className="text-[11px] text-neutral-500 font-medium">Under active investigation</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 flex items-center justify-center text-[#B68A55]">
-            <MessageSquare className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-[#0D0D0D] border border-neutral-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
-              Resolved Tickets
-            </span>
-            <span className="text-2xl font-extrabold text-emerald-400 mt-1 block">
-              {resolvedCount}
-            </span>
-            <span className="text-[11px] text-emerald-400 font-medium inline-flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {tickets.length > 0 ? Math.round((resolvedCount / tickets.length) * 100) : 0}% Resolution Rate
-            </span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-        </div>
+        <StatCard
+          title="Open & Pending"
+          value={openTicketsCount}
+          description="Awaiting engineering triage"
+          icon={Clock}
+          colorScheme="amber"
+        />
+        <StatCard
+          title="In Progress"
+          value={inProgressCount}
+          description="Active investigation"
+          icon={MessageSquare}
+          colorScheme="indigo"
+        />
+        <StatCard
+          title="Resolved"
+          value={resolvedCount}
+          description={`${
+            tickets.length > 0 ? Math.round((resolvedCount / tickets.length) * 100) : 0
+          }% resolution rate`}
+          icon={ShieldCheck}
+          colorScheme="emerald"
+        />
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#0D0D0D] p-3.5 rounded-2xl border border-neutral-800 shadow-2xs">
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+      {/* Filter & Search Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[var(--bg-surface)] p-3.5 rounded-xl border border-[var(--border-subtle)] shadow-[var(--shadow-xs)]">
+        <div className="flex items-center gap-1.5 overflow-x-auto">
           {[
             { id: "all", label: `All (${tickets.length})` },
             { id: "OPEN", label: `Open (${openTicketsCount})` },
@@ -237,11 +191,12 @@ export default function AdminTicketsPage() {
           ].map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 statusFilter === tab.id
-                  ? "bg-[#B68A55] text-white shadow-xs"
-                  : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
               }`}
             >
               {tab.label}
@@ -249,135 +204,158 @@ export default function AdminTicketsPage() {
           ))}
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search tickets, email, or message..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-neutral-800 bg-[#121212] text-xs text-white outline-hidden focus:border-[#B68A55]"
-          />
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {categories.length > 0 && (
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              aria-label="Filter by ticket category"
+              className="px-3 py-2 text-xs bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] rounded-lg text-[var(--text-secondary)] outline-hidden cursor-pointer"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search ticket ID, email, subject..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)]/50 focus:bg-[var(--bg-surface)] text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-hidden focus:border-indigo-500"
+            />
+          </div>
         </div>
       </div>
 
       {/* Tickets List */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-neutral-400 bg-[#0D0D0D] rounded-2xl border border-neutral-800">
-          <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#B68A55] mb-2" />
-          Loading support tickets...
-        </div>
+        <TableSkeleton rows={4} cols={5} />
       ) : filteredTickets.length === 0 ? (
-        <div className="p-12 text-center text-xs text-neutral-400 bg-[#0D0D0D] rounded-2xl border border-dashed border-neutral-800">
-          No support tickets found matching criteria.
-        </div>
+        <EmptyState
+          icon={LifeBuoy}
+          title="No support tickets found"
+          description="Incoming customer support requests will appear here."
+        />
       ) : (
         <div className="space-y-3">
           {filteredTickets.map((ticket) => {
-            const isResolved = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
             const isOpen = ticket.status === "OPEN";
-
             return (
               <div
                 key={ticket.id}
-                className="p-5 rounded-2xl bg-[#0D0D0D] border border-neutral-800 hover:border-neutral-700 transition-all shadow-2xs space-y-3"
+                className="p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-strong)] transition-all shadow-[var(--shadow-xs)] space-y-3"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-3">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="font-mono text-xs font-extrabold px-2 py-0.5 rounded-md bg-neutral-900 text-neutral-200 border border-neutral-800">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-subtle)]">
                       {ticket.id}
                     </span>
-                    <span className="font-bold text-sm text-white">
+                    <span className="font-bold text-sm text-[var(--text-primary)]">
                       {ticket.subject}
                     </span>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                       {ticket.category}
                     </span>
+                    {ticket.priority && (
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-muted)]">
+                        {ticket.priority}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {/* Status Dropdown */}
                     <select
                       value={ticket.status}
                       disabled={updating}
                       onChange={(e) => handleUpdateStatus(ticket.id, e.target.value)}
-                      className={`text-xs font-bold px-2.5 py-1 rounded-xl border outline-hidden cursor-pointer ${
+                      aria-label={`Status for ${ticket.id}`}
+                      className={`text-xs font-bold px-2.5 py-1 rounded-lg border outline-hidden cursor-pointer ${
                         isOpen
-                          ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25"
                           : ticket.status === "IN_PROGRESS"
-                          ? "bg-[#B68A55]/15 text-[#B68A55] border-[#B68A55]/30"
-                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                          ? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25"
+                          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25"
                       }`}
                     >
-                      <option value="OPEN" className="bg-[#121212] text-white">Status: OPEN</option>
-                      <option value="IN_PROGRESS" className="bg-[#121212] text-white">Status: IN PROGRESS</option>
-                      <option value="RESOLVED" className="bg-[#121212] text-white">Status: RESOLVED</option>
-                      <option value="CLOSED" className="bg-[#121212] text-white">Status: CLOSED</option>
+                      <option value="OPEN">OPEN</option>
+                      <option value="IN_PROGRESS">IN PROGRESS</option>
+                      <option value="RESOLVED">RESOLVED</option>
+                      <option value="CLOSED">CLOSED</option>
                     </select>
 
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => {
                         setSelectedTicket(ticket);
                         setAdminNotes(ticket.adminNotes || "");
                       }}
-                      className="px-2.5 py-1 rounded-xl bg-[#121212] hover:bg-neutral-800 text-neutral-300 text-xs font-semibold transition-colors cursor-pointer border border-neutral-800"
                     >
                       Details & Notes
-                    </button>
+                    </Button>
 
                     <button
+                      type="button"
                       onClick={() => handleDeleteTicket(ticket.id)}
-                      title="Delete Ticket"
-                      className="p-1 rounded-lg text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
+                      aria-label={`Delete ticket ${ticket.id}`}
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Message Body */}
-                <p className="text-xs text-neutral-300 leading-relaxed bg-[#121212] p-3 rounded-xl border border-neutral-800">
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed bg-[var(--bg-subtle)]/50 p-3 rounded-lg border border-[var(--border-subtle)]">
                   {ticket.message}
                 </p>
 
-                {/* Admin Notes Preview if present */}
                 {ticket.adminNotes && (
-                  <div className="p-2.5 rounded-xl bg-[#1a1714] border border-[#B68A55]/30 text-[11px] text-[#B68A55] flex items-start gap-2">
-                    <span className="font-bold shrink-0">Admin Note:</span>
-                    <span className="text-neutral-200">{ticket.adminNotes}</span>
+                  <div className="p-2.5 rounded-lg bg-indigo-500/8 border border-indigo-500/20 text-xs flex items-start gap-2">
+                    <span className="font-bold text-indigo-700 dark:text-indigo-300 shrink-0">
+                      Admin Note:
+                    </span>
+                    <span className="text-[var(--text-primary)]">{ticket.adminNotes}</span>
                   </div>
                 )}
 
-                {/* Customer Details Footer */}
-                <div className="flex flex-wrap items-center justify-between text-[11px] text-neutral-400 pt-1 gap-2">
+                <div className="flex flex-wrap items-center justify-between text-[11px] text-[var(--text-muted)] pt-1 gap-2">
                   <div className="flex items-center gap-4 flex-wrap">
                     <span className="flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-neutral-500" />
-                      <strong className="text-white">{ticket.userName}</strong>
+                      <User className="w-3.5 h-3.5" />
+                      <strong className="text-[var(--text-primary)]">{ticket.userName}</strong>
                     </span>
                     <a
                       href={`mailto:${ticket.userEmail}?subject=Re: [${ticket.id}] ${ticket.subject}`}
-                      className="flex items-center gap-1 text-[#B68A55] hover:underline"
+                      className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
                     >
                       <Mail className="w-3.5 h-3.5" />
                       <span>{ticket.userEmail}</span>
                     </a>
                     {ticket.organizationId && (
-                      <span className="flex items-center gap-1 text-neutral-500">
+                      <span className="flex items-center gap-1">
                         <Building2 className="w-3.5 h-3.5" />
-                        <span>Org: {ticket.organizationId}</span>
+                        <span>{ticket.organizationId}</span>
                       </span>
                     )}
                   </div>
 
-                  <span className="text-neutral-500">
-                    Submitted: {new Date(ticket.createdAt).toLocaleString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  <span>
+                    {ticket.createdAt
+                      ? new Date(ticket.createdAt).toLocaleString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""}
                   </span>
                 </div>
               </div>
@@ -386,91 +364,77 @@ export default function AdminTicketsPage() {
         </div>
       )}
 
-      {/* Ticket Details & Admin Notes Drawer/Modal */}
-      {selectedTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-lg bg-[#0D0D0D] rounded-3xl border border-neutral-800 shadow-2xl overflow-hidden text-white space-y-4 p-6">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-neutral-900 text-neutral-200 border border-neutral-800">
-                  {selectedTicket.id}
-                </span>
-                <span className="font-bold text-sm text-white">
-                  Ticket Management
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedTicket(null)}
-                className="p-1 rounded-full text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* Ticket Details Modal */}
+      <Modal
+        isOpen={Boolean(selectedTicket)}
+        onClose={() => setSelectedTicket(null)}
+        title={selectedTicket ? `Ticket ${selectedTicket.id}` : "Ticket Details"}
+        description={selectedTicket?.subject}
+      >
+        {selectedTicket && (
+          <div className="space-y-4 text-xs">
+            <div className="p-3 rounded-xl bg-[var(--bg-subtle)]/60 border border-[var(--border-subtle)] text-[var(--text-primary)] leading-relaxed max-h-48 overflow-y-auto">
+              {selectedTicket.message}
             </div>
 
-            <div className="space-y-2 text-xs">
-              <span className="font-bold text-white block text-sm">
-                {selectedTicket.subject}
-              </span>
-              <div className="p-3 rounded-xl bg-[#121212] border border-neutral-800 text-neutral-300 leading-relaxed max-h-48 overflow-y-auto">
-                {selectedTicket.message}
-              </div>
-            </div>
-
-            {/* Quick Email Customer */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#121212] border border-neutral-800 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-subtle)]/40 border border-[var(--border-subtle)]">
               <div>
-                <span className="font-bold text-white block">{selectedTicket.userName}</span>
-                <span className="text-[11px] text-neutral-400">{selectedTicket.userEmail}</span>
+                <span className="font-bold text-[var(--text-primary)] block">
+                  {selectedTicket.userName}
+                </span>
+                <span className="text-[11px] text-[var(--text-muted)]">
+                  {selectedTicket.userEmail}
+                </span>
               </div>
               <a
                 href={`mailto:${selectedTicket.userEmail}?subject=Re: [${selectedTicket.id}] ${selectedTicket.subject}`}
-                className="px-3 py-1.5 rounded-lg bg-[#B68A55] hover:bg-[#a67c48] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
               >
                 <Mail className="w-3.5 h-3.5" />
                 <span>Email Customer</span>
               </a>
             </div>
 
-            {/* Admin Notes Form */}
-            <div className="space-y-1.5 text-xs">
-              <label className="font-bold text-neutral-300">
-                Internal Admin Notes / Action Log
+            <div className="space-y-1.5">
+              <label className="font-semibold text-[var(--text-secondary)] block">
+                Internal Admin Notes
               </label>
               <textarea
                 rows={3}
-                placeholder="Log internal resolution steps, customer replies, or escalated actions..."
+                placeholder="Log internal resolution steps..."
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-neutral-800 bg-[#121212] text-xs text-white outline-hidden focus:border-[#B68A55]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
               />
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-neutral-800 text-xs">
-              <button
-                onClick={() => handleUpdateStatus(selectedTicket.id, "RESOLVED", adminNotes)}
-                disabled={updating}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
+            <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]">
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={updating}
+                onClick={() => {
+                  handleUpdateStatus(selectedTicket.id, "RESOLVED", adminNotes);
+                  setSelectedTicket(null);
+                }}
               >
-                Mark as Resolved
-              </button>
-
-              <button
+                Mark Resolved
+              </Button>
+              <Button
+                size="sm"
+                loading={updating}
                 onClick={() => {
                   handleUpdateStatus(selectedTicket.id, selectedTicket.status, adminNotes);
                   setSelectedTicket(null);
                 }}
-                disabled={updating}
-                className="px-4 py-2 rounded-xl bg-[#B68A55] hover:bg-[#a67c48] text-white font-bold transition-colors cursor-pointer disabled:opacity-50"
               >
                 Save Notes
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
-      {/* Premium Confirm Modal */}
       <ConfirmModal
         isOpen={Boolean(confirmConfig)}
         onClose={() => setConfirmConfig(null)}

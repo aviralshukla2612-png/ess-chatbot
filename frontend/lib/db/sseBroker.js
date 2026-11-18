@@ -83,12 +83,10 @@ class SSEBroker {
         continue;
       }
 
-      // Rule: Dashboard team subscribers
+      // Rule: Dashboard team subscribers — strict organization match or verified Platform Super Admin
       const isAuthorized =
         sub.isSuperAdmin ||
-        (Boolean(eventOrgId) && sub.organizationId === eventOrgId) ||
-        eventOrgId === "org_ess_default" ||
-        eventOrgId === "org_default";
+        (Boolean(eventOrgId) && sub.organizationId === eventOrgId);
 
       if (!isAuthorized) {
         continue;

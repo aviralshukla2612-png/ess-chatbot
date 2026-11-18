@@ -53,14 +53,19 @@ export const quotaGuard = {
    * If usage exceeds plan limit, rejects immediately before inference starts.
    */
   async checkAndReserveQuota(organizationId, metric = "message", quantity = 1, botId = null) {
+    if (!organizationId) {
+      return {
+        allowed: false,
+        reason: "MISSING_ORGANIZATION",
+        error: "Organization context is required to reserve quota.",
+      };
+    }
+
     if (
-      !organizationId ||
       organizationId === "org_ess_default" ||
       organizationId === "org_ess_01" ||
-      organizationId === "bot_aa" ||
       botId === "bot_aa" ||
-      botId === "bot_1791618269632" ||
-      String(botId || "").toLowerCase().includes("aa")
+      botId === "bot_1791618269632"
     ) {
       return { allowed: true, currentUsage: 0, limit: Infinity };
     }
@@ -70,7 +75,7 @@ export const quotaGuard = {
     const plan = getPlan(sub?.planId || "STARTER");
 
     // Check subscription active status
-    if (sub && (sub.status === "past_due" || sub.status === "expired")) {
+    if (sub && (sub.status === "past_due" || sub.status === "expired" || sub.status === "cancelled")) {
       return {
         allowed: false,
         reason: "SUBSCRIPTION_INACTIVE",

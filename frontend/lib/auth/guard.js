@@ -1,6 +1,7 @@
 /**
- * Centralized API Authentication & Tenant Authorization Guard
- * Enforces authenticated identity, session tokens, API keys, and RBAC on every private endpoint.
+ * Centralized API Authentication, Tenant Authorization, CSRF & Principal Rate-Limit Guard
+ * Enforces authenticated identity, session tokens, API keys, RBAC, and per-user / per-API-key
+ * rate limits across private endpoints.
  */
 
 let NextResponse = globalThis.Response;
@@ -14,6 +15,7 @@ try {
 }
 import { parseCookies, verifySessionToken } from "./session.js";
 import { authStore } from "../db/authStore.js";
+import { enforceRateLimit, verifyCsrfOrigin } from "../security/rateLimitPolicy.js";
 
 export const ROLES = {
   SUPER_ADMIN: "SUPER_ADMIN",
@@ -22,6 +24,50 @@ export const ROLES = {
   MEMBER: "MEMBER",
   VIEWER: "VIEWER",
 };
+
+// Short-lived in-memory cache for user block checks to avoid synchronous disk reads on every API call
+let blockedUsersCache = { loadedAt: 0, blockedIds: new Set(), blockedEmails: new Set() };
+const BLOCK_CACHE_TTL_MS = 5000;
+
+export function invalidateBlockedUsersCache() {
+  blockedUsersCache.loadedAt = 0;
+}
+
+async function isPrincipalBlocked(principal) {
+  const now = Date.now();
+  if (now - blockedUsersCache.loadedAt > BLOCK_CACHE_TTL_MS) {
+    try {
+      const { usersStore } = await import("../db/usersStore.js");
+      const list = usersStore.getUsers();
+      const ids = new Set();
+      const emails = new Set();
+      for (const u of list) {
+        if (u && (u.status === "Blocked" || u.status === "BLOCKED")) {
+          if (u.id) ids.add(u.id);
+          if (u.email) emails.add(u.email.toLowerCase());
+        }
+      }
+      blockedUsersCache = { loadedAt: now, blockedIds: ids, blockedEmails: emails };
+    } catch {
+      return false;
+    }
+  }
+
+  if (principal.userId && blockedUsersCache.blockedIds.has(principal.userId)) return true;
+  if (principal.email && blockedUsersCache.blockedEmails.has(principal.email.toLowerCase())) return true;
+  return false;
+}
+
+/**
+ * Helper: Strictly evaluate whether a verified principal holds Platform SUPER_ADMIN authority.
+ */
+export function isPlatformSuperAdmin(principal) {
+  if (!principal || !principal.authenticated) return false;
+  return (
+    principal.platformRole === ROLES.SUPER_ADMIN ||
+    principal.orgRole === ROLES.SUPER_ADMIN
+  );
+}
 
 /**
  * Extract authenticated session or API key from Next.js Request.
@@ -35,7 +81,7 @@ export async function getAuthenticatedPrincipal(request) {
   if (sessionToken) {
     const session = verifySessionToken(sessionToken);
     if (session) {
-      // Allow caller to switch active organization via X-Organization-Id header if they are a member
+      // Allow caller to switch active organization via X-Organization-Id header ONLY if they are a verified member
       const requestedOrgId = request.headers.get("x-organization-id");
       let activeOrgId = session.organizationId;
       let activeOrgRole = session.orgRole;
@@ -52,6 +98,7 @@ export async function getAuthenticatedPrincipal(request) {
         authenticated: true,
         type: "session",
         userId: session.userId,
+        name: session.name || null,
         email: session.email,
         platformRole: session.role,
         organizationId: activeOrgId,
@@ -72,6 +119,7 @@ export async function getAuthenticatedPrincipal(request) {
         return {
           authenticated: true,
           type: "apiKey",
+          apiKeyId: apiKey.id,
           userId: `apikey_${apiKey.id}`,
           email: "service-account@api",
           platformRole: "MEMBER",
@@ -88,6 +136,7 @@ export async function getAuthenticatedPrincipal(request) {
         authenticated: true,
         type: "session",
         userId: session.userId,
+        name: session.name || null,
         email: session.email,
         platformRole: session.role,
         organizationId: session.organizationId,
@@ -104,6 +153,7 @@ export async function getAuthenticatedPrincipal(request) {
       return {
         authenticated: true,
         type: "apiKey",
+        apiKeyId: apiKey.id,
         userId: `apikey_${apiKey.id}`,
         email: "service-account@api",
         platformRole: "MEMBER",
@@ -118,9 +168,11 @@ export async function getAuthenticatedPrincipal(request) {
 
 /**
  * Guard: Requires any valid authenticated session or API key.
- * Returns { ok: true, principal } OR { ok: false, response: NextResponse }
+ * Enforces CSRF Origin verification on cookie-authenticated mutations,
+ * account block status, and per-API-key / per-user / per-org rate limits.
+ * Returns { ok: true, principal, rateLimit } OR { ok: false, response: NextResponse }
  */
-export async function requireAuth(request) {
+export async function requireAuth(request, options = {}) {
   const principal = await getAuthenticatedPrincipal(request);
   if (!principal.authenticated) {
     return {
@@ -136,27 +188,55 @@ export async function requireAuth(request) {
     };
   }
 
-  // Enforce account block for non-superadmin users
-  if (principal.platformRole !== ROLES.SUPER_ADMIN && principal.orgRole !== ROLES.SUPER_ADMIN) {
-    try {
-      const { usersStore } = await import("../db/usersStore.js");
-      const user = usersStore.getUsers().find(
-        (u) => u.id === principal.userId || (u.email && u.email.toLowerCase() === principal.email?.toLowerCase())
-      );
-      if (user && (user.status === "Blocked" || user.status === "BLOCKED")) {
-        return {
-          ok: false,
-          response: NextResponse.json(
-            {
-              success: false,
-              error: "Your account has been blocked or suspended by platform administration.",
-              code: "ACCOUNT_BLOCKED",
-            },
-            { status: 403 }
-          ),
-        };
-      }
-    } catch (e) {}
+  // 1. CSRF check for browser cookie state-changing requests
+  if (principal.type === "session" && options.skipCsrf !== true) {
+    const csrf = verifyCsrfOrigin(request);
+    if (!csrf.ok) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          {
+            success: false,
+            error: csrf.error,
+            code: "CSRF_ORIGIN_MISMATCH",
+          },
+          { status: 403 }
+        ),
+      };
+    }
+  }
+
+  // 2. Enforce account block for non-superadmin users
+  if (!isPlatformSuperAdmin(principal)) {
+    if (await isPrincipalBlocked(principal)) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          {
+            success: false,
+            error: "Your account has been blocked or suspended by platform administration.",
+            code: "ACCOUNT_BLOCKED",
+          },
+          { status: 403 }
+        ),
+      };
+    }
+  }
+
+  // 3. Enforce per-API-key OR per-user + per-organization rate limits
+  if (options.skipRateLimit !== true) {
+    if (principal.type === "apiKey") {
+      const keyLimit = await enforceRateLimit("api_key", principal.apiKeyId || principal.userId);
+      if (!keyLimit.ok) return { ok: false, response: keyLimit.response };
+    } else if (principal.userId) {
+      const userLimit = await enforceRateLimit("user_api", principal.userId);
+      if (!userLimit.ok) return { ok: false, response: userLimit.response };
+    }
+
+    if (principal.organizationId) {
+      const orgLimit = await enforceRateLimit("organization", principal.organizationId);
+      if (!orgLimit.ok) return { ok: false, response: orgLimit.response };
+    }
   }
 
   return { ok: true, principal };
@@ -165,13 +245,17 @@ export async function requireAuth(request) {
 /**
  * Guard: Requires organization membership with specific role(s).
  */
-export async function requireOrgRole(request, allowedRoles = [ROLES.ORG_OWNER, ROLES.ORG_ADMIN]) {
-  const auth = await requireAuth(request);
+export async function requireOrgRole(
+  request,
+  allowedRoles = [ROLES.ORG_OWNER, ROLES.ORG_ADMIN],
+  options = {}
+) {
+  const auth = await requireAuth(request, options);
   if (!auth.ok) return auth;
 
   const { principal } = auth;
   // Super Admins always pass
-  if (principal.platformRole === ROLES.SUPER_ADMIN || principal.orgRole === ROLES.SUPER_ADMIN) {
+  if (isPlatformSuperAdmin(principal)) {
     return { ok: true, principal };
   }
 
@@ -195,12 +279,12 @@ export async function requireOrgRole(request, allowedRoles = [ROLES.ORG_OWNER, R
 /**
  * Guard: Requires platform SUPER_ADMIN role.
  */
-export async function requireSuperAdmin(request) {
-  const auth = await requireAuth(request);
+export async function requireSuperAdmin(request, options = {}) {
+  const auth = await requireAuth(request, options);
   if (!auth.ok) return auth;
 
   const { principal } = auth;
-  if (principal.platformRole !== ROLES.SUPER_ADMIN && principal.orgRole !== ROLES.SUPER_ADMIN) {
+  if (!isPlatformSuperAdmin(principal)) {
     return {
       ok: false,
       response: NextResponse.json(

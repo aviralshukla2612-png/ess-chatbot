@@ -4,12 +4,13 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 /**
  * Universal Real-Time Data Synchronization Hook
- * Combines Server-Sent Events (SSE) push + adaptive background polling + window focus revalidation
- * Ensures data stays live in real-time without user ever needing to manually refresh.
+ * Combines Server-Sent Events (SSE) push + adaptive background polling + window focus revalidation.
+ * Avoids duplicate network storms by backing off polling when SSE `isLive === true` and
+ * stabilizing `events` filter arrays by value rather than object identity.
  */
 export function useRealtimeSync(onSync, options = {}) {
   const {
-    pollingInterval = 3500,
+    pollingInterval = 5000,
     events = null, // null means all events
     enabled = true,
   } = options;
@@ -17,6 +18,10 @@ export function useRealtimeSync(onSync, options = {}) {
   const [isLive, setIsLive] = useState(false);
   const [lastSync, setLastSync] = useState(null);
   const onSyncRef = useRef(onSync);
+  const isLiveRef = useRef(false);
+
+  // Value-stable key prevents inline `events: [...]` arrays from tearing down EventSource on every render
+  const eventsKey = Array.isArray(events) ? events.join("|") : "";
 
   useEffect(() => {
     onSyncRef.current = onSync;
@@ -39,14 +44,15 @@ export function useRealtimeSync(onSync, options = {}) {
     let eventSource = null;
     let pollTimer = null;
     let isMounted = true;
+    const allowedEvents = eventsKey ? eventsKey.split("|") : null;
 
-    // 1. Initial Load in background
+    // 1. Initial Load
     const executeInitial = async () => {
       if (typeof onSyncRef.current === "function") {
         try {
           await onSyncRef.current();
           if (isMounted) setLastSync(new Date());
-        } catch (e) {}
+        } catch {}
       }
     };
     executeInitial();
@@ -57,6 +63,7 @@ export function useRealtimeSync(onSync, options = {}) {
         eventSource = new EventSource("/api/realtime");
 
         eventSource.onopen = () => {
+          isLiveRef.current = true;
           if (isMounted) setIsLive(true);
         };
 
@@ -65,53 +72,72 @@ export function useRealtimeSync(onSync, options = {}) {
           try {
             const payload = JSON.parse(e.data);
             if (payload.type === "connected") {
+              isLiveRef.current = true;
               setIsLive(true);
               return;
             }
 
-            // If specific events filter was passed, check match
-            if (events && Array.isArray(events) && !events.includes(payload.type)) {
+            if (allowedEvents && !allowedEvents.includes(payload.type)) {
               return;
             }
 
-            // Immediately trigger smooth background data sync
             if (typeof onSyncRef.current === "function") {
-              onSyncRef.current().then(() => {
-                if (isMounted) setLastSync(new Date());
-              }).catch(() => {});
+              onSyncRef
+                .current()
+                .then(() => {
+                  if (isMounted) setLastSync(new Date());
+                })
+                .catch(() => {});
             }
-          } catch (err) {
-            // Ignore non-json heartbeats
+          } catch {
+            // Ignore heartbeats
           }
         };
 
         eventSource.onerror = () => {
+          isLiveRef.current = false;
           if (isMounted) setIsLive(false);
         };
-      } catch (err) {
+      } catch {
+        isLiveRef.current = false;
         if (isMounted) setIsLive(false);
       }
     }
 
     connectSSE();
 
-    // 3. Resilient Polling Fallback (ensures freshness even across network hiccups)
+    // 3. Adaptive Polling Fallback:
+    // When SSE is healthy (`isLiveRef.current === true`), reconcile only once every ~30s instead of every 3s.
     if (pollingInterval > 0) {
+      let lastPollAt = Date.now();
+      const baseTick = Math.max(2500, pollingInterval);
       pollTimer = setInterval(() => {
-        if (document.visibilityState === "visible" && typeof onSyncRef.current === "function") {
-          onSyncRef.current().then(() => {
-            if (isMounted) setLastSync(new Date());
-          }).catch(() => {});
+        if (document.visibilityState !== "visible" || typeof onSyncRef.current !== "function") {
+          return;
         }
-      }, pollingInterval);
+        const now = Date.now();
+        const effectiveInterval = isLiveRef.current ? Math.max(30000, pollingInterval * 8) : pollingInterval;
+        if (now - lastPollAt >= effectiveInterval) {
+          lastPollAt = now;
+          onSyncRef
+            .current()
+            .then(() => {
+              if (isMounted) setLastSync(new Date());
+            })
+            .catch(() => {});
+        }
+      }, baseTick);
     }
 
-    // 4. Tab visibility & focus revalidation (instant refresh when user switches tab)
+    // 4. Tab visibility & focus revalidation
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && typeof onSyncRef.current === "function") {
-        onSyncRef.current().then(() => {
-          if (isMounted) setLastSync(new Date());
-        }).catch(() => {});
+        onSyncRef
+          .current()
+          .then(() => {
+            if (isMounted) setLastSync(new Date());
+          })
+          .catch(() => {});
       }
     };
     window.addEventListener("visibilitychange", handleVisibility);
@@ -119,12 +145,13 @@ export function useRealtimeSync(onSync, options = {}) {
 
     return () => {
       isMounted = false;
+      isLiveRef.current = false;
       if (eventSource) eventSource.close();
       if (pollTimer) clearInterval(pollTimer);
       window.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("focus", handleVisibility);
     };
-  }, [enabled, pollingInterval, events]);
+  }, [enabled, pollingInterval, eventsKey]);
 
   return { isLive, lastSync, triggerSync };
 }

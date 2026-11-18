@@ -366,8 +366,8 @@ export default function LoginPage() {
     }
 
     // Stage 2: Phone is verified -> Validate Passwords
-    if (!regPassword || regPassword.length < 6) {
-      setErrorMessage("Please create a password with at least 6 characters");
+    if (!regPassword || regPassword.length < 8) {
+      setErrorMessage("Please create a password with at least 8 characters");
       return;
     }
     if (regPassword !== regConfirmPassword) {
@@ -745,16 +745,24 @@ export default function LoginPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-xs font-semibold text-[#D1D1DB]">Password</label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLoginMode("otp");
-                          setErrorMessage("");
-                        }}
-                        className="text-[11px] text-[#C28AFF] hover:underline cursor-pointer"
-                      >
-                        Sign in with OTP code instead
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href="/forgot-password"
+                          className="text-[11px] text-[#9898A6] hover:text-white transition-colors"
+                        >
+                          Forgot password?
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginMode("otp");
+                            setErrorMessage("");
+                          }}
+                          className="text-[11px] text-[#C28AFF] hover:underline cursor-pointer"
+                        >
+                          Use OTP instead
+                        </button>
+                      </div>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
@@ -1046,10 +1054,10 @@ export default function LoginPage() {
                       <input
                         type={showRegPassword ? "text" : "password"}
                         required
-                        minLength={6}
+                        minLength={8}
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="Minimum 6 characters"
+                        placeholder="Minimum 8 characters"
                         className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
                       />
                       <button
@@ -1071,7 +1079,7 @@ export default function LoginPage() {
                       <input
                         type={showRegConfirmPassword ? "text" : "password"}
                         required
-                        minLength={6}
+                        minLength={8}
                         value={regConfirmPassword}
                         onChange={(e) => setRegConfirmPassword(e.target.value)}
                         placeholder="Re-enter your password"
@@ -1101,7 +1109,7 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    disabled={loading || !regPassword || regPassword.length < 6 || regPassword !== regConfirmPassword}
+                    disabled={loading || !regPassword || regPassword.length < 8 || regPassword !== regConfirmPassword}
                     className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (

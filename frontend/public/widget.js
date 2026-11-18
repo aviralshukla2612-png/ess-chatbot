@@ -1298,51 +1298,83 @@
     if (brandingLink) brandingLink.style.color = botConfig.primaryColor;
   }
 
+  function escapeHtmlSafe(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function formatMessage(text, isUser = false) {
     if (!text || typeof text !== "string") return "";
-    let html = text;
 
     if (isUser) {
-      // Safe HTML escaping for user messages
-      html = html
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-      // Auto-link standalone URLs in user bubble with WHITE text
+      let html = escapeHtmlSafe(text);
       html = html.replace(
-        /(https?:\/\/[^\s<)]+)/g,
+        /(https?:\/\/[^\s<)"'&]+)/g,
         '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#ffffff!important;text-decoration:underline;font-weight:600;word-break:break-all;">$1</a>'
       );
-
-      // Newlines to <br/>
       return html.replace(/\n/g, "<br/>");
     }
 
-    // Filter out leaked system prompt directives or meta headers
-    html = html.replace(/^(?:(?:You are|The visitor is|The user is)\s+writing in[^\n]*\n*)+/gim, "");
-    html = html.replace(/^(?:VISITOR\s*(?:IDENTITY|DETAILS)?:?[^\n]*\n*)+/gim, "");
-    html = html.replace(/^(?:MANDATORY\s+)?[A-Z0-9_\s-]+(?:RULE|DIRECTIVE|INSTRUCTION):[^\n]*\n*/gim, "");
-    html = html.replace(/^[•*-]\s*(?:If the visitor|Greet them|Whenever a visitor|The visitor|You MUST)[^\n]*\n*/gim, "");
-    html = html.replace(/^Greet them warmly[^\n]*\n*/gim, "");
-    html = html.replace(/^Example:\s*"[^"]*"\s*\n*/gim, "");
-    html = html.replace(/^(?:Language & Tone|Core Rules|Verified Knowledge|WHO WE ARE|PUBLIC COMPANY CONTACT|GUIDELINES|ABOUT EMPEROR SMART SOLUTIONS)[^\n]*\n*/gim, "");
-    html = html.replace(/^Hello!\s*Welcome to Emperor Smart Solutions\.\s*May I know your name and contact number[^\n]*\n+/gi, "");
+    // Filter out leaked system prompt directives or meta headers BEFORE escaping
+    let cleaned = text;
+    cleaned = cleaned.replace(/^(?:(?:You are|The visitor is|The user is)\s+writing in[^\n]*\n*)+/gim, "");
+    cleaned = cleaned.replace(/^(?:VISITOR\s*(?:IDENTITY|DETAILS)?:?[^\n]*\n*)+/gim, "");
+    cleaned = cleaned.replace(/^(?:MANDATORY\s+)?[A-Z0-9_\s-]+(?:RULE|DIRECTIVE|INSTRUCTION):[^\n]*\n*/gim, "");
+    cleaned = cleaned.replace(/^[•*-]\s*(?:If the visitor|Greet them|Whenever a visitor|The visitor|You MUST)[^\n]*\n*/gim, "");
+    cleaned = cleaned.replace(/^Greet them warmly[^\n]*\n*/gim, "");
+    cleaned = cleaned.replace(/^Example:\s*"[^"]*"\s*\n*/gim, "");
+    cleaned = cleaned.replace(/^(?:Language & Tone|Core Rules|Verified Knowledge|WHO WE ARE|PUBLIC COMPANY CONTACT|GUIDELINES|ABOUT EMPEROR SMART SOLUTIONS)[^\n]*\n*/gim, "");
+    cleaned = cleaned.replace(/^Hello!\s*Welcome to Emperor Smart Solutions\.\s*May I know your name and contact number[^\n]*\n+/gi, "");
 
-    // Convert bold: ***text*** or **text** -> <strong style="font-weight:700!important;color:#0f172a!important;opacity:1!important;">text</strong>
-    html = html.replace(/\*{2,3}([^*]+)\*{2,3}/g, '<strong style="font-weight:700!important;color:#ffffff!important;opacity:1!important;">$1</strong>');
+    // Strictly escape ALL HTML entities first to eliminate DOM XSS & Prompt-Injection XSS (SEC-11)
+    let html = escapeHtmlSafe(cleaned);
 
-    // Convert markdown links: [Title](https://...) -> <a href="https://..." target="_blank" rel="noopener noreferrer">Title</a>
-    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--nexus-primary);text-decoration:underline;font-weight:600;">$1</a>`);
+    // Extract fenced code blocks ```lang\ncode``` before inline formatting
+    const codeBlocks = [];
+    html = html.replace(/```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(
+        `<pre style="margin:8px 0;padding:10px 12px;border-radius:10px;background:#0f172a;border:1px solid rgba(255,255,255,0.12);overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.5;color:#e2e8f0;"><code>${code.trim()}</code></pre>`
+      );
+      return `@@NEXUS_CODE_BLOCK_${idx}@@`;
+    });
+
+    // Inline code `code`
+    html = html.replace(
+      /`([^`\n]+)`/g,
+      '<code style="padding:1px 5px;border-radius:5px;background:rgba(255,255,255,0.1);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;">$1</code>'
+    );
+
+    // Bold: ***text*** or **text**
+    html = html.replace(
+      /\*{2,3}([^*]+)\*{2,3}/g,
+      '<strong style="font-weight:700!important;color:#ffffff!important;opacity:1!important;">$1</strong>'
+    );
+
+    // Markdown links: [Title](https://...) — disallow quotes/angle brackets in URL
+    html = html.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s<)"'&]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--nexus-primary);text-decoration:underline;font-weight:600;">$1</a>'
+    );
 
     // Auto-link standalone https:// URLs
-    html = html.replace(/(^|[\s(])(https:\/\/[^\s<)]+)/g, `$1<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--nexus-primary);text-decoration:underline;font-weight:600;">$2</a>`);
+    html = html.replace(
+      /(^|[\s(])(https:\/\/[^\s<)"'&]+)/g,
+      '$1<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--nexus-primary);text-decoration:underline;font-weight:600;">$2</a>'
+    );
 
     // Bullet points: * Item or - Item
     html = html.replace(/^[*-]\s+(.+)$/gm, "• $1");
 
     // Newlines to <br/>
     html = html.replace(/\n/g, "<br/>");
+
+    // Restore fenced code blocks
+    html = html.replace(/@@NEXUS_CODE_BLOCK_(\d+)@@/g, (_, idx) => codeBlocks[Number(idx)] || "");
 
     return html;
   }

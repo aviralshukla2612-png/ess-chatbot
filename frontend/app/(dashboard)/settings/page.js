@@ -3,15 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  Settings,
   Building2,
   User,
   Shield,
   Bell,
   CreditCard,
-  CheckCircle2,
-  Sparkles,
-  Zap,
   Globe,
   Copy,
   Check,
@@ -19,26 +15,24 @@ import {
   ShieldCheck,
   Database,
   Server,
-  Layers,
   Bot,
   Users2,
-  Calendar,
   Lock,
   ChevronRight,
-  Activity,
-  Cpu,
-  Clock,
-  ExternalLink,
   Laptop,
   Mail,
-  ShieldAlert,
 } from "lucide-react";
 import { botsApi } from "@/lib/api/bots";
 import { leadsApi } from "@/lib/api/leads";
+import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
+import { InlineAlert, useToast } from "@/components/ui/Toast";
 
 export default function SettingsPage() {
+  const { toast } = useToast();
   const [activeSection, setActiveSection] = useState("general");
-  const [savedNotice, setSavedNotice] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [userProfile, setUserProfile] = useState({
     name: "",
     email: "",
@@ -50,13 +44,16 @@ export default function SettingsPage() {
   const [botsCount, setBotsCount] = useState(0);
   const [leadsCount, setLeadsCount] = useState(0);
 
-  // Form states
   const [orgNameInput, setOrgNameInput] = useState("");
+  const [profileNameInput, setProfileNameInput] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [market, setMarket] = useState("India (GST applicable)");
-  const [language, setLanguage] = useState("English (US & India)");
+  const [language, setLanguage] = useState("English (US & India) — Recommended");
 
-  // Notification toggles
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [notifications, setNotifications] = useState({
     leadCaptured: true,
     weeklyReport: true,
@@ -66,7 +63,6 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    // If user clicked or bookmarked ?tab=billing, redirect directly to dedicated /billing page
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
@@ -77,6 +73,16 @@ export default function SettingsPage() {
       if (tab && ["general", "profile", "security", "notifications"].includes(tab)) {
         setActiveSection(tab);
       }
+      try {
+        const storedPrefs = localStorage.getItem("nexus_workspace_prefs");
+        if (storedPrefs) {
+          const parsed = JSON.parse(storedPrefs);
+          if (parsed.currency) setCurrency(parsed.currency);
+          if (parsed.market) setMarket(parsed.market);
+          if (parsed.language) setLanguage(parsed.language);
+          if (parsed.notifications) setNotifications((prev) => ({ ...prev, ...parsed.notifications }));
+        }
+      } catch {}
     }
 
     fetch("/api/auth/me", { cache: "no-store" })
@@ -84,22 +90,33 @@ export default function SettingsPage() {
       .then((d) => {
         if (d?.success && d?.user) {
           const userName = d.user.name || d.user.email?.split("@")[0] || "Administrator";
-          const orgName = `${userName}'s Workspace`;
+          const orgName = d.activeOrgName || `${userName}'s Workspace`;
           setUserProfile({
             name: userName,
             email: d.user.email || "",
-            orgName: orgName,
-            role: d.user.role === "SUPER_ADMIN" ? "Super Administrator" : "Workspace Owner",
-            organizationId: d.user.organizationId || "org_nexus_enterprise",
+            orgName,
+            role:
+              d.user.role === "SUPER_ADMIN"
+                ? "Super Administrator"
+                : d.activeOrgRole === "ORG_ADMIN"
+                ? "Workspace Admin"
+                : "Workspace Owner",
+            organizationId: d.activeOrganizationId || "org_default",
           });
           setOrgNameInput(orgName);
+          setProfileNameInput(userName);
         }
       })
       .catch(() => {});
 
-    // Fetch live workspace stats
-    botsApi.getBots().then((list) => setBotsCount(Array.isArray(list) ? list.length : 0)).catch(() => {});
-    leadsApi.getLeads().then((list) => setLeadsCount(Array.isArray(list) ? list.length : 0)).catch(() => {});
+    botsApi
+      .getBots()
+      .then((list) => setBotsCount(Array.isArray(list) ? list.length : 0))
+      .catch(() => {});
+    leadsApi
+      .getLeads()
+      .then((list) => setLeadsCount(Array.isArray(list) ? list.length : 0))
+      .catch(() => {});
   }, []);
 
   const handleCopyTenant = () => {
@@ -110,72 +127,163 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSave = (e) => {
+  const handleSaveGeneralOrProfile = async (e) => {
     e.preventDefault();
-    setSavedNotice(true);
-    setTimeout(() => setSavedNotice(false), 2800);
+    setErrorMsg("");
+    setSaving(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "profile",
+          name: profileNameInput.trim() || userProfile.name,
+          organizationName: orgNameInput.trim() || userProfile.orgName,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update settings.");
+      }
+
+      try {
+        localStorage.setItem(
+          "nexus_workspace_prefs",
+          JSON.stringify({ currency, market, language, notifications })
+        );
+      } catch {}
+
+      setUserProfile((prev) => ({
+        ...prev,
+        name: profileNameInput.trim() || prev.name,
+        orgName: orgNameInput.trim() || prev.orgName,
+      }));
+      window.dispatchEvent(new CustomEvent("profile-updated"));
+      toast({
+        title: "Settings saved",
+        message: data.message || "Workspace and profile configuration updated.",
+        variant: "success",
+      });
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+    if (!newPassword || newPassword.length < 8) {
+      setErrorMsg("New password must be at least 8 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("New password and confirmation do not match.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "password",
+          currentPassword,
+          newPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update password.");
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({
+        title: "Password updated",
+        message: "Your account password has been rotated securely.",
+        variant: "success",
+      });
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = () => {
+    try {
+      localStorage.setItem(
+        "nexus_workspace_prefs",
+        JSON.stringify({ currency, market, language, notifications })
+      );
+    } catch {}
+    toast({
+      title: "Notification triggers saved",
+      message: "Alert preferences updated for this workspace.",
+      variant: "success",
+    });
   };
 
   const sections = [
-    { id: "general", label: "General & Workspace", icon: Building2, desc: "Organization identity, locale & cloud specs" },
-    { id: "profile", label: "My Profile", icon: User, desc: "Account details & admin credentials" },
-    { id: "security", label: "Security & Passwords", icon: Shield, desc: "Access credentials & session control" },
-    { id: "notifications", label: "Notifications & Alerts", icon: Bell, desc: "Lead triggers & report automation" },
+    {
+      id: "general",
+      label: "General & Workspace",
+      icon: Building2,
+      desc: "Organization identity & locale",
+    },
+    {
+      id: "profile",
+      label: "My Profile",
+      icon: User,
+      desc: "Personal account details",
+    },
+    {
+      id: "security",
+      label: "Security & Password",
+      icon: Shield,
+      desc: "Credential rotation & sessions",
+    },
+    {
+      id: "notifications",
+      label: "Notifications & Alerts",
+      icon: Bell,
+      desc: "Lead & gap triggers",
+    },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-16 font-sans">
-      {/* Top Breadcrumb & Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-md bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-              Workspace Control Center
-            </span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Multi-Tenant Isolated
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            Account & Workspace Settings
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Configure organization profiles, technical specs, security credentials, and event triggers.
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto space-y-6 pb-16 animate-fade-in">
+      <PageHeader
+        badge="Workspace Configuration"
+        title="Account & Workspace Settings"
+        description="Manage organization identity, account profile, password credentials, and automated alert preferences."
+        actions={
+          <Link href="/billing">
+            <Button variant="secondary" size="sm" icon={CreditCard} iconRight={ArrowRight}>
+              Billing & Plans
+            </Button>
+          </Link>
+        }
+      />
 
-        {/* Quick link to dedicated Billing page */}
-        <Link
-          href="/billing"
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-600 dark:text-indigo-300 transition-colors text-xs font-bold shrink-0 self-start sm:self-auto"
-        >
-          <CreditCard className="w-4 h-4 text-indigo-400" />
-          <span>Go to Billing & Plans</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
-
-      {/* Success Notification Bar */}
-      {savedNotice && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between shadow-lg shadow-emerald-500/5 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <span className="font-semibold">Workspace configuration successfully synchronized across all active bot nodes.</span>
-          </div>
-          <span className="text-[10px] font-mono opacity-70">SAVED</span>
-        </div>
+      {errorMsg && (
+        <InlineAlert
+          variant="error"
+          title="Update Error"
+          message={errorMsg}
+          onDismiss={() => setErrorMsg("")}
+        />
       )}
 
-      {/* Main Layout: Left Navigation + Right Content Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Navigation Sidebar (4 cols on lg) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Navigation */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-200/90 dark:border-slate-800 p-2 shadow-xl shadow-slate-900/5 dark:shadow-black/20 space-y-1">
-            <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              Settings Navigation
+          <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-2 shadow-[var(--shadow-xs)] space-y-1">
+            <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Settings Sections
             </div>
             {sections.map((s) => {
               const Icon = s.icon;
@@ -183,111 +291,112 @@ export default function SettingsPage() {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-semibold transition-all text-left cursor-pointer group ${
+                  type="button"
+                  onClick={() => {
+                    setActiveSection(s.id);
+                    setErrorMsg("");
+                  }}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg text-xs font-semibold transition-all text-left cursor-pointer ${
                     isActive
-                      ? "bg-[#252525] dark:bg-[#B68A55] text-white shadow-xs"
-                      : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white hover:bg-[#FAF9F6] dark:hover:bg-[#1A1A1A]"
+                      ? "bg-indigo-600 text-white shadow-2xs"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         isActive
                           ? "bg-white/20 text-white"
-                          : "bg-slate-100 dark:bg-[#1A1A1A] text-slate-500 dark:text-neutral-400 group-hover:text-[#B68A55] dark:group-hover:text-[#B68A55]"
+                          : "bg-[var(--bg-subtle)] text-[var(--text-muted)]"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className={`font-bold ${isActive ? "text-white" : "text-slate-800 dark:text-neutral-200"}`}>
+                      <p className={`font-bold ${isActive ? "text-white" : "text-[var(--text-primary)]"}`}>
                         {s.label}
                       </p>
-                      <p className={`text-[10px] truncate max-w-[150px] ${isActive ? "text-slate-200" : "text-slate-400 dark:text-neutral-500"}`}>
+                      <p
+                        className={`text-[11px] truncate max-w-[165px] ${
+                          isActive ? "text-indigo-100" : "text-[var(--text-muted)]"
+                        }`}
+                      >
                         {s.desc}
                       </p>
                     </div>
                   </div>
-
                   <ChevronRight
-                    className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
-                      isActive ? "text-white/80" : "text-slate-300 dark:text-neutral-600"
-                    }`}
+                    className={`w-4 h-4 ${isActive ? "text-white/80" : "text-[var(--text-muted)]"}`}
                   />
                 </button>
               );
             })}
           </div>
 
-          {/* Infrastructure Specs Card */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 text-[#252525] dark:text-white shadow-xs space-y-3">
+          {/* Infrastructure Summary */}
+          <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-neutral-400 flex items-center gap-1.5">
-                <Server className="w-3.5 h-3.5 text-[#B68A55]" />
-                Infrastructure
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                <Server className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                Tenant Isolation
               </span>
-              <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold">
-                99.98% SLA
+              <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
+                ENFORCED
               </span>
             </div>
-            <div className="space-y-1.5 text-xs text-slate-600 dark:text-neutral-300">
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 dark:text-neutral-400">Database Engine:</span>
-                <span className="font-mono font-medium text-[#252525] dark:text-neutral-200">PostgreSQL (RLS)</span>
+                <span className="text-[var(--text-muted)]">Session Auth</span>
+                <span className="font-mono font-medium text-[var(--text-primary)]">
+                  HMAC-SHA256
+                </span>
               </div>
               <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 dark:text-neutral-400">Embedding Vector:</span>
-                <span className="font-mono font-medium text-[#B68A55]">1536-dim HNSW</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="text-slate-500 dark:text-neutral-400">Data Isolation:</span>
-                <span className="font-medium text-emerald-600 dark:text-emerald-300">Tenant Level</span>
+                <span className="text-[var(--text-muted)]">Vector Isolation</span>
+                <span className="font-mono font-medium text-indigo-600 dark:text-indigo-400">
+                  Org + Bot Scoped
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Content Area (8 cols on lg) */}
+        {/* Right Content Area */}
         <div className="lg:col-span-8">
-          {/* TAB 1: GENERAL & WORKSPACE */}
           {activeSection === "general" && (
             <div className="space-y-6">
-              {/* Workspace Identity Hero Card */}
-              <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-7 shadow-xs text-[#252525] dark:text-white">
-                <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#B68A55]/10 rounded-full blur-3xl pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+              <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 shadow-[var(--shadow-xs)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#252525] dark:bg-[#B68A55] flex items-center justify-center text-white text-xl font-extrabold shadow-sm border border-black/10 dark:border-white/20 shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-base font-bold shrink-0">
                       {orgNameInput?.slice(0, 2).toUpperCase() || "WS"}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#252525] dark:text-white">
-                          {orgNameInput || "Enterprise Workspace"}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
+                          {orgNameInput || "Workspace"}
                         </h2>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/15 text-[#B68A55] border border-[#B68A55]/20">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                           {userProfile.role}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-slate-500 dark:text-neutral-400 font-mono">
+                        <span className="text-xs text-[var(--text-muted)] font-mono">
                           ID: {userProfile.organizationId || "org_default"}
                         </span>
                         <button
+                          type="button"
                           onClick={handleCopyTenant}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-[#FAF9F6] hover:bg-[#EFE7DC] text-[#252525] dark:bg-[#1A1A1A] dark:hover:bg-[#252525] dark:text-neutral-300 border border-[#EFE7DC] dark:border-neutral-800 transition-colors cursor-pointer"
-                          title="Copy Tenant ID"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[var(--bg-subtle)] hover:bg-[var(--border-subtle)] text-[var(--text-secondary)] border border-[var(--border-subtle)] transition-colors cursor-pointer"
                         >
                           {copiedTenantId ? (
                             <>
-                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                              <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
+                              <Check className="w-3 h-3 text-emerald-500" />
+                              <span>Copied</span>
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3 h-3 text-slate-500 dark:text-neutral-400" />
+                              <Copy className="w-3 h-3" />
                               <span>Copy</span>
                             </>
                           )}
@@ -295,365 +404,311 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      Live Cluster Online
-                    </span>
-                  </div>
                 </div>
 
-                {/* 4 Live Workspace Metric Chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#EFE7DC] dark:border-neutral-800">
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400 text-[11px] mb-1">
-                      <Bot className="w-3.5 h-3.5 text-[#B68A55]" />
-                      <span>Live Bots</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5 pt-5 border-t border-[var(--border-subtle)]">
+                  <div className="p-3 rounded-lg bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)]">
+                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[11px] mb-1">
+                      <Bot className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Active Bots</span>
                     </div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white">{botsCount} Assistant</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
+                      {botsCount} {botsCount === 1 ? "Assistant" : "Assistants"}
+                    </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400 text-[11px] mb-1">
+                  <div className="p-3 rounded-lg bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)]">
+                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[11px] mb-1">
                       <Users2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Captured Leads</span>
                     </div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white">{leadsCount} Leads</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
+                      {leadsCount} Leads
+                    </span>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-neutral-400 text-[11px] mb-1">
-                      <Database className="w-3.5 h-3.5 text-[#B68A55]" />
-                      <span>Vector Search</span>
+                  <div className="p-3 rounded-lg bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] col-span-2 sm:col-span-1">
+                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-[11px] mb-1">
+                      <Database className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Knowledge Store</span>
                     </div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white">Active (RAG)</span>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-[#FAF9F6] dark:bg-slate-800/50 border border-[#EFE7DC] dark:border-slate-700/60 shadow-xs">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px] mb-1">
-                      <Globe className="w-3.5 h-3.5 text-[#B68A55] dark:text-sky-400" />
-                      <span>Cloud Region</span>
-                    </div>
-                    <span className="text-base font-bold text-[#252525] dark:text-white">ap-south-1</span>
+                    <span className="text-sm font-bold text-[var(--text-primary)]">
+                      RAG Active
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Organization Profile Form */}
-              <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      Organization & Locale Preferences
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Configure public branding, billing currencies, and regulatory market defaults.
-                    </p>
-                  </div>
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-6 shadow-[var(--shadow-xs)] space-y-5">
+                <div className="border-b border-[var(--border-subtle)] pb-4">
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">
+                    Organization & Locale Preferences
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    Configure workspace branding and default assistant locale.
+                  </p>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-5 text-xs">
+                <form onSubmit={handleSaveGeneralOrProfile} className="space-y-4 text-xs">
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
                       Company / Organization Name
                     </label>
                     <div className="relative">
-                      <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Building2 className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         value={orgNameInput}
                         onChange={(e) => setOrgNameInput(e.target.value)}
                         placeholder="e.g. Acme Technologies Private Limited"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500 font-medium"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Appears on your deployed chatbot widgets, billing invoices, and lead email notifications.
-                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
                         Operating Currency
                       </label>
                       <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500 font-medium"
                       >
-                        <option value="INR">Indian Rupee (INR / ₹) — Domestic Gateway</option>
-                        <option value="USD">US Dollar (USD / $) — Global Accounts</option>
-                        <option value="EUR">Euro (EUR / €) — EU Processing</option>
+                        <option value="INR">Indian Rupee (INR / ₹)</option>
+                        <option value="USD">US Dollar (USD / $)</option>
+                        <option value="EUR">Euro (EUR / €)</option>
                       </select>
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Primary Market & Jurisdiction
+                      <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
+                        Primary Market
                       </label>
                       <div className="relative">
-                        <Globe className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Globe className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                           type="text"
                           value={market}
                           onChange={(e) => setMarket(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500 font-medium"
                         />
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
                       Default AI Assistant Language
                     </label>
                     <select
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-hidden focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500 font-medium"
                     >
                       <option>English (US & India) — Recommended</option>
                       <option>Hindi + English (Hinglish)</option>
-                      <option>Multilingual Auto-Detect (Dynamic translation)</option>
+                      <option>Multilingual Auto-Detect</option>
                     </select>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-[11px] text-slate-400">
-                      Changes apply instantly to all live web & WhatsApp widgets.
-                    </span>
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold rounded-xl shadow-md transition-all hover:scale-[1.02] cursor-pointer flex items-center gap-2"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Save Workspace Changes</span>
-                    </button>
+                  <div className="pt-3 flex items-center justify-end border-t border-[var(--border-subtle)]">
+                    <Button type="submit" loading={saving}>
+                      Save Workspace Changes
+                    </Button>
                   </div>
                 </form>
-              </div>
-
-              {/* Data Privacy & Compliance Architecture */}
-              <div className="p-6 rounded-3xl bg-neutral-50 dark:bg-[#0A0A0A] border border-neutral-200 dark:border-neutral-800 space-y-4">
-                <div className="flex items-center gap-2 text-neutral-800 dark:text-neutral-200 font-bold text-xs">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  <span>Enterprise Security & Data Isolation Protocols</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800">
-                    <span className="font-bold text-neutral-900 dark:text-white block mb-0.5">AES-256 Vector Store</span>
-                    <span className="text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      All uploaded PDF documents & URLs are isolated per organization ID.
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800">
-                    <span className="font-bold text-neutral-900 dark:text-white block mb-0.5">Anti-Hallucination Guard</span>
-                    <span className="text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      Cosine thresholding ensures bots only respond to grounded knowledge.
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800">
-                    <span className="font-bold text-neutral-900 dark:text-white block mb-0.5">Automated Backups</span>
-                    <span className="text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                      Continuous write-ahead logging (WAL) with hourly snapshot verification.
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 2: MY PROFILE */}
           {activeSection === "profile" && (
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="flex items-center gap-4 pb-6 border-b border-[#EFE7DC] dark:border-neutral-800">
-                  <div className="w-16 h-16 rounded-2xl bg-[#252525] dark:bg-[#B68A55] flex items-center justify-center text-white text-2xl font-bold shadow-md">
-                    {userProfile.name?.slice(0, 2).toUpperCase() || "AD"}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
-                      {userProfile.name || "Administrator"}
-                    </h3>
-                    <p className="text-xs text-neutral-400 font-medium">{userProfile.email}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#B68A55]/10 text-[#B68A55] border border-[#B68A55]/20">
-                      {userProfile.role}
-                    </span>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-6 shadow-[var(--shadow-xs)] space-y-6">
+              <div className="flex items-center gap-4 pb-5 border-b border-[var(--border-subtle)]">
+                <div className="w-14 h-14 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                  {profileNameInput?.slice(0, 2).toUpperCase() || "AD"}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">
+                    {userProfile.name || "Administrator"}
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)]">{userProfile.email}</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveGeneralOrProfile} className="space-y-4 text-xs">
+                <div>
+                  <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      value={profileNameInput}
+                      onChange={(e) => setProfileNameInput(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500 font-medium"
+                    />
                   </div>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        defaultValue={userProfile.name || "Administrator"}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55] font-medium"
-                      />
-                    </div>
+                <div>
+                  <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
+                    Login Email / Identifier
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={userProfile.email}
+                      disabled
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-[var(--text-muted)] font-medium cursor-not-allowed"
+                    />
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
-                      Email Address (Login ID)
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="email"
-                        defaultValue={userProfile.email}
-                        disabled
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800/50 text-neutral-500 dark:text-neutral-400 text-xs font-medium cursor-not-allowed"
-                      />
-                    </div>
-                    <p className="text-[10px] text-neutral-400 mt-1">
-                      To modify your primary email, contact platform security administration.
-                    </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
-                    >
-                      Update Profile
-                    </button>
-                  </div>
-                </form>
-              </div>
+                <div className="pt-2">
+                  <Button type="submit" loading={saving}>
+                    Update Profile
+                  </Button>
+                </div>
+              </form>
             </div>
           )}
 
-          {/* TAB 3: SECURITY & PASSWORDS */}
           {activeSection === "security" && (
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-[#0D0D0D] rounded-3xl border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="border-b border-[#EFE7DC] dark:border-neutral-800 pb-4">
-                  <h3 className="text-base font-bold text-neutral-900 dark:text-white">
-                    Password & Credential Authentication
+            <div className="space-y-5">
+              <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-6 shadow-[var(--shadow-xs)] space-y-5">
+                <div className="border-b border-[var(--border-subtle)] pb-4">
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">
+                    Password & Credential Rotation
                   </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    Manage session tokens, cryptographic salt keys, and credential rotation.
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    Update your account password using PBKDF2-SHA256 / scrypt hashed storage.
                   </p>
                 </div>
 
-                <form onSubmit={handleSave} className="space-y-4 text-xs">
+                <form onSubmit={handleChangePassword} className="space-y-4 text-xs">
                   <div>
-                    <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                    <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
                       Current Password
                     </label>
                     <div className="relative">
-                      <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Lock className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <input
                         type="password"
-                        placeholder="••••••••••••"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55]"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                      <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
                         New Password
                       </label>
                       <input
                         type="password"
+                        required
+                        minLength={8}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Minimum 8 characters"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55]"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block font-bold text-neutral-700 dark:text-neutral-300 mb-1.5">
+                      <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
                         Confirm New Password
                       </label>
                       <input
                         type="password"
-                        placeholder="Re-enter password"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55]"
+                        required
+                        minLength={8}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter new password"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
                       />
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
-                  >
-                    Change Password
-                  </button>
+                  <div className="pt-2">
+                    <Button type="submit" loading={saving}>
+                      Change Password
+                    </Button>
+                  </div>
                 </form>
               </div>
 
-              {/* Active Session & Device Card */}
-              <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-[#0A0A0A] border border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
+              <div className="p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#B68A55]/10 flex items-center justify-center text-[#B68A55] shrink-0">
-                    <Laptop className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                    <Laptop className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-slate-900 dark:text-white block">
-                      Current Active Browser Session
+                    <span className="font-bold text-[var(--text-primary)] block">
+                      Current Authenticated Browser Session
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      IP: 187.127.131.178 • SSL TLS 1.3 Encrypted • Active now
+                    <span className="text-[11px] text-[var(--text-muted)]">
+                      HttpOnly SameSite=Lax Cookie · Signed Session Token · Active now
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold">
-                  TRUSTED
+                <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20 font-bold">
+                  VERIFIED
                 </span>
               </div>
             </div>
           )}
 
-          {/* TAB 4: NOTIFICATIONS & ALERTS */}
           {activeSection === "notifications" && (
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Automated Event Triggers & Alerts
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Customize webhook deliveries and email alerts for high-value leads and unanswered questions.
-                  </p>
-                </div>
+            <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] p-6 shadow-[var(--shadow-xs)] space-y-5">
+              <div className="border-b border-[var(--border-subtle)] pb-4">
+                <h3 className="text-base font-bold text-[var(--text-primary)]">
+                  Automated Event Triggers & Alerts
+                </h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Configure workspace notifications for lead capture, WhatsApp relays, and knowledge gaps.
+                </p>
+              </div>
 
-                <div className="space-y-3.5 text-xs">
-                  {[
-                    {
-                      key: "leadCaptured",
-                      title: "Immediate Lead Capture Alert",
-                      desc: "Instant notification dispatched when visitor submits phone number or enterprise email.",
-                    },
-                    {
-                      key: "whatsappAlerts",
-                      title: "WhatsApp Message Relays",
-                      desc: "Relay visitor conversations initiated via the Meta Cloud API directly to dashboard.",
-                    },
-                    {
-                      key: "weeklyReport",
-                      title: "Weekly AI Performance Digest",
-                      desc: "Comprehensive weekly briefing on total questions, qualification rates, and lead metrics.",
-                    },
-                    {
-                      key: "knowledgeGap",
-                      title: "Knowledge Gap Detection Alerts",
-                      desc: "Notify admin when a customer question cannot be answered by vector documentation >5 times.",
-                    },
-                    {
-                      key: "systemAlerts",
-                      title: "System Status & SLA Broadcasts",
-                      desc: "Real-time alerts for scheduled cluster maintenance and gateway updates.",
-                    },
-                  ].map((item) => (
+              <div className="space-y-3 text-xs">
+                {[
+                  {
+                    key: "leadCaptured",
+                    title: "Immediate Lead Capture Alert",
+                    desc: "Alert when a visitor submits a phone number or business email in chat.",
+                  },
+                  {
+                    key: "whatsappAlerts",
+                    title: "WhatsApp Message Relays",
+                    desc: "Highlight conversations initiated via the Meta WhatsApp Cloud API.",
+                  },
+                  {
+                    key: "weeklyReport",
+                    title: "Weekly Performance Summary",
+                    desc: "Digest of conversation volume, answer coverage, and lead conversion.",
+                  },
+                  {
+                    key: "knowledgeGap",
+                    title: "Knowledge Gap Detection",
+                    desc: "Flag repeated visitor questions lacking high-confidence vector answers.",
+                  },
+                  {
+                    key: "systemAlerts",
+                    title: "System & Billing Notices",
+                    desc: "Subscription renewal reminders and platform maintenance notices.",
+                  },
+                ].map((item) => {
+                  const enabled = Boolean(notifications[item.key]);
+                  return (
                     <div
                       key={item.key}
                       onClick={() =>
@@ -662,42 +717,39 @@ export default function SettingsPage() {
                           [item.key]: !prev[item.key],
                         }))
                       }
-                      className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-700 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-subtle)]/40 hover:border-[var(--border-strong)] transition-colors cursor-pointer"
                     >
                       <div className="space-y-0.5 pr-4">
-                        <span className="font-bold text-slate-900 dark:text-white block">
+                        <span className="font-bold text-[var(--text-primary)] block">
                           {item.title}
                         </span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed block">
+                        <span className="text-[11px] text-[var(--text-muted)] leading-relaxed block">
                           {item.desc}
                         </span>
                       </div>
 
-                      {/* iOS Style Interactive Toggle Switch */}
                       <button
                         type="button"
-                        className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
-                          notifications[item.key] ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
+                        role="switch"
+                        aria-checked={enabled}
+                        aria-label={item.title}
+                        className={`w-10 h-5.5 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                          enabled ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"
                         }`}
                       >
                         <span
-                          className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 left-0.5 ${
-                            notifications[item.key] ? "translate-x-5" : "translate-x-0"
+                          className={`w-4.5 h-4.5 rounded-full bg-white shadow-xs transform transition-transform absolute top-0.5 left-0.5 ${
+                            enabled ? "translate-x-4.5" : "translate-x-0"
                           }`}
                         />
                       </button>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
+              </div>
 
-                <div className="pt-2">
-                  <button
-                    onClick={handleSave}
-                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md transition-all cursor-pointer"
-                  >
-                    Save Alert Preferences
-                  </button>
-                </div>
+              <div className="pt-2 flex justify-end">
+                <Button onClick={handleSaveNotifications}>Save Alert Preferences</Button>
               </div>
             </div>
           )}

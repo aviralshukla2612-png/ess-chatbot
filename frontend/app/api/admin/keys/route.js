@@ -74,52 +74,58 @@ export async function POST(request) {
     const body = await request.json();
     const action = body.action || "add";
 
+    const sanitizeKeyForResponse = (k) => {
+      if (!k || typeof k !== "object") return k;
+      const { apiKey: _redacted, ...safe } = k;
+      return safe;
+    };
+
     if (action === "add") {
       const { label, apiKey } = body;
       const created = GroqKeyPoolManager.addKey({ label, apiKey });
-      return NextResponse.json({ ok: true, message: "API Key added to pool", key: created });
+      return NextResponse.json({ ok: true, message: "API Key added to pool", key: sanitizeKeyForResponse(created) });
     }
 
     if (action === "toggle") {
       const { id, isActive } = body;
       const updated = GroqKeyPoolManager.toggleKey(id, isActive);
-      return NextResponse.json({ ok: true, message: "API Key status updated", key: updated });
+      return NextResponse.json({ ok: true, message: "API Key status updated", key: sanitizeKeyForResponse(updated) });
     }
 
     if (action === "reset") {
       const { id } = body;
       const reset = GroqKeyPoolManager.resetKeyStatus(id);
-      return NextResponse.json({ ok: true, message: "Key cooldown reset", key: reset });
+      return NextResponse.json({ ok: true, message: "Key cooldown reset", key: sanitizeKeyForResponse(reset) });
     }
 
     if (action === "delete") {
       const { id } = body;
       const removed = GroqKeyPoolManager.removeKey(id);
-      return NextResponse.json({ ok: true, message: "API Key removed from pool", key: removed });
+      return NextResponse.json({ ok: true, message: "API Key removed from pool", key: sanitizeKeyForResponse(removed) });
     }
 
     if (action === "set_primary") {
       const { id } = body;
       const promoted = GroqKeyPoolManager.setPrimaryKey(id);
-      return NextResponse.json({ ok: true, message: "Promoted to primary active key", key: promoted });
+      return NextResponse.json({ ok: true, message: "Promoted to primary active key", key: sanitizeKeyForResponse(promoted) });
     }
 
     if (action === "update-limits") {
       const { id, dailyCap, tokenCap } = body;
       const updated = GroqKeyPoolManager.updateKeyLimits({ id, dailyCap, tokenCap });
-      return NextResponse.json({ ok: true, message: "Key limits updated", key: updated });
+      return NextResponse.json({ ok: true, message: "Key limits updated", key: sanitizeKeyForResponse(updated) });
     }
 
     if (action === "reset-usage") {
       const { id } = body;
       const reset = GroqKeyPoolManager.resetKeyUsage(id);
-      return NextResponse.json({ ok: true, message: "Key usage reset to 0", key: reset });
+      return NextResponse.json({ ok: true, message: "Key usage reset to 0", key: sanitizeKeyForResponse(reset) });
     }
 
     if (action === "sync-baseline") {
       const { id, baselineTokens } = body;
       const updated = GroqKeyPoolManager.syncGroqBaseline(id, baselineTokens);
-      return NextResponse.json({ ok: true, message: "Groq Console usage synced", key: updated });
+      return NextResponse.json({ ok: true, message: "Groq Console usage synced", key: sanitizeKeyForResponse(updated) });
     }
 
     if (action === "restart_cycle") {

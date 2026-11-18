@@ -4,13 +4,24 @@ import fsp from "fs/promises";
 import path from "path";
 import { getDbPool, isDbConnected } from "../db/dbPool.js";
 
-const OTP_SECRET =
-  process.env.OTP_SECRET || process.env.JWT_SECRET || "nexus_otp_secret_key_prod_2026";
+const DEV_OTP_SECRET = "nexus_otp_secret_key_dev_fallback_only_32chars";
+function getOtpSecret() {
+  const configured = process.env.OTP_SECRET || process.env.SESSION_SECRET || process.env.JWT_SECRET;
+  if (configured && configured.length >= 24) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("CRITICAL_CONFIG_ERROR: OTP_SECRET or SESSION_SECRET must be configured in production.");
+  }
+  return configured || DEV_OTP_SECRET;
+}
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_SECONDS = 60;
 const OTP_EXPIRY_MINUTES = 10;
 const BAN_HOURS = 24;
 const DB_OTP_TIMEOUT_MS = 600;
+
+// Anti-replay tracking for consumed OTP verification tokens & concurrent SMS send lock
+const consumedVerificationTokens = new Map();
+const inFlightOtpSends = new Set();
 
 function resolveDataDir() {
   const direct = path.join(process.cwd(), "data");
@@ -154,22 +165,37 @@ export const otpStore = {
 
   hashOtp(phone, otp) {
     return crypto
-      .createHmac("sha256", OTP_SECRET)
+      .createHmac("sha256", getOtpSecret())
       .update(`${phone}:${otp}`)
       .digest("hex");
   },
 
   createVerificationToken(phone, purpose) {
-    const payload = `${phone}:${purpose}:${Date.now()}`;
-    const sig = crypto.createHmac("sha256", OTP_SECRET).update(payload).digest("hex");
+    const nonce = crypto.randomBytes(8).toString("hex");
+    const payload = `${phone}:${purpose}:${Date.now()}:${nonce}`;
+    const sig = crypto.createHmac("sha256", getOtpSecret()).update(payload).digest("hex");
     return Buffer.from(`${payload}:${sig}`).toString("base64");
   },
 
   verifyVerificationToken(phone, token, purpose) {
     if (!token || !phone) return false;
     try {
+      const tokenDigest = crypto.createHash("sha256").update(token).digest("hex");
+      const consumedAt = consumedVerificationTokens.get(tokenDigest);
+      if (consumedAt && Date.now() - consumedAt < 25 * 60 * 1000) {
+        return false; // Replay blocked
+      }
+
       const decoded = Buffer.from(token, "base64").toString("utf8");
-      const [tPhone, tPurpose, tTime, tSig] = decoded.split(":");
+      const parts = decoded.split(":");
+      if (parts.length !== 4 && parts.length !== 5) return false;
+
+      const tPhone = parts[0];
+      const tPurpose = parts[1];
+      const tTime = parts[2];
+      const tSig = parts[parts.length - 1];
+      const signedPayload = parts.slice(0, parts.length - 1).join(":");
+
       if (!tPhone || !tPurpose || !tTime || !tSig) return false;
       if (tPhone !== phone) return false;
 
@@ -183,8 +209,8 @@ export const otpStore = {
       if (isNaN(ageMs) || ageMs > 20 * 60 * 1000 || ageMs < 0) return false;
 
       const expectedSig = crypto
-        .createHmac("sha256", OTP_SECRET)
-        .update(`${tPhone}:${tPurpose}:${tTime}`)
+        .createHmac("sha256", getOtpSecret())
+        .update(signedPayload)
         .digest("hex");
       const sigBuf = Buffer.from(tSig);
       const expBuf = Buffer.from(expectedSig);
@@ -192,6 +218,18 @@ export const otpStore = {
       return crypto.timingSafeEqual(sigBuf, expBuf);
     } catch {
       return false;
+    }
+  },
+
+  consumeVerificationToken(token) {
+    if (!token || typeof token !== "string") return;
+    const tokenDigest = crypto.createHash("sha256").update(token).digest("hex");
+    const now = Date.now();
+    consumedVerificationTokens.set(tokenDigest, now);
+    if (consumedVerificationTokens.size > 5000) {
+      for (const [k, ts] of consumedVerificationTokens.entries()) {
+        if (now - ts > 25 * 60 * 1000) consumedVerificationTokens.delete(k);
+      }
     }
   },
 
@@ -319,6 +357,16 @@ export const otpStore = {
       }
     }
 
+    // Prevent concurrent duplicate SMS dispatch race before gateway responds
+    if (inFlightOtpSends.has(phone)) {
+      return {
+        success: false,
+        cooldown: true,
+        cooldownSeconds: COOLDOWN_SECONDS,
+        error: "An OTP dispatch is already in progress for this number. Please wait a moment.",
+      };
+    }
+
     // 3. Generate secure 6-digit OTP
     const otp = String(crypto.randomInt(100000, 999999));
     const otpHash = this.hashOtp(phone, otp);
@@ -331,6 +379,7 @@ export const otpStore = {
 
     // 4. Dispatch via TRAI DLT SMS Gateway FIRST (3 Variables: "User", 6-digit OTP, "Team Nexus")
     let smsRes = { success: false, error: "SMS provider unavailable." };
+    inFlightOtpSends.add(phone);
     try {
       const { smsService } = await import("./smsService.js");
       smsRes = await smsService.sendSms({
@@ -341,6 +390,8 @@ export const otpStore = {
     } catch (smsErr) {
       console.warn("[SMS_PROVIDER_ERROR]", smsErr.message);
       smsRes = { success: false, error: smsErr.message };
+    } finally {
+      inFlightOtpSends.delete(phone);
     }
 
     // Do NOT fake success or lock cooldown if SMS dispatch failed!

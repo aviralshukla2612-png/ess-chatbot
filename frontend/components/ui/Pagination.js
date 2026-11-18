@@ -8,6 +8,7 @@ import {
   ChevronsRight,
   ChevronDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Pagination({
   currentPage = 1,
@@ -22,52 +23,55 @@ export default function Pagination({
 }) {
   if (totalItems === 0) return null;
 
-  const safePage = Math.min(Math.max(1, currentPage), Math.max(1, totalPages));
+  const safeTotalPages = Math.max(1, totalPages || Math.ceil(totalItems / Math.max(1, pageSize)));
+  const safePage = Math.min(Math.max(1, currentPage), safeTotalPages);
   const startItem = totalItems > 0 ? (safePage - 1) * pageSize + 1 : 0;
   const endItem = Math.min(safePage * pageSize, totalItems);
 
-  // Generate page numbers with smart ellipsis
   const getPageNumbers = () => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safeTotalPages <= 7) {
+      return Array.from({ length: safeTotalPages }, (_, i) => i + 1);
     }
-
     if (safePage <= 3) {
-      return [1, 2, 3, 4, "...", totalPages];
+      return [1, 2, 3, 4, "...", safeTotalPages];
     }
-
-    if (safePage >= totalPages - 2) {
-      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    if (safePage >= safeTotalPages - 2) {
+      return [1, "...", safeTotalPages - 3, safeTotalPages - 2, safeTotalPages - 1, safeTotalPages];
     }
-
-    return [1, "...", safePage - 1, safePage, safePage + 1, "...", totalPages];
+    return [1, "...", safePage - 1, safePage, safePage + 1, "...", safeTotalPages];
   };
 
   const pages = getPageNumbers();
 
   return (
-    <div
-      className={`px-4 sm:px-6 py-3 sm:py-3.5 bg-white dark:bg-[#0D0D0D] border-t border-[#EFE7DC] dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs select-none ${className}`}
+    <nav
+      aria-label="Pagination"
+      className={cn(
+        "px-4 sm:px-6 py-3 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs select-none",
+        className
+      )}
     >
-      {/* Left: Summary Count & Page Size Selector */}
-      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 w-full sm:w-auto text-slate-500 dark:text-neutral-400">
-        <span className="text-[11px] sm:text-xs">
-          Showing <strong className="font-bold text-[#252525] dark:text-white">{startItem}</strong> to{" "}
-          <strong className="font-bold text-[#252525] dark:text-white">{endItem}</strong> of{" "}
-          <strong className="font-bold text-[#252525] dark:text-white">{totalItems}</strong> {itemLabel}
+      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 w-full sm:w-auto text-[var(--text-muted)]">
+        <span className="tabular-nums">
+          Showing{" "}
+          <strong className="font-semibold text-[var(--text-primary)]">{startItem}</strong>–
+          <strong className="font-semibold text-[var(--text-primary)]">{endItem}</strong> of{" "}
+          <strong className="font-semibold text-[var(--text-primary)]">{totalItems}</strong>{" "}
+          {itemLabel}
         </span>
 
         {onPageSizeChange && (
-          <div className="flex items-center gap-1.5 pl-0 sm:pl-2 sm:border-l border-[#EFE7DC] dark:border-neutral-800">
-            <span className="text-[11px] text-slate-400">Per page:</span>
+          <div className="flex items-center gap-1.5 sm:pl-3 sm:border-l border-[var(--border-subtle)]">
+            <label className="text-[11px] text-[var(--text-muted)]">Rows:</label>
             <div className="relative">
               <select
+                aria-label="Items per page"
                 value={pageSize}
                 onChange={(e) => {
                   onPageSizeChange(Number(e.target.value));
-                  if (onPageChange) onPageChange(1);
+                  onPageChange?.(1);
                 }}
-                className="appearance-none pl-2.5 pr-6 py-1 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-[#252525] dark:text-neutral-200 text-xs font-semibold outline-hidden focus:border-[#B68A55] cursor-pointer shadow-2xs"
+                className="appearance-none pl-2.5 pr-6 py-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-[var(--text-primary)] text-xs font-medium focus:border-[var(--accent-primary)] cursor-pointer"
               >
                 {pageSizeOptions.map((opt) => (
                   <option key={opt} value={opt}>
@@ -75,62 +79,59 @@ export default function Pagination({
                   </option>
                 ))}
               </select>
-              <ChevronDown className="w-3 h-3 text-slate-400 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 text-[var(--text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
         )}
       </div>
 
-      {/* Right: Controls & Page Numbers */}
-      <div className="flex items-center justify-center gap-1 sm:gap-1.5 w-full sm:w-auto">
-        {/* First Page */}
+      <div className="flex items-center justify-center gap-1 w-full sm:w-auto">
         <button
           type="button"
-          onClick={() => onPageChange(1)}
+          onClick={() => onPageChange?.(1)}
           disabled={safePage === 1}
-          className="hidden sm:inline-flex p-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-slate-600 dark:text-neutral-300 hover:bg-white dark:hover:bg-[#1E1E1E] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
-          title="First Page"
+          aria-label="First page"
+          className="hidden sm:inline-flex p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
 
-        {/* Previous Page */}
         <button
           type="button"
-          onClick={() => onPageChange(Math.max(1, safePage - 1))}
+          onClick={() => onPageChange?.(Math.max(1, safePage - 1))}
           disabled={safePage === 1}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-slate-600 dark:text-neutral-300 hover:bg-white dark:hover:bg-[#1E1E1E] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer font-medium shadow-2xs"
-          title="Previous Page"
+          aria-label="Previous page"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer font-medium"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span className="text-[11px] hidden sm:inline">Prev</span>
+          <span className="hidden sm:inline">Prev</span>
         </button>
 
-        {/* Page Number Pills (Desktop & Tablet) */}
         <div className="hidden sm:flex items-center gap-1">
           {pages.map((p, idx) => {
             if (p === "...") {
               return (
                 <span
                   key={`ellipsis-${idx}`}
-                  className="px-2 py-1 text-slate-400 dark:text-neutral-500 font-mono text-xs select-none"
+                  className="px-2 py-1 text-[var(--text-muted)] font-mono text-xs"
                 >
                   …
                 </span>
               );
             }
-
             const isActive = p === safePage;
             return (
               <button
                 key={p}
                 type="button"
-                onClick={() => onPageChange(p)}
-                className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => onPageChange?.(p)}
+                className={cn(
+                  "min-w-8 h-8 px-2 rounded-lg text-xs font-semibold tabular-nums transition-colors cursor-pointer",
                   isActive
-                    ? "bg-[#252525] text-white dark:bg-[#B68A55] dark:text-white shadow-xs scale-105"
-                    : "border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-slate-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-[#1E1E1E] hover:border-[#B68A55]/40"
-                }`}
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
+                )}
               >
                 {p}
               </button>
@@ -138,37 +139,31 @@ export default function Pagination({
           })}
         </div>
 
-        {/* Mobile Compact Page Display */}
-        <div className="sm:hidden px-3 py-1 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-[11px] font-bold text-[#252525] dark:text-white">
-          <span>
-            {safePage} / {totalPages}
-          </span>
+        <div className="sm:hidden px-3 py-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-subtle)] text-xs font-semibold tabular-nums text-[var(--text-primary)]">
+          {safePage} / {safeTotalPages}
         </div>
 
-        {/* Next Page */}
         <button
           type="button"
-          onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
-          disabled={safePage === totalPages}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-slate-600 dark:text-neutral-300 hover:bg-white dark:hover:bg-[#1E1E1E] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer font-medium shadow-2xs"
-          title="Next Page"
+          onClick={() => onPageChange?.(Math.min(safeTotalPages, safePage + 1))}
+          disabled={safePage === safeTotalPages}
+          aria-label="Next page"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer font-medium"
         >
-          <span className="text-[11px] hidden sm:inline">Next</span>
+          <span className="hidden sm:inline">Next</span>
           <ChevronRight className="w-4 h-4" />
         </button>
 
-        {/* Last Page */}
         <button
           type="button"
-          onClick={() => onPageChange(totalPages)}
-          disabled={safePage === totalPages}
-          className="hidden sm:inline-flex p-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-[#141414] text-slate-600 dark:text-neutral-300 hover:bg-white dark:hover:bg-[#1E1E1E] disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
-          title="Last Page"
+          onClick={() => onPageChange?.(safeTotalPages)}
+          disabled={safePage === safeTotalPages}
+          aria-label="Last page"
+          className="hidden sm:inline-flex p-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
         >
           <ChevronsRight className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
-

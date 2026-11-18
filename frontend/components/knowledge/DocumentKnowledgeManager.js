@@ -69,6 +69,18 @@ export default function DocumentKnowledgeManager({ botId }) {
     }
   }, [botId]);
 
+  // Escape key support for modals
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setEditorOpen(false);
+        setUploadOpen(false);
+        setViewingDoc(null);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
   // Toast auto-clear
   useEffect(() => {
     if (successToast) {
@@ -725,7 +737,7 @@ export default function DocumentKnowledgeManager({ botId }) {
                         Click to select or drag and drop a file
                       </p>
                       <p className="text-[11px] text-neutral-400">
-                        Supports PDF, TXT, MD, CSV, JSON (up to 15MB)
+                        Supports PDF, TXT, MD, CSV, JSON (up to 5MB)
                       </p>
                     </div>
                   )}

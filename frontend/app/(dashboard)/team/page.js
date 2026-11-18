@@ -1,155 +1,201 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { UserPlus, Mail, Shield, Check, Trash2, Plus, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, Users } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import PageHeader from "@/components/ui/PageHeader";
+import StatusBadge from "@/components/ui/StatusBadge";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 
 export default function TeamPage() {
+  const { toast } = useToast();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState(null);
   const [newMember, setNewMember] = useState({ name: "", email: "", role: "Member" });
 
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.success && d?.user) {
-          const primaryRole = d.activeOrgRole === "ORG_OWNER" || d.user.role === "SUPER_ADMIN" ? "Owner" : "Admin";
-          const me = {
-            id: d.user.id || `tm_${Date.now()}`,
-            name: d.user.name || d.user.email.split("@")[0],
-            email: d.user.email,
-            role: primaryRole,
-            status: "Active",
-            addedDate: new Date().toISOString().split("T")[0],
-          };
-          setMembers([me]);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleInvite = (e) => {
-    e.preventDefault();
-    if (!newMember.name || !newMember.email) return;
-
-    const added = {
-      id: `tm_${Date.now()}`,
-      name: newMember.name,
-      email: newMember.email,
-      role: newMember.role,
-      status: "Active",
-      addedDate: new Date().toISOString().split("T")[0],
-    };
-    setMembers([...members, added]);
-    setNewMember({ name: "", email: "", role: "Member" });
-    setInviteModalOpen(false);
+  const loadMembers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/team", { cache: "no-store" });
+      const data = await res.json();
+      if (data?.success && Array.isArray(data.members)) {
+        setMembers(data.members);
+      }
+    } catch {
+      toast({ title: "Failed to load team roster", variant: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRemove = (id) => {
-    setMembers(members.filter((m) => m.id !== id));
+  useEffect(() => {
+    loadMembers();
+  }, []);
+
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    if (!newMember.email.trim()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMember),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Unable to invite member.");
+      }
+      toast({
+        title: "Teammate added",
+        message: data.message || `${newMember.email} added to workspace.`,
+        variant: "success",
+      });
+      setNewMember({ name: "", email: "", role: "Member" });
+      setInviteModalOpen(false);
+      await loadMembers();
+    } catch (err) {
+      toast({ title: "Invite failed", message: err.message, variant: "error" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!removeTarget) return;
+    try {
+      const res = await fetch(`/api/team?memberId=${encodeURIComponent(removeTarget.id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Unable to remove member.");
+      }
+      toast({ title: "Member removed", variant: "info" });
+      setRemoveTarget(null);
+      await loadMembers();
+    } catch (err) {
+      toast({ title: "Removal failed", message: err.message, variant: "error" });
+    }
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-white">
-            Team & Permissions
-          </h1>
-          <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Invite colleagues to collaborate on bots, review conversations, and manage captured leads.
-          </p>
-        </div>
+    <div className="space-y-6 pb-12 animate-fade-in">
+      <PageHeader
+        badge="Workspace Access Control"
+        title="Team & Permissions"
+        description="Invite colleagues to collaborate on chatbots, handle live customer takeovers, and manage qualified leads."
+        actions={
+          <Button icon={UserPlus} size="sm" onClick={() => setInviteModalOpen(true)}>
+            Invite Member
+          </Button>
+        }
+      />
 
-        <button
-          onClick={() => setInviteModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#252525] hover:bg-black text-white dark:bg-[#B68A55] dark:hover:bg-[#9F7645] dark:text-white font-semibold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
-        >
-          <UserPlus className="w-4 h-4" />
-          Invite Member
-        </button>
-      </div>
-
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] dark:bg-[#121212] text-neutral-400 font-medium uppercase text-[10px] border-b border-[#EFE7DC] dark:border-neutral-800">
-              <tr>
-                <th className="p-4">Name & Email</th>
-                <th className="p-4">Role</th>
-                <th className="p-4">Permissions</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Added Date</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EFE7DC]/60 dark:divide-neutral-800">
-              {members.map((m) => (
-                <tr key={m.id} className="hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#252525] dark:bg-[#B68A55] text-white font-bold flex items-center justify-center text-xs">
-                        {(m.name || m.email || "U")
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                          .slice(0, 2)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-neutral-900 dark:text-white">{m.name}</p>
-                        <p className="text-[11px] text-neutral-400">{m.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 font-semibold text-neutral-800 dark:text-neutral-200">
-                    <span className="px-2 py-0.5 rounded-md bg-[#FAF9F6] dark:bg-neutral-800 border border-[#EFE7DC] dark:border-neutral-700">
-                      {m.role}
-                    </span>
-                  </td>
-                  <td className="p-4 text-neutral-500">
-                    {m.role === "Owner"
-                      ? "Full Tenant Access & Billing"
-                      : m.role === "Admin"
-                      ? "Manage Bots, Knowledge & Leads"
-                      : "View Analytics & Inbox"}
-                  </td>
-                  <td className="p-4">
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-2 py-0.5 rounded-full">
-                      {m.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-neutral-400">{m.addedDate}</td>
-                  <td className="p-4 text-right">
-                    {m.role !== "Owner" && (
-                      <button
-                        onClick={() => handleRemove(m.id)}
-                        className="p-1.5 text-neutral-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                        title="Remove Member"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
+      {loading ? (
+        <TableSkeleton rows={4} cols={6} />
+      ) : members.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No team members found"
+          description="Invite your sales or support teammates to share inbox assignments."
+          actionLabel="Invite Member"
+          onAction={() => setInviteModalOpen(true)}
+        />
+      ) : (
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] overflow-hidden shadow-[var(--shadow-xs)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[var(--bg-subtle)]/60 text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider border-b border-[var(--border-subtle)]">
+                <tr>
+                  <th className="p-4">Name & Email</th>
+                  <th className="p-4">Role</th>
+                  <th className="p-4">Permissions</th>
+                  <th className="p-4">Active Chats</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4">Joined</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)]">
+                {members.map((m) => (
+                  <tr key={m.id} className="hover:bg-[var(--bg-subtle)]/40 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                          {(m.name || m.email || "U")
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[var(--text-primary)]">{m.name}</p>
+                          <p className="text-[11px] text-[var(--text-muted)]">{m.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <span className="px-2.5 py-0.5 rounded-md font-semibold bg-[var(--bg-subtle)] text-[var(--text-primary)] border border-[var(--border-subtle)]">
+                        {m.role}
+                      </span>
+                    </td>
+                    <td className="p-4 text-[var(--text-secondary)]">
+                      {m.role === "Owner"
+                        ? "Full Workspace Access & Billing"
+                        : m.role === "Admin"
+                        ? "Manage Bots, Knowledge & Leads"
+                        : m.role === "Viewer"
+                        ? "Read-only Analytics & Transcripts"
+                        : "Live Inbox & Lead Management"}
+                    </td>
+                    <td className="p-4 font-mono font-semibold text-[var(--text-primary)] tabular-nums">
+                      {m.activeConversationsCount ?? 0}
+                    </td>
+                    <td className="p-4">
+                      <StatusBadge status={m.status || "ACTIVE"} size="sm" />
+                    </td>
+                    <td className="p-4 text-[var(--text-muted)] tabular-nums">
+                      {m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : "Active"}
+                    </td>
+                    <td className="p-4 text-right">
+                      {m.role !== "Owner" && (
+                        <button
+                          type="button"
+                          onClick={() => setRemoveTarget(m)}
+                          className="p-1.5 text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                          aria-label={`Remove ${m.name}`}
+                          title="Remove Member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       <Modal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}
-        title="Invite New Teammate"
-        description="Your team member will receive an email invitation to access your organization workspace."
+        title="Invite Workspace Member"
+        description="Grant role-scoped access to your organization's bots, inbox, and lead pipeline."
       >
         <form onSubmit={handleInvite} className="space-y-4 text-xs">
           <div>
-            <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+            <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
               Full Name
             </label>
             <input
@@ -158,12 +204,12 @@ export default function TeamPage() {
               placeholder="e.g. Rahul Sharma"
               value={newMember.name}
               onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 text-xs outline-hidden focus:border-[#B68A55] shadow-2xs"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-hidden focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+            <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
               Business Email Address
             </label>
             <input
@@ -172,42 +218,46 @@ export default function TeamPage() {
               placeholder="rahul@company.com"
               value={newMember.email}
               onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 text-xs outline-hidden focus:border-[#B68A55] shadow-2xs"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-hidden focus:border-indigo-500"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+            <label className="block font-semibold text-[var(--text-secondary)] mb-1.5">
               Assigned Role
             </label>
             <select
               value={newMember.role}
               onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#121212] text-neutral-900 dark:text-white text-xs outline-hidden focus:border-[#B68A55] shadow-2xs"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] outline-hidden focus:border-indigo-500"
             >
-              <option value="Admin">Admin (Can edit bots and train knowledge)</option>
-              <option value="Member">Member (Can view conversations & leads)</option>
+              <option value="Admin">Admin (Edit bots, knowledge & team)</option>
+              <option value="Member">Member (Handle conversations & leads)</option>
               <option value="Viewer">Viewer (Read-only)</option>
             </select>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setInviteModalOpen(false)}
-              className="px-3.5 py-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl"
-            >
+            <Button variant="secondary" size="sm" onClick={() => setInviteModalOpen(false)}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-semibold rounded-xl transition-colors cursor-pointer"
-            >
-              Send Invitation
-            </button>
+            </Button>
+            <Button type="submit" size="sm" loading={submitting}>
+              Add Member
+            </Button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={Boolean(removeTarget)}
+        onClose={() => setRemoveTarget(null)}
+        onConfirm={handleConfirmRemove}
+        title="Remove Team Member?"
+        description={`Revoke workspace access for ${removeTarget?.name || removeTarget?.email || "this member"}?`}
+        confirmText="Remove Member"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

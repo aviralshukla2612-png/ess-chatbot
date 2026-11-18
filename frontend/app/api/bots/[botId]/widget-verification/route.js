@@ -68,18 +68,43 @@ export async function POST(request, { params }) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 9000);
-      const res = await fetch(targetUrl, {
-        headers: {
-          "User-Agent": "NexusAI-Installation-Verifier/1.0 (+https://nexusai.so)",
-          Accept: "text/html,application/xhtml+xml",
-        },
-        signal: controller.signal,
-      });
+      let currentUrl = targetUrl;
+      let res = null;
+
+      // Follow at most 3 redirects, re-validating every hop against SSRF (SEC-12)
+      for (let hop = 0; hop <= 3; hop++) {
+        res = await fetch(currentUrl, {
+          headers: {
+            "User-Agent": "NexusAI-Installation-Verifier/1.0 (+https://emperornexus.com)",
+            Accept: "text/html,application/xhtml+xml",
+          },
+          redirect: "manual",
+          signal: controller.signal,
+        });
+
+        if (res.status >= 300 && res.status < 400) {
+          const loc = res.headers.get("location");
+          if (!loc) break;
+          const resolvedHop = new URL(loc, currentUrl).href;
+          const hopCheck = await validateUrlForSSRF(resolvedHop);
+          if (!hopCheck.valid) {
+            clearTimeout(timeout);
+            return NextResponse.json(
+              { success: false, error: `Redirect blocked by security policy: ${hopCheck.error}` },
+              { status: 400 }
+            );
+          }
+          currentUrl = hopCheck.normalizedUrl;
+          continue;
+        }
+        break;
+      }
       clearTimeout(timeout);
 
       statusCode = res.status;
       cspHeader = res.headers.get("content-security-policy");
-      html = await res.text();
+      const rawBuf = Buffer.from(await res.arrayBuffer());
+      html = rawBuf.subarray(0, 2 * 1024 * 1024).toString("utf8");
     } catch (fetchErr) {
       // Record failed installation check
       await websitesDb.saveWidgetInstallation({
@@ -98,7 +123,8 @@ export async function POST(request, { params }) {
       });
     }
 
-    // 2. Inspect HTML for widget script
+    // 2. Inspect HTML for widget script (escape regex metacharacters in bot IDs/names)
+    const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const validIds = [botId];
     if (bot) {
       if (bot.id) validIds.push(bot.id);
@@ -106,10 +132,13 @@ export async function POST(request, { params }) {
     }
 
     const hasWidgetJs = /widget\.js/i.test(html);
-    const hasDataBotId = validIds.some((id) =>
-      new RegExp(`data-bot-id=["']${id}["']`, "i").test(html) ||
-      new RegExp(`["']data-bot-id["'],\\s*["']${id}["']`, "i").test(html)
-    );
+    const hasDataBotId = validIds.some((id) => {
+      const safeId = escapeRegex(id);
+      return (
+        new RegExp(`data-bot-id=["']${safeId}["']`, "i").test(html) ||
+        new RegExp(`["']data-bot-id["'],\\s*["']${safeId}["']`, "i").test(html)
+      );
+    });
     const hasGeneralBotId = /data-bot-id/i.test(html);
 
     if (hasWidgetJs && hasDataBotId) {

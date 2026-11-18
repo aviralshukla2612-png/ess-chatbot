@@ -164,7 +164,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
   const [formData, setFormData] = useState({
     name: "",
     avatar: "🤖",
-    primaryColor: "#B68A55",
+    primaryColor: "#4F46E5",
     welcomeMessage: "",
     placeholderText: "Ask anything about our solutions...",
     launcherPosition: "bottom-right",
@@ -181,6 +181,15 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
     personality: "Professional",
     collectLeads: true,
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isOpen, onClose]);
 
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -234,7 +243,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
       setFormData({
         name: bot.name || "AI Assistant",
         avatar: bot.avatar || "🤖",
-        primaryColor: bot.primaryColor || "#B68A55",
+        primaryColor: bot.primaryColor || "#4F46E5",
         welcomeMessage:
           bot.welcomeMessage ||
           `Hello! Welcome to ${bot.company || bot.name || "our company"}. How can I assist you with your project today?`,
@@ -304,16 +313,24 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
   const launcherPx = formData.launcherSize === "compact" ? 52 : formData.launcherSize === "large" ? 72 : 62;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/65 backdrop-blur-xs animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose?.();
+      }}
+    >
       <div
-        className="w-full max-w-5xl max-h-[94vh] bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-neutral-900 dark:text-neutral-100"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Customize chatbot appearance"
+        className="w-full max-w-5xl max-h-[94vh] bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl shadow-[var(--shadow-modal)] flex flex-col overflow-hidden text-[var(--text-primary)] animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-6 py-4.5 border-b border-[#EFE7DC] dark:border-neutral-800/80 flex items-center justify-between shrink-0 bg-[#FAF9F6] dark:bg-[#111111]">
+        <div className="px-6 py-4 border-b border-[var(--border-subtle)] flex items-center justify-between shrink-0 bg-[var(--bg-surface)]">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold shadow-sm transition-all overflow-hidden"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-xs transition-all overflow-hidden"
               style={{ backgroundColor: formData.primaryColor }}
             >
               {formData.launcherLogoUrl ? (
@@ -331,15 +348,15 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold text-[#252525] dark:text-white">
-                  Redesign Bot & Chat Launcher
+                <h3 className="text-base font-bold text-[var(--text-primary)]">
+                  Customize Chatbot & Launcher
                 </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#B68A55]/15 text-[#B68A55] font-bold border border-[#B68A55]/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] font-semibold border border-[var(--accent-border)]">
                   {bot.id}
                 </span>
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Customize chat button logo, circle shape, brand colors, and widget appearance (available to all workspace admins).
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Configure launcher shape, logo, brand color, greeting message, and persona.
               </p>
             </div>
           </div>
@@ -347,9 +364,10 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-white rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            aria-label="Close appearance editor"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -466,8 +484,8 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                     <label className="block text-[11px] font-bold text-neutral-800 dark:text-neutral-200">
                       Brand Logo Image (Upload from Computer or URL)
                     </label>
-                    <span className="text-[10px] text-[#B68A55] font-semibold">
-                      PNG, WEBP, SVG
+                    <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">
+                      PNG, JPG, WEBP, GIF
                     </span>
                   </div>
 
@@ -475,7 +493,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     className="hidden"
                     onChange={handleFileUpload}
                   />
@@ -799,7 +817,7 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
                       maxLength={4}
                       value={formData.avatar}
                       onChange={(e) => handleAvatarChange(e.target.value)}
-                      className="w-12 text-center text-xs bg-white dark:bg-[#1E1E1E] border border-[#EFE7DC] dark:border-neutral-700 rounded-lg py-1 text-white"
+                      className="w-12 text-center text-xs bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg py-1 text-[var(--text-primary)]"
                     />
                   </div>
                 </div>
@@ -1038,11 +1056,11 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-[#EFE7DC] dark:border-neutral-800/80 bg-[#FAF9F6] dark:bg-[#111111] flex items-center justify-between shrink-0">
+        <div className="px-6 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -1051,8 +1069,8 @@ export default function RedesignBotModal({ isOpen, onClose, bot, onBotUpdated })
             type="button"
             onClick={handleSave}
             disabled={saving || uploadingImage}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-            style={{ backgroundColor: formData.primaryColor || "#B68A55" }}
+            className="inline-flex items-center gap-2 h-9 px-5 rounded-lg text-xs font-semibold text-white shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            style={{ backgroundColor: formData.primaryColor || "#4F46E5" }}
           >
             {uploadingImage ? (
               <>

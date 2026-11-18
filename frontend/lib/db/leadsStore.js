@@ -17,6 +17,8 @@ function resolveDataFile() {
 const SEED_LEADS = [];
 
 let memoryCache = null;
+let lastLoadedMtimeMs = 0;
+let lastLoadedPath = null;
 
 function loadFromDisk() {
   const dataFile = resolveDataFile();
@@ -26,16 +28,31 @@ function loadFromDisk() {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(dataFile, JSON.stringify(SEED_LEADS, null, 2), "utf8");
       memoryCache = [...SEED_LEADS];
+      lastLoadedPath = dataFile;
+      try {
+        lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+      } catch {}
       return memoryCache;
     }
+    const stat = fs.statSync(dataFile);
+    if (memoryCache && lastLoadedPath === dataFile && stat.mtimeMs === lastLoadedMtimeMs) {
+      return memoryCache;
+    }
+
     const raw = fs.readFileSync(dataFile, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       memoryCache = parsed;
+      lastLoadedPath = dataFile;
+      lastLoadedMtimeMs = stat.mtimeMs;
       return memoryCache;
     }
     fs.writeFileSync(dataFile, JSON.stringify(SEED_LEADS, null, 2), "utf8");
     memoryCache = [...SEED_LEADS];
+    lastLoadedPath = dataFile;
+    try {
+      lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+    } catch {}
     return memoryCache;
   } catch (err) {
     console.error("Error loading leads store:", err);
@@ -50,6 +67,10 @@ function saveToDisk(data) {
     const dir = path.dirname(dataFile);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf8");
+    lastLoadedPath = dataFile;
+    try {
+      lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+    } catch {}
   } catch (err) {
     console.error("Error saving leads store:", err);
   }
@@ -58,23 +79,33 @@ function saveToDisk(data) {
 export const leadsStore = {
   getLeads(filters = {}) {
     let list = loadFromDisk();
+    const cleanDigits = (p) => (p || "").replace(/\D/g, "");
 
-    // Auto-sync leads from conversationsStore: any conversation marked as isLead or with phone/email MUST be in the lead CRM
+    // Single-pass O(C) conversation lookup map (eliminates O(L * C) N+1 disk re-parses!)
+    const convById = new Map();
+    const convByPhone = new Map();
     try {
-      const allConvs = conversationsStore.getConversations();
+      const scopedConvs = conversationsStore.getConversations(
+        filters.organizationId ? { organizationId: filters.organizationId } : {}
+      );
       let hasNewLeads = false;
-      const cleanDigits = (p) => (p || "").replace(/\D/g, "");
 
-      allConvs.forEach((conv) => {
+      for (const conv of scopedConvs) {
+        if (conv.id) convById.set(conv.id, conv);
+        const ph = cleanDigits(conv.visitorPhone);
+        if (ph.length >= 10) convByPhone.set(`${conv.organizationId || "org_ess_default"}:${ph}`, conv);
+
         const hasContact = Boolean(conv.visitorPhone || conv.visitorEmail);
         const isMarkedLead = conv.isLead !== false && Boolean(conv.isLead || hasContact);
-        if (!isMarkedLead) return;
+        if (!isMarkedLead) continue;
 
-        // Check if lead already tracked in list
-        const exists = list.some((l) =>
-          (l.sessionId && l.sessionId === conv.id) ||
-          (conv.visitorPhone && l.phone && cleanDigits(l.phone) === cleanDigits(conv.visitorPhone) && cleanDigits(conv.visitorPhone).length >= 10) ||
-          (conv.visitorEmail && l.email && l.email.toLowerCase() === conv.visitorEmail.toLowerCase())
+        const convOrg = conv.organizationId || "org_ess_default";
+        const exists = list.some(
+          (l) =>
+            (l.organizationId || "org_ess_default") === convOrg &&
+            ((l.sessionId && l.sessionId === conv.id) ||
+              (ph.length >= 10 && l.phone && cleanDigits(l.phone) === ph) ||
+              (conv.visitorEmail && l.email && l.email.toLowerCase() === conv.visitorEmail.toLowerCase()))
         );
 
         if (!exists) {
@@ -86,16 +117,24 @@ export const leadsStore = {
             id: `lead_${conv.id.replace(/^c_/, "")}`,
             visitorId: conv.visitorId || null,
             sessionId: conv.id,
-            organizationId: conv.organizationId || "org_ess_default",
-            name: conv.visitorName && !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(conv.visitorName.trim())
-              ? conv.visitorName
-              : (conv.visitorEmail ? conv.visitorEmail.split("@")[0].replace(/[._]/g, " ") : (conv.visitorPhone ? `Client (${conv.visitorPhone})` : "Client Lead")),
+            organizationId: convOrg,
+            name:
+              conv.visitorName &&
+              !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(
+                conv.visitorName.trim()
+              )
+                ? conv.visitorName
+                : conv.visitorEmail
+                ? conv.visitorEmail.split("@")[0].replace(/[._]/g, " ")
+                : conv.visitorPhone
+                ? `Client (${conv.visitorPhone})`
+                : "Client Lead",
             email: conv.visitorEmail || "",
             phone: conv.visitorPhone || "",
             company: conv.company || "Direct Inbound",
             botId: conv.botId || "bot_1791618269632",
             bot: conv.botName || "Emperor AI Assistant",
-            score: (conv.visitorPhone && conv.visitorEmail) ? "High" : (conv.leadScore || "High"),
+            score: conv.visitorPhone && conv.visitorEmail ? "High" : conv.leadScore || "High",
             status: conv.status === "Resolved" ? "Converted" : "New",
             created: new Date(conv.createdAt || Date.now()).toLocaleDateString("en-US", {
               month: "short",
@@ -105,7 +144,7 @@ export const leadsStore = {
             createdAt: conv.createdAt || new Date().toISOString(),
             updatedAt: conv.updatedAt || new Date().toISOString(),
             inquiry: qualInquiry,
-            budget: qualAnswers.budget || "₹50,000+",
+            budget: qualAnswers.budget || "",
             answers: qualAnswers,
             qualification: qual,
             source: "Web Chatbot Widget",
@@ -114,7 +153,7 @@ export const leadsStore = {
           list.unshift(newLead);
           hasNewLeads = true;
         }
-      });
+      }
 
       if (hasNewLeads) {
         saveToDisk(list);
@@ -123,16 +162,15 @@ export const leadsStore = {
       console.warn("Conversations to Leads auto-sync warning:", syncErr.message);
     }
 
-    // Auto-enrich answers, qualification, and inquiry from conversationsStore if missing
-    list.forEach((l) => {
-      const cleanDigits = (p) => (p || "").replace(/\D/g, "");
-      const conv = (l.sessionId && conversationsStore.getConversation(l.sessionId, l.organizationId)) ||
-        conversationsStore.getConversations({ organizationId: l.organizationId, botId: l.botId }).find((c) =>
-          (l.phone && c.visitorPhone && cleanDigits(c.visitorPhone) === cleanDigits(l.phone)) ||
-          (l.name && !/^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client)$/i.test(l.name.trim()) && c.visitorName && c.visitorName.toLowerCase() === l.name.toLowerCase())
-        );
+    // O(1) enrichment per lead via pre-indexed Maps
+    for (const l of list) {
+      const lOrg = l.organizationId || "org_ess_default";
+      const ph = cleanDigits(l.phone);
+      const conv =
+        (l.sessionId && convById.get(l.sessionId)) ||
+        (ph.length >= 10 ? convByPhone.get(`${lOrg}:${ph}`) : null);
 
-      if (conv?.qualification) {
+      if (conv?.qualification && (conv.organizationId || "org_ess_default") === lOrg) {
         if (!l.qualification) l.qualification = conv.qualification;
         if (conv.qualification.answers) {
           l.answers = { ...(conv.qualification.answers || {}), ...(l.answers || {}) };
@@ -141,13 +179,17 @@ export const leadsStore = {
           l.inquiry = formatQualificationInquiry(conv.qualification);
         }
       }
-    });
+    }
 
-    // Sanitize: filter out invalid entries without contact info, real name, or qualification answers, or bogus question names
+    // Sanitize invalid entries
     list = list.filter((l) => {
       const hasContact = Boolean(l.email || l.phone);
       const hasAnswers = Boolean(l.answers && Object.keys(l.answers).length > 0);
-      const isPlaceholder = !l.name || /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(l.name.trim());
+      const isPlaceholder =
+        !l.name ||
+        /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(
+          l.name.trim()
+        );
       const hasRealName = Boolean(l.name && !isPlaceholder);
       const isBogusName = /^(?:who\s+is|what\s+is|can\s+you|tell\s+me|i\s+want|how\s+much|hello|hi)\b/i.test(l.name || "");
       if (isBogusName) return false;
@@ -155,14 +197,9 @@ export const leadsStore = {
       return true;
     });
 
+    // Strict tenant isolation: no cross-tenant wildcard matching
     if (filters.organizationId) {
-      list = list.filter(
-        (l) =>
-          !l.organizationId ||
-          l.organizationId === filters.organizationId ||
-          l.organizationId === "org_ess_default" ||
-          filters.organizationId === "org_ess_default"
-      );
+      list = list.filter((l) => (l.organizationId || "org_ess_default") === filters.organizationId);
     }
     if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
       list = list.filter((l) => l.status?.toLowerCase() === filters.status.toLowerCase());
@@ -193,7 +230,7 @@ export const leadsStore = {
 
   getLead(id, organizationId = null) {
     const list = loadFromDisk();
-    return list.find((l) => l.id === id && (!organizationId || (l.organizationId || "org_ess_default") === organizationId || organizationId === "org_ess_default")) || null;
+    return list.find((l) => l.id === id && (!organizationId || (l.organizationId || "org_ess_default") === organizationId)) || null;
   },
 
   async getLeadsAsync(filters = {}) {
@@ -204,9 +241,9 @@ export const leadsStore = {
       const params = [];
       const conditions = [];
 
-      if (filters.organizationId && filters.organizationId !== "org_ess_default") {
+      if (filters.organizationId) {
         params.push(filters.organizationId);
-        conditions.push(`("organizationId" = $${params.length} OR "organizationId" = 'org_ess_default' OR "organizationId" IS NULL)`);
+        conditions.push(`"organizationId" = $${params.length}`);
       }
       if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
         params.push(filters.status);

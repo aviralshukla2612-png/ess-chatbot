@@ -311,56 +311,23 @@ export const authStore = {
       user = memoryUsers.get(cleanEmail);
     }
 
-    // Check if logging in as DEFAULT_ADMIN_EMAIL with master password
-    const isMasterAdmin =
-      cleanEmail === DEFAULT_ADMIN_EMAIL &&
-      (password === "AdminAccessPassword2026!" || password === (process.env.ADMIN_PASSWORD || "AdminAccessPassword2026!"));
+    if (!user) {
+      // Run dummy hash check to prevent timing analysis of user existence
+      await verifyPassword(
+        password,
+        "scrypt:00000000000000000000000000000000:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      );
+      throw new Error("Invalid email or password");
+    }
 
-    if (isMasterAdmin) {
-      if (!user) {
-        const reg = await this.register({
-          email: cleanEmail,
-          password: "AdminAccessPassword2026!",
-          name: "Emperor Smart Solution",
-          organizationName: "Emperor Smart Solutions",
-          role: "SUPER_ADMIN",
-        });
-        user = {
-          id: reg.user.id,
-          name: "Emperor Smart Solution",
-          email: cleanEmail,
-          role: "SUPER_ADMIN",
-          status: "ACTIVE",
-        };
-      } else {
-        const newHash = await hashPassword("AdminAccessPassword2026!");
-        await queryDb('UPDATE "User" SET "name" = $1, "role" = $2, "passwordHash" = $3, "status" = $4 WHERE "email" = $5;', [
-          "Emperor Smart Solution",
-          "SUPER_ADMIN",
-          newHash,
-          "ACTIVE",
-          cleanEmail,
-        ]);
-        user.role = "SUPER_ADMIN";
-        user.name = "Emperor Smart Solution";
-        user.status = "ACTIVE";
-      }
-    } else {
-      if (!user) {
-        // Run dummy hash check to prevent timing analysis of user existence
-        await verifyPassword(password, "scrypt:00000000000000000000000000000000:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
-        throw new Error("Invalid email or password");
-      }
+    if (user.status !== "ACTIVE") {
+      throw new Error("Account has been suspended. Please contact support.");
+    }
 
-      if (user.status !== "ACTIVE") {
-        throw new Error("Account has been suspended. Please contact support.");
-      }
-
-      // 2. Constant-time password verification
-      const isValid = await verifyPassword(password, user.passwordHash);
-      if (!isValid) {
-        throw new Error("Invalid email or password");
-      }
+    // 2. Constant-time password verification (no hardcoded backdoor passwords)
+    const isValid = await verifyPassword(password, user.passwordHash);
+    if (!isValid) {
+      throw new Error("Invalid email or password");
     }
 
     // 3. Resolve user's organizations and primary membership
@@ -387,69 +354,6 @@ export const authStore = {
         name: isSuper ? "Emperor Smart Solution" : user.name,
         email: user.email,
         role: isSuper ? "SUPER_ADMIN" : user.role,
-      },
-      organizationId: orgId,
-      orgRole,
-      memberships,
-    };
-  },
-
-  /**
-   * One-click direct authentication for instant portal access.
-   */
-  async directLogin(targetRole = "ORG_OWNER") {
-    const roleStr = String(targetRole || "").toLowerCase();
-    const isSuper = roleStr === "super_admin" || roleStr === "superadmin" || roleStr.includes("super");
-    const email = isSuper ? DEFAULT_ADMIN_EMAIL : "admin@company.com";
-    const cleanEmail = email.toLowerCase();
-
-    let user = null;
-    const dbRes = await queryDb('SELECT * FROM "User" WHERE "email" = $1;', [cleanEmail]);
-    if (dbRes.ok && dbRes.rows.length > 0) {
-      user = dbRes.rows[0];
-    } else {
-      user = memoryUsers.get(cleanEmail);
-    }
-
-    if (!user) {
-      const reg = await this.register({
-        email: cleanEmail,
-        password: "AdminAccessPassword2026!",
-        name: isSuper ? "Emperor Smart Solution" : "Workspace Administrator",
-        organizationName: "Emperor Smart Solutions",
-        role: isSuper ? "SUPER_ADMIN" : "ORG_ADMIN",
-      });
-      user = {
-        id: reg.user.id,
-        name: reg.user.name,
-        email: reg.user.email,
-        role: isSuper ? "SUPER_ADMIN" : "ORG_ADMIN",
-      };
-    } else if (isSuper) {
-      user.name = "Emperor Smart Solution";
-      user.role = "SUPER_ADMIN";
-      await queryDb('UPDATE "User" SET "name" = $1, "role" = $2 WHERE "email" = $3;', [
-        "Emperor Smart Solution",
-        "SUPER_ADMIN",
-        cleanEmail,
-      ]);
-      if (memoryUsers.has(cleanEmail)) {
-        memoryUsers.get(cleanEmail).name = "Emperor Smart Solution";
-        memoryUsers.get(cleanEmail).role = "SUPER_ADMIN";
-      }
-    }
-
-    const memberships = await this.getUserMemberships(user.id);
-    const primaryMembership = memberships[0] || null;
-    const orgId = DEFAULT_ORG_ID;
-    const orgRole = isSuper ? "SUPER_ADMIN" : (primaryMembership?.role || "ORG_ADMIN");
-
-    return {
-      user: {
-        id: user.id,
-        name: isSuper ? "Emperor Smart Solution" : (user.name || "Workspace Administrator"),
-        email: user.email,
-        role: isSuper ? "SUPER_ADMIN" : (user.role || "MEMBER"),
       },
       organizationId: orgId,
       orgRole,
@@ -510,20 +414,191 @@ export const authStore = {
       }
     } catch (e) {}
 
-    // Memory or usersStore fallback
+    // Tenant-isolated memory fallback: NEVER return users belonging to other organizations
     const members = [];
-    const allUsers = usersStore.getUsers ? usersStore.getUsers() : [];
-    for (const u of allUsers) {
-      members.push({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        orgRole: u.role === "Platform Super Admin" || u.role === "Workspace Owner" ? "ORG_OWNER" : "MEMBER",
-        status: u.status || "ACTIVE",
-        joinedAt: u.createdAt || new Date().toISOString(),
-      });
+    for (const mem of memoryMemberships.values()) {
+      if (mem.organizationId === organizationId && (mem.status === "ACTIVE" || mem.status === "INVITED")) {
+        let matchedUser = null;
+        for (const u of memoryUsers.values()) {
+          if (u.id === mem.userId) {
+            matchedUser = u;
+            break;
+          }
+        }
+        if (matchedUser) {
+          members.push({
+            id: matchedUser.id,
+            name: matchedUser.name,
+            email: matchedUser.email,
+            orgRole: mem.role || "MEMBER",
+            status: mem.status || "ACTIVE",
+            joinedAt: mem.createdAt || matchedUser.createdAt || new Date().toISOString(),
+          });
+        }
+      }
     }
     return members;
+  },
+
+  /**
+   * Invite or add a team member into a specific organization.
+   */
+  async inviteOrgMember({ organizationId, email, name, role = "MEMBER" }) {
+    if (!organizationId || !email || !email.includes("@")) {
+      throw new Error("Valid email address and organization are required.");
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const normalizedRole =
+      role === "Admin" || role === "ORG_ADMIN"
+        ? "ORG_ADMIN"
+        : role === "Viewer" || role === "VIEWER"
+        ? "VIEWER"
+        : "MEMBER";
+    const cleanName = (name || cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())).trim();
+
+    let userId = null;
+    const existingDb = await queryDb('SELECT "id", "name", "email" FROM "User" WHERE "email" = $1;', [cleanEmail]);
+    if (existingDb.ok && existingDb.rows.length > 0) {
+      userId = existingDb.rows[0].id;
+    } else if (memoryUsers.has(cleanEmail)) {
+      userId = memoryUsers.get(cleanEmail).id;
+    } else {
+      userId = `usr_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+      const randomPassHash = await hashPassword(crypto.randomBytes(24).toString("hex"));
+      const userObj = {
+        id: userId,
+        name: cleanName,
+        email: cleanEmail,
+        passwordHash: randomPassHash,
+        role: "MEMBER",
+        status: "ACTIVE",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      memoryUsers.set(cleanEmail, userObj);
+      await queryDb(
+        'INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "status") VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT ("email") DO NOTHING;',
+        [userId, cleanName, cleanEmail, randomPassHash, "MEMBER", "ACTIVE"]
+      );
+    }
+
+    const memId = `mem_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+    const joinedAt = new Date().toISOString();
+    const memObj = {
+      id: memId,
+      organizationId,
+      userId,
+      role: normalizedRole,
+      status: "ACTIVE",
+      createdAt: joinedAt,
+    };
+    memoryMemberships.set(`${organizationId}_${userId}`, memObj);
+
+    await queryDb(
+      `INSERT INTO "OrganizationMembership" ("id", "organizationId", "userId", "role", "status")
+       VALUES ($1, $2, $3, $4, 'ACTIVE')
+       ON CONFLICT DO NOTHING;`,
+      [memId, organizationId, userId, normalizedRole]
+    );
+
+    return {
+      id: userId,
+      name: cleanName,
+      email: cleanEmail,
+      orgRole: normalizedRole,
+      role: normalizedRole === "ORG_ADMIN" ? "Admin" : normalizedRole === "VIEWER" ? "Viewer" : "Member",
+      status: "ACTIVE",
+      joinedAt,
+    };
+  },
+
+  /**
+   * Remove a member from an organization (cannot remove ORG_OWNER).
+   */
+  async removeOrgMember({ organizationId, memberId }) {
+    if (!organizationId || !memberId) {
+      throw new Error("organizationId and memberId are required.");
+    }
+    const memKey = `${organizationId}_${memberId}`;
+    const existingMem = memoryMemberships.get(memKey);
+    if (existingMem?.role === "ORG_OWNER") {
+      throw new Error("Cannot remove the primary Organization Owner.");
+    }
+    memoryMemberships.delete(memKey);
+
+    await queryDb(
+      `DELETE FROM "OrganizationMembership"
+       WHERE "organizationId" = $1 AND "userId" = $2 AND "role" != 'ORG_OWNER';`,
+      [organizationId, memberId]
+    );
+    return { removed: true };
+  },
+
+  /**
+   * Update user profile and/or workspace name.
+   */
+  async updateUserProfile({ userId, email, name, organizationId, organizationName }) {
+    if (name && name.trim()) {
+      const cleanName = name.trim().slice(0, 100);
+      await queryDb('UPDATE "User" SET "name" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $2;', [cleanName, userId]);
+      if (email && memoryUsers.has(email.toLowerCase())) {
+        memoryUsers.get(email.toLowerCase()).name = cleanName;
+      }
+      for (const u of memoryUsers.values()) {
+        if (u.id === userId) u.name = cleanName;
+      }
+    }
+
+    if (organizationId && organizationName && organizationName.trim()) {
+      const cleanOrg = organizationName.trim().slice(0, 120);
+      await queryDb('UPDATE "Organization" SET "name" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $2;', [cleanOrg, organizationId]);
+      if (memoryOrgs.has(organizationId)) {
+        memoryOrgs.get(organizationId).name = cleanOrg;
+      }
+    }
+
+    return { updated: true };
+  },
+
+  /**
+   * Change user password after verifying current password.
+   */
+  async changeUserPassword({ userId, currentPassword, newPassword }) {
+    if (!newPassword || newPassword.length < 8) {
+      throw new Error("New password must be at least 8 characters long.");
+    }
+
+    let user = null;
+    const dbRes = await queryDb('SELECT * FROM "User" WHERE "id" = $1;', [userId]);
+    if (dbRes.ok && dbRes.rows.length > 0) {
+      user = dbRes.rows[0];
+    } else {
+      for (const u of memoryUsers.values()) {
+        if (u.id === userId) {
+          user = u;
+          break;
+        }
+      }
+    }
+
+    if (!user) {
+      throw new Error("Account not found.");
+    }
+
+    if (currentPassword && user.passwordHash) {
+      const valid = await verifyPassword(currentPassword, user.passwordHash);
+      if (!valid) {
+        throw new Error("Current password is incorrect.");
+      }
+    }
+
+    const nextHash = await hashPassword(newPassword);
+    await queryDb('UPDATE "User" SET "passwordHash" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = $2;', [nextHash, userId]);
+    if (user.email && memoryUsers.has(user.email.toLowerCase())) {
+      memoryUsers.get(user.email.toLowerCase()).passwordHash = nextHash;
+    }
+
+    return { updated: true };
   },
 
   /**

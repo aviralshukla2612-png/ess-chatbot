@@ -25,6 +25,9 @@ export async function GET(request) {
   const { principal } = auth;
   const user = await authStore.getUserById(principal.userId);
   const memberships = await authStore.getUserMemberships(principal.userId);
+  const activeMembership = Array.isArray(memberships)
+    ? memberships.find((m) => m.organizationId === principal.organizationId)
+    : null;
 
   return NextResponse.json(
     {
@@ -33,10 +36,11 @@ export async function GET(request) {
       user: {
         id: principal.userId,
         email: principal.email,
-        name: user?.name || principal.email?.split("@")[0] || "User",
+        name: user?.name || principal.name || principal.email?.split("@")[0] || "User",
         role: principal.platformRole,
       },
       activeOrganizationId: principal.organizationId,
+      activeOrgName: activeMembership?.organizationName || activeMembership?.name || null,
       activeOrgRole: principal.orgRole,
       memberships,
     },

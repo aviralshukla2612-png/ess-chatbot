@@ -68,7 +68,7 @@ export default function IndustryBotWizard() {
     name: "Clinic Care Assistant",
     personality: "Helpful & Professional",
     welcomeMessage: "Hello! Welcome to our clinic. How can I help you today?",
-    primaryColor: "#963DFF",
+    primaryColor: "#4F46E5",
     avatar: "🤖",
     launcherShape: "squircle",
     launcherAnimation: "none",
@@ -252,7 +252,7 @@ export default function IndustryBotWizard() {
         phoneNumber: businessDetails.phoneNumber?.trim() || null,
         businessAddress: businessDetails.businessAddress || null,
         workingDaysHours: businessDetails.workingDaysHours || null,
-        primaryColor: assistantConfig.primaryColor || "#963DFF",
+        primaryColor: assistantConfig.primaryColor || "#4F46E5",
         avatar: assistantConfig.avatar || "🤖",
         welcomeMessage: assistantConfig.welcomeMessage,
         personality: assistantConfig.personality,
@@ -304,20 +304,20 @@ export default function IndustryBotWizard() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12 animate-fade-in text-white font-sans">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12 animate-fade-in text-[var(--text-primary)] font-sans">
       {/* Draft Recovery Banner */}
       {draftDetected && (
-        <div className="p-4 rounded-2xl bg-[#161622] border border-[#963DFF]/40 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in shadow-lg">
+        <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--accent-border)] flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in shadow-[var(--shadow-xs)]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#963DFF]/20 text-[#C28AFF] flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-[var(--accent-soft)] text-[var(--accent-primary)] flex items-center justify-center shrink-0">
               <RotateCcw className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white">
+              <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                 Saved Draft Detected
               </h4>
-              <p className="text-[11px] text-[#9898A6]">
-                You have an incomplete wizard session saved on this device. Would you like to resume where you left off?
+              <p className="text-xs text-[var(--text-muted)]">
+                You have an unfinished chatbot setup draft on this device. Resume where you left off?
               </p>
             </div>
           </div>
@@ -326,14 +326,14 @@ export default function IndustryBotWizard() {
             <button
               type="button"
               onClick={handleResumeDraft}
-              className="px-4 py-2 rounded-xl bg-[#963DFF] hover:bg-[#852FE0] text-white text-xs font-bold cursor-pointer transition-all"
+              className="h-8 px-3.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer transition-colors"
             >
               Resume Draft
             </button>
             <button
               type="button"
               onClick={handleDiscardDraft}
-              className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#9898A6] hover:text-white text-xs cursor-pointer transition-all"
+              className="h-8 px-3 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] text-xs font-medium cursor-pointer transition-colors"
             >
               Start Fresh
             </button>
@@ -342,39 +342,37 @@ export default function IndustryBotWizard() {
       )}
 
       {/* 6-Step Visual Breadcrumb Indicator */}
-      <div className="p-4 rounded-2xl bg-[#0D0D14] border border-white/[0.08] shadow-xl">
-        <div className="flex items-center justify-between overflow-x-auto gap-2 py-1 scrollbar-none">
+      <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)]">
+        <div className="flex items-center justify-between overflow-x-auto gap-2 py-0.5 scrollbar-none">
           {WIZARD_STEPS.map((stg, sIdx) => {
             const isCompleted = currentStep > stg.id;
             const isCurrent = currentStep === stg.id;
-            const StepIcon = stg.icon;
 
             return (
               <React.Fragment key={stg.id}>
                 <button
                   type="button"
-                  disabled={isSubmitting || createdBot}
+                  disabled={isSubmitting || Boolean(createdBot)}
                   onClick={() => {
-                    // Allow navigating backwards or up to completed steps
                     if (stg.id < currentStep) {
                       setCurrentStep(stg.id);
                     }
                   }}
-                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl transition-all shrink-0 select-none ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all shrink-0 select-none ${
                     isCurrent
-                      ? "bg-[#181828] border border-[#963DFF] text-white shadow-[0_0_20px_rgba(150,61,255,0.25)] font-bold"
+                      ? "bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[var(--accent-text)] font-semibold"
                       : isCompleted
-                      ? "text-emerald-400 hover:bg-white/5 cursor-pointer font-medium"
-                      : "text-[#9898A6]/60 cursor-not-allowed"
+                      ? "text-emerald-700 dark:text-emerald-400 hover:bg-[var(--bg-subtle)] cursor-pointer font-medium"
+                      : "text-[var(--text-muted)] cursor-not-allowed"
                   }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-mono font-bold ${
+                    className={`w-6 h-6 rounded-md flex items-center justify-center text-xs font-mono font-bold ${
                       isCurrent
-                        ? "bg-[#963DFF] text-white"
+                        ? "bg-indigo-600 text-white"
                         : isCompleted
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-white/5 text-[#9898A6]"
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                        : "bg-[var(--bg-subtle)] text-[var(--text-muted)]"
                     }`}
                   >
                     {isCompleted ? "✓" : stg.number}
@@ -387,8 +385,8 @@ export default function IndustryBotWizard() {
 
                 {sIdx < WIZARD_STEPS.length - 1 && (
                   <div
-                    className={`h-[1px] w-4 sm:w-8 shrink-0 transition-all ${
-                      currentStep > sIdx + 1 ? "bg-emerald-500/50" : "bg-white/10"
+                    className={`h-px w-4 sm:w-8 shrink-0 transition-all ${
+                      currentStep > sIdx + 1 ? "bg-emerald-500/60" : "bg-[var(--border-subtle)]"
                     }`}
                   />
                 )}

@@ -6,11 +6,18 @@
 
 import crypto from "crypto";
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "ess_dev_secret_replace_in_prod_minimum_32_chars_long_123456";
+const DEV_FALLBACK_SECRET = "ess_dev_secret_replace_in_prod_minimum_32_chars_long_123456";
 const DEFAULT_TTL_SECONDS = 7 * 24 * 3600; // 7 days
 
 export function getSessionSecret() {
-  return process.env.SESSION_SECRET || SESSION_SECRET;
+  const configured = process.env.SESSION_SECRET;
+  if (configured && configured.length >= 32) {
+    return configured;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("CRITICAL_CONFIG_ERROR: SESSION_SECRET (>= 32 chars) must be configured in production.");
+  }
+  return configured || DEV_FALLBACK_SECRET;
 }
 
 /**
@@ -73,19 +80,19 @@ export function verifySessionToken(token) {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
 
-  const [encodedHeader, encodedPayload, signature] = parts;
-  const secret = getSessionSecret();
-
-  const dataToSign = `${encodedHeader}.${encodedPayload}`;
-  const expectedSig = crypto
-    .createHmac("sha256", secret)
-    .update(dataToSign)
-    .digest("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-
   try {
+    const [encodedHeader, encodedPayload, signature] = parts;
+    const secret = getSessionSecret();
+
+    const dataToSign = `${encodedHeader}.${encodedPayload}`;
+    const expectedSig = crypto
+      .createHmac("sha256", secret)
+      .update(dataToSign)
+      .digest("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+
     const sigBuffer = Buffer.from(signature);
     const expectedBuffer = Buffer.from(expectedSig);
 
@@ -122,19 +129,27 @@ export function parseCookies(cookieHeader = "") {
     const key = parts[0]?.trim();
     const value = parts.slice(1).join("=").trim();
     if (key) {
-      list[key] = decodeURIComponent(value);
+      try {
+        list[key] = decodeURIComponent(value);
+      } catch {
+        list[key] = value;
+      }
     }
   });
 
   return list;
 }
 
+function shouldUseSecureCookie() {
+  if (process.env.COOKIE_SECURE === "false") return false;
+  return process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+}
+
 /**
  * Build standard Set-Cookie string for session
  */
 export function createSessionCookie(token, maxAgeSeconds = DEFAULT_TTL_SECONDS) {
-  const isSecure = process.env.COOKIE_SECURE === "true";
-  const secureFlag = isSecure ? "; Secure" : "";
+  const secureFlag = shouldUseSecureCookie() ? "; Secure" : "";
   return `ess_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${secureFlag}`;
 }
 
@@ -142,7 +157,6 @@ export function createSessionCookie(token, maxAgeSeconds = DEFAULT_TTL_SECONDS) 
  * Build Set-Cookie string to clear session
  */
 export function clearSessionCookie() {
-  const isSecure = process.env.COOKIE_SECURE === "true";
-  const secureFlag = isSecure ? "; Secure" : "";
+  const secureFlag = shouldUseSecureCookie() ? "; Secure" : "";
   return `ess_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT${secureFlag}`;
 }

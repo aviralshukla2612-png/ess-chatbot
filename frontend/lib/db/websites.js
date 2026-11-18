@@ -10,6 +10,37 @@ let widgetInstallationsStore = [];
 // Helper to generate IDs
 const uid = (prefix = "id") => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+const WEBSITE_SOURCE_UPDATABLE_COLUMNS = new Set([
+  "name",
+  "baseUrl",
+  "crawlScope",
+  "maxPages",
+  "includePatterns",
+  "excludePatterns",
+  "syncSchedule",
+  "status",
+  "pagesDiscovered",
+  "pagesIndexed",
+  "pagesSkipped",
+  "pagesFailed",
+  "lastSyncedAt",
+  "lastError",
+]);
+
+const INGESTION_JOB_UPDATABLE_COLUMNS = new Set([
+  "status",
+  "jobStatus",
+  "currentStep",
+  "progress",
+  "discoveredCount",
+  "indexedCount",
+  "skippedCount",
+  "failedCount",
+  "startedAt",
+  "finishedAt",
+  "errorDetails",
+]);
+
 export const websitesDb = {
   // --- WEBSITE SOURCES ---
   async createWebsiteSource({
@@ -115,11 +146,19 @@ export const websitesDb = {
   },
 
   async updateWebsiteSource(websiteId, updates) {
-    if (websiteId && updates && Object.keys(updates).length > 0) {
+    const safeUpdates = {};
+    if (updates && typeof updates === "object") {
+      for (const [k, v] of Object.entries(updates)) {
+        if (WEBSITE_SOURCE_UPDATABLE_COLUMNS.has(k)) {
+          safeUpdates[k] = v;
+        }
+      }
+    }
+    if (websiteId && Object.keys(safeUpdates).length > 0) {
       const sets = [];
       const vals = [websiteId];
       let pIdx = 2;
-      for (const [k, v] of Object.entries(updates)) {
+      for (const [k, v] of Object.entries(safeUpdates)) {
         sets.push(`"${k}" = $${pIdx}`);
         vals.push(v);
         pIdx++;
@@ -134,21 +173,21 @@ export const websitesDb = {
     if (idx >= 0) {
       websiteSourcesStore[idx] = {
         ...websiteSourcesStore[idx],
-        ...updates,
+        ...safeUpdates,
         updatedAt: new Date().toISOString(),
       };
       return websiteSourcesStore[idx];
     }
-    return updates;
+    return safeUpdates;
   },
 
   async deleteWebsiteSource(websiteId, botId) {
     if (websiteId) {
       await queryDb(
-        `DELETE FROM "KnowledgeChunk" WHERE "sourceUrl" IN (
-           SELECT "url" FROM "WebsitePage" WHERE "websiteSourceId" = $1
-         ) OR "documentId" = $1;`,
-        [websiteId]
+        `DELETE FROM "KnowledgeChunk"
+         WHERE ("sourceUrl" IN (SELECT "url" FROM "WebsitePage" WHERE "websiteSourceId" = $1) OR "documentId" = $1)
+           AND ($2::text IS NULL OR "botId" = $2);`,
+        [websiteId, botId || null]
       );
       await queryDb(
         `DELETE FROM "WebsiteSource" WHERE "id" = $1 AND ($2::text IS NULL OR "botId" = $2);`,
@@ -157,7 +196,7 @@ export const websitesDb = {
     }
     websitePagesStore = websitePagesStore.filter((p) => p.websiteSourceId !== websiteId);
     ingestionJobsStore = ingestionJobsStore.filter((j) => j.websiteSourceId !== websiteId);
-    websiteSourcesStore = websiteSourcesStore.filter((s) => s.id !== websiteId);
+    websiteSourcesStore = websiteSourcesStore.filter((s) => s.id !== websiteId && (!botId || s.botId === botId));
     return true;
   },
 
@@ -232,15 +271,23 @@ export const websitesDb = {
   },
 
   async updateIngestionJob(jobId, updates) {
-    if (jobId && updates && Object.keys(updates).length > 0) {
-      const dbUpdates = { ...updates };
-      if (dbUpdates.jobStatus && !dbUpdates.status) {
-        dbUpdates.status = dbUpdates.jobStatus;
+    const safeUpdates = {};
+    if (updates && typeof updates === "object") {
+      const candidate = { ...updates };
+      if (candidate.jobStatus && !candidate.status) {
+        candidate.status = candidate.jobStatus;
       }
+      for (const [k, v] of Object.entries(candidate)) {
+        if (INGESTION_JOB_UPDATABLE_COLUMNS.has(k)) {
+          safeUpdates[k] = v;
+        }
+      }
+    }
+    if (jobId && Object.keys(safeUpdates).length > 0) {
       const sets = [];
       const vals = [jobId];
       let pIdx = 2;
-      for (const [k, v] of Object.entries(dbUpdates)) {
+      for (const [k, v] of Object.entries(safeUpdates)) {
         sets.push(`"${k}" = $${pIdx}`);
         vals.push(v);
         pIdx++;
@@ -254,11 +301,11 @@ export const websitesDb = {
     if (idx >= 0) {
       ingestionJobsStore[idx] = {
         ...ingestionJobsStore[idx],
-        ...updates,
+        ...safeUpdates,
       };
       return ingestionJobsStore[idx];
     }
-    return updates;
+    return safeUpdates;
   },
 
   // --- WEBSITE PAGES ---

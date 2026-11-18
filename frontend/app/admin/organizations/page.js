@@ -3,36 +3,37 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Building2,
-  Users,
   Bot,
-  MessageSquare,
   Users2,
   Power,
   PowerOff,
   UserCheck,
   Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  ShieldCheck,
-  CheckCircle2,
   XCircle,
   RefreshCw,
-  ExternalLink,
 } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
+import PageHeader from "@/components/ui/PageHeader";
+import StatCard from "@/components/ui/StatCard";
+import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/ui/EmptyState";
+import { TableSkeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 import { adminApi } from "@/lib/api/admin";
 
 export default function AdminOrganizationsPage() {
+  const { toast } = useToast();
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [suspendTarget, setSuspendTarget] = useState(null);
 
-  // Pagination & Filtering state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [pagination, setPagination] = useState({
     page: 1,
@@ -48,17 +49,25 @@ export default function AdminOrganizationsPage() {
     totalCapturedLeads: 0,
   });
 
-  const loadData = useCallback(async (targetPage = page, search = searchTerm, status = statusFilter, limit = pageSize) => {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput);
+      setPage(1);
+    }, 280);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await adminApi.getOrganizations({
-        page: targetPage,
-        limit,
-        search,
-        status,
+        page,
+        limit: pageSize,
+        search: debouncedSearch,
+        status: statusFilter,
       });
 
-      if (res && res.success) {
+      if (res?.success) {
         setOrganizations(res.data || []);
         if (res.pagination) setPagination(res.pagination);
         if (res.stats) setStats(res.stats);
@@ -68,315 +77,272 @@ export default function AdminOrganizationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, statusFilter, pageSize]);
+  }, [page, pageSize, debouncedSearch, statusFilter]);
 
   useEffect(() => {
-    loadData(page, searchTerm, statusFilter, pageSize);
-  }, [page, statusFilter, pageSize, loadData]);
+    loadData();
+  }, [loadData]);
 
-  // Debounced search
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setPage(1);
-      loadData(1, searchTerm, statusFilter, pageSize);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchTerm, statusFilter, pageSize, loadData]);
-
-  const handleToggleStatus = async (org) => {
+  const executeToggleStatus = async (org) => {
     setUpdatingId(org.id);
     try {
       const updated = await adminApi.toggleOrgStatus(org.id, org.status);
       setOrganizations((prev) =>
         prev.map((o) => (o.id === org.id ? { ...o, status: updated.status } : o))
       );
+      toast({
+        title: updated.status === "ACTIVE" ? "Workspace activated" : "Workspace suspended",
+        message: `${org.name} is now ${updated.status}.`,
+        variant: "success",
+      });
     } catch (err) {
-      console.error("Status toggle failed:", err);
+      toast({ title: "Status update failed", message: err.message, variant: "error" });
     } finally {
       setUpdatingId(null);
+      setSuspendTarget(null);
     }
   };
 
   const handleImpersonate = async (orgId) => {
     try {
-      await fetch("/api/auth/switch-org", {
+      const res = await fetch("/api/auth/switch-org", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ organizationId: orgId }),
       });
-      window.location.href = "/dashboard";
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        toast({ title: "Switch failed", message: "Unable to enter workspace.", variant: "error" });
+      }
     } catch {
       window.location.href = "/dashboard";
     }
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12 font-sans">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#252525] dark:text-white">
-            Tenant Organizations & Admins
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 mt-1">
-            Manage thousands of client workspaces, audit active bots, and impersonate any workspace securely.
-          </p>
-        </div>
+    <div className="space-y-6 pb-12 animate-fade-in">
+      <PageHeader
+        badge="Tenant Management"
+        title="Organizations & Workspaces"
+        description="Audit client workspaces, inspect deployed bots and leads, or switch context into any tenant workspace."
+        actions={
+          <Button variant="secondary" size="sm" icon={RefreshCw} onClick={loadData}>
+            Refresh
+          </Button>
+        }
+      />
 
-        <button
-          onClick={() => loadData(page, searchTerm, statusFilter, pageSize)}
-          className="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[#252525] dark:text-neutral-300 bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-[#161616] rounded-xl shadow-xs transition-colors self-start md:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#B68A55]" : "text-slate-400"}`} />
-          <span>Refresh</span>
-        </button>
+      {/* KPI Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Workspaces"
+          value={stats.totalOrganizations.toLocaleString()}
+          description={`${stats.activeOrganizations.toLocaleString()} active tenants`}
+          icon={Building2}
+          colorScheme="indigo"
+        />
+        <StatCard
+          title="Deployed AI Bots"
+          value={stats.totalBots.toLocaleString()}
+          description="Across all tenant domains"
+          icon={Bot}
+          colorScheme="sky"
+        />
+        <StatCard
+          title="Captured Leads"
+          value={stats.totalCapturedLeads.toLocaleString()}
+          description="Qualified visitor contacts"
+          icon={Users2}
+          colorScheme="emerald"
+        />
+        <StatCard
+          title="Suspended"
+          value={stats.suspendedOrganizations.toLocaleString()}
+          description="Access restricted"
+          icon={XCircle}
+          colorScheme="rose"
+        />
       </div>
 
-      {/* KPI Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-neutral-400 mb-1">
-            <Building2 className="w-4 h-4 text-indigo-500" />
-            <span className="text-xs font-medium">Total Workspaces</span>
-          </div>
-          <p className="text-2xl font-extrabold text-[#252525] dark:text-white">
-            {stats.totalOrganizations.toLocaleString()}
-          </p>
-          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-            {stats.activeOrganizations.toLocaleString()} active tenants
-          </span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-neutral-400 mb-1">
-            <Bot className="w-4 h-4 text-sky-500" />
-            <span className="text-xs font-medium">Deployed AI Bots</span>
-          </div>
-          <p className="text-2xl font-extrabold text-[#252525] dark:text-white">
-            {stats.totalBots.toLocaleString()}
-          </p>
-          <span className="text-[11px] text-slate-400 dark:text-neutral-500">Across all tenant domains</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-neutral-400 mb-1">
-            <Users2 className="w-4 h-4 text-emerald-500" />
-            <span className="text-xs font-medium">Total Leads Captured</span>
-          </div>
-          <p className="text-2xl font-extrabold text-[#252525] dark:text-white">
-            {stats.totalCapturedLeads.toLocaleString()}
-          </p>
-          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">High commercial intent</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs">
-          <div className="flex items-center gap-2 text-slate-500 dark:text-neutral-400 mb-1">
-            <XCircle className="w-4 h-4 text-rose-500" />
-            <span className="text-xs font-medium">Suspended</span>
-          </div>
-          <p className="text-2xl font-extrabold text-[#252525] dark:text-white">
-            {stats.suspendedOrganizations.toLocaleString()}
-          </p>
-          <span className="text-[11px] text-slate-400 dark:text-neutral-500">Access revoked</span>
-        </div>
-      </div>
-
-      {/* Control Bar: Search & Status Filters */}
-      <div className="bg-white dark:bg-[#0D0D0D] p-4 rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Search */}
+      {/* Control Bar */}
+      <div className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search 1,000s of workspaces by company, admin name, email, or ID..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl outline-hidden focus:border-[#B68A55] text-[#252525] dark:text-white transition-all placeholder:text-neutral-400 dark:placeholder:text-neutral-500 shadow-2xs"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search workspaces by company, owner, email, or ID..."
+            className="w-full pl-10 pr-4 py-2 text-xs bg-[var(--bg-subtle)]/50 focus:bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg outline-hidden focus:border-indigo-500 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Status Tabs */}
-          <div className="flex items-center p-1 rounded-xl bg-[#FAF9F6] dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 text-xs">
-            <button
-              onClick={() => { setStatusFilter("ALL"); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                statusFilter === "ALL" ? "bg-[#B68A55] text-white shadow-xs font-bold" : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => { setStatusFilter("ACTIVE"); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                statusFilter === "ACTIVE" ? "bg-emerald-600 text-white shadow-xs font-bold" : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white"
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => { setStatusFilter("DISABLED"); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                statusFilter === "DISABLED" ? "bg-rose-600 text-white shadow-xs font-bold" : "text-slate-600 dark:text-neutral-400 hover:text-[#252525] dark:hover:text-white"
-              }`}
-            >
-              Suspended
-            </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center p-1 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs">
+            {[
+              { id: "ALL", label: "All" },
+              { id: "ACTIVE", label: "Active" },
+              { id: "DISABLED", label: "Suspended" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(item.id);
+                  setPage(1);
+                }}
+                className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                  statusFilter === item.id
+                    ? "bg-indigo-600 text-white shadow-2xs"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-
-          {/* Page Size selector */}
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPage(1);
-            }}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-[#121212] border border-[#EFE7DC] dark:border-neutral-800 rounded-xl text-[#252525] dark:text-neutral-200 outline-hidden cursor-pointer"
-          >
-            <option value={10}>10 / page</option>
-            <option value={25}>25 / page</option>
-            <option value={50}>50 / page</option>
-            <option value={100}>100 / page</option>
-          </select>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white dark:bg-[#0D0D0D] rounded-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] dark:bg-[#0A0A0A] text-slate-500 dark:text-neutral-400 font-semibold text-[11px] uppercase tracking-wider border-b border-[#EFE7DC] dark:border-neutral-800">
-              <tr>
-                <th className="p-4">Organization & Domain</th>
-                <th className="p-4">Workspace Admin</th>
-                <th className="p-4">Plan</th>
-                <th className="p-4">Bots</th>
-                <th className="p-4">Chats</th>
-                <th className="p-4">Leads</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EFE7DC] dark:divide-neutral-800">
-              {loading ? (
+      {/* Table */}
+      {loading ? (
+        <TableSkeleton rows={6} cols={8} />
+      ) : organizations.length === 0 ? (
+        <EmptyState
+          icon={Building2}
+          title="No organizations found"
+          description={
+            searchInput || statusFilter !== "ALL"
+              ? "No workspaces match your current search or filter."
+              : "No tenant organizations registered yet."
+          }
+          actionLabel={searchInput || statusFilter !== "ALL" ? "Clear Filters" : undefined}
+          onAction={
+            searchInput || statusFilter !== "ALL"
+              ? () => {
+                  setSearchInput("");
+                  setStatusFilter("ALL");
+                }
+              : undefined
+          }
+        />
+      ) : (
+        <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)] overflow-hidden shadow-[var(--shadow-xs)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[var(--bg-subtle)]/60 text-[var(--text-muted)] font-semibold text-[10px] uppercase tracking-wider border-b border-[var(--border-subtle)]">
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 dark:text-neutral-400">
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#B68A55]" />
-                      <span>Loading workspaces...</span>
-                    </div>
-                  </td>
+                  <th className="p-4">Organization</th>
+                  <th className="p-4">Workspace Owner</th>
+                  <th className="p-4">Plan</th>
+                  <th className="p-4">Bots</th>
+                  <th className="p-4">Chats</th>
+                  <th className="p-4">Leads</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Actions</th>
                 </tr>
-              ) : organizations.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-500 dark:text-neutral-400">
-                    <p className="font-semibold text-sm text-[#252525] dark:text-white">No organizations found</p>
-                    <p className="text-xs text-slate-500 dark:text-neutral-500 mt-1">
-                      No matching records found for "{searchTerm}". Try clearing your filter.
-                    </p>
-                    <button
-                      onClick={() => { setSearchTerm(""); setStatusFilter("ALL"); }}
-                      className="mt-3 px-3 py-1.5 text-xs font-semibold text-[#B68A55] bg-[#B68A55]/10 hover:bg-[#B68A55]/20 rounded-lg cursor-pointer"
-                    >
-                      Clear Filters
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                organizations.map((org) => (
-                  <tr key={org.id} className="hover:bg-[#FAF9F6] dark:hover:bg-neutral-900/60 transition-colors">
+              </thead>
+              <tbody className="divide-y divide-[var(--border-subtle)]">
+                {organizations.map((org) => (
+                  <tr key={org.id} className="hover:bg-[var(--bg-subtle)]/40 transition-colors">
                     <td className="p-4">
-                      <p className="font-bold text-[#252525] dark:text-white">{org.name}</p>
-                      <p className="text-[10px] font-mono text-slate-400 dark:text-neutral-500">{org.id} • {org.slug}</p>
+                      <p className="font-semibold text-[var(--text-primary)]">{org.name}</p>
+                      <p className="text-[10px] font-mono text-[var(--text-muted)]">
+                        {org.id} · {org.slug}
+                      </p>
                     </td>
                     <td className="p-4">
-                      <p className="font-semibold text-slate-800 dark:text-neutral-200">{org.owner}</p>
-                      <p className="text-[10px] text-slate-500 dark:text-neutral-400 font-mono">{org.ownerEmail}</p>
+                      <p className="font-medium text-[var(--text-secondary)]">{org.owner}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                        {org.ownerEmail}
+                      </p>
                     </td>
                     <td className="p-4">
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#B68A55]/15 text-[#B68A55] border border-[#B68A55]/30">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
                         {org.plan}
                       </span>
                     </td>
-                    <td className="p-4 font-mono text-[#B68A55] font-bold">{org.botsCount || 0}</td>
-                    <td className="p-4 font-mono text-slate-600 dark:text-neutral-300">{(org.conversationsCount || 0).toLocaleString()}</td>
-                    <td className="p-4 font-mono text-emerald-600 dark:text-emerald-400 font-bold">{(org.leadsCount || 0).toLocaleString()}</td>
+                    <td className="p-4 font-mono font-bold text-[var(--text-primary)] tabular-nums">
+                      {org.botsCount || 0}
+                    </td>
+                    <td className="p-4 font-mono text-[var(--text-secondary)] tabular-nums">
+                      {(org.conversationsCount || 0).toLocaleString()}
+                    </td>
+                    <td className="p-4 font-mono text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
+                      {(org.leadsCount || 0).toLocaleString()}
+                    </td>
                     <td className="p-4">
                       <StatusBadge status={org.status} size="sm" />
                     </td>
                     <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
+                          type="button"
                           onClick={() => handleImpersonate(org.id)}
-                          className="p-1.5 text-slate-400 hover:text-[#252525] dark:hover:text-white rounded-lg hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                          title="Impersonate Workspace (Enter as Admin)"
+                          className="p-1.5 text-[var(--text-muted)] hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
+                          title="Enter Workspace as Admin"
+                          aria-label={`Enter ${org.name}`}
                         >
                           <UserCheck className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleToggleStatus(org)}
+                          type="button"
+                          onClick={() =>
+                            org.status === "ACTIVE"
+                              ? setSuspendTarget(org)
+                              : executeToggleStatus(org)
+                          }
                           disabled={updatingId === org.id}
-                          className="p-1.5 text-slate-400 hover:text-[#252525] dark:hover:text-white rounded-lg hover:bg-[#FAF9F6] dark:hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
-                          title={org.status === "ACTIVE" ? "Suspend Workspace Access" : "Activate Workspace"}
+                          className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer disabled:opacity-50"
+                          title={
+                            org.status === "ACTIVE"
+                              ? "Suspend Workspace"
+                              : "Activate Workspace"
+                          }
+                          aria-label={`Toggle status for ${org.name}`}
                         >
                           {org.status === "ACTIVE" ? (
-                            <PowerOff className="w-4 h-4 text-rose-500 dark:text-rose-400" />
+                            <PowerOff className="w-4 h-4 text-rose-500" />
                           ) : (
-                            <Power className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                            <Power className="w-4 h-4 text-emerald-500" />
                           )}
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Server-Side Pagination Bar */}
-        <div className="p-4 border-t border-[#EFE7DC] dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-neutral-400">
-          <div>
-            Showing{" "}
-            <span className="font-semibold text-[#252525] dark:text-white">
-              {pagination.totalCount === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}
-            </span>{" "}
-            to{" "}
-            <span className="font-semibold text-[#252525] dark:text-white">
-              {Math.min(pagination.page * pagination.limit, pagination.totalCount)}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-[#252525] dark:text-white">
-              {pagination.totalCount.toLocaleString()}
-            </span>{" "}
-            workspaces
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={pagination.page <= 1 || loading}
-              className="p-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 text-[#252525] dark:text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              title="Previous Page"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            <span className="px-3 py-1 font-semibold text-[#252525] dark:text-neutral-200 bg-[#FAF9F6] dark:bg-neutral-900 border border-[#EFE7DC] dark:border-neutral-800 rounded-lg">
-              Page {pagination.page} of {pagination.totalPages}
-            </span>
-
-            <button
-              onClick={() => setPage((prev) => Math.min(pagination.totalPages, prev + 1))}
-              disabled={pagination.page >= pagination.totalPages || loading}
-              className="p-1.5 rounded-lg border border-[#EFE7DC] dark:border-neutral-800 hover:bg-[#FAF9F6] dark:hover:bg-neutral-900 text-[#252525] dark:text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              title="Next Page"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <Pagination
+            currentPage={pagination.page || page}
+            totalPages={Math.max(1, pagination.totalPages || 1)}
+            totalItems={pagination.totalCount || organizations.length}
+            pageSize={pageSize}
+            onPageChange={(next) => setPage(next)}
+            onPageSizeChange={(sz) => {
+              setPageSize(sz);
+              setPage(1);
+            }}
+            pageSizeOptions={[10, 25, 50, 100]}
+            itemLabel="workspaces"
+          />
         </div>
-      </div>
+      )}
+
+      <ConfirmModal
+        isOpen={Boolean(suspendTarget)}
+        onClose={() => setSuspendTarget(null)}
+        onConfirm={() => suspendTarget && executeToggleStatus(suspendTarget)}
+        title="Suspend Organization Workspace?"
+        description={`Suspending "${suspendTarget?.name || ""}" will pause dashboard access for its members until re-activated.`}
+        confirmText="Suspend Workspace"
+        cancelText="Cancel"
+        variant="warning"
+        badgeText="Tenant Governance"
+      />
     </div>
   );
 }

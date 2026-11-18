@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function Modal({ isOpen, onClose, title, description, children, maxWidth = "max-w-lg" }) {
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  description,
+  children,
+  footer,
+  maxWidth = "max-w-lg",
+}) {
+  const titleId = useId();
+  const descId = useId();
+
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onClose?.();
     };
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -21,29 +33,61 @@ export default function Modal({ isOpen, onClose, title, description, children, m
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-xs transition-opacity animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/60 backdrop-blur-xs animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose?.();
+      }}
+    >
       <div
-        className={`w-full ${maxWidth} max-h-[92vh] flex flex-col bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl border border-[#EFE7DC] dark:border-neutral-800 overflow-hidden transform transition-all`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={description ? descId : undefined}
+        className={cn(
+          "w-full max-h-[92vh] flex flex-col bg-[var(--bg-elevated)] rounded-2xl shadow-[var(--shadow-modal)] border border-[var(--border-subtle)] overflow-hidden animate-scale-in",
+          maxWidth
+        )}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#EFE7DC] dark:border-neutral-800 bg-[#FAF9F6] dark:bg-neutral-900 shrink-0">
-          <div className="min-w-0 pr-2">
-            <h3 className="text-base sm:text-lg font-semibold text-[#252525] dark:text-white truncate">
-              {title}
-            </h3>
+        <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
+          <div className="min-w-0">
+            {title && (
+              <h2
+                id={titleId}
+                className="text-base sm:text-lg font-semibold text-[var(--text-primary)] tracking-tight"
+              >
+                {title}
+              </h2>
+            )}
             {description && (
-              <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 truncate sm:whitespace-normal">
+              <p
+                id={descId}
+                className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5 leading-relaxed"
+              >
                 {description}
               </p>
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 sm:p-2 text-slate-400 hover:text-[#252525] dark:hover:text-neutral-200 rounded-lg hover:bg-[#EFE7DC]/50 dark:hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
+            aria-label="Close modal"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer shrink-0"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1">{children}</div>
+
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1 text-[var(--text-primary)]">
+          {children}
+        </div>
+
+        {footer && (
+          <div className="px-5 sm:px-6 py-3.5 border-t border-[var(--border-subtle)] bg-[var(--bg-subtle)]/50 flex items-center justify-end gap-2.5 shrink-0">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

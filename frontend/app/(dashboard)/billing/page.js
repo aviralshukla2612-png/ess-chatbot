@@ -2,32 +2,90 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import {
   CreditCard,
   CheckCircle2,
   Sparkles,
   ShieldCheck,
   Clock,
-  ArrowRight,
-  RefreshCw,
-  ExternalLink,
-  Shield,
   Zap,
-  Lock,
   Calendar,
-  AlertCircle,
-  FileText,
-  Building2,
-  Check,
   Loader2,
-  Crown,
-  Layers,
-  ArrowUpRight,
 } from "lucide-react";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import PageHeader from "@/components/ui/PageHeader";
+import Button from "@/components/ui/Button";
+import { InlineAlert, useToast } from "@/components/ui/Toast";
+import { Skeleton } from "@/components/ui/Skeleton";
+
+const EXTENSION_PACKAGES = [
+  {
+    id: "monthly",
+    name: "Monthly Pass",
+    badge: "Flexible",
+    badgeClass:
+      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25",
+    duration: "+30 Days Access",
+    price: "₹999",
+    equivalent: "₹999 / month",
+    periodLabel: "1 month",
+    description: "Prepaid 30-day workspace extension with full autonomous AI assistant access.",
+    features: [
+      "1 workspace & chatbot",
+      "Full autonomous AI access",
+      "Unlimited visitor conversations",
+      "50 Website Knowledge Pages",
+      "Lead Capture & CSV Export",
+    ],
+    isPopular: false,
+    cta: "Activate Monthly (₹999)",
+  },
+  {
+    id: "six-months",
+    name: "Six Months Pass",
+    badge: "Half-Year Value",
+    badgeClass:
+      "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25",
+    duration: "+180 Days Access",
+    price: "₹5,999",
+    equivalent: "₹999 / month",
+    periodLabel: "6 months",
+    description: "Uninterrupted commercial AI customer engagement for 6 full months.",
+    features: [
+      "1 workspace & chatbot",
+      "Full autonomous AI access",
+      "Unlimited visitor conversations",
+      "150 Website Knowledge Pages",
+      "WhatsApp Cloud API Webhook",
+    ],
+    isPopular: false,
+    cta: "Activate 6 Months (₹5,999)",
+  },
+  {
+    id: "annual",
+    name: "Annual VIP Pass",
+    badge: "RECOMMENDED · SAVE ₹2,989",
+    badgeClass:
+      "bg-indigo-600 text-white border-indigo-600",
+    duration: "+365 Days Access",
+    price: "₹8,999",
+    equivalent: "₹749 / month",
+    periodLabel: "12 months",
+    description: "Best annual value — save ₹2,989 compared with twelve monthly renewals.",
+    features: [
+      "1 workspace & chatbot",
+      "Full autonomous AI access",
+      "Save ₹2,989 vs monthly renewals",
+      "500 Knowledge Pages & PDFs",
+      "Priority onboarding support",
+    ],
+    isPopular: true,
+    cta: "Activate Annual VIP (₹8,999)",
+  },
+];
 
 export default function BillingPage() {
+  const { toast } = useToast();
   const [billingData, setBillingData] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,72 +97,6 @@ export default function BillingPage() {
   const [extensionError, setExtensionError] = useState("");
   const extensionSectionRef = useRef(null);
   const autoCheckoutTriggered = useRef(false);
-
-  const extensionPackages = [
-    {
-      id: "monthly",
-      name: "Monthly Plan",
-      badge: "Flexible",
-      badgeColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30",
-      duration: "+30 Days Access",
-      price: "₹999",
-      equivalent: "₹999 / month",
-      periodLabel: "1 month",
-      description: "Flexible Month-to-Month Plan with full autonomous AI assistant access.",
-      features: [
-        "1 account",
-        "1 chatbot",
-        "Full autonomous AI access",
-        "Unlimited Messages & Inquiries",
-        "50 Website Knowledge Pages",
-        "Lead Capture & CRM Export",
-      ],
-      isPopular: false,
-      cta: "Activate Monthly (₹999)",
-    },
-    {
-      id: "six-months",
-      name: "Six Months Plan",
-      badge: "Commercial Half-Year",
-      badgeColor: "bg-[#963DFF]/15 text-[#963DFF] border-[#963DFF]/30 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30",
-      duration: "+180 Days Access (6 Months)",
-      price: "₹5,999",
-      equivalent: "₹999 / month",
-      periodLabel: "6 months",
-      description: "Lock in uninterrupted AI customer engagement for half a year.",
-      features: [
-        "1 account",
-        "1 chatbot",
-        "Full autonomous AI access",
-        "Unlimited Messages & Inquiries",
-        "150 Website Knowledge Pages",
-        "WhatsApp Cloud API Integration",
-      ],
-      isPopular: false,
-      cta: "Activate 6 Months (₹5,999)",
-    },
-    {
-      id: "annual",
-      name: "Annual VIP Plan",
-      badge: "RECOMMENDED • SAVE ₹2,989",
-      badgeColor: "bg-sky-500/10 text-sky-600 border-sky-500/20 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30",
-      duration: "+365 Days Access (12 Months)",
-      price: "₹8,999",
-      equivalent: "₹749 / month",
-      periodLabel: "12 months",
-      description: "Full Year Maximum Value. Save ₹2,989 compared with twelve monthly payments.",
-      features: [
-        "1 account",
-        "1 chatbot",
-        "Full autonomous AI access",
-        "Save ₹2,989 vs monthly payments",
-        "500 Knowledge Pages & PDFs",
-        "Priority VIP setup assistance",
-      ],
-      isPopular: true,
-      cta: "Activate Annual VIP (₹8,999) 👑",
-    },
-  ];
 
   const loadBilling = () => {
     setLoading(true);
@@ -132,10 +124,6 @@ export default function BillingPage() {
     return () => window.removeEventListener("subscription-updated", handleUpdated);
   }, []);
 
-  const handleCancelAutopay = () => {
-    setShowCancelModal(true);
-  };
-
   const handleConfirmCancelAutopay = async () => {
     setCancelLoading(true);
     setCancelSuccessMsg("");
@@ -143,21 +131,22 @@ export default function BillingPage() {
       const res = await fetch("/api/billing/cancel", { method: "POST" });
       const d = await res.json();
       if (d.success) {
-        setCancelSuccessMsg(d.message || "Autopay has been cancelled.");
+        setCancelSuccessMsg(d.message || "Autopay mandate has been cancelled.");
+        toast({ title: "Autopay cancelled", message: "No future recurring charges will occur.", variant: "info" });
         loadBilling();
       } else {
-        alert(d.error || "Failed to cancel autopay");
+        setExtensionError(d.error || "Failed to cancel autopay");
       }
     } catch {
-      alert("Network error while cancelling autopay");
+      setExtensionError("Network error while cancelling autopay.");
     } finally {
       setCancelLoading(false);
       setShowCancelModal(false);
     }
   };
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
+  const loadRazorpayScript = () =>
+    new Promise((resolve) => {
       if (typeof window !== "undefined" && window.Razorpay) {
         return resolve(true);
       }
@@ -167,7 +156,6 @@ export default function BillingPage() {
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
-  };
 
   const handleExtendPlan = async (plan) => {
     setExtendingPlanId(plan.id);
@@ -177,7 +165,7 @@ export default function BillingPage() {
     try {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
-        throw new Error("Unable to load Razorpay payment gateway. Please check your internet connection.");
+        throw new Error("Unable to load Razorpay payment gateway. Check your connection.");
       }
 
       const res = await fetch("/api/billing/checkout", {
@@ -191,11 +179,10 @@ export default function BillingPage() {
 
       const data = await res.json();
       if (!data.success || !data.checkout) {
-        throw new Error(data.error || "Failed to create extension checkout order");
+        throw new Error(data.error || "Failed to create checkout order");
       }
 
       const { checkout } = data;
-
       if (!window.Razorpay) {
         throw new Error("Razorpay SDK not initialized");
       }
@@ -203,7 +190,7 @@ export default function BillingPage() {
       const options = {
         key: checkout.keyId,
         order_id: checkout.orderId,
-        name: "NexusAI Platform",
+        name: "Emperor Nexus",
         description: `Plan Extension: ${plan.name} (${plan.periodLabel})`,
         handler: async function (response) {
           try {
@@ -211,8 +198,11 @@ export default function BillingPage() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                subscriptionId: response.razorpay_order_id,
+                orderId: response.razorpay_order_id || checkout.orderId,
+                subscriptionId:
+                  response.razorpay_subscription_id || response.razorpay_order_id,
                 paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
                 planId: plan.id,
                 isTrial: false,
               }),
@@ -220,26 +210,30 @@ export default function BillingPage() {
 
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
-              setExtensionSuccessMsg(`🎉 Plan extended successfully! You are now subscribed to ${plan.name}.`);
+              setExtensionSuccessMsg(
+                `Plan extended! Your workspace is now active on ${plan.name}.`
+              );
+              toast({
+                title: "Subscription activated",
+                message: `${plan.name} has been verified and applied.`,
+                variant: "success",
+              });
               loadBilling();
               window.dispatchEvent(new CustomEvent("subscription-updated"));
 
-              // Auto-redirect to bot creation with the user's selected industry after paying
               try {
                 const params = new URLSearchParams(window.location.search);
                 const targetInd =
                   params.get("industry") ||
-                  (typeof window !== "undefined"
-                    ? localStorage.getItem("nexus_selected_industry")
-                    : null);
+                  localStorage.getItem("nexus_selected_industry");
                 if (targetInd) {
                   setTimeout(() => {
                     window.location.href = `/bots/create?industry=${encodeURIComponent(targetInd)}`;
                   }, 1200);
                 }
-              } catch (e) {}
+              } catch {}
             } else {
-              setExtensionError(verifyData.error || "Payment verification failed.");
+              setExtensionError(verifyData.error || "Payment signature verification failed.");
             }
           } catch (err) {
             setExtensionError(err.message || "Failed to confirm payment verification.");
@@ -252,7 +246,7 @@ export default function BillingPage() {
           email: currentUser?.email || "",
         },
         theme: {
-          color: "#963DFF",
+          color: "#4F46E5",
         },
         modal: {
           ondismiss: function () {
@@ -281,13 +275,14 @@ export default function BillingPage() {
 
     if (checkoutParam === "true" && planParam) {
       autoCheckoutTriggered.current = true;
-      const targetPackage = extensionPackages.find(
-        (p) =>
-          p.id.toLowerCase() === planParam.toLowerCase() ||
-          (planParam.includes("month") && !planParam.includes("six") && p.id === "monthly") ||
-          (planParam.includes("six") && p.id === "six-months") ||
-          (planParam.includes("annual") && p.id === "annual")
-      ) || extensionPackages[0];
+      const targetPackage =
+        EXTENSION_PACKAGES.find(
+          (p) =>
+            p.id.toLowerCase() === planParam.toLowerCase() ||
+            (planParam.includes("month") && !planParam.includes("six") && p.id === "monthly") ||
+            (planParam.includes("six") && p.id === "six-months") ||
+            (planParam.includes("annual") && p.id === "annual")
+        ) || EXTENSION_PACKAGES[0];
 
       if (targetPackage) {
         setTimeout(() => {
@@ -299,128 +294,111 @@ export default function BillingPage() {
 
   const planName =
     billingData?.subscription?.plan?.name ||
-    (billingData?.isTrial ? "Starter (7-Day Trial)" : "Starter");
+    (billingData?.isTrial ? "Starter Autopay (7-Day Trial)" : "Starter Autopay");
 
   const hasActiveSub = Boolean(billingData?.hasActiveSubscription);
   const isTrial = Boolean(billingData?.isTrial);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-16 font-sans">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-md bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-              Razorpay Autopay Suite
-            </span>
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              RBI Compliant E-Mandate
-            </span>
+    <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-fade-in">
+      <PageHeader
+        badge="Razorpay Autopay & Passes"
+        title="Billing & Subscription"
+        description="Manage your active subscription, RBI-compliant UPI/Card autopay mandate, and prepaid multi-month duration passes."
+        actions={
+          <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)]">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-[var(--text-primary)] block">
+                {isTrial ? "7-Day Trial" : hasActiveSub ? "Active Plan" : "Action Needed"}
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)] font-mono">
+                {hasActiveSub
+                  ? billingData?.subscription?.plan?.priceINR
+                    ? `₹${Number(billingData.subscription.plan.priceINR).toLocaleString("en-IN")}`
+                    : "Active"
+                  : "Not Subscribed"}
+              </span>
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            Billing & Plans
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage your active Razorpay subscription, autopay mandates, plan entitlements, and duration extensions.
-          </p>
-        </div>
-
-        {/* Quick status pill */}
-        <div className="flex items-center gap-2 p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0">
-            <CreditCard className="w-4 h-4" />
-          </div>
-          <div className="pr-2">
-            <span className="text-xs font-bold text-slate-900 dark:text-white block">
-              {isTrial ? "Trialing" : hasActiveSub ? "Active Plan" : "Action Needed"}
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono">
-              {hasActiveSub ? "₹2,499 / month" : "Not Subscribed"}
-            </span>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {cancelSuccessMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium text-xs flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-          <span>{cancelSuccessMsg}</span>
-        </div>
+        <InlineAlert
+          variant="success"
+          title="Autopay Cancelled"
+          message={cancelSuccessMsg}
+          onDismiss={() => setCancelSuccessMsg("")}
+        />
       )}
 
       {extensionSuccessMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/10 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-          <span className="font-bold">{extensionSuccessMsg}</span>
-        </div>
+        <InlineAlert
+          variant="success"
+          title="Subscription Updated"
+          message={extensionSuccessMsg}
+          onDismiss={() => setExtensionSuccessMsg("")}
+        />
       )}
 
       {extensionError && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-medium text-xs flex items-center gap-2 shadow-lg shadow-rose-500/10 animate-in fade-in slide-in-from-top-2">
-          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
-          <span>{extensionError}</span>
-        </div>
+        <InlineAlert
+          variant="error"
+          title="Billing Notice"
+          message={extensionError}
+          onDismiss={() => setExtensionError("")}
+        />
       )}
 
-      {/* Action Required Banner if Inactive */}
-      {!hasActiveSub && (
-        <div className="p-6 rounded-3xl border border-rose-300 dark:border-rose-900/60 bg-linear-to-r from-rose-500/10 via-rose-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-lg shadow-rose-500/5">
+      {!loading && !hasActiveSub && (
+        <div className="p-6 rounded-2xl border border-rose-500/30 bg-rose-500/8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-              <h4 className="font-bold text-rose-900 dark:text-rose-200 text-sm sm:text-base">
-                No Active Subscription or Trial Expired
-              </h4>
-            </div>
-            <p className="text-xs text-rose-700 dark:text-rose-300/80 leading-relaxed max-w-xl">
-              Your AI assistants require an active subscription to answer visitor inquiries and capture leads. Select an extension package below or start autopay via Razorpay.
+            <h4 className="font-bold text-rose-800 dark:text-rose-200 text-sm sm:text-base">
+              No Active Subscription or Trial Expired
+            </h4>
+            <p className="text-xs text-rose-700/90 dark:text-rose-300/90 leading-relaxed max-w-xl">
+              Your AI assistants require an active subscription or prepaid pass to answer visitor inquiries and capture leads. Choose a prepaid pass below or activate a trial mandate.
             </p>
           </div>
-          <button
-            onClick={() => {
-              if (extensionSectionRef.current) {
-                extensionSectionRef.current.scrollIntoView({ behavior: "smooth" });
-              } else {
-                window.dispatchEvent(new CustomEvent("open-subscription-modal"));
-              }
-            }}
-            className="px-6 py-3 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold text-xs shadow-md transition-all hover:scale-[1.02] cursor-pointer shrink-0 flex items-center justify-center gap-2"
+          <Button
+            icon={Sparkles}
+            onClick={() => extensionSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Choose Extension Plan ↓</span>
-          </button>
+            Choose Plan Pass
+          </Button>
         </div>
       )}
 
-      {/* Executive Razorpay Subscription Card */}
-      <div className="relative overflow-hidden rounded-3xl bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 p-6 sm:p-9 text-[#252525] dark:text-white shadow-xs space-y-7">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-[#B68A55]/10 dark:bg-[#B68A55]/5 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Card Header */}
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#EFE7DC] dark:border-neutral-800 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#B68A55]/10 border border-[#B68A55]/20 dark:bg-[#B68A55]/15 dark:border-[#B68A55]/30 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-[#B68A55]" />
+      {/* Active Subscription Summary Card */}
+      {loading ? (
+        <Skeleton className="h-64 w-full rounded-2xl" />
+      ) : (
+        <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8 shadow-[var(--shadow-sm)] space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                  Official Payment Gateway
+                </span>
+                <span className="text-sm sm:text-base font-bold text-[var(--text-primary)]">
+                  Razorpay Subscriptions & Prepaid Passes
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#B68A55] block">
-                Official Payment Gateway
-              </span>
-              <span className="text-base font-extrabold text-[#252525] dark:text-white">
-                Razorpay Subscriptions (UPI Autopay & Cards)
-              </span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-extrabold uppercase border ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border w-fit ${
                 isTrial
-                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25"
                   : hasActiveSub
-                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-                  : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25"
+                  : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25"
               }`}
             >
               <span
@@ -436,207 +414,180 @@ export default function BillingPage() {
                 ? "7-Day Free Trial Active"
                 : hasActiveSub
                 ? "Active Subscription"
-                : "Inactive / Action Needed"}
-            </span>
-          </div>
-        </div>
-
-        {/* Plan Details & Pricing */}
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-          <div>
-            <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-[#252525] dark:text-white">
-              {planName} Plan
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
-              {isTrial
-                ? "Full unrestricted access to custom AI Chatbots, Vector Knowledge, and Leads CRM. ₹0 was charged upfront."
-                : hasActiveSub
-                ? "Full production tier with zero message caps, WhatsApp bridge, and lead qualification workflows."
-                : "Autopay has lapsed. Reactivate your subscription or choose an extension package to continue."}
-            </p>
-          </div>
-
-          <div className="sm:text-right flex flex-col justify-center sm:items-end">
-            <div className="text-3xl sm:text-4xl font-black text-[#B68A55] font-mono">
-              {isTrial ? "₹0.00" : "₹2,499"}
-              <span className="text-xs sm:text-sm font-normal text-slate-500 dark:text-neutral-400 font-sans">
-                {isTrial ? " (Upfront)" : " / month"}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1">
-              {isTrial
-                ? `Recurring deduction of ₹2,499/mo begins on ${billingData?.autopayDate || "Day 8"}.`
-                : "Billed monthly via automatic bank mandate."}
-            </p>
-          </div>
-        </div>
-
-        {/* Trial Progress Bar */}
-        {isTrial && (
-          <div className="relative z-10 p-5 rounded-2xl bg-[#FAF9F6] dark:bg-white/5 border border-[#EFE7DC] dark:border-white/10 space-y-2.5">
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                Trial Period Progress
-              </span>
-              <span className="font-bold font-mono text-[#252525] dark:text-white text-sm">
-                {billingData?.trialDaysRemaining ?? 7} Days Remaining
-              </span>
-            </div>
-            <div className="w-full bg-[#EFE7DC] dark:bg-neutral-800 rounded-full h-2.5 overflow-hidden">
-              <div
-                className="bg-linear-to-r from-amber-500 via-amber-400 to-[#B68A55] h-2.5 rounded-full transition-all duration-500"
-                style={{
-                  width: `${Math.max(
-                    12,
-                    Math.min(100, Math.round(((7 - (billingData?.trialDaysRemaining ?? 7)) / 7) * 100))
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Card Footer Details & Actions */}
-        <div className="relative z-10 pt-5 border-t border-[#EFE7DC] dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-xs text-slate-500 dark:text-neutral-400 flex items-center gap-2">
-            <span>Mandate ID:</span>
-            <span className="font-mono text-[#252525] dark:text-neutral-200 bg-[#FAF9F6] dark:bg-neutral-900 px-2 py-0.5 rounded-md font-semibold border border-[#EFE7DC] dark:border-neutral-800">
-              {billingData?.subscription?.providerSubscriptionId || "sub_unregistered"}
+                : "Inactive"}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                extensionSectionRef.current?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="px-4 py-2 rounded-xl bg-[#252525] hover:bg-black dark:bg-[#B68A55] dark:hover:bg-[#9F7645] text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <Zap className="w-3.5 h-3.5 text-[#B68A55] dark:text-white" />
-              <span>Extend Plan Duration ⚡</span>
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+                {planName}
+              </h3>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed">
+                {isTrial
+                  ? "Full access to AI Chatbots, RAG Vector Knowledge, and Leads CRM during your 7-day evaluation."
+                  : hasActiveSub
+                  ? "Production workspace tier with unlimited conversational turns, RAG indexing, and CRM lead sync."
+                  : "Activate a prepaid duration pass below to resume uninterrupted visitor assistance."}
+              </p>
+            </div>
 
-            {isTrial && billingData?.subscription?.status !== "cancelled" && (
-              <button
-                onClick={handleCancelAutopay}
-                disabled={cancelLoading}
-                className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-400/30 text-rose-700 dark:text-rose-200 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+            <div className="sm:text-right flex flex-col justify-center sm:items-end">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] font-mono tabular-nums">
+                {isTrial ? "₹0.00" : "₹2,499"}
+                <span className="text-xs sm:text-sm font-normal text-[var(--text-muted)] font-sans">
+                  {isTrial ? " upfront" : " / month mandate"}
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                {isTrial
+                  ? `Starter Autopay mandate (₹2,499/mo) schedules after ${billingData?.autopayDate || "Day 7"}, or switch to a ₹999/mo prepaid pass below.`
+                  : "Starter Autopay Mandate · or extend anytime with prepaid passes below."}
+              </p>
+            </div>
+          </div>
+
+          {isTrial && (
+            <div className="p-4 rounded-xl bg-[var(--bg-subtle)]/60 border border-[var(--border-subtle)] space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" />
+                  Trial Period Remaining
+                </span>
+                <span className="font-bold font-mono text-[var(--text-primary)] tabular-nums">
+                  {billingData?.trialDaysRemaining ?? 7} Days Left
+                </span>
+              </div>
+              <div className="w-full bg-[var(--border-subtle)] rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.max(
+                      14,
+                      Math.min(100, Math.round(((7 - (billingData?.trialDaysRemaining ?? 7)) / 7) * 100))
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="pt-4 border-t border-[var(--border-subtle)] flex flex-wrap items-center justify-between gap-4">
+            <div className="text-xs text-[var(--text-muted)] flex items-center gap-2">
+              <span>Subscription Ref:</span>
+              <span className="font-mono text-[var(--text-primary)] bg-[var(--bg-subtle)] px-2 py-0.5 rounded border border-[var(--border-subtle)]">
+                {billingData?.subscription?.providerSubscriptionId || "sub_unregistered"}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Button
+                size="sm"
+                icon={Zap}
+                onClick={() => extensionSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
               >
-                {cancelLoading ? "Cancelling..." : "Cancel Autopay"}
-              </button>
-            )}
+                Extend Plan Duration
+              </Button>
+
+              {isTrial && billingData?.subscription?.status !== "cancelled" && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  loading={cancelLoading}
+                  onClick={() => setShowCancelModal(true)}
+                >
+                  Cancel Autopay
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* EXTEND PLAN SECTION */}
-      <div ref={extensionSectionRef} className="space-y-5 pt-4">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-4">
+      {/* Prepaid Duration Extension Packages */}
+      <div ref={extensionSectionRef} className="space-y-5 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[var(--border-subtle)] pb-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-md bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20">
-                Extension Packages
-              </span>
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-semibold">
-                Instant Razorpay Checkout
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white tracking-tight">
-              Extend Your Active Plan
+            <span className="text-[11px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400">
+              Prepaid Duration Passes
+            </span>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mt-0.5">
+              Extend Your Workspace Access
             </h2>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Add more duration to your active assistant or upgrade to multi-month passes to save up to 66%.
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              One-time Razorpay checkout passes with zero recurring mandate lock-in.
             </p>
           </div>
-
-          <span className="text-xs text-neutral-400 dark:text-neutral-500 font-medium">
-            Renews immediately upon payment
+          <span className="text-xs text-[var(--text-muted)] font-medium">
+            Activates immediately after signature verification
           </span>
         </div>
 
-        {/* 3 Extension Plan Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {extensionPackages.map((pkg) => {
+          {EXTENSION_PACKAGES.map((pkg) => {
             const isProcessing = extendingPlanId === pkg.id;
-
             return (
               <div
                 key={pkg.id}
-                className={`relative rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between ${
+                className={`relative rounded-2xl p-6 transition-all flex flex-col justify-between bg-[var(--bg-surface)] ${
                   pkg.isPopular
-                    ? "bg-white dark:bg-[#0D0D0D] border-2 border-[#B68A55] shadow-lg shadow-[#B68A55]/10 text-[#252525] dark:text-white scale-[1.02]"
-                    : "bg-white dark:bg-[#0D0D0D] border border-[#EFE7DC] dark:border-neutral-800 shadow-xs hover:border-[#B68A55]/40 dark:hover:border-neutral-700 text-[#252525] dark:text-white"
+                    ? "border-2 border-indigo-600 dark:border-indigo-500 shadow-[var(--shadow-md)]"
+                    : "border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] hover:border-[var(--border-strong)]"
                 }`}
               >
-                {/* Popular Pill */}
-                <div className="flex items-center justify-between mb-4">
-                  <span
-                    className={`text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border ${pkg.badgeColor}`}
-                  >
-                    {pkg.badge}
-                  </span>
-                  <span className="text-[11px] font-bold text-[#B68A55] flex items-center gap-1 font-mono">
-                    <Calendar className="w-3 h-3" />
-                    {pkg.duration}
-                  </span>
-                </div>
-
-                {/* Plan Info */}
                 <div>
-                  <h4 className="text-lg font-black tracking-tight text-[#252525] dark:text-white">{pkg.name}</h4>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${pkg.badgeClass}`}
+                    >
+                      {pkg.badge}
+                    </span>
+                    <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 font-mono">
+                      <Calendar className="w-3 h-3" />
+                      {pkg.duration}
+                    </span>
+                  </div>
+
+                  <h4 className="text-base font-bold text-[var(--text-primary)]">{pkg.name}</h4>
+                  <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                     {pkg.description}
                   </p>
 
-                  <div className="mt-4 pt-4 border-t border-[#EFE7DC] dark:border-neutral-800">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-black font-mono tracking-tight text-[#252525] dark:text-white">{pkg.price}</span>
-                      {pkg.originalPrice && (
-                        <span className="text-xs text-neutral-400 line-through font-mono">
-                          {pkg.originalPrice}
-                        </span>
-                      )}
+                  <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
+                    <div className="text-3xl font-extrabold font-mono tracking-tight text-[var(--text-primary)] tabular-nums">
+                      {pkg.price}
                     </div>
-                    <p className="text-[11px] text-[#B68A55] font-semibold mt-0.5">
+                    <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
                       Equivalent to {pkg.equivalent}
                     </p>
                   </div>
 
-                  {/* Features List */}
                   <ul className="mt-5 space-y-2 text-xs">
                     {pkg.features.map((feat, idx) => (
                       <li key={idx} className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className="text-neutral-600 dark:text-neutral-300">{feat}</span>
+                        <span className="text-[var(--text-secondary)]">{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Action CTA */}
-                <div className="mt-6 pt-4 border-t border-[#EFE7DC] dark:border-neutral-800">
-                  <button
-                    onClick={() => handleExtendPlan(pkg)}
+                <div className="mt-6 pt-4 border-t border-[var(--border-subtle)]">
+                  <Button
+                    variant={pkg.isPopular ? "primary" : "secondary"}
+                    className="w-full"
                     disabled={isProcessing}
-                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 ${
-                      pkg.isPopular
-                        ? "bg-[#B68A55] hover:bg-[#a07746] text-white shadow-md shadow-[#B68A55]/25 hover:scale-[1.02]"
-                        : "bg-[#252525] hover:bg-black dark:bg-[#1A1A1A] dark:hover:bg-[#252525] text-white"
-                    }`}
+                    onClick={() => handleExtendPlan(pkg)}
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Opening Razorpay...</span>
                       </>
                     ) : (
-                      <>
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>{pkg.cta}</span>
-                      </>
+                      <span>{pkg.cta}</span>
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
@@ -644,95 +595,49 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Included Plan Entitlements Grid (4 Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <span>Unlimited AI Conversations</span>
-          </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
-            Zero hard tokens cap. Visitors can engage in unlimited multi-turn sales and support interactions across all deployed bots.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <span>Custom Vector Knowledge (RAG)</span>
-          </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
-            Upload PDF price sheets, FAQs, and crawl web pages up to 50 URLs per assistant with instant re-indexing and strict tenant isolation.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <span>Real-time Lead CRM & Export</span>
-          </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
-            Automatic capture of visitor phone, email, and intent scores with one-click CSV export and webhook push directly to your CRM.
-          </p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#0D0D0D] border border-neutral-200 dark:border-neutral-800 shadow-xs space-y-2">
-          <div className="flex items-center gap-2.5 font-bold text-neutral-900 dark:text-white text-sm">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <span>Meta WhatsApp Cloud Gateway</span>
-          </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed pl-9">
-            Official WhatsApp business integration to deploy your trained bot directly on your company WhatsApp number.
-          </p>
-        </div>
-      </div>
-
-      {/* Payment Security & Invoicing Details */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-neutral-50 dark:bg-[#0A0A0A] border border-neutral-200 dark:border-neutral-800 space-y-4">
-        <div className="flex items-center gap-2 text-neutral-800 dark:text-neutral-200 font-bold text-xs sm:text-sm">
+      {/* Payment Security & Invoicing Compliance */}
+      <div className="p-6 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] space-y-4">
+        <div className="flex items-center gap-2 text-[var(--text-primary)] font-bold text-xs sm:text-sm">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
           <span>Payment Security & Invoicing Compliance</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-1">
-            <span className="font-bold text-neutral-900 dark:text-white block">PCI-DSS Level 1 Security</span>
-            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block">
-              Payment credentials are never stored on our servers. Razorpay processes all transactions with 256-bit bank grade encryption.
+          <div className="p-4 rounded-xl bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] space-y-1">
+            <span className="font-bold text-[var(--text-primary)] block">
+              PCI-DSS Level 1 Gateway
+            </span>
+            <span className="text-[11px] text-[var(--text-muted)] leading-relaxed block">
+              Card and UPI credentials are processed directly by Razorpay and never stored on workspace servers.
             </span>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-1">
-            <span className="font-bold text-neutral-900 dark:text-white block">UPI & Card Autopay</span>
-            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block">
-              Supports Google Pay, PhonePe, Paytm, BHIM UPI autopay mandates and all major domestic & international credit/debit cards.
+          <div className="p-4 rounded-xl bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] space-y-1">
+            <span className="font-bold text-[var(--text-primary)] block">
+              HMAC-SHA256 Verified
+            </span>
+            <span className="text-[11px] text-[var(--text-muted)] leading-relaxed block">
+              Every payment callback is cryptographically verified before subscription entitlements are activated.
             </span>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 space-y-1">
-            <span className="font-bold text-neutral-900 dark:text-white block">GST Compliant Invoicing</span>
-            <span className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed block">
-              Automated invoice receipts with GST breakdown are dispatched to {currentUser?.email || "your registered email"} after each billing cycle.
+          <div className="p-4 rounded-xl bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] space-y-1">
+            <span className="font-bold text-[var(--text-primary)] block">
+              GST Compliant Receipts
+            </span>
+            <span className="text-[11px] text-[var(--text-muted)] leading-relaxed block">
+              Payment confirmations are dispatched to {currentUser?.email || "your workspace email"}.
             </span>
           </div>
         </div>
       </div>
 
-      {/* Premium Confirm Modal for Autopay Cancellation */}
       <ConfirmModal
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
         onConfirm={handleConfirmCancelAutopay}
-        title="Cancel Autopay?"
-        description="Are you sure you want to cancel autopay? You will not be charged when your trial or current billing cycle ends, but your subscription and bot features will lapse."
+        title="Cancel Autopay Mandate?"
+        description="You will not be charged when your trial or current billing cycle ends, and your subscription will not auto-renew."
         confirmText="Cancel Autopay"
-        cancelText="Keep My Subscription"
-        loadingText="Cancelling Autopay..."
+        cancelText="Keep Subscription"
+        loadingText="Cancelling..."
         variant="warning"
         badgeText="Subscription Notice"
       />

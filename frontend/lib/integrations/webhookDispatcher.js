@@ -1,8 +1,9 @@
 /**
- * Production Webhook Dispatcher with HMAC SHA-256 Signatures and Exponential Backoff Retries
+ * Production Webhook Dispatcher with HMAC SHA-256 Signatures, SSRF Guard, and Exponential Backoff Retries
  */
 
 import crypto from "node:crypto";
+import { validateUrlForSSRF } from "../security/ssrf.js";
 
 export class WebhookDispatcher {
   /**
@@ -14,7 +15,7 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Dispatches a webhook asynchronously with retry and idempotency
+   * Dispatches a webhook asynchronously with SSRF protection, retry, and idempotency
    */
   static async dispatch({
     url,
@@ -23,8 +24,13 @@ export class WebhookDispatcher {
     payload = {},
     maxRetries = 3,
   }) {
-    if (!url || typeof url !== "string") {
+    if (!url || typeof url !== "string" || !url.trim()) {
       return { success: false, error: "Invalid webhook URL." };
+    }
+
+    const ssrfCheck = await validateUrlForSSRF(url.trim());
+    if (!ssrfCheck.valid) {
+      return { success: false, error: `Invalid webhook URL: ${ssrfCheck.error}` };
     }
 
     const payloadString = JSON.stringify({
@@ -52,10 +58,11 @@ export class WebhookDispatcher {
     while (attempt < maxRetries) {
       attempt++;
       try {
-        const res = await fetch(url, {
+        const res = await fetch(ssrfCheck.normalizedUrl, {
           method: "POST",
           headers,
           body: payloadString,
+          redirect: "error", // Prevent HTTP 30x redirect SSRF to internal networks
           signal: AbortSignal.timeout(7000),
         });
 
@@ -66,7 +73,6 @@ export class WebhookDispatcher {
             attemptCount: attempt,
           };
         } else if (res.status >= 400 && res.status < 500) {
-          // Client error (e.g. 404 or 401) - do not retry indefinitely
           return {
             success: false,
             statusCode: res.status,
@@ -80,7 +86,6 @@ export class WebhookDispatcher {
         lastError = err;
       }
 
-      // Exponential backoff wait: 500ms, 1500ms, etc.
       if (attempt < maxRetries) {
         const backoffMs = Math.pow(2, attempt) * 400;
         await new Promise((r) => setTimeout(r, backoffMs));

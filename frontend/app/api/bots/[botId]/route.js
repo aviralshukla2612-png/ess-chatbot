@@ -1,7 +1,42 @@
 import { NextResponse } from "next/server";
 import { botsStore } from "@/lib/db/botsStore";
-import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { requireAuth, requireOrgRole, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
 import { validateProhibitedContent } from "@/lib/security/contentModeration";
+
+const TENANT_MUTABLE_BOT_FIELDS = [
+  "name",
+  "company",
+  "description",
+  "industry",
+  "avatar",
+  "primaryColor",
+  "welcomeMessage",
+  "placeholderText",
+  "systemPrompt",
+  "instructions",
+  "collectLeads",
+  "allowedDomains",
+  "quickReplies",
+  "starterQuestions",
+  "websiteUrl",
+  "phoneNumber",
+  "webhookUrl",
+  "webhookSecret",
+  "fallbackMessage",
+  "globalBotEnabled",
+  "brandingEnabled",
+  "launcherPosition",
+  "launcherShape",
+  "launcherSize",
+  "launcherIcon",
+  "launcherLogoUrl",
+  "launcherText",
+  "launcherMarginBottom",
+  "launcherMarginRight",
+  "launcherMarginLeft",
+  "launcherMarginTop",
+  "launcherAnimation",
+];
 
 export async function GET(request, { params }) {
   try {
@@ -11,9 +46,7 @@ export async function GET(request, { params }) {
     const { principal } = auth;
     const { botId } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
 
     const bot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
     if (!bot) {
@@ -39,9 +72,7 @@ export async function PUT(request, { params }) {
     const { botId } = await params;
     const body = await request.json();
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
 
     const existingBot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
     if (!existingBot) {
@@ -56,38 +87,76 @@ export async function PUT(request, { params }) {
       ? (body.organizationId || existingBot.organizationId)
       : principal.organizationId;
 
+    // Whitelist mutable fields & prevent non-SuperAdmin from unblocking Suspended/Blocked bots (SEC-16)
+    const safeUpdates = {};
+    for (const key of TENANT_MUTABLE_BOT_FIELDS) {
+      if (body[key] !== undefined) {
+        safeUpdates[key] = body[key];
+      }
+    }
+
+    if (body.status !== undefined) {
+      if (isSuperAdmin) {
+        safeUpdates.status = body.status;
+      } else if (existingBot.status === "Blocked" || existingBot.status === "Suspended") {
+        return NextResponse.json(
+          { success: false, error: "Forbidden: This chatbot has been suspended by platform administration." },
+          { status: 403 }
+        );
+      } else if (["Active", "Inactive", "Draft"].includes(body.status)) {
+        safeUpdates.status = body.status;
+      }
+    }
+
     if (body.phoneNumber || body.phone) {
       const raw = (body.phoneNumber || body.phone || "").trim();
       const digitCount = (raw.match(/\d/g) || []).length;
-      body.phoneNumber = digitCount >= 7 ? raw : null;
+      safeUpdates.phoneNumber = digitCount >= 7 ? raw : null;
     }
-    if (body.company && typeof body.company === "string") {
-      body.company = body.company.trim();
+    if (safeUpdates.company && typeof safeUpdates.company === "string") {
+      safeUpdates.company = safeUpdates.company.trim().slice(0, 140);
     }
-    if (body.websiteUrl && typeof body.websiteUrl === "string" && body.websiteUrl.trim()) {
+    if (safeUpdates.systemPrompt && typeof safeUpdates.systemPrompt === "string") {
+      safeUpdates.systemPrompt = safeUpdates.systemPrompt.slice(0, 12000);
+    }
+    if (safeUpdates.instructions && typeof safeUpdates.instructions === "string") {
+      safeUpdates.instructions = safeUpdates.instructions.slice(0, 12000);
+    }
+
+    if (safeUpdates.websiteUrl && typeof safeUpdates.websiteUrl === "string" && safeUpdates.websiteUrl.trim()) {
       const { validateUrlForSSRF } = await import("@/lib/security/ssrf");
-      const ssrfCheck = await validateUrlForSSRF(body.websiteUrl.trim());
+      const ssrfCheck = await validateUrlForSSRF(safeUpdates.websiteUrl.trim());
       if (!ssrfCheck.valid) {
         return NextResponse.json({ success: false, error: ssrfCheck.error }, { status: 400 });
       }
-      body.websiteUrl = ssrfCheck.normalizedUrl;
+      safeUpdates.websiteUrl = ssrfCheck.normalizedUrl;
     }
 
-    if (body.launcherMarginBottom !== undefined) body.launcherMarginBottom = Number(body.launcherMarginBottom) || 0;
-    if (body.launcherMarginRight !== undefined) body.launcherMarginRight = Number(body.launcherMarginRight) || 0;
-    if (body.launcherMarginLeft !== undefined) body.launcherMarginLeft = Number(body.launcherMarginLeft) || 0;
-    if (body.launcherMarginTop !== undefined) body.launcherMarginTop = Number(body.launcherMarginTop) || 0;
+    // Validate outbound webhookUrl against SSRF (SEC-12)
+    if (safeUpdates.webhookUrl && typeof safeUpdates.webhookUrl === "string" && safeUpdates.webhookUrl.trim()) {
+      const { validateUrlForSSRF } = await import("@/lib/security/ssrf");
+      const whCheck = await validateUrlForSSRF(safeUpdates.webhookUrl.trim());
+      if (!whCheck.valid) {
+        return NextResponse.json({ success: false, error: `Invalid webhook URL: ${whCheck.error}` }, { status: 400 });
+      }
+      safeUpdates.webhookUrl = whCheck.normalizedUrl;
+    }
+
+    if (safeUpdates.launcherMarginBottom !== undefined) safeUpdates.launcherMarginBottom = Number(safeUpdates.launcherMarginBottom) || 0;
+    if (safeUpdates.launcherMarginRight !== undefined) safeUpdates.launcherMarginRight = Number(safeUpdates.launcherMarginRight) || 0;
+    if (safeUpdates.launcherMarginLeft !== undefined) safeUpdates.launcherMarginLeft = Number(safeUpdates.launcherMarginLeft) || 0;
+    if (safeUpdates.launcherMarginTop !== undefined) safeUpdates.launcherMarginTop = Number(safeUpdates.launcherMarginTop) || 0;
 
     // Strict Acceptable Use Policy: Permanent Ban on Gambling, Betting, and Adult Content
     const contentCheck = validateProhibitedContent({
-      name: body.name,
-      company: body.company,
-      description: body.description,
-      systemPrompt: body.systemPrompt,
-      instructions: body.instructions,
-      welcomeMessage: body.welcomeMessage,
-      websiteUrl: body.websiteUrl,
-      allowedDomains: body.allowedDomains,
+      name: safeUpdates.name,
+      company: safeUpdates.company,
+      description: safeUpdates.description,
+      systemPrompt: safeUpdates.systemPrompt,
+      instructions: safeUpdates.instructions,
+      welcomeMessage: safeUpdates.welcomeMessage,
+      websiteUrl: safeUpdates.websiteUrl,
+      allowedDomains: safeUpdates.allowedDomains,
     });
     if (!contentCheck.ok) {
       return NextResponse.json(
@@ -101,7 +170,10 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const bot = botsStore.upsertBot({ ...existingBot, ...body, id: botId, organizationId: targetOrgId }, targetOrgId);
+    const bot = botsStore.upsertBot(
+      { ...existingBot, ...safeUpdates, id: botId, organizationId: targetOrgId },
+      targetOrgId
+    );
     return NextResponse.json({ success: true, bot });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -116,9 +188,7 @@ export async function DELETE(request, { params }) {
     const { principal } = auth;
     const { botId } = await params;
 
-    const isSuperAdmin =
-      principal.platformRole === ROLES.SUPER_ADMIN ||
-      principal.orgRole === ROLES.SUPER_ADMIN;
+    const isSuperAdmin = isPlatformSuperAdmin(principal);
 
     const existingBot = (await botsStore.getBotAsync(botId)) || botsStore.getBot(botId);
     if (!existingBot) {

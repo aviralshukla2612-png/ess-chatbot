@@ -3,6 +3,11 @@ import { botsStore } from "@/lib/db/botsStore";
 import { visitorsStore } from "@/lib/db/visitorsStore";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 import { checkDomainAuthorization } from "@/lib/security/domainGuard";
+import {
+  extractClientIp,
+  enforceRateLimit,
+  applyRateLimitHeaders,
+} from "@/lib/security/rateLimitPolicy";
 
 function getCorsOrigin(request) {
   if (!request) return "*";
@@ -229,12 +234,31 @@ async function handleSession(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { botId } = await params;
+    const clientIp = extractClientIp(request);
+    const ipCheck = await enforceRateLimit("public_session_ip", `del:${clientIp}:${botId}`);
+    if (!ipCheck.ok) return corsResponse(ipCheck.response, request);
+
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
     if (!bot || bot.status === "Inactive" || bot.status === "Deleted") {
       return corsResponse(
-        NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 }),
+        applyRateLimitHeaders(
+          NextResponse.json({ success: false, error: "Chatbot not found or inactive" }, { status: 404 }),
+          ipCheck.result
+        ),
         request
+      );
+    }
+
+    const originHeader = request.headers.get("origin") || request.headers.get("referer");
+    const allowedDomains = (!bot?.allowedDomains || !Array.isArray(bot.allowedDomains) || bot.allowedDomains.length === 0)
+      ? ["*"]
+      : bot.allowedDomains;
+    const domainCheck = checkDomainAuthorization(originHeader, allowedDomains);
+    if (!domainCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized domain." },
+        { status: 403 }
       );
     }
 

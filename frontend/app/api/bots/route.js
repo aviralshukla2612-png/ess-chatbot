@@ -144,6 +144,17 @@ export async function POST(request) {
       body.websiteUrl = validatedBaseUrl;
     }
 
+    if (body.webhookUrl && typeof body.webhookUrl === "string" && body.webhookUrl.trim()) {
+      const webhookSsrf = await validateUrlForSSRF(body.webhookUrl.trim());
+      if (!webhookSsrf.valid) {
+        return NextResponse.json(
+          { success: false, error: `Invalid webhookUrl: ${webhookSsrf.error}` },
+          { status: 400 }
+        );
+      }
+      body.webhookUrl = webhookSsrf.normalizedUrl;
+    }
+
     const bot = botsStore.upsertBot(body, principal.organizationId);
 
     // 1. Synthesize and Ingest Approved Business Knowledge Profile into RAG store
