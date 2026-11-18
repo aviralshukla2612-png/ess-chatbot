@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "vis_1795003708991_369a7968",
+    "organizationId": "org_stream_1795003708267",
+    "botId": "bot_stream_1795003708267",
+    "visitorTokenHash": "f5a6716294bc315d87e181533d4f820466987f940512ed04d95e77aa1af4b8fa",
+    "leadId": null,
+    "name": "",
+    "email": "",
+    "phone": "",
+    "metadata": {},
+    "revoked": false,
+    "lastSeenAt": "2026-11-18T12:08:28.991Z",
+    "lastConversationAt": "2026-11-18T12:08:28.991Z",
+    "createdAt": "2026-11-18T12:08:28.991Z",
+    "updatedAt": "2026-11-18T12:08:28.991Z"
+  },
+  {
+    "id": "vis_1795003705549_4aa890db",
+    "organizationId": "org_isolation_test_999",
+    "botId": "bot_clinic_dentist",
+    "visitorTokenHash": "79853065ccb9a7b9866c86d9bb2fc92adc16cb31bab403da74c2391314a881e6",
+    "leadId": null,
+    "name": "Dentist Visitor",
+    "email": "",
+    "phone": "",
+    "metadata": {},
+    "revoked": false,
+    "lastSeenAt": "2026-11-18T12:08:25.549Z",
+    "lastConversationAt": "2026-11-18T12:08:25.549Z",
+    "createdAt": "2026-11-18T12:08:25.549Z",
+    "updatedAt": "2026-11-18T12:08:25.549Z"
+  }
+]

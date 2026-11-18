@@ -7,7 +7,6 @@ function getEdgeSessionSecret() {
     return process.env.SESSION_SECRET;
   }
   if (process.env.NODE_ENV === "production") {
-    // Refuse weak/default fallback in production if SESSION_SECRET was omitted
     return process.env.SESSION_SECRET || "";
   }
   return process.env.SESSION_SECRET || FALLBACK_DEV_SECRET;
@@ -28,7 +27,6 @@ function base64UrlToUint8Array(base64Url) {
 
 /**
  * Cryptographically verify HMAC-SHA256 session JWT in Edge Runtime using Web Crypto API.
- * Prevents forged base64 payloads from bypassing /dashboard or /admin route protection.
  */
 export async function verifyEdgeSession(token) {
   if (!token || typeof token !== "string") return null;
@@ -68,7 +66,7 @@ export async function verifyEdgeSession(token) {
   }
 }
 
-function applySecurityHeaders(response, pathname) {
+function applySecurityHeaders(response, pathname, disableCache = false) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-DNS-Prefetch-Control", "on");
@@ -79,18 +77,26 @@ function applySecurityHeaders(response, pathname) {
   if (!pathname.startsWith("/preview") && !pathname.startsWith("/widget.js")) {
     response.headers.set("X-Frame-Options", "SAMEORIGIN");
   }
+  if (disableCache) {
+    response.headers.set(
+      "Cache-Control",
+      "private, no-store, no-cache, must-revalidate, max-age=0"
+    );
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+  }
   return response;
 }
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // 0. Redirect /register to /login?tab=register (unified auth screen, preserving plan/industry params)
+  // 0. Redirect /register to /login?tab=register
   if (pathname === "/register" || pathname.startsWith("/register/")) {
     const target = new URL("/login", request.url);
     request.nextUrl.searchParams.forEach((val, key) => target.searchParams.set(key, val));
     if (!target.searchParams.has("tab")) target.searchParams.set("tab", "register");
-    return applySecurityHeaders(NextResponse.redirect(target), pathname);
+    return applySecurityHeaders(NextResponse.redirect(target), pathname, true);
   }
 
   // 1. Skip public assets and public endpoints
@@ -110,14 +116,43 @@ export async function middleware(request) {
     pathname === "/forgot-password" ||
     pathname.startsWith("/preview")
   ) {
-    return applySecurityHeaders(NextResponse.next(), pathname);
+    return applySecurityHeaders(
+      NextResponse.next(),
+      pathname,
+      pathname === "/login" || pathname === "/forgot-password"
+    );
   }
 
   // 2. Extract and cryptographically verify session cookie (Edge Web Crypto HMAC-SHA256)
   const sessionCookie = request.cookies.get("ess_session")?.value;
   const session = sessionCookie ? await verifyEdgeSession(sessionCookie) : null;
 
-  // 3. Protect ALL tenant dashboard & workspace routes (including /billing and /support)
+  // 3. Block non-SUPER_ADMIN callers from /api/admin/* right at the Edge
+  if (pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {
+    if (!session) {
+      return applySecurityHeaders(
+        NextResponse.json(
+          { success: false, error: "Authentication required" },
+          { status: 401 }
+        ),
+        pathname,
+        true
+      );
+    }
+    if (session.role !== "SUPER_ADMIN") {
+      return applySecurityHeaders(
+        NextResponse.json(
+          { success: false, error: "Forbidden: Platform Super Admin privileges required." },
+          { status: 403 }
+        ),
+        pathname,
+        true
+      );
+    }
+    return applySecurityHeaders(NextResponse.next(), pathname, true);
+  }
+
+  // 4. Protect ALL tenant dashboard & workspace routes
   const protectedRoutes = [
     "/dashboard",
     "/bots",
@@ -140,51 +175,61 @@ export async function middleware(request) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
-      return applySecurityHeaders(NextResponse.redirect(loginUrl), pathname);
+      return applySecurityHeaders(NextResponse.redirect(loginUrl), pathname, true);
     }
-    return applySecurityHeaders(NextResponse.next(), pathname);
+    return applySecurityHeaders(NextResponse.next(), pathname, true);
   }
 
-  // 4. Protect /admin and /admin/* (Strict Platform SUPER_ADMIN role only — no email substring checks)
+  // 5. Protect /admin and /admin/* (Strict Platform SUPER_ADMIN role ONLY)
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     if (!session) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
-      return applySecurityHeaders(NextResponse.redirect(loginUrl), pathname);
+      return applySecurityHeaders(NextResponse.redirect(loginUrl), pathname, true);
     }
 
-    const isSuper =
-      session.role === "SUPER_ADMIN" ||
-      session.orgRole === "SUPER_ADMIN";
-
-    if (!isSuper) {
+    if (session.role !== "SUPER_ADMIN") {
       const dashboardUrl = new URL("/dashboard", request.url);
       dashboardUrl.searchParams.set("error", "unauthorized_admin");
-      return applySecurityHeaders(NextResponse.redirect(dashboardUrl), pathname);
+      return applySecurityHeaders(NextResponse.redirect(dashboardUrl), pathname, true);
     }
 
-    return applySecurityHeaders(NextResponse.next(), pathname);
+    return applySecurityHeaders(NextResponse.next(), pathname, true);
   }
 
-  return applySecurityHeaders(NextResponse.next(), pathname);
+  return applySecurityHeaders(NextResponse.next(), pathname, false);
 }
 
 export const config = {
   matcher: [
+    "/login",
     "/register/:path*",
     "/register",
     "/dashboard/:path*",
+    "/dashboard",
     "/bots/:path*",
+    "/bots",
     "/knowledge/:path*",
+    "/knowledge",
     "/conversations/:path*",
+    "/conversations",
     "/leads/:path*",
+    "/leads",
     "/analytics/:path*",
+    "/analytics",
     "/integrations/:path*",
+    "/integrations",
     "/team/:path*",
+    "/team",
     "/billing/:path*",
+    "/billing",
     "/support/:path*",
+    "/support",
     "/settings/:path*",
+    "/settings",
     "/admin/:path*",
     "/admin",
+    "/api/admin/:path*",
+    "/api/admin",
   ],
 };

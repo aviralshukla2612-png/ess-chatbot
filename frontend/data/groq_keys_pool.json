@@ -5,17 +5,17 @@
     "apiKey": "gsk_primary_auto_active",
     "maskedKey": "gsk_yCd...Wd35",
     "isActive": true,
-    "status": "active",
+    "status": "error",
     "rateLimitedUntil": null,
     "totalRequests": 5,
     "totalTokens": 6600,
     "dailyRequests": 0,
     "dailyTokens": 0,
     "lastUsedAt": "2026-10-30T12:00:00.000Z",
-    "lastError": null,
+    "lastError": "Invalid key / Auth error (401)",
     "createdAt": "2026-10-30T00:00:00.000Z",
     "dailyCap": 14400,
     "tokenCap": 500000,
-    "isServing": true
+    "isServing": false
   }
 ]

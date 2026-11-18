@@ -17,8 +17,8 @@ export default function RegisterPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#050507] flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-[#963DFF] border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-[var(--bg-canvas)] flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { Menu, Search, Sun, Moon, ArrowRight, ShieldCheck } from "lucide-react";
+import { Menu, Search, Sun, Moon, ArrowRight, ShieldCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -28,7 +28,45 @@ export default function AdminLayout({ children }) {
   const [theme, setTheme] = useState("light");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  // Hard client-side RBAC gate (prevents any cached / BFcache / prefetched Admin shell from ever rendering to non-SUPER_ADMIN users)
+  const [authStatus, setAuthStatus] = useState("verifying"); // 'verifying' | 'authorized' | 'denied'
   const searchRef = useRef(null);
+
+  const verifySuperAdmin = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", {
+        cache: "no-store",
+        headers: { Pragma: "no-cache" },
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.authenticated || !data?.user) {
+        setAuthStatus("denied");
+        window.location.replace("/login?redirect=%2Fadmin");
+        return;
+      }
+
+      if (data.user.role !== "SUPER_ADMIN") {
+        setAuthStatus("denied");
+        window.location.replace("/dashboard?error=unauthorized_admin");
+        return;
+      }
+
+      setAuthStatus("authorized");
+    } catch {
+      setAuthStatus("denied");
+      window.location.replace("/login?redirect=%2Fadmin");
+    }
+  }, []);
+
+  useEffect(() => {
+    verifySuperAdmin();
+    const handlePageShow = (e) => {
+      if (e.persisted) verifySuperAdmin();
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [verifySuperAdmin]);
 
   useEffect(() => {
     const syncTheme = () => {
@@ -62,6 +100,16 @@ export default function AdminLayout({ children }) {
     }
     window.dispatchEvent(new Event("theme-change"));
   };
+
+  // Never render Admin navigation or content until SUPER_ADMIN role is verified
+  if (authStatus !== "authorized") {
+    return (
+      <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-secondary)] flex flex-col items-center justify-center gap-3 font-sans">
+        <RefreshCw className="w-5 h-5 text-indigo-600 dark:text-indigo-400 animate-spin" />
+        <p className="text-xs font-medium">Verifying Super Admin privileges...</p>
+      </div>
+    );
+  }
 
   const filteredItems = ADMIN_SEARCH_ITEMS.filter((item) => {
     const q = searchQuery.trim().toLowerCase();
@@ -162,29 +210,16 @@ export default function AdminLayout({ children }) {
                     </>
                   )}
                 </button>
-
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/25">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="hidden sm:inline">Operational</span>
-                </span>
-
-                <div className="flex items-center gap-2 pl-2.5 border-l border-[var(--border-subtle)]">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-semibold text-xs flex items-center justify-center">
+                <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-[var(--border-subtle)]">
+                  <div className="w-7 h-7 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
                     SA
                   </div>
-                  <div className="hidden sm:block text-left">
-                    <p className="text-xs font-semibold text-[var(--text-primary)] leading-tight">
-                      Platform Admin
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)] leading-tight">
-                      SUPER_ADMIN
-                    </p>
-                  </div>
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">Super Admin</span>
                 </div>
               </div>
             </header>
 
-            <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl w-full mx-auto">
+            <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
               <Suspense fallback={<div className="py-12" />}>
                 {children}
               </Suspense>

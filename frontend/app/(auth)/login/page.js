@@ -3,26 +3,25 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  Sparkles,
   CheckCircle2,
   Lock,
   ArrowRight,
   ShieldAlert,
-  User,
-  Globe,
+  UserPlus,
   ArrowLeft,
   CreditCard,
   Check,
-  Phone,
   KeyRound,
   RefreshCw,
   Clock,
   AlertTriangle,
-  Smartphone,
+  LogIn,
   Eye,
   EyeOff,
+  Sun,
+  Moon,
+  ShieldCheck,
 } from "lucide-react";
 
 const PLAN_INFO = {
@@ -30,60 +29,84 @@ const PLAN_INFO = {
     name: "Monthly Plan",
     price: "₹999 / month",
     badge: "Flexible Access",
-    color: "#00D98B",
   },
   "six-months": {
     name: "Six Months Plan",
     price: "₹5,999 / 6 months",
     badge: "Commercial Half-Year",
-    color: "#C653FF",
   },
   annual: {
     name: "Annual VIP Plan",
     price: "₹8,999 / year",
-    badge: "Maximum Value · Save ₹2,989",
-    color: "#55A9FF",
+    badge: "Save ₹2,989",
   },
 };
+
+/**
+ * Normalize Indian 10-digit mobile input cleanly:
+ * Strips non-digits; if 12 digits starting with "91" (e.g. pasted "+91 9876543210"), trims prefix to 10 digits;
+ * hard-caps length at 10 digits so 15-16 digit typos are impossible.
+ */
+function sanitizeTenDigitPhone(raw) {
+  let digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) {
+    digits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+  return digits.slice(0, 10);
+}
+
+/**
+ * Sanitize login identifier (accepts either a 10-digit mobile number OR an email address).
+ */
+function sanitizeLoginIdentifier(raw) {
+  const val = String(raw || "");
+  // If user is typing an email (contains letters or @), preserve email characters cleanly
+  if (/[a-zA-Z@]/.test(val)) {
+    return val.trimStart().slice(0, 120);
+  }
+  return sanitizeTenDigitPhone(val);
+}
+
+/**
+ * Sanitize redirect path to prevent open redirects and prevent non-admin redirects to /admin.
+ */
+function resolveSafeRedirect(redirectPath, isSuperAdmin, defaultTarget) {
+  if (
+    !redirectPath ||
+    typeof redirectPath !== "string" ||
+    !redirectPath.startsWith("/") ||
+    redirectPath.startsWith("//")
+  ) {
+    return defaultTarget;
+  }
+  if (!isSuperAdmin && (redirectPath === "/admin" || redirectPath.startsWith("/admin/"))) {
+    return "/dashboard";
+  }
+  return redirectPath;
+}
 
 /**
  * 6 Separate OTP Boxes Component with Auto-Advance, Backspace Backtracking, and Paste Support
  */
 function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = true }) {
   const inputRefs = useRef([]);
-
-  // 6 individual character slots
   const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
 
   const handleBoxChange = (e, idx) => {
     const val = e.target.value.replace(/\D/g, "");
-
-    // If emptied
     if (!val) {
-      const newOtp = value.slice(0, idx) + "" + value.slice(idx + 1);
+      const newOtp = value.slice(0, idx) + value.slice(idx + 1);
       onChange(newOtp.trim());
       return;
     }
 
-    // If multiple characters typed or auto-filled
-    if (val.length > 1) {
-      const char = val.slice(-1);
-      const newArr = [...digits];
-      newArr[idx] = char;
-      const combined = newArr.join("").slice(0, 6);
-      onChange(combined);
-      if (idx < 5 && inputRefs.current[idx + 1]) {
-        inputRefs.current[idx + 1].focus();
-      }
-      return;
-    }
-
-    // Single digit typed
+    const char = val.slice(-1);
     const newArr = [...digits];
-    newArr[idx] = val;
+    newArr[idx] = char;
     const combined = newArr.join("").slice(0, 6);
     onChange(combined);
-
     if (idx < 5 && inputRefs.current[idx + 1]) {
       inputRefs.current[idx + 1].focus();
     }
@@ -92,13 +115,10 @@ function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = 
   const handleKeyDown = (e, idx) => {
     if (e.key === "Backspace") {
       if (!digits[idx] && idx > 0) {
-        // Current box already empty: move to previous box & clear it
         const newArr = [...digits];
         newArr[idx - 1] = "";
         onChange(newArr.join("").trim());
-        if (inputRefs.current[idx - 1]) {
-          inputRefs.current[idx - 1].focus();
-        }
+        inputRefs.current[idx - 1]?.focus();
       } else {
         const newArr = [...digits];
         newArr[idx] = "";
@@ -121,7 +141,7 @@ function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = 
   };
 
   return (
-    <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 my-2" onPaste={handlePaste}>
+    <div className="flex items-center justify-between gap-2 my-2" onPaste={handlePaste}>
       {[0, 1, 2, 3, 4, 5].map((idx) => {
         const char = digits[idx];
         const isFilled = Boolean(char);
@@ -133,15 +153,16 @@ function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = 
             inputMode="numeric"
             pattern="[0-9]*"
             maxLength={1}
+            aria-label={`OTP digit ${idx + 1}`}
             disabled={disabled}
             autoFocus={autoFocus && idx === 0}
             value={char}
             onChange={(e) => handleBoxChange(e, idx)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
-            className={`w-11 sm:w-12 h-13 sm:h-14 text-center font-mono text-xl sm:text-2xl font-black rounded-xl sm:rounded-2xl border transition-all duration-200 outline-hidden select-none ${
+            className={`w-11 sm:w-12 h-12 sm:h-13 text-center font-mono text-lg sm:text-xl font-bold rounded-xl border transition-all duration-150 outline-none select-none ${
               isFilled
-                ? "bg-[#100D1C] border-[#963DFF] text-white shadow-[0_0_15px_rgba(150,61,255,0.35)]"
-                : "bg-black/80 border-white/15 text-white/90 hover:border-white/30 focus:border-[#963DFF] focus:bg-[#0C0A14] focus:ring-2 focus:ring-[#963DFF]/40"
+                ? "bg-indigo-50/70 dark:bg-indigo-500/15 border-indigo-600 dark:border-indigo-400 text-[var(--text-primary)] ring-2 ring-indigo-500/20"
+                : "bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-primary)] hover:border-slate-400 dark:hover:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           />
         );
@@ -151,8 +172,8 @@ function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = 
 }
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState("login"); // 'login' or 'register'
+  const [activeTab, setActiveTab] = useState("login"); // 'login' | 'register'
+  const [theme, setTheme] = useState("light");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -162,7 +183,7 @@ export default function LoginPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedIndustry, setSelectedIndustry] = useState(null);
 
-  // Mobile OTP States - Registration
+  // Registration states
   const [regPhone, setRegPhone] = useState("");
   const [regOtp, setRegOtp] = useState("");
   const [regOtpSent, setRegOtpSent] = useState(false);
@@ -179,9 +200,9 @@ export default function LoginPage() {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
-  // Mobile States - Login
-  const [loginPhone, setLoginPhone] = useState("");
-  const [loginMode, setLoginMode] = useState("password"); // 'password' or 'otp'
+  // Login states
+  const [loginIdentifier, setLoginIdentifier] = useState("");
+  const [loginMode, setLoginMode] = useState("password"); // 'password' | 'otp'
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginOtp, setLoginOtp] = useState("");
@@ -193,7 +214,31 @@ export default function LoginPage() {
   const [loginIsBanned, setLoginIsBanned] = useState(false);
   const [loginBanMessage, setLoginBanMessage] = useState("");
 
-  // 60-Second Cooldown Countdown Timers
+  useEffect(() => {
+    const syncTheme = () => {
+      setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    };
+    syncTheme();
+    window.addEventListener("theme-change", syncTheme);
+    return () => window.removeEventListener("theme-change", syncTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    try {
+      localStorage.setItem("theme", next);
+    } catch {}
+    if (next === "dark") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    }
+    window.dispatchEvent(new Event("theme-change"));
+  };
+
   useEffect(() => {
     if (regCooldown <= 0) return;
     const interval = setInterval(() => {
@@ -230,12 +275,12 @@ export default function LoginPage() {
         setSelectedIndustry(ind);
         try {
           localStorage.setItem("nexus_selected_industry", ind);
-        } catch (e) {}
+        } catch {}
       } else {
         try {
           const stored = localStorage.getItem("nexus_selected_industry");
           if (stored) setSelectedIndustry(stored);
-        } catch (e) {}
+        } catch {}
       }
       const tab = params.get("tab");
       if (tab === "register") {
@@ -244,7 +289,6 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Poll carrier Delivery Report (DLR) in background to confirm handset arrival
   const trackCarrierDelivery = (messageId, phoneLabel) => {
     if (!messageId) return;
     [3800, 8200].forEach((delay) => {
@@ -259,11 +303,11 @@ export default function LoginPage() {
             setSuccessMessage((prev) =>
               prev && prev.includes("verified successfully")
                 ? prev
-                : `SMS OTP delivered to ${phoneLabel}. Enter your 6-digit code below.`
+                : `SMS code delivered to ${phoneLabel}. Enter your 6-digit code below.`
             );
           } else if (d?.status === "failed") {
             setErrorMessage(
-              `Telecom carrier rejected SMS delivery (${d.stat || "DLT/DND block"}, code ${d.err || "N/A"}). Please check DND status or retry.`
+              `Carrier could not deliver SMS (${d.stat || "DLT/DND block"}, code ${d.err || "N/A"}). Check DND status or retry.`
             );
           }
         } catch {}
@@ -271,11 +315,11 @@ export default function LoginPage() {
     });
   };
 
-  // Send Registration OTP via DLT Gateway
+  // Send Registration OTP (Single unified trigger — never duplicated)
   const handleSendRegOtp = async () => {
-    const rawDigits = regPhone.replace(/\D/g, "");
-    if (rawDigits.length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number");
+    const cleanDigits = sanitizeTenDigitPhone(regPhone);
+    if (!/^[6-9]\d{9}$/.test(cleanDigits)) {
+      setErrorMessage("Please enter a valid 10-digit Indian mobile number.");
       return;
     }
     setErrorMessage("");
@@ -286,7 +330,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: regPhone, purpose: "registration" }),
+        body: JSON.stringify({ phone: cleanDigits, purpose: "registration" }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -296,14 +340,14 @@ export default function LoginPage() {
         } else if (data.cooldown && data.cooldownSeconds) {
           setRegCooldown(data.cooldownSeconds);
         }
-        throw new Error(data.error || "Failed to dispatch verification code");
+        throw new Error(data.error || "Failed to send verification code.");
       }
 
       setRegOtpSent(true);
       setRegCooldown(data.cooldownSeconds || 60);
       setRegAttemptsLeft(5);
       setRegIsBanned(false);
-      setSuccessMessage(`SMS Verification Code dispatched to ${data.phone}. Checking handset delivery...`);
+      setSuccessMessage(`6-digit verification code sent to ${data.phone}.`);
       trackCarrierDelivery(data.messageId, data.phone);
     } catch (err) {
       setErrorMessage(err.message);
@@ -315,7 +359,7 @@ export default function LoginPage() {
   // Verify Registration OTP
   const handleVerifyRegOtp = async () => {
     if (!regOtp || regOtp.trim().length !== 6) {
-      setErrorMessage("Please enter the complete 6-digit OTP code");
+      setErrorMessage("Please enter the complete 6-digit verification code.");
       return;
     }
     setErrorMessage("");
@@ -326,7 +370,11 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: regPhone, otp: regOtp.trim(), purpose: "registration" }),
+        body: JSON.stringify({
+          phone: sanitizeTenDigitPhone(regPhone),
+          otp: regOtp.trim(),
+          purpose: "registration",
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -337,13 +385,13 @@ export default function LoginPage() {
         } else if (data.attemptsLeft !== undefined) {
           setRegAttemptsLeft(data.attemptsLeft);
         }
-        throw new Error(data.error || "Invalid OTP code");
+        throw new Error(data.error || "Invalid verification code.");
       }
 
       setRegPhoneVerified(true);
       setRegVerificationToken(data.verificationToken);
       setRegAttemptsLeft(null);
-      setSuccessMessage("Mobile number verified successfully!");
+      setSuccessMessage("Mobile number verified. Set a password to finish creating your workspace.");
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -351,11 +399,10 @@ export default function LoginPage() {
     }
   };
 
-  // Registration Submit (Mobile OTP -> Create Password)
+  // Registration Form Submit
   const handleRegisterSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
-    // Stage 1: If phone not verified yet, ensure OTP is verified first
     if (!regPhoneVerified || !regVerificationToken) {
       if (!regOtpSent) {
         await handleSendRegOtp();
@@ -365,13 +412,12 @@ export default function LoginPage() {
       return;
     }
 
-    // Stage 2: Phone is verified -> Validate Passwords
     if (!regPassword || regPassword.length < 8) {
-      setErrorMessage("Please create a password with at least 8 characters");
+      setErrorMessage("Password must be at least 8 characters long.");
       return;
     }
     if (regPassword !== regConfirmPassword) {
-      setErrorMessage("Passwords do not match");
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
@@ -384,7 +430,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: regPhone,
+          phone: sanitizeTenDigitPhone(regPhone),
           password: regPassword,
           verificationToken: regVerificationToken,
         }),
@@ -401,19 +447,21 @@ export default function LoginPage() {
         return;
       }
 
-      const defaultTarget = selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
-      window.location.replace(redirectPath || defaultTarget);
+      const defaultTarget = selectedIndustry
+        ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}`
+        : "/dashboard";
+      window.location.replace(resolveSafeRedirect(redirectPath, false, defaultTarget));
     } catch (err) {
       setErrorMessage(err.message || "Registration failed. Please try again.");
       setLoading(false);
     }
   };
 
-  // Send Login OTP via DLT Gateway
+  // Send Login OTP
   const handleSendLoginOtp = async () => {
-    const rawDigits = loginPhone.replace(/\D/g, "");
-    if (rawDigits.length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number");
+    const cleanDigits = sanitizeTenDigitPhone(loginIdentifier);
+    if (!/^[6-9]\d{9}$/.test(cleanDigits)) {
+      setErrorMessage("Please enter a valid 10-digit mobile number to receive an OTP.");
       return;
     }
     setErrorMessage("");
@@ -424,7 +472,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: loginPhone, purpose: "login" }),
+        body: JSON.stringify({ phone: cleanDigits, purpose: "login" }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -434,14 +482,14 @@ export default function LoginPage() {
         } else if (data.cooldown && data.cooldownSeconds) {
           setLoginCooldown(data.cooldownSeconds);
         }
-        throw new Error(data.error || "Failed to dispatch verification code");
+        throw new Error(data.error || "Failed to send verification code.");
       }
 
       setLoginOtpSent(true);
       setLoginCooldown(data.cooldownSeconds || 60);
       setLoginAttemptsLeft(5);
       setLoginIsBanned(false);
-      setSuccessMessage(`SMS Verification Code dispatched to ${data.phone}. Checking handset delivery...`);
+      setSuccessMessage(`6-digit verification code sent to ${data.phone}.`);
       trackCarrierDelivery(data.messageId, data.phone);
     } catch (err) {
       setErrorMessage(err.message);
@@ -450,30 +498,30 @@ export default function LoginPage() {
     }
   };
 
-  // Login Submit (Password or OTP Mode)
+  // Login Submit (Password or OTP)
   const handleLoginSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
 
-    const isEmail = loginPhone.includes("@");
-    const rawDigits = loginPhone.replace(/\D/g, "");
-    if (!isEmail && rawDigits.length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number or admin email");
-      return;
-    }
+    const isEmail = loginIdentifier.includes("@");
+    const cleanDigits = sanitizeTenDigitPhone(loginIdentifier);
 
-    // 1. Mobile & Password Mode (or Admin Email & Password)
     if (loginMode === "password") {
-      if (!loginPassword) {
-        setErrorMessage("Please enter your password");
+      if (!isEmail && cleanDigits.length !== 10) {
+        setErrorMessage("Enter a valid 10-digit mobile number or email address.");
         return;
       }
+      if (!loginPassword) {
+        setErrorMessage("Please enter your password.");
+        return;
+      }
+
       setLoading(true);
       try {
         const payload = isEmail
-          ? { email: loginPhone.trim().toLowerCase(), password: loginPassword }
-          : { phone: loginPhone, password: loginPassword };
+          ? { email: loginIdentifier.trim().toLowerCase(), password: loginPassword }
+          : { phone: cleanDigits, password: loginPassword };
 
         const lRes = await fetch("/api/auth/login", {
           method: "POST",
@@ -482,7 +530,7 @@ export default function LoginPage() {
         });
         const lData = await lRes.json();
         if (!lRes.ok || !lData.success) {
-          throw new Error(lData.error || (isEmail ? "Invalid admin email or password" : "Invalid mobile number or password"));
+          throw new Error(lData.error || "Invalid credentials. Please check and try again.");
         }
 
         if (selectedPlan) {
@@ -491,9 +539,13 @@ export default function LoginPage() {
           return;
         }
 
-        const isSuper = lData.user?.role === "SUPER_ADMIN" || lData.orgRole === "SUPER_ADMIN";
-        const defaultTarget = isSuper ? "/admin" : selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
-        window.location.replace(redirectPath || defaultTarget);
+        const isSuper = lData.user?.role === "SUPER_ADMIN";
+        const defaultTarget = isSuper
+          ? "/admin"
+          : selectedIndustry
+          ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}`
+          : "/dashboard";
+        window.location.replace(resolveSafeRedirect(redirectPath, isSuper, defaultTarget));
       } catch (err) {
         setErrorMessage(err.message);
       } finally {
@@ -502,23 +554,26 @@ export default function LoginPage() {
       return;
     }
 
-    // 2. Mobile & OTP Mode
+    // OTP Mode
+    if (isEmail) {
+      setErrorMessage("SMS OTP sign-in requires a 10-digit mobile number. Use Password mode for email sign-in.");
+      return;
+    }
     if (!loginOtpSent) {
       await handleSendLoginOtp();
       return;
     }
     if (!loginOtp || loginOtp.trim().length !== 6) {
-      setErrorMessage("Please enter the 6-digit OTP code");
+      setErrorMessage("Please enter the 6-digit verification code.");
       return;
     }
-    setLoginOtpVerifying(true);
 
+    setLoginOtpVerifying(true);
     try {
-      // 1. Verify OTP code
       const vRes = await fetch("/api/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: loginPhone, otp: loginOtp.trim(), purpose: "login" }),
+        body: JSON.stringify({ phone: cleanDigits, otp: loginOtp.trim(), purpose: "login" }),
       });
       const vData = await vRes.json();
       if (!vRes.ok || !vData.success) {
@@ -529,15 +584,14 @@ export default function LoginPage() {
         } else if (vData.attemptsLeft !== undefined) {
           setLoginAttemptsLeft(vData.attemptsLeft);
         }
-        throw new Error(vData.error || "Invalid OTP code");
+        throw new Error(vData.error || "Invalid verification code.");
       }
 
-      // 2. Complete Phone Session Sign In
       const lRes = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: loginPhone,
+          phone: cleanDigits,
           verificationToken: vData.verificationToken,
           mode: "otp",
         }),
@@ -545,14 +599,13 @@ export default function LoginPage() {
       const lData = await lRes.json();
       if (!lRes.ok || !lData.success) {
         if (lData.userFound === false) {
-          // Pre-fill phone in register tab with verified status and switch to set password
-          setRegPhone(loginPhone);
+          setRegPhone(cleanDigits);
           setRegPhoneVerified(true);
           setRegVerificationToken(vData.verificationToken);
           setActiveTab("register");
-          throw new Error("No account found for this mobile number. Please create a password to complete registration.");
+          throw new Error("Mobile verified, but no workspace exists yet. Set a password below to finish registration.");
         }
-        throw new Error(lData.error || "Sign in failed");
+        throw new Error(lData.error || "Sign in failed.");
       }
 
       if (selectedPlan) {
@@ -561,9 +614,13 @@ export default function LoginPage() {
         return;
       }
 
-      const isSuper = lData.user?.role === "SUPER_ADMIN" || lData.orgRole === "SUPER_ADMIN";
-      const defaultTarget = isSuper ? "/admin" : selectedIndustry ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}` : "/dashboard";
-      window.location.replace(redirectPath || defaultTarget);
+      const isSuper = lData.user?.role === "SUPER_ADMIN";
+      const defaultTarget = isSuper
+        ? "/admin"
+        : selectedIndustry
+        ? `/bots/create?industry=${encodeURIComponent(selectedIndustry)}`
+        : "/dashboard";
+      window.location.replace(resolveSafeRedirect(redirectPath, isSuper, defaultTarget));
     } catch (err) {
       setErrorMessage(err.message);
     } finally {
@@ -574,210 +631,278 @@ export default function LoginPage() {
   const planMeta = selectedPlan
     ? PLAN_INFO[selectedPlan] || {
         name: selectedPlan.replace(/-/g, " ").toUpperCase(),
-        price: "Custom Plan",
-        badge: "Selected Plan",
-        color: "#963DFF",
+        price: "Selected Plan",
+        badge: "Checkout Pending",
       }
     : null;
 
+  const isTypingEmail = /[a-zA-Z@]/.test(loginIdentifier);
+
   return (
-    <div className="min-h-screen bg-black text-[#F5F5F7] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 relative font-sans">
-      <div className="w-full max-w-md relative z-10 space-y-6">
-        {/* Brand Logo & Presentation */}
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-10 relative font-sans transition-colors duration-150">
+      {/* Top-Right Theme Toggle */}
+      <div className="fixed top-4 right-4 z-20">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Switch color theme"
+          className="h-9 px-3 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] text-[var(--text-secondary)] shadow-xs flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer"
+        >
+          {theme === "dark" ? (
+            <>
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <span>Light</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-3.5 h-3.5 text-slate-600" />
+              <span>Dark</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="w-full max-w-[440px] space-y-6">
+        {/* Brand Header */}
         <div className="text-center flex flex-col items-center">
-          <Link href="/" className="inline-block group focus:outline-hidden" title="Return to Emperor Nexus Home">
-            <img
-              src="/logo.png"
-              alt="Emperor Nexus — Sales AI Assistant"
-              className="h-12 sm:h-14 w-auto object-contain filter drop-shadow-[0_0_24px_rgba(150,61,255,0.4)] transition-transform duration-300 group-hover:scale-105"
-            />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 group focus:outline-none"
+            title="Return to Emperor Nexus Home"
+          >
+            <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-indigo-600 flex items-center justify-center shadow-sm">
+              <img
+                src="/favicon.svg"
+                alt=""
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+            <div className="text-left">
+              <span className="block text-base font-bold tracking-tight text-[var(--text-primary)] leading-none">
+                Emperor Nexus
+              </span>
+              <span className="block text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+                Enterprise AI Sales &amp; Support
+              </span>
+            </div>
           </Link>
-          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            {activeTab === "register" ? "Create Workspace" : "Sign In to Workspace"}
+
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            {activeTab === "register" ? "Create your workspace" : "Sign in to your workspace"}
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-[#9898A6]">
+          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
             {activeTab === "register"
-              ? "Verify mobile number with OTP & set your password"
-              : "Enter your mobile number and password or sign in with OTP"}
+              ? "Verify your 10-digit mobile number with SMS OTP and set a password."
+              : "Sign in with your mobile number or email address."}
           </p>
         </div>
 
-        {/* Selected Plan Banner if arriving from Pricing */}
+        {/* Selected Plan Banner */}
         {planMeta && (
-          <div className="p-3.5 rounded-2xl bg-black border border-[#963DFF]/40 shadow-[0_0_30px_rgba(150,61,255,0.15)] flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="p-3.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#963DFF]/20 text-[#C28AFF] flex items-center justify-center shrink-0 border border-[#963DFF]/30">
+              <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
                 <CreditCard className="w-4 h-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">{planMeta.name}</span>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">{planMeta.name}</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
                     {planMeta.price}
                   </span>
                 </div>
-                <p className="text-[11px] text-[#9898A6] mt-0.5">
-                  Complete sign-in or registration to proceed with order
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  Complete authentication to continue to checkout
                 </p>
               </div>
             </div>
-            <div className="w-6 h-6 rounded-full bg-[#963DFF]/30 text-[#C28AFF] flex items-center justify-center shrink-0">
-              <Check className="w-3.5 h-3.5" />
-            </div>
+            <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
           </div>
         )}
 
-        {/* Success Alert Box */}
+        {/* Success Alert */}
         {successMessage && (
-          <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-start gap-2.5 shadow-lg animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{successMessage}</span>
+          <div
+            role="status"
+            className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs flex items-start gap-2.5"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{successMessage}</span>
           </div>
         )}
 
-        {/* Error Alert Box */}
+        {/* Error Alert */}
         {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2.5 shadow-lg animate-in fade-in">
-            <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">{errorMessage}</span>
+          <div
+            role="alert"
+            className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{errorMessage}</span>
           </div>
         )}
 
-        {/* Deep Black Luxury Card */}
-        <div className="bg-black p-6 sm:p-8 rounded-3xl border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.95)] relative">
-          {/* Segmented Switcher (Sign In vs Register) */}
-          <div className="flex p-1 rounded-2xl bg-[#0A0A0E] border border-white/10 mb-6 relative">
+        {/* Auth Surface Card */}
+        <div className="bg-[var(--bg-surface)] p-6 sm:p-7 rounded-2xl border border-[var(--border-subtle)] shadow-[var(--shadow-md)]">
+          {/* Segmented Tab Switcher */}
+          <div
+            role="tablist"
+            aria-label="Authentication mode"
+            className="grid grid-cols-2 p-1 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] mb-6"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === "login"}
               onClick={() => {
                 setActiveTab("login");
                 setErrorMessage("");
                 setSuccessMessage("");
               }}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === "login"
-                  ? "bg-[#963DFF] text-white shadow-[0_0_20px_rgba(150,61,255,0.45)]"
-                  : "text-[#9898A6] hover:text-white"
+                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs border border-[var(--border-subtle)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
-              <Smartphone className="w-3.5 h-3.5" />
+              <LogIn className="w-3.5 h-3.5" />
               <span>Sign In</span>
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === "register"}
               onClick={() => {
                 setActiveTab("register");
                 setErrorMessage("");
                 setSuccessMessage("");
               }}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === "register"
-                  ? "bg-[#963DFF] text-white shadow-[0_0_20px_rgba(150,61,255,0.45)]"
-                  : "text-[#9898A6] hover:text-white"
+                  ? "bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs border border-[var(--border-subtle)]"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               }`}
             >
-              <User className="w-3.5 h-3.5" />
-              <span>Register</span>
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Create Account</span>
             </button>
           </div>
 
-          {/* ================= SIGN IN VIEW (MOBILE & PASSWORD OR OTP) ================= */}
+          {/* ================= SIGN IN TAB ================= */}
           {activeTab === "login" && (
-            <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs sm:text-sm">
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Mobile Number or Admin Email
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="login-identifier"
+                    className="block text-xs font-semibold text-[var(--text-primary)]"
+                  >
+                    {loginMode === "otp" ? "Mobile Number" : "Mobile Number or Email"}
+                  </label>
+                  {!isTypingEmail && loginIdentifier.length > 0 && (
+                    <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                      {loginIdentifier.length}/10 digits
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
-                  {!loginPhone.includes("@") && (
-                    <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
-                      🇮🇳 +91
+                  {!isTypingEmail && (
+                    <div className="flex items-center px-3 h-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)] font-mono text-xs font-medium select-none shrink-0">
+                      IN +91
                     </div>
                   )}
                   <input
+                    id="login-identifier"
                     type="text"
                     required
-                    value={loginPhone}
-                    onChange={(e) => setLoginPhone(e.target.value)}
-                    placeholder="10-digit mobile number or admin email"
-                    className="flex-1 px-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                    autoComplete="username"
+                    value={loginIdentifier}
+                    onChange={(e) => {
+                      const nextVal =
+                        loginMode === "otp"
+                          ? sanitizeTenDigitPhone(e.target.value)
+                          : sanitizeLoginIdentifier(e.target.value);
+                      setLoginIdentifier(nextVal);
+                      if (loginOtpSent) {
+                        setLoginOtpSent(false);
+                        setLoginOtp("");
+                      }
+                    }}
+                    placeholder={
+                      loginMode === "otp"
+                        ? "9876543210"
+                        : "10-digit mobile or you@company.com"
+                    }
+                    className="flex-1 h-10 px-3.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-slate-400 dark:hover:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
                   />
-                  {loginMode === "otp" && (
-                    <button
-                      type="button"
-                      disabled={loginOtpSending || loginCooldown > 0 || loginIsBanned || !loginPhone}
-                      onClick={handleSendLoginOtp}
-                      className="px-3.5 py-3 rounded-xl bg-[#963DFF] hover:bg-[#8529f7] disabled:bg-white/5 disabled:text-white/40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(150,61,255,0.3)]"
-                    >
-                      {loginOtpSending ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : loginCooldown > 0 ? (
-                        <>
-                          <Clock className="w-3 h-3 text-[#C28AFF]" />
-                          <span>{loginCooldown}s</span>
-                        </>
-                      ) : loginOtpSent ? (
-                        "Resend"
-                      ) : (
-                        "Send OTP"
-                      )}
-                    </button>
-                  )}
                 </div>
               </div>
 
-              {/* 24-Hour Banned Notice for Login */}
               {loginIsBanned && (
-                <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-rose-200">Account Temporarily Locked for 24 Hours</p>
-                    <p className="text-[11px] text-rose-300/90 mt-0.5">
-                      {loginBanMessage || "This number has been locked for 24 hours due to 5 consecutive failed OTP attempts."}
+                    <p className="font-semibold">Temporarily Locked for 24 Hours</p>
+                    <p className="mt-0.5 opacity-90">
+                      {loginBanMessage || "Locked after 5 consecutive failed OTP attempts."}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Mode A: Password Input */}
+              {/* Password Sign-In Mode */}
               {loginMode === "password" && (
-                <div className="space-y-4 animate-in fade-in">
+                <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-semibold text-[#D1D1DB]">Password</label>
+                      <label
+                        htmlFor="login-password"
+                        className="text-xs font-semibold text-[var(--text-primary)]"
+                      >
+                        Password
+                      </label>
                       <div className="flex items-center gap-3">
                         <Link
                           href="/forgot-password"
-                          className="text-[11px] text-[#9898A6] hover:text-white transition-colors"
+                          className="text-xs font-medium text-[var(--text-secondary)] hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                         >
                           Forgot password?
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLoginMode("otp");
-                            setErrorMessage("");
-                          }}
-                          className="text-[11px] text-[#C28AFF] hover:underline cursor-pointer"
-                        >
-                          Use OTP instead
-                        </button>
+                        {!isTypingEmail && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLoginMode("otp");
+                              setLoginIdentifier((v) => sanitizeTenDigitPhone(v));
+                              setErrorMessage("");
+                            }}
+                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                          >
+                            Use SMS OTP
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
                       <input
+                        id="login-password"
                         type={showLoginPassword ? "text" : "password"}
                         required
+                        autoComplete="current-password"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="Enter your account password"
-                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                        placeholder="Enter your password"
+                        className="w-full h-10 pl-9 pr-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-slate-400 dark:hover:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                        aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowLoginPassword((s) => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                       >
                         {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -786,17 +911,17 @@ export default function LoginPage() {
 
                   <button
                     type="submit"
-                    disabled={loading || !loginPhone || !loginPassword}
-                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={loading || !loginIdentifier || !loginPassword}
+                    className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Signing In...</span>
+                        <span>Signing in...</span>
                       </>
                     ) : (
                       <>
-                        <span>Sign In to Workspace</span>
+                        <span>Sign In</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -804,9 +929,9 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Mode B: OTP Input for Login */}
+              {/* SMS OTP Sign-In Mode (Single action button — never duplicated) */}
               {loginMode === "otp" && (
-                <div className="space-y-4 animate-in fade-in">
+                <div className="space-y-4">
                   <div className="flex justify-end">
                     <button
                       type="button"
@@ -814,133 +939,139 @@ export default function LoginPage() {
                         setLoginMode("password");
                         setErrorMessage("");
                       }}
-                      className="text-[11px] text-[#C28AFF] hover:underline cursor-pointer"
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                     >
-                      Sign in with Password instead
+                      Sign in with password instead
                     </button>
                   </div>
 
-                  {loginOtpSent && !loginIsBanned && (
-                    <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
-                          <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
-                          Enter 6-Digit OTP Code:
-                        </span>
-                        {loginAttemptsLeft !== null && (
-                          <span className={`text-[11px] font-bold ${loginAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
-                            {loginAttemptsLeft} of 5 attempts left
-                          </span>
-                        )}
-                      </div>
-
-                      <SixDigitOtpBoxes
-                        value={loginOtp}
-                        onChange={setLoginOtp}
-                        disabled={loginOtpVerifying}
-                        autoFocus={true}
-                      />
-
-                      <button
-                        type="submit"
-                        disabled={loginOtpVerifying || loginOtp.length !== 6}
-                        className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {loginOtpVerifying ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>Verifying & Signing In...</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Sign In to Workspace</span>
-                            <ArrowRight className="w-4 h-4" />
-                          </>
-                        )}
-                      </button>
-
-                      <p className="text-[11px] text-[#9898A6] text-center">
-                        Security Policy: 5 consecutive failed attempts will lock this mobile number for 24 hours.
-                      </p>
-                    </div>
-                  )}
-
-                  {!loginOtpSent && (
+                  {!loginOtpSent ? (
                     <button
                       type="button"
                       onClick={handleSendLoginOtp}
-                      disabled={loginOtpSending || !loginPhone}
-                      className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled={loginOtpSending || loginIsBanned || loginIdentifier.length !== 10}
+                      className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loginOtpSending ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Sending OTP...</span>
+                          <span>Sending verification code...</span>
                         </>
                       ) : (
                         <>
-                          <span>Send OTP Code</span>
+                          <span>Send Verification Code</span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
                     </button>
+                  ) : (
+                    !loginIsBanned && (
+                      <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[var(--text-primary)] font-semibold flex items-center gap-1.5">
+                            <KeyRound className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                            Enter 6-Digit SMS Code
+                          </span>
+                          <button
+                            type="button"
+                            disabled={loginOtpSending || loginCooldown > 0}
+                            onClick={handleSendLoginOtp}
+                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline disabled:text-[var(--text-muted)] disabled:no-underline disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                          >
+                            {loginCooldown > 0 ? (
+                              <>
+                                <Clock className="w-3 h-3" />
+                                <span>Resend in {loginCooldown}s</span>
+                              </>
+                            ) : (
+                              "Resend code"
+                            )}
+                          </button>
+                        </div>
+
+                        <SixDigitOtpBoxes
+                          value={loginOtp}
+                          onChange={setLoginOtp}
+                          disabled={loginOtpVerifying}
+                          autoFocus={true}
+                        />
+
+                        {loginAttemptsLeft !== null && (
+                          <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 text-right">
+                            {loginAttemptsLeft} of 5 attempts remaining
+                          </p>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={loginOtpVerifying || loginOtp.length !== 6}
+                          className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loginOtpVerifying ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>Verifying &amp; signing in...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>Verify &amp; Sign In</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )
                   )}
                 </div>
               )}
             </form>
           )}
 
-          {/* ================= REGISTER VIEW (MOBILE -> OTP -> CREATE PASSWORD) ================= */}
+          {/* ================= REGISTER TAB (SINGLE OTP CTA -> VERIFY -> PASSWORD) ================= */}
           {activeTab === "register" && (
-            <form onSubmit={handleRegisterSubmit} className="space-y-4 text-xs sm:text-sm">
-              {/* Step 1: Mobile Number Input */}
-              <div>
-                <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
-                  Mobile Number
-                </label>
-                <div className="flex gap-2">
-                  <div className="flex items-center px-3 py-3 rounded-xl border border-white/10 bg-[#0A0A0E] text-white/80 font-mono text-xs select-none shrink-0">
-                    🇮🇳 +91
-                  </div>
-                  <input
-                    type="tel"
-                    required
-                    disabled={regPhoneVerified}
-                    value={regPhone}
-                    onChange={(e) => setRegPhone(e.target.value)}
-                    placeholder="10-digit mobile number"
-                    className="flex-1 px-3.5 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
-                  />
-                  {!regPhoneVerified && (
-                    <button
-                      type="button"
-                      disabled={regOtpSending || regCooldown > 0 || regIsBanned || !regPhone}
-                      onClick={handleSendRegOtp}
-                      className="px-3.5 py-3 rounded-xl bg-[#963DFF] hover:bg-[#8529f7] disabled:bg-white/5 disabled:text-white/40 disabled:cursor-not-allowed text-white text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(150,61,255,0.3)]"
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              {!regPhoneVerified ? (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label
+                      htmlFor="reg-phone"
+                      className="block text-xs font-semibold text-[var(--text-primary)]"
                     >
-                      {regOtpSending ? (
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      ) : regCooldown > 0 ? (
-                        <>
-                          <Clock className="w-3 h-3 text-[#C28AFF]" />
-                          <span>{regCooldown}s</span>
-                        </>
-                      ) : regOtpSent ? (
-                        "Resend"
-                      ) : (
-                        "Send OTP"
-                      )}
-                    </button>
-                  )}
+                      10-Digit Mobile Number
+                    </label>
+                    <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                      {regPhone.length}/10 digits
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex items-center px-3 h-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-subtle)] text-[var(--text-secondary)] font-mono text-xs font-medium select-none shrink-0">
+                      IN +91
+                    </div>
+                    <input
+                      id="reg-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      required
+                      value={regPhone}
+                      onChange={(e) => {
+                        const clean = sanitizeTenDigitPhone(e.target.value);
+                        setRegPhone(clean);
+                        if (regOtpSent) {
+                          setRegOtpSent(false);
+                          setRegOtp("");
+                        }
+                      }}
+                      placeholder="9876543210"
+                      className="flex-1 h-10 px-3.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-slate-400 dark:hover:border-slate-500 focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
+                    />
+                  </div>
                 </div>
-              </div>
-
-              {/* Verified Mobile Number Banner */}
-              {regPhoneVerified && (
-                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between animate-in fade-in">
+              ) : (
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span className="font-semibold">+91 {regPhone.replace(/\D/g, "").slice(-10)} Verified</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-semibold">+91 {regPhone} verified</span>
                   </div>
                   <button
                     type="button"
@@ -952,86 +1083,37 @@ export default function LoginPage() {
                       setRegPassword("");
                       setRegConfirmPassword("");
                     }}
-                    className="text-[11px] text-emerald-400/80 hover:text-emerald-300 underline cursor-pointer"
+                    className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer"
                   >
-                    Change Number
+                    Change
                   </button>
                 </div>
               )}
 
-              {/* 24-Hour Banned Notice for Registration */}
               {regIsBanned && (
-                <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2 animate-in fade-in">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-rose-200">Mobile Number Locked for 24 Hours</p>
-                    <p className="text-[11px] text-rose-300/90 mt-0.5">
-                      {regBanMessage || "You have reached the maximum 5 failed attempts. Please try again after 24 hours."}
+                    <p className="font-semibold">Mobile Number Locked for 24 Hours</p>
+                    <p className="mt-0.5 opacity-90">
+                      {regBanMessage || "Maximum 5 failed OTP attempts reached. Try again after 24 hours."}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* STAGE 1: OTP Input Field & Verification Button */}
-              {regOtpSent && !regPhoneVerified && !regIsBanned && (
-                <div className="p-4 rounded-2xl bg-[#0A0A0E] border border-[#963DFF]/30 space-y-3 animate-in fade-in slide-in-from-top-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#D1D1DB] font-semibold flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-[#C28AFF]" />
-                      Enter 6-Digit OTP Code:
-                    </span>
-                    {regAttemptsLeft !== null && (
-                      <span className={`text-[11px] font-bold ${regAttemptsLeft <= 2 ? "text-rose-400" : "text-amber-400"}`}>
-                        {regAttemptsLeft} of 5 attempts left
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 6 SEPARATE BOXES COMPONENT */}
-                  <SixDigitOtpBoxes
-                    value={regOtp}
-                    onChange={setRegOtp}
-                    disabled={regOtpVerifying}
-                    autoFocus={true}
-                  />
-
-                  <button
-                    type="button"
-                    disabled={regOtpVerifying || regOtp.length !== 6}
-                    onClick={handleVerifyRegOtp}
-                    className="w-full py-3 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-500 hover:brightness-110 disabled:opacity-50 text-white font-bold text-xs sm:text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    {regOtpVerifying ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Verifying OTP...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Verify & Create Password</span>
-                      </>
-                    )}
-                  </button>
-
-                  <p className="text-[11px] text-[#9898A6] text-center">
-                    Security Policy: Maximum 5 attempts allowed before a 24-hour lockout is triggered.
-                  </p>
-                </div>
-              )}
-
-              {/* Action Button if OTP not sent yet */}
+              {/* Step 1A: Single Primary Send Verification Code Button */}
               {!regOtpSent && !regPhoneVerified && (
                 <button
                   type="button"
                   onClick={handleSendRegOtp}
-                  disabled={regOtpSending || !regPhone}
-                  className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={regOtpSending || regIsBanned || regPhone.length !== 10}
+                  className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {regOtpSending ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Sending OTP...</span>
+                      <span>Sending verification code...</span>
                     </>
                   ) : (
                     <>
@@ -1042,28 +1124,93 @@ export default function LoginPage() {
                 </button>
               )}
 
-              {/* STAGE 2: Create Password & Confirm Password (APPEARS ONLY AFTER OTP VERIFICATION) */}
+              {/* Step 1B: Enter 6-Digit OTP + Single Inline Resend */}
+              {regOtpSent && !regPhoneVerified && !regIsBanned && (
+                <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[var(--text-primary)] font-semibold flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      Enter 6-Digit SMS Code
+                    </span>
+                    <button
+                      type="button"
+                      disabled={regOtpSending || regCooldown > 0}
+                      onClick={handleSendRegOtp}
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline disabled:text-[var(--text-muted)] disabled:no-underline disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                    >
+                      {regCooldown > 0 ? (
+                        <>
+                          <Clock className="w-3 h-3" />
+                          <span>Resend in {regCooldown}s</span>
+                        </>
+                      ) : (
+                        "Resend code"
+                      )}
+                    </button>
+                  </div>
+
+                  <SixDigitOtpBoxes
+                    value={regOtp}
+                    onChange={setRegOtp}
+                    disabled={regOtpVerifying}
+                    autoFocus={true}
+                  />
+
+                  {regAttemptsLeft !== null && (
+                    <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 text-right">
+                      {regAttemptsLeft} of 5 attempts remaining
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={regOtpVerifying || regOtp.length !== 6}
+                    onClick={handleVerifyRegOtp}
+                    className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {regOtpVerifying ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Verifying code...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Verify &amp; Continue</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Step 2: Create Password (after mobile OTP verified) */}
               {regPhoneVerified && (
-                <div className="space-y-3.5 pt-1 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-3.5 pt-1">
                   <div>
-                    <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
+                    <label
+                      htmlFor="reg-password"
+                      className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5"
+                    >
                       Create Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
                       <input
+                        id="reg-password"
                         type={showRegPassword ? "text" : "password"}
                         required
                         minLength={8}
+                        autoComplete="new-password"
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
                         placeholder="Minimum 8 characters"
-                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                        className="w-full h-10 pl-9 pr-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowRegPassword(!showRegPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                        aria-label={showRegPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowRegPassword((s) => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                       >
                         {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -1071,55 +1218,67 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#D1D1DB] mb-1.5">
+                    <label
+                      htmlFor="reg-confirm-password"
+                      className="block text-xs font-semibold text-[var(--text-primary)] mb-1.5"
+                    >
                       Confirm Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
                       <input
+                        id="reg-confirm-password"
                         type={showRegConfirmPassword ? "text" : "password"}
                         required
                         minLength={8}
+                        autoComplete="new-password"
                         value={regConfirmPassword}
                         onChange={(e) => setRegConfirmPassword(e.target.value)}
                         placeholder="Re-enter your password"
-                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-white/10 bg-[#06060A] hover:border-white/20 focus:border-[#963DFF] focus:ring-1 focus:ring-[#963DFF] outline-hidden text-xs sm:text-sm text-white placeholder:text-white/30 font-medium transition-all shadow-inner"
+                        className="w-full h-10 pl-9 pr-10 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowRegConfirmPassword(!showRegConfirmPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 cursor-pointer"
+                        aria-label={showRegConfirmPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowRegConfirmPassword((s) => !s)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                       >
                         {showRegConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     {regPassword && regConfirmPassword && (
-                      <p className={`text-[11px] mt-1.5 flex items-center gap-1 ${regPassword === regConfirmPassword ? "text-emerald-400" : "text-rose-400"}`}>
-                        {regPassword === regConfirmPassword ? (
-                          <>
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Passwords match</span>
-                          </>
-                        ) : (
-                          "Passwords do not match"
-                        )}
+                      <p
+                        className={`text-xs mt-1.5 font-medium flex items-center gap-1 ${
+                          regPassword === regConfirmPassword
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-rose-600 dark:text-rose-400"
+                        }`}
+                      >
+                        {regPassword === regConfirmPassword
+                          ? "Passwords match"
+                          : "Passwords do not match"}
                       </p>
                     )}
                   </div>
 
                   <button
                     type="submit"
-                    disabled={loading || !regPassword || regPassword.length < 8 || regPassword !== regConfirmPassword}
-                    className="w-full py-3.5 rounded-xl bg-linear-to-r from-[#7B2BF9] via-[#963DFF] to-[#A855F7] hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm shadow-[0_4px_24px_rgba(150,61,255,0.45)] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={
+                      loading ||
+                      !regPassword ||
+                      regPassword.length < 8 ||
+                      regPassword !== regConfirmPassword
+                    }
+                    className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Creating Workspace...</span>
+                        <span>Creating workspace...</span>
                       </>
                     ) : (
                       <>
-                        <span>Create Workspace & Launch</span>
+                        <span>Create Workspace &amp; Launch</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -1129,55 +1288,53 @@ export default function LoginPage() {
             </form>
           )}
 
-          {/* Social or SSO Divider */}
+          {/* Divider */}
           <div className="relative text-center my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
+              <div className="w-full border-t border-[var(--border-subtle)]" />
             </div>
-            <span className="relative bg-black px-3 text-[11px] text-[#9898A6] uppercase tracking-wider font-semibold">
+            <span className="relative bg-[var(--bg-surface)] px-3 text-[11px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
               or continue with
             </span>
           </div>
 
-          {/* Google OAuth Button */}
-          <div className="space-y-3">
-            <a
-              href={
-                selectedPlan
-                  ? `/api/auth/google?redirect=${encodeURIComponent(`/billing?plan=${selectedPlan}&checkout=true`)}`
-                  : redirectPath
-                  ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}`
-                  : "/api/auth/google"
-              }
-              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl border border-white/10 bg-[#0A0A0E] hover:bg-[#121218] hover:border-white/20 transition-all cursor-pointer text-xs font-semibold text-white group"
-            >
-              <svg className="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </a>
-          </div>
+          {/* Google OAuth */}
+          <a
+            href={
+              selectedPlan
+                ? `/api/auth/google?redirect=${encodeURIComponent(`/billing?plan=${selectedPlan}&checkout=true`)}`
+                : redirectPath
+                ? `/api/auth/google?redirect=${encodeURIComponent(redirectPath)}`
+                : "/api/auth/google"
+            }
+            className="w-full h-10 flex items-center justify-center gap-2.5 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] hover:bg-[var(--bg-subtle)] transition-colors text-xs font-semibold text-[var(--text-primary)]"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              />
+            </svg>
+            <span>Continue with Google</span>
+          </a>
 
-          {/* Bottom Switch Link */}
-          <div className="text-center pt-5 mt-5 border-t border-white/10 text-xs text-[#9898A6]">
+          {/* Footer Switch */}
+          <div className="text-center pt-4 mt-5 border-t border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
             {activeTab === "login" ? (
               <span>
-                Don&apos;t have an account?{" "}
+                New to Emperor Nexus?{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -1185,14 +1342,14 @@ export default function LoginPage() {
                     setErrorMessage("");
                     setSuccessMessage("");
                   }}
-                  className="font-bold text-[#C28AFF] hover:underline cursor-pointer ml-1"
+                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-1"
                 >
-                  Register now
+                  Create an account
                 </button>
               </span>
             ) : (
               <span>
-                Already registered?{" "}
+                Already have a workspace?{" "}
                 <button
                   type="button"
                   onClick={() => {
@@ -1200,7 +1357,7 @@ export default function LoginPage() {
                     setErrorMessage("");
                     setSuccessMessage("");
                   }}
-                  className="font-bold text-[#C28AFF] hover:underline cursor-pointer ml-1"
+                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer ml-1"
                 >
                   Sign in
                 </button>
@@ -1209,16 +1366,19 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Back to Website Link */}
-        <div className="text-center">
+        {/* Security & Return Footer */}
+        <div className="flex items-center justify-between px-1 text-xs text-[var(--text-muted)]">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs text-[#9898A6] hover:text-white transition-colors group"
+            className="inline-flex items-center gap-1.5 hover:text-[var(--text-primary)] transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-            <Globe className="w-3.5 h-3.5 text-[#55A9FF]" />
-            <span>Return to Emperor Nexus Home</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to home</span>
           </Link>
+          <span className="inline-flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>TLS &amp; RBAC Protected</span>
+          </span>
         </div>
       </div>
     </div>
