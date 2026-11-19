@@ -33,7 +33,7 @@ export default function KnowledgePage() {
 
   const [bots, setBots] = useState([]);
   const [activeBotId, setActiveBotId] = useState("");
-  const [activeTab, setActiveTab] = useState("documents");
+  const [activeTab, setActiveTab] = useState("company-profile");
   const [documents, setDocuments] = useState([]);
   const [qas, setQas] = useState([]);
   const [websites, setWebsites] = useState([]);
@@ -77,6 +77,13 @@ export default function KnowledgePage() {
         setBots(safeBots);
         const initialBotId = safeBots[0]?.id || "bot_aa";
         setActiveBotId(initialBotId);
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          const tabParam = urlParams.get("tab");
+          if (tabParam && ["company-profile", "documents", "qa", "websites", "gaps"].includes(tabParam)) {
+            setActiveTab(tabParam);
+          }
+        }
         await loadKnowledgeForBot(initialBotId);
       } catch {
         if (mounted) await loadKnowledgeForBot("bot_aa");
