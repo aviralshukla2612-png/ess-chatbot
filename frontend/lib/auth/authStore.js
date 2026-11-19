@@ -166,7 +166,7 @@ export const authStore = {
         user: { id: userId, name: cleanName, email: cleanEmail, phone: cleanPhone, role: userRole },
         organizationId: orgId,
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return {
       user: { id: userId, name: cleanName, email: cleanEmail, phone: cleanPhone, role: userRole },
@@ -288,7 +288,7 @@ export const authStore = {
         );
       });
       if (found) return true;
-    } catch (e) {}
+    } catch (e) { }
 
     return false;
   },
@@ -348,7 +348,7 @@ export const authStore = {
         );
       });
       if (found) return true;
-    } catch (e) {}
+    } catch (e) { }
 
     return false;
   },
@@ -532,7 +532,7 @@ export const authStore = {
       if (dbRes.ok && dbRes.rows.length > 0) {
         return dbRes.rows;
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // Tenant-isolated memory fallback: NEVER return users belonging to other organizations
     const members = [];
@@ -572,8 +572,8 @@ export const authStore = {
       role === "Admin" || role === "ORG_ADMIN"
         ? "ORG_ADMIN"
         : role === "Viewer" || role === "VIEWER"
-        ? "VIEWER"
-        : "MEMBER";
+          ? "VIEWER"
+          : "MEMBER";
     const cleanName = (name || cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())).trim();
 
     let userId = null;
@@ -868,7 +868,7 @@ export const authStore = {
     );
     if (dbRes.ok && dbRes.rows.length > 0) {
       // Update lastUsedAt asynchronously
-      queryDb('UPDATE "ApiKey" SET "lastUsedAt" = CURRENT_TIMESTAMP WHERE "id" = $1;', [dbRes.rows[0].id]).catch(() => {});
+      queryDb('UPDATE "ApiKey" SET "lastUsedAt" = CURRENT_TIMESTAMP WHERE "id" = $1;', [dbRes.rows[0].id]).catch(() => { });
       return dbRes.rows[0];
     }
 
@@ -898,7 +898,7 @@ export const authStore = {
           }
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // Add memory users
     for (const u of memoryUsers.values()) {
@@ -1004,7 +1004,7 @@ export const authStore = {
         user: { id: user.id, name: user.name || cleanName, email: user.email },
         organizationId: orgId,
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return {
       user: {

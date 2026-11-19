@@ -104,11 +104,10 @@ function SixDigitOtpBoxes({ value = "", onChange, disabled = false, autoFocus = 
             value={char}
             onChange={(e) => handleBoxChange(e, idx)}
             onKeyDown={(e) => handleKeyDown(e, idx)}
-            className={`w-11 sm:w-12 h-12 text-center font-mono text-lg font-bold rounded-xl border transition-all duration-150 outline-none select-none ${
-              isFilled
+            className={`w-11 sm:w-12 h-12 text-center font-mono text-lg font-bold rounded-xl border transition-all duration-150 outline-none select-none ${isFilled
                 ? "bg-indigo-50/70 dark:bg-indigo-500/15 border-indigo-600 dark:border-indigo-400 text-[var(--text-primary)] ring-2 ring-indigo-500/20"
                 : "bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-primary)] hover:border-[var(--border-strong)] focus:border-indigo-600 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
           />
         );
       })}
@@ -589,11 +588,10 @@ export default function ForgotPasswordPage() {
                     </div>
                     {newPassword && confirmPassword && (
                       <p
-                        className={`text-[11px] font-medium mt-1.5 flex items-center gap-1 ${
-                          newPassword === confirmPassword
+                        className={`text-[11px] font-medium mt-1.5 flex items-center gap-1 ${newPassword === confirmPassword
                             ? "text-emerald-600 dark:text-emerald-400"
                             : "text-rose-600 dark:text-rose-400"
-                        }`}
+                          }`}
                       >
                         {newPassword === confirmPassword ? (
                           <>

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import TrialBanner from "@/components/billing/TrialBanner";
 import TrialOnboardingModal from "@/components/billing/TrialOnboardingModal";
+import BotBenefitsView from "@/components/billing/BotBenefitsView";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ShieldAlert, X } from "lucide-react";
 
@@ -24,9 +26,6 @@ export default function DashboardLayout({ children }) {
         if (d?.success) {
           setSubscription(d.subscription);
           setSubMeta(d);
-          if (!d.hasActiveSubscription) {
-            setTrialModalOpen(true);
-          }
         }
       })
       .catch(() => {});
@@ -89,6 +88,16 @@ export default function DashboardLayout({ children }) {
     };
   }, [fetchAuthContext, fetchSubscription]);
 
+  const pathname = usePathname();
+  const isSuperAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.platformRole === "SUPER_ADMIN";
+  const hasPaid = Boolean(
+    subscription?.hasAutopay || subMeta?.hasActiveSubscription || isSuperAdmin
+  );
+  const isExemptPath =
+    pathname?.startsWith("/billing") || pathname?.startsWith("/settings") || pathname?.startsWith("/support");
+  const showBenefitsOnly = subMeta !== null && !hasPaid && !isExemptPath;
+
   return (
     <ToastProvider>
       <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col transition-colors duration-150">
@@ -142,13 +151,19 @@ export default function DashboardLayout({ children }) {
                 </div>
               )}
 
-              <TrialBanner
-                subscription={subscription}
-                onOpenCheckout={() => setTrialModalOpen(true)}
-              />
-              <Suspense fallback={<div className="py-12" />}>
-                {children}
-              </Suspense>
+              {showBenefitsOnly ? (
+                <BotBenefitsView onGetStarted={() => setTrialModalOpen(true)} />
+              ) : (
+                <>
+                  <TrialBanner
+                    subscription={subscription}
+                    onOpenCheckout={() => setTrialModalOpen(true)}
+                  />
+                  <Suspense fallback={<div className="py-12" />}>
+                    {children}
+                  </Suspense>
+                </>
+              )}
             </main>
           </div>
         </div>
