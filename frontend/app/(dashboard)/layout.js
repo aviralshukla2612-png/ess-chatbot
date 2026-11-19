@@ -10,6 +10,32 @@ import BotBenefitsView from "@/components/billing/BotBenefitsView";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ShieldAlert, X } from "lucide-react";
 
+function DashboardContent({ children, subscription, subMeta, currentUser, setTrialModalOpen }) {
+  const pathname = usePathname();
+  const isSuperAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.platformRole === "SUPER_ADMIN";
+  const hasPaid = Boolean(
+    subscription?.hasAutopay || subMeta?.hasActiveSubscription || isSuperAdmin
+  );
+  const isExemptPath =
+    pathname?.startsWith("/billing") || pathname?.startsWith("/settings") || pathname?.startsWith("/support");
+  const showBenefitsOnly = subMeta !== null && !hasPaid && !isExemptPath;
+
+  if (showBenefitsOnly) {
+    return <BotBenefitsView onGetStarted={() => setTrialModalOpen(true)} />;
+  }
+
+  return (
+    <>
+      <TrialBanner
+        subscription={subscription}
+        onOpenCheckout={() => setTrialModalOpen(true)}
+      />
+      {children}
+    </>
+  );
+}
+
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [subscription, setSubscription] = useState(null);
@@ -88,16 +114,6 @@ export default function DashboardLayout({ children }) {
     };
   }, [fetchAuthContext, fetchSubscription]);
 
-  const pathname = usePathname();
-  const isSuperAdmin =
-    currentUser?.role === "SUPER_ADMIN" || currentUser?.platformRole === "SUPER_ADMIN";
-  const hasPaid = Boolean(
-    subscription?.hasAutopay || subMeta?.hasActiveSubscription || isSuperAdmin
-  );
-  const isExemptPath =
-    pathname?.startsWith("/billing") || pathname?.startsWith("/settings") || pathname?.startsWith("/support");
-  const showBenefitsOnly = subMeta !== null && !hasPaid && !isExemptPath;
-
   return (
     <ToastProvider>
       <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col transition-colors duration-150">
@@ -151,19 +167,16 @@ export default function DashboardLayout({ children }) {
                 </div>
               )}
 
-              {showBenefitsOnly ? (
-                <BotBenefitsView onGetStarted={() => setTrialModalOpen(true)} />
-              ) : (
-                <>
-                  <TrialBanner
-                    subscription={subscription}
-                    onOpenCheckout={() => setTrialModalOpen(true)}
-                  />
-                  <Suspense fallback={<div className="py-12" />}>
-                    {children}
-                  </Suspense>
-                </>
-              )}
+              <Suspense fallback={<div className="py-12" />}>
+                <DashboardContent
+                  subscription={subscription}
+                  subMeta={subMeta}
+                  currentUser={currentUser}
+                  setTrialModalOpen={setTrialModalOpen}
+                >
+                  {children}
+                </DashboardContent>
+              </Suspense>
             </main>
           </div>
         </div>
