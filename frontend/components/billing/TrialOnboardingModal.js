@@ -22,18 +22,12 @@ export default function TrialOnboardingModal({
   userEmail,
   userName,
   isMandatory = false,
-  hasUsedTrial = false,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [availablePlans, setAvailablePlans] = useState([]);
   const [planId, setPlanId] = useState("PLAN_STARTER_MONTHLY");
-  const [isTrialExhausted, setIsTrialExhausted] = useState(Boolean(hasUsedTrial));
   const timeoutRef = useRef(null);
-
-  useEffect(() => {
-    setIsTrialExhausted(Boolean(hasUsedTrial));
-  }, [hasUsedTrial]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,10 +58,6 @@ export default function TrialOnboardingModal({
   if (!isOpen) return null;
 
   const selectedPlan = availablePlans.find((p) => p.id === planId) || availablePlans[0] || null;
-  const trialDays = selectedPlan?.trialDays ?? 7;
-  const recurringAmountText = selectedPlan
-    ? `${selectedPlan.priceMonthly} ${selectedPlan.periodLabel || "per month"}`
-    : "₹2,499 per month";
 
   const handleStartTrial = async () => {
     setLoading(true);
@@ -90,15 +80,12 @@ export default function TrialOnboardingModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: selectedPlan?.id || planId,
-          isTrial: !isTrialExhausted,
+          isTrial: false,
         }),
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
-        if (data.code === "TRIAL_ALREADY_USED") {
-          setIsTrialExhausted(true);
-        }
         throw new Error(data.error || "Failed to initiate checkout");
       }
 
@@ -202,7 +189,7 @@ export default function TrialOnboardingModal({
         body: JSON.stringify({
           subscriptionId: checkout.subscriptionId,
           planId: selectedPlan?.id || planId,
-          isTrial: !isTrialExhausted,
+          isTrial: false,
         }),
       });
 
@@ -275,9 +262,7 @@ export default function TrialOnboardingModal({
               <div className="flex-1">
                 <p className="font-semibold">{error}</p>
                 <p className="text-[11px] opacity-85 mt-0.5">
-                  {isTrialExhausted
-                    ? "Select a paid plan below to unlock chatbot deployment."
-                    : "Please verify your payment method or try again."}
+                  Please verify your payment method or try again.
                 </p>
               </div>
             </div>
@@ -290,7 +275,7 @@ export default function TrialOnboardingModal({
                 Select Billing Interval
               </span>
               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/12 dark:text-emerald-300 dark:border-emerald-500/25">
-                {isTrialExhausted ? selectedPlan?.priceMonthly || "Paid Plan" : "₹0 Today"}
+                {selectedPlan?.priceMonthly || "Active Plan"}
               </span>
             </div>
 
@@ -360,34 +345,21 @@ export default function TrialOnboardingModal({
             <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
               <span className="text-[var(--text-muted)]">Due Today</span>
               <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                {isTrialExhausted
-                  ? `${selectedPlan?.priceMonthly || "₹2,499"}`
-                  : "₹0 (Zero Charged Today)"}
+                {selectedPlan?.priceMonthly || "₹2,499"}
               </span>
             </div>
-            {!isTrialExhausted ? (
-              <>
-                <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
-                  <span className="text-[var(--text-muted)]">Trial Access</span>
-                  <span className="font-semibold text-[var(--text-primary)]">
-                    {trialDays} Full Days Included
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--text-muted)]">Recurring Billing Starts</span>
-                  <span className="font-semibold text-[var(--accent-text)]">
-                    Day {trialDays + 1} ({recurringAmountText})
-                  </span>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--text-muted)]">Billing Term</span>
-                <span className="font-semibold text-[var(--text-primary)]">
-                  {selectedPlan?.name} ({selectedPlan?.periodLabel || "per month"})
-                </span>
-              </div>
-            )}
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--text-muted)]">Billing Cadence</span>
+              <span className="font-semibold text-[var(--text-primary)]">
+                {selectedPlan?.name} ({selectedPlan?.periodLabel || "per month"})
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[var(--text-muted)]">Instant Activation</span>
+              <span className="font-semibold text-[var(--accent-text)]">
+                Immediate access upon payment
+              </span>
+            </div>
           </div>
 
           {/* Feature Checklist */}
@@ -408,7 +380,7 @@ export default function TrialOnboardingModal({
           <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-secondary)] bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] p-2.5 rounded-xl">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>
-              <strong>Cancel anytime:</strong> Cancel in Billing before Day {trialDays} with zero charges.
+              <strong>Secure Payment:</strong> Processed instantly via Razorpay. Cancel anytime from Billing &amp; Plans.
             </span>
           </div>
 
@@ -427,9 +399,7 @@ export default function TrialOnboardingModal({
               <>
                 <CreditCard className="w-4 h-4 shrink-0" />
                 <span>
-                  {isTrialExhausted
-                    ? `Subscribe to ${selectedPlan?.name || "Starter"} (${selectedPlan?.priceMonthly || "₹2,499"})`
-                    : "Continue to Razorpay Autopay (₹0 Today)"}
+                  Subscribe to {selectedPlan?.name || "Starter"} ({selectedPlan?.priceMonthly || "₹2,499"})
                 </span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </>

@@ -57,7 +57,7 @@ const ROUTE_TITLES = {
   "/support": "Help & Support",
 };
 
-export default function Header({ onToggleSidebar, currentUser }) {
+export default function Header({ onToggleSidebar, currentUser, hasPaid = false }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -114,6 +114,7 @@ export default function Header({ onToggleSidebar, currentUser }) {
 
   // Load real workspace notifications (recent unread conversations + leads) & bots for quick search
   useEffect(() => {
+    if (!hasPaid) return;
     let active = true;
     Promise.all([
       fetch("/api/conversations?limit=4", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
@@ -161,7 +162,7 @@ export default function Header({ onToggleSidebar, currentUser }) {
     return () => {
       active = false;
     };
-  }, [pathname]);
+  }, [pathname, hasPaid]);
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -224,84 +225,102 @@ export default function Header({ onToggleSidebar, currentUser }) {
     <header className="sticky top-0 z-30 flex items-center justify-between h-[60px] px-4 sm:px-6 lg:px-8 bg-[var(--bg-surface)]/90 backdrop-blur-md border-b border-[var(--border-subtle)] transition-colors">
       {/* Left: Mobile menu, current section & Quick Search */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          aria-label="Open navigation menu"
-          className="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] rounded-lg shrink-0 cursor-pointer"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
-        <span className="sm:hidden text-sm font-semibold text-[var(--text-primary)] truncate">
-          {currentSectionTitle}
-        </span>
-
-        <div className="relative max-w-md w-full hidden sm:block" ref={searchRef}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchQuery}
-            onFocus={() => setSearchOpen(true)}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setSearchOpen(true);
-            }}
-            aria-label="Quick navigation search"
-            placeholder="Jump to chatbots, inbox, leads, settings..."
-            className="w-full h-9 pl-9 pr-14 text-xs lg:text-sm bg-[var(--bg-subtle)]/70 hover:bg-[var(--bg-subtle)] focus:bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--focus-ring)] rounded-lg transition-all text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
-          />
-          <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            ⌘K
-          </kbd>
-
-          {searchOpen && (
-            <div className="absolute left-0 right-0 mt-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl shadow-[var(--shadow-lg)] p-1.5 z-50 animate-fade-in">
-              <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                Quick Jump
-              </div>
-              {searchResults.length === 0 ? (
-                <p className="px-3 py-4 text-xs text-center text-[var(--text-muted)]">
-                  No matching pages or chatbots for &ldquo;{searchQuery}&rdquo;
-                </p>
-              ) : (
-                <div className="max-h-64 overflow-y-auto">
-                  {searchResults.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.href}
-                        type="button"
-                        onClick={() => {
-                          setSearchOpen(false);
-                          setSearchQuery("");
-                          router.push(item.href);
-                        }}
-                        className="w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg text-left hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Icon className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-[var(--text-primary)] truncate">
-                              {item.label}
-                            </p>
-                            {item.sub && (
-                              <p className="text-[11px] text-[var(--text-muted)] truncate">
-                                {item.sub}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+        {!hasPaid ? (
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <img
+              src="/logo.png"
+              alt="Emperor Nexus"
+              className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+            />
+            <div className="leading-tight">
+              <span className="font-bold text-sm text-[var(--text-primary)] block">Emperor Nexus</span>
+              <span className="text-[10px] text-[var(--text-muted)] block">AI Sales &amp; Support</span>
             </div>
-          )}
-        </div>
+          </Link>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              aria-label="Open navigation menu"
+              className="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] rounded-lg shrink-0 cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <span className="sm:hidden text-sm font-semibold text-[var(--text-primary)] truncate">
+              {currentSectionTitle}
+            </span>
+          </>
+        )}
+
+        {hasPaid && (
+          <div className="relative max-w-md w-full hidden sm:block" ref={searchRef}>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onFocus={() => setSearchOpen(true)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchOpen(true);
+              }}
+              aria-label="Quick navigation search"
+              placeholder="Jump to chatbots, inbox, leads, settings..."
+              className="w-full h-9 pl-9 pr-14 text-xs lg:text-sm bg-[var(--bg-subtle)]/70 hover:bg-[var(--bg-subtle)] focus:bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--focus-ring)] rounded-lg transition-all text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+            />
+            <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+              ⌘K
+            </kbd>
+
+            {searchOpen && (
+              <div className="absolute left-0 right-0 mt-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl shadow-[var(--shadow-lg)] p-1.5 z-50 animate-fade-in">
+                <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  Quick Jump
+                </div>
+                {searchResults.length === 0 ? (
+                  <p className="px-3 py-4 text-xs text-center text-[var(--text-muted)]">
+                    No matching pages or chatbots for &ldquo;{searchQuery}&rdquo;
+                  </p>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto">
+                    {searchResults.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.href}
+                          type="button"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearchQuery("");
+                            router.push(item.href);
+                          }}
+                          className="w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded-lg text-left hover:bg-[var(--bg-subtle)] transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Icon className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-[var(--text-primary)] truncate">
+                                {item.label}
+                              </p>
+                              {item.sub && (
+                                <p className="text-[11px] text-[var(--text-muted)] truncate">
+                                  {item.sub}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right: Theme toggle, Create Bot CTA, Notifications, User menu */}
@@ -326,93 +345,97 @@ export default function Header({ onToggleSidebar, currentUser }) {
           )}
         </button>
 
-        <Link
-          href="/bots/create"
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 text-xs sm:text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">New Chatbot</span>
-        </Link>
+        {hasPaid && (
+          <Link
+            href="/bots/create"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 text-xs sm:text-sm font-medium rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">New Chatbot</span>
+          </Link>
+        )}
 
         {/* Notifications */}
-        <div className="relative" ref={notifRef}>
-          <button
-            type="button"
-            onClick={() => setNotificationsOpen((o) => !o)}
-            aria-label="Workspace notifications"
-            aria-expanded={notificationsOpen}
-            className="relative w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-colors cursor-pointer"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
-            )}
-          </button>
+        {hasPaid && (
+          <div className="relative" ref={notifRef}>
+            <button
+              type="button"
+              onClick={() => setNotificationsOpen((o) => !o)}
+              aria-label="Workspace notifications"
+              aria-expanded={notificationsOpen}
+              className="relative w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-colors cursor-pointer"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+              )}
+            </button>
 
-          {notificationsOpen && (
-            <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-88 max-w-sm bg-[var(--bg-elevated)] rounded-xl shadow-[var(--shadow-lg)] border border-[var(--border-subtle)] p-3.5 z-50 animate-fade-in">
-              <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-subtle)]">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-sm text-[var(--text-primary)]">
-                    Workspace Activity
-                  </h3>
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] sm:w-88 max-w-sm bg-[var(--bg-elevated)] rounded-xl shadow-[var(--shadow-lg)] border border-[var(--border-subtle)] p-3.5 z-50 animate-fade-in">
+                <div className="flex items-center justify-between pb-2.5 border-b border-[var(--border-subtle)]">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm text-[var(--text-primary)]">
+                      Workspace Activity
+                    </h3>
+                    {unreadCount > 0 && (
+                      <span className="text-[11px] font-semibold bg-[var(--accent-soft)] text-[var(--accent-text)] px-2 py-0.5 rounded-full">
+                        {unreadCount} unread
+                      </span>
+                    )}
+                  </div>
                   {unreadCount > 0 && (
-                    <span className="text-[11px] font-semibold bg-[var(--accent-soft)] text-[var(--accent-text)] px-2 py-0.5 rounded-full">
-                      {unreadCount} unread
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setUnreadCount(0)}
+                      className="text-xs text-[var(--accent-primary)] hover:underline font-medium cursor-pointer"
+                    >
+                      Dismiss badge
+                    </button>
                   )}
                 </div>
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setUnreadCount(0)}
-                    className="text-xs text-[var(--accent-primary)] hover:underline font-medium cursor-pointer"
-                  >
-                    Dismiss badge
-                  </button>
+
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <Inbox className="w-6 h-6 text-[var(--text-muted)] mx-auto mb-2" />
+                    <p className="text-xs font-medium text-[var(--text-secondary)]">
+                      All caught up
+                    </p>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                      New visitor chats and captured leads appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[var(--border-subtle)] max-h-72 overflow-y-auto mt-1">
+                    {notifications.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          onClick={() => setNotificationsOpen(false)}
+                          className="py-2.5 px-2 flex items-start gap-3 hover:bg-[var(--bg-subtle)] rounded-lg transition-colors"
+                        >
+                          <div className={cn("p-2 rounded-lg shrink-0", item.tone)}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                              {item.title}
+                            </p>
+                            <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">
+                              {item.desc}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-
-              {notifications.length === 0 ? (
-                <div className="py-8 text-center">
-                  <Inbox className="w-6 h-6 text-[var(--text-muted)] mx-auto mb-2" />
-                  <p className="text-xs font-medium text-[var(--text-secondary)]">
-                    All caught up
-                  </p>
-                  <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                    New visitor chats and captured leads appear here.
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-[var(--border-subtle)] max-h-72 overflow-y-auto mt-1">
-                  {notifications.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        onClick={() => setNotificationsOpen(false)}
-                        className="py-2.5 px-2 flex items-start gap-3 hover:bg-[var(--bg-subtle)] rounded-lg transition-colors"
-                      >
-                        <div className={cn("p-2 rounded-lg shrink-0", item.tone)}>
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                            {item.title}
-                          </p>
-                          <p className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">
-                            {item.desc}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {/* User Profile Dropdown */}
         <div className="relative pl-1.5 border-l border-[var(--border-subtle)]" ref={profileRef}>

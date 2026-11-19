@@ -19,7 +19,16 @@ function DashboardContent({ children, subscription, subMeta, currentUser, setTri
   );
   const isExemptPath =
     pathname?.startsWith("/billing") || pathname?.startsWith("/settings") || pathname?.startsWith("/support");
-  const showBenefitsOnly = subMeta !== null && !hasPaid && !isExemptPath;
+
+  if (subMeta === null && !isExemptPath) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const showBenefitsOnly = !hasPaid && !isExemptPath;
 
   if (showBenefitsOnly) {
     return <BotBenefitsView onGetStarted={() => setTrialModalOpen(true)} />;
@@ -114,26 +123,34 @@ export default function DashboardLayout({ children }) {
     };
   }, [fetchAuthContext, fetchSubscription]);
 
+  const isSuperAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.platformRole === "SUPER_ADMIN";
+  const hasPaid = Boolean(
+    subscription?.hasAutopay || subMeta?.hasActiveSubscription || isSuperAdmin
+  );
+
   return (
     <ToastProvider>
       <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)] flex flex-col transition-colors duration-150">
         <div className="flex flex-1 min-h-screen">
-          <Suspense
-            fallback={
-              <aside className="w-[260px] hidden lg:block bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] sticky top-0 h-screen shrink-0" />
-            }
-          >
-            <Sidebar
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              currentUser={currentUser}
-              memberships={memberships}
-              subscription={subscription}
-              subMeta={subMeta}
-              onSwitchWorkspace={fetchAuthContext}
-              onOpenCheckout={() => setTrialModalOpen(true)}
-            />
-          </Suspense>
+          {hasPaid && (
+            <Suspense
+              fallback={
+                <aside className="w-[260px] hidden lg:block bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] sticky top-0 h-screen shrink-0" />
+              }
+            >
+              <Sidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                currentUser={currentUser}
+                memberships={memberships}
+                subscription={subscription}
+                subMeta={subMeta}
+                onSwitchWorkspace={fetchAuthContext}
+                onOpenCheckout={() => setTrialModalOpen(true)}
+              />
+            </Suspense>
+          )}
 
           <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden">
             <Suspense
@@ -143,6 +160,7 @@ export default function DashboardLayout({ children }) {
             >
               <Header
                 currentUser={currentUser}
+                hasPaid={hasPaid}
                 onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
               />
             </Suspense>

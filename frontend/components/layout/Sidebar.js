@@ -153,7 +153,6 @@ export default function Sidebar({
   const botMatch = pathname.match(/^\/bots\/([^/?]+)/);
   const activeBotId = botMatch && botMatch[1] !== "create" ? botMatch[1] : null;
 
-  const isTrial = subscription?.status === "trialing" || subMeta?.isTrial;
   const hasActiveSub = Boolean(subscription?.hasAutopay || subMeta?.hasActiveSubscription);
   const planPriceLabel = subscription?.plan?.priceMonthly || "₹2,499/mo";
   const isSuperAdmin =
