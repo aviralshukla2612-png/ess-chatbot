@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Activity,
   SlidersHorizontal,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -468,7 +469,7 @@ export default function Sidebar({
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Crown className="w-3.5 h-3.5 fill-white/20 text-white" />
                   <span>Activate Plan</span>
                 </button>
               )}

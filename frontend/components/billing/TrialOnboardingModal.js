@@ -12,6 +12,8 @@ import {
   X,
   AlertCircle,
   Check,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -236,8 +238,8 @@ export default function TrialOnboardingModal({
             </button>
           )}
 
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[11px] font-semibold text-[var(--accent-text)] mb-2.5">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-pink-500/15 border border-indigo-500/30 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mb-2.5 shadow-2xs">
+            <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500/30" />
             <span>Workspace Subscription</span>
           </div>
 
@@ -371,14 +373,16 @@ export default function TrialOnboardingModal({
               "Automated CRM lead qualification",
             ].map((feat) => (
               <div key={feat} className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500/20 shrink-0" />
                 <span>{feat}</span>
               </div>
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-secondary)] bg-[var(--bg-subtle)]/50 border border-[var(--border-subtle)] p-2.5 rounded-xl">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-3 text-[11px] text-[var(--text-secondary)] bg-[var(--bg-subtle)]/70 border border-[var(--border-subtle)] p-2.5 rounded-xl">
+            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+              <ShieldCheck className="w-3.5 h-3.5" />
+            </div>
             <span>
               <strong>Secure Payment:</strong> Processed instantly via Razorpay. Cancel anytime from Billing &amp; Plans.
             </span>

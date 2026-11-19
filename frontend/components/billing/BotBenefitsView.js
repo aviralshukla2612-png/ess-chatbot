@@ -20,6 +20,9 @@ import {
   Lock,
   Layers,
   ChevronRight,
+  Crown,
+  Headphones,
+  Send,
 } from "lucide-react";
 
 const STATS = [
@@ -28,28 +31,28 @@ const STATS = [
     value: "24/7/365",
     desc: "Captures buyers outside office hours",
     icon: Clock,
-    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+    color: "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/25",
   },
   {
     label: "Response Latency",
     value: "1.2s",
     desc: "Instant answers with zero wait queues",
     icon: Zap,
-    color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+    color: "bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/25",
   },
   {
     label: "Conversion Boost",
     value: "+35%",
     desc: "Higher visitor-to-lead engagement",
     icon: TrendingUp,
-    color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+    color: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25",
   },
   {
     label: "Routine Automation",
     value: "80%",
     desc: "Of repetitive inquiries resolved automatically",
     icon: Bot,
-    color: "text-violet-600 dark:text-violet-400 bg-violet-500/10",
+    color: "bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/25",
   },
 ];
 
@@ -78,8 +81,8 @@ export default function BotBenefitsView({ onGetStarted }) {
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-indigo-600 dark:text-indigo-400 text-xs font-semibold tracking-wide">
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-pink-500/15 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 text-xs font-semibold tracking-wide shadow-2xs">
+            <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500/30" />
             <span>AI SALES &amp; CUSTOMER SUPPORT PLATFORM</span>
           </div>
 
@@ -142,7 +145,7 @@ export default function BotBenefitsView({ onGetStarted }) {
                 <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                   {stat.label}
                 </span>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.color}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.color}`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
@@ -171,8 +174,8 @@ export default function BotBenefitsView({ onGetStarted }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
           {/* Card 1 */}
           <div className="p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-indigo-500/40 transition-all space-y-4 group">
-            <div className="w-11 h-11 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:scale-105 transition-transform">
-              <Users2 className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+              <Users2 className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-[var(--text-primary)]">
               1. 24/7 Autonomous Lead Capture &amp; Verification
@@ -188,8 +191,8 @@ export default function BotBenefitsView({ onGetStarted }) {
 
           {/* Card 2 */}
           <div className="p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-indigo-500/40 transition-all space-y-4 group">
-            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-105 transition-transform">
-              <Cpu className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
+              <Cpu className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-[var(--text-primary)]">
               2. Accurate RAG Knowledge Engine (Zero Hallucinations)
@@ -205,8 +208,8 @@ export default function BotBenefitsView({ onGetStarted }) {
 
           {/* Card 3 */}
           <div className="p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-indigo-500/40 transition-all space-y-4 group">
-            <div className="w-11 h-11 rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-500/20 group-hover:scale-105 transition-transform">
-              <Globe className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-violet-500/25 group-hover:scale-105 transition-transform">
+              <Globe className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-[var(--text-primary)]">
               3. 1-Line Script Website &amp; WhatsApp Integration
@@ -222,8 +225,8 @@ export default function BotBenefitsView({ onGetStarted }) {
 
           {/* Card 4 */}
           <div className="p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] hover:border-indigo-500/40 transition-all space-y-4 group">
-            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform">
-              <MessageSquare className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:scale-105 transition-transform">
+              <Headphones className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-[var(--text-primary)]">
               4. Real-Time Inbox &amp; 1-Click Human Takeover
@@ -252,7 +255,7 @@ export default function BotBenefitsView({ onGetStarted }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-indigo-500/20">
               1
             </div>
             <h4 className="font-bold text-sm text-[var(--text-primary)]">Add Company Knowledge</h4>
@@ -262,7 +265,7 @@ export default function BotBenefitsView({ onGetStarted }) {
           </div>
 
           <div className="p-5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-purple-500/20">
               2
             </div>
             <h4 className="font-bold text-sm text-[var(--text-primary)]">Customize Bot Persona</h4>
@@ -272,7 +275,7 @@ export default function BotBenefitsView({ onGetStarted }) {
           </div>
 
           <div className="p-5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold text-xs flex items-center justify-center shadow-md shadow-emerald-500/20">
               3
             </div>
             <h4 className="font-bold text-sm text-[var(--text-primary)]">Embed &amp; Generate Leads</h4>
