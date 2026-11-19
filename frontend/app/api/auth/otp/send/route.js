@@ -51,15 +51,15 @@ export async function POST(request) {
       }
     }
 
-    // 2. LOGIN GATE: If logging in via OTP and number does not exist, BLOCK OTP IMMEDIATELY!
-    if (purpose === "login") {
+    // 2. LOGIN & PASSWORD RESET GATE: If logging in or resetting password and number does not exist, BLOCK OTP IMMEDIATELY!
+    if (purpose === "login" || purpose === "password_reset" || purpose === "forgot_password") {
       const exists = await authStore.checkPhoneExists(phone);
       if (!exists) {
         return NextResponse.json(
           {
             success: false,
             notFound: true,
-            error: "No account found with this mobile number. Please create an account first.",
+            error: "No account found with this mobile number. Please check the number or create an account.",
             phone,
           },
           { status: 404 }

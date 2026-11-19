@@ -4,10 +4,12 @@ import {
   enforceRateLimit,
   applyRateLimitHeaders,
 } from "@/lib/security/rateLimitPolicy";
+import { authStore } from "@/lib/db/authStore";
+import { otpStore } from "@/lib/auth/otpStore";
 
 /**
  * POST /api/auth/forgot-password
- * Rate-limited account recovery endpoint (returns anti-enumeration response).
+ * Rate-limited account recovery & password reset endpoint.
  */
 export async function POST(request) {
   try {
@@ -16,19 +18,82 @@ export async function POST(request) {
     if (!ipCheck.ok) return ipCheck.response;
 
     const body = await request.json().catch(() => ({}));
-    const email = (body.email || "").toString().trim().toLowerCase();
+    const { phone, password, verificationToken, email } = body;
 
-    if (!email || !email.includes("@") || email.length > 160) {
+    // Case 1: Mobile OTP-Verified Password Reset
+    if (phone) {
+      const rawDigits = String(phone).replace(/\D/g, "");
+      if (rawDigits.length < 10) {
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Please enter a valid 10-digit mobile number." },
+            { status: 400 }
+          ),
+          ipCheck.result
+        );
+      }
+
+      const cleanPhone = otpStore.normalizePhone(phone);
+      if (!cleanPhone) {
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Invalid mobile number format." },
+            { status: 400 }
+          ),
+          ipCheck.result
+        );
+      }
+
+      if (!password || password.length < 8) {
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Password must be at least 8 characters long." },
+            { status: 400 }
+          ),
+          ipCheck.result
+        );
+      }
+
+      // Verify OTP verification token
+      const isTokenValid = otpStore.verifyVerificationToken(cleanPhone, verificationToken, "password_reset");
+      if (!isTokenValid) {
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "OTP verification expired or invalid. Please verify your mobile number again." },
+            { status: 403 }
+          ),
+          ipCheck.result
+        );
+      }
+
+      // Update password in database and memory stores
+      await authStore.resetPasswordWithPhone({
+        phone: cleanPhone,
+        newPassword: password,
+      });
+
+      return applyRateLimitHeaders(
+        NextResponse.json({
+          success: true,
+          message: "Your password has been reset successfully. Please sign in with your new password.",
+        }),
+        ipCheck.result
+      );
+    }
+
+    // Case 2: Email recovery fallback
+    const cleanEmail = (email || "").toString().trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes("@") || cleanEmail.length > 160) {
       return applyRateLimitHeaders(
         NextResponse.json(
-          { success: false, error: "Please provide a valid email address." },
+          { success: false, error: "Please provide a valid 10-digit mobile number or email address." },
           { status: 400 }
         ),
         ipCheck.result
       );
     }
 
-    // Anti-enumeration response: never disclose whether the email exists in the system
+    // Anti-enumeration response for email
     return applyRateLimitHeaders(
       NextResponse.json({
         success: true,
@@ -37,9 +102,9 @@ export async function POST(request) {
       }),
       ipCheck.result
     );
-  } catch {
+  } catch (err) {
     return NextResponse.json(
-      { success: false, error: "Unable to process recovery request right now." },
+      { success: false, error: err.message || "Unable to process recovery request right now." },
       { status: 500 }
     );
   }
