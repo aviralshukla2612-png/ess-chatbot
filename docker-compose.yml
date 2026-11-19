@@ -45,8 +45,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
       interval: 15s
@@ -119,8 +117,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_started
 
 volumes:
   pgvector_data:
