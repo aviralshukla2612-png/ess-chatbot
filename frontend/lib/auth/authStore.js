@@ -234,6 +234,66 @@ export const authStore = {
   },
 
   /**
+   * Check if an account already exists with the given mobile phone number.
+   * Checks PostgreSQL database, in-memory cache, and disk user store.
+   */
+  async checkPhoneExists(phone) {
+    if (!phone) return false;
+    const cleanPhone = otpStore.normalizePhone(phone);
+    const rawDigits = String(phone).replace(/\D/g, "");
+    const digits10 = rawDigits.length >= 10 ? rawDigits.slice(-10) : rawDigits;
+    if (!digits10 || digits10.length < 10) return false;
+
+    const digits12 = `91${digits10}`;
+    const plusDigits = `+91${digits10}`;
+    const generatedEmail = `${digits10}@phone.emperornexus.com`;
+    const phoneVariants = [cleanPhone, digits10, digits12, plusDigits].filter(Boolean);
+
+    // 1. Check PostgreSQL DB
+    try {
+      const dbRes = await queryDb(
+        'SELECT "id", "phone", "email" FROM "User" WHERE "phone" = $1 OR "phone" = $2 OR "phone" = $3 OR "email" = $4 LIMIT 1;',
+        [plusDigits, digits10, digits12, generatedEmail]
+      );
+      if (dbRes.ok && dbRes.rows && dbRes.rows.length > 0) {
+        return true;
+      }
+    } catch (e) {
+      console.warn("[AUTH_CHECK_PHONE_DB_WARN]", e.message);
+    }
+
+    // 2. Check in-memory store
+    for (const u of memoryUsers.values()) {
+      if (!u) continue;
+      const uPhoneDigits = String(u.phone || "").replace(/\D/g, "");
+      if (
+        phoneVariants.includes(u.phone) ||
+        (uPhoneDigits && uPhoneDigits.endsWith(digits10)) ||
+        u.email === generatedEmail
+      ) {
+        return true;
+      }
+    }
+
+    // 3. Check usersStore (JSON disk storage fallback)
+    try {
+      const allUsers = usersStore.getUsers ? usersStore.getUsers() : [];
+      const found = allUsers.some((u) => {
+        if (!u) return false;
+        const uPhoneDigits = String(u.phone || "").replace(/\D/g, "");
+        return (
+          phoneVariants.includes(u.phone) ||
+          (uPhoneDigits && uPhoneDigits.endsWith(digits10)) ||
+          u.email === generatedEmail
+        );
+      });
+      if (found) return true;
+    } catch (e) {}
+
+    return false;
+  },
+
+  /**
    * Authenticate a user by mobile phone & password.
    */
   async loginWithPhoneAndPassword({ phone, password }) {

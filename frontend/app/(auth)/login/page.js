@@ -183,6 +183,7 @@ export default function LoginPage() {
 
   // Registration states
   const [regPhone, setRegPhone] = useState("");
+  const [regAlreadyExists, setRegAlreadyExists] = useState(false);
   const [regOtp, setRegOtp] = useState("");
   const [regOtpSent, setRegOtpSent] = useState(false);
   const [regOtpSending, setRegOtpSending] = useState(false);
@@ -211,6 +212,7 @@ export default function LoginPage() {
   const [loginAttemptsLeft, setLoginAttemptsLeft] = useState(null);
   const [loginIsBanned, setLoginIsBanned] = useState(false);
   const [loginBanMessage, setLoginBanMessage] = useState("");
+  const [loginNotFound, setLoginNotFound] = useState(false);
 
   // Measure active panel height continuously via ResizeObserver for silky-smooth height transition
   useEffect(() => {
@@ -280,6 +282,41 @@ export default function LoginPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, [loginCooldown]);
+
+  // Live debounced check if mobile number already exists when typing in registration
+  useEffect(() => {
+    const cleanDigits = sanitizeTenDigitPhone(regPhone);
+    if (cleanDigits.length !== 10) {
+      if (regAlreadyExists) setRegAlreadyExists(false);
+      return;
+    }
+    let isCancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/auth/check-phone", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: cleanDigits }),
+        });
+        const data = await res.json();
+        if (!isCancelled) {
+          if (data.exists) {
+            setRegAlreadyExists(true);
+            setErrorMessage("This mobile number is already registered. Please sign in instead.");
+          } else {
+            setRegAlreadyExists(false);
+            setErrorMessage((prev) => (prev?.includes("already registered") ? "" : prev));
+          }
+        }
+      } catch (e) {
+      }
+    }, 350);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [regPhone]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -373,9 +410,15 @@ export default function LoginPage() {
         } else if (data.cooldown && data.cooldownSeconds) {
           setRegCooldown(data.cooldownSeconds);
         }
+        if (data.alreadyExists || res.status === 409) {
+          setRegAlreadyExists(true);
+          setRegOtpSent(false);
+          throw new Error(data.error || "This mobile number is already registered. Please sign in instead.");
+        }
         throw new Error(data.error || "Failed to send verification code.");
       }
 
+      setRegAlreadyExists(false);
       setRegOtpSent(true);
       setRegCooldown(data.cooldownSeconds || 60);
       setRegAttemptsLeft(5);
@@ -516,9 +559,15 @@ export default function LoginPage() {
         } else if (data.cooldown && data.cooldownSeconds) {
           setLoginCooldown(data.cooldownSeconds);
         }
+        if (data.notFound || res.status === 404) {
+          setLoginNotFound(true);
+          setLoginOtpSent(false);
+          throw new Error(data.error || "No account found with this mobile number. Please create an account first.");
+        }
         throw new Error(data.error || "Failed to send verification code.");
       }
 
+      setLoginNotFound(false);
       setLoginOtpSent(true);
       setLoginCooldown(data.cooldownSeconds || 60);
       setLoginAttemptsLeft(5);
@@ -901,6 +950,8 @@ export default function LoginPage() {
                             ? sanitizeTenDigitPhone(e.target.value)
                             : sanitizeLoginIdentifier(e.target.value);
                         setLoginIdentifier(nextVal);
+                        if (loginNotFound) setLoginNotFound(false);
+                        if (errorMessage) setErrorMessage("");
                         if (loginOtpSent) {
                           setLoginOtpSent(false);
                           setLoginOtp("");
@@ -1029,6 +1080,32 @@ export default function LoginPage() {
                       </button>
                     </div>
 
+                    {/* Account Not Found Alert Banner for Login */}
+                    {loginNotFound && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700/60 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-3 animate-in fade-in">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">No Account Found</p>
+                            <p className="mt-0.5 opacity-90 truncate">
+                              +91 {loginIdentifier} is not registered yet.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegPhone(loginIdentifier);
+                            switchTab("register");
+                            setLoginNotFound(false);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shrink-0 cursor-pointer transition-colors shadow-xs"
+                        >
+                          Create Account &rarr;
+                        </button>
+                      </div>
+                    )}
+
                     {!loginOtpSent ? (
                       <button
                         type="button"
@@ -1153,6 +1230,8 @@ export default function LoginPage() {
                         onChange={(e) => {
                           const clean = sanitizeTenDigitPhone(e.target.value);
                           setRegPhone(clean);
+                          if (regAlreadyExists) setRegAlreadyExists(false);
+                          if (errorMessage) setErrorMessage("");
                           if (regOtpSent) {
                             setRegOtpSent(false);
                             setRegOtp("");
@@ -1198,12 +1277,40 @@ export default function LoginPage() {
                   </div>
                 )}
 
+                {/* Mobile Number Already Registered Alert Banner */}
+                {regAlreadyExists && (
+                  <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-3 animate-in fade-in">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-semibold truncate">Mobile Number Already Registered</p>
+                        <p className="mt-0.5 opacity-90 truncate">
+                          +91 {regPhone} already has an active workspace.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginIdentifier(regPhone);
+                        switchTab("login");
+                        setRegAlreadyExists(false);
+                        setErrorMessage("");
+                        setSuccessMessage(`Welcome back! Sign in with +91 ${regPhone}`);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shrink-0 cursor-pointer transition-colors shadow-xs"
+                    >
+                      Sign In &rarr;
+                    </button>
+                  </div>
+                )}
+
                 {!regOtpSent && !regPhoneVerified && (
                   <button
                     type="button"
                     tabIndex={activeTab === "register" ? 0 : -1}
                     onClick={handleSendRegOtp}
-                    disabled={regOtpSending || regIsBanned || regPhone.length !== 10}
+                    disabled={regOtpSending || regIsBanned || regPhone.length !== 10 || regAlreadyExists}
                     className="w-full h-10 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm shadow-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {regOtpSending ? (
@@ -1211,6 +1318,8 @@ export default function LoginPage() {
                         <RefreshCw className="w-4 h-4 animate-spin" />
                         <span>Sending verification code...</span>
                       </>
+                    ) : regAlreadyExists ? (
+                      <span>Already Registered · Sign In Above</span>
                     ) : (
                       <>
                         <span>Send Verification Code</span>

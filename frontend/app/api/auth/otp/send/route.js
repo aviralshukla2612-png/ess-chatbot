@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { otpStore } from "@/lib/auth/otpStore";
+import { authStore } from "@/lib/db/authStore";
 import {
   extractClientIp,
   enforceRateLimit,
@@ -24,6 +25,46 @@ export async function POST(request) {
         ),
         ipCheck.result
       );
+    }
+
+    const rawDigits = String(phone).replace(/\D/g, "");
+    if (rawDigits.length < 10) {
+      return NextResponse.json(
+        { success: false, error: "Please enter a valid 10-digit mobile number." },
+        { status: 400 }
+      );
+    }
+
+    // 1. REGISTRATION GATE: If registering and number already exists, BLOCK OTP IMMEDIATELY!
+    if (purpose === "registration") {
+      const alreadyExists = await authStore.checkPhoneExists(phone);
+      if (alreadyExists) {
+        return NextResponse.json(
+          {
+            success: false,
+            alreadyExists: true,
+            error: "This mobile number is already registered. Please sign in instead.",
+            phone,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // 2. LOGIN GATE: If logging in via OTP and number does not exist, BLOCK OTP IMMEDIATELY!
+    if (purpose === "login") {
+      const exists = await authStore.checkPhoneExists(phone);
+      if (!exists) {
+        return NextResponse.json(
+          {
+            success: false,
+            notFound: true,
+            error: "No account found with this mobile number. Please create an account first.",
+            phone,
+          },
+          { status: 404 }
+        );
+      }
     }
 
     const result = await otpStore.sendOtp({ phone, purpose, name });
