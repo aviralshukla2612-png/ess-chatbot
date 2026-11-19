@@ -216,6 +216,25 @@
   }
 }
 
+@keyframes nexus-border-spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.nexus-border-beam {
+  animation: nexus-border-spin 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-border-beam {
+    animation: none;
+  }
+}
+
 /* ==========================================================================
    ACCESSIBLE SUBTLE SCROLLBARS + OPT-IN HIDDEN SCROLLBAR UTILITIES
    ========================================================================== */

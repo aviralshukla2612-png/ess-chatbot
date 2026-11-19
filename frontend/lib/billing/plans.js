@@ -159,17 +159,20 @@ function getStoragePath() {
   return PLANS_FILE_PATH;
 }
 
-// In-memory cache for ultra-fast lookups
+// In-memory cache with mtimeMs invalidation for instant reflection of Super Admin edits
 let cachedPlans = null;
+let cachedPlansMtimeMs = 0;
 
 export function loadPlansFromDisk() {
   try {
     const targetPath = getStoragePath();
     if (fs.existsSync(targetPath)) {
+      const stat = fs.statSync(targetPath);
       const raw = fs.readFileSync(targetPath, "utf-8");
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
         cachedPlans = parsed;
+        cachedPlansMtimeMs = stat.mtimeMs;
         return parsed;
       }
     }
@@ -278,6 +281,9 @@ export function savePlansToDisk(plans) {
       fs.mkdirSync(dir, { recursive: true });
     }
     fs.writeFileSync(targetPath, JSON.stringify(plans, null, 2), "utf-8");
+    try {
+      cachedPlansMtimeMs = fs.statSync(targetPath).mtimeMs;
+    } catch {}
     return true;
   } catch (err) {
     console.error("[PLANS_SAVE_ERR] Failed saving plans to disk:", err);
@@ -286,11 +292,21 @@ export function savePlansToDisk(plans) {
 }
 
 /**
- * Returns all configured plans (for Super Admin dashboard)
+ * Returns all configured plans (for Super Admin dashboard & public pricing)
  */
 export function getPlans() {
-  if (!cachedPlans) {
-    loadPlansFromDisk();
+  try {
+    const targetPath = getStoragePath();
+    if (fs.existsSync(targetPath)) {
+      const stat = fs.statSync(targetPath);
+      if (!cachedPlans || stat.mtimeMs !== cachedPlansMtimeMs) {
+        loadPlansFromDisk();
+      }
+    } else if (!cachedPlans) {
+      loadPlansFromDisk();
+    }
+  } catch {
+    if (!cachedPlans) loadPlansFromDisk();
   }
   return cachedPlans || [];
 }
@@ -304,14 +320,36 @@ export function getActivePlans() {
 }
 
 /**
- * Resolve plan by ID (handles dynamic plan IDs as well as legacy STARTER/GROWTH/ENTERPRISE)
+ * Resolve plan by ID (checks dynamic Super Admin plans FIRST, then legacy fallback)
  */
 export function getPlan(planId = "STARTER") {
   if (!planId) return PLANS.STARTER;
 
   const normalized = String(planId).trim();
+  const lower = normalized.toLowerCase();
 
-  // 1. Check legacy static baseline PLANS first (MONTHLY, SIX_MONTHS, ANNUAL, STARTER, GROWTH, ENTERPRISE)
+  // 1. Check dynamic Super Admin plans first so live price edits apply to checkout
+  const all = getPlans();
+  const dynamicExact = all.find(
+    (p) => p.id?.toLowerCase() === lower || p.name?.toLowerCase() === lower
+  );
+  if (dynamicExact) return dynamicExact;
+
+  // Match aliases like PLAN_STARTER_MONTHLY / PLAN_PRO_6MONTHS / PLAN_ENTERPRISE_ANNUAL against dynamic plans
+  if (lower.includes("6month") || lower.includes("six")) {
+    const dynSix = all.find((p) => p.id === "six-months" || (p.interval === "monthly" && Number(p.intervalCount) === 6));
+    if (dynSix) return dynSix;
+  }
+  if (lower.includes("annual") || lower.includes("year")) {
+    const dynAnnual = all.find((p) => p.id === "annual" || p.interval === "yearly");
+    if (dynAnnual) return dynAnnual;
+  }
+  if (lower.includes("month")) {
+    const dynMonthly = all.find((p) => p.id === "monthly" || (p.interval === "monthly" && Number(p.intervalCount || 1) === 1));
+    if (dynMonthly) return dynMonthly;
+  }
+
+  // 2. Fallback to static baseline PLANS
   const key = normalized.toUpperCase().replace(/-/g, "_");
   const legacyMatch = PLANS[key] || PLANS[normalized.toUpperCase()];
   if (legacyMatch) return legacyMatch;
@@ -325,9 +363,6 @@ export function getPlan(planId = "STARTER") {
   if (normalized.toUpperCase().includes("MONTH") || normalized === "PLAN_STARTER_MONTHLY") {
     return PLANS.MONTHLY;
   }
-
-  // 2. Check dynamic plans
-  const all = getPlans();
   const match = all.find(
     (p) =>
       p.id.toLowerCase() === normalized.toLowerCase() ||
