@@ -88,10 +88,10 @@ export default function CreateBotPage() {
               <span>Subscription Setup Required</span>
             </div>
             <h2 className="text-lg font-bold text-[var(--text-primary)]">
-              Start Your 7-Day Free Trial (₹0 Today)
+              Activate Your Plan to Create Chatbots
             </h2>
             <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-md mx-auto leading-relaxed">
-              Activate your Razorpay trial mandate to create and deploy AI chatbots. Nothing is charged today.
+              Subscribe to a plan to create, customize, and deploy AI chatbots across your website and WhatsApp.
             </p>
           </div>
 
@@ -102,7 +102,7 @@ export default function CreateBotPage() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 px-5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <CreditCard className="w-4 h-4" />
-              <span>Activate Trial & Unlock</span>
+              <span>Activate Plan &amp; Unlock</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <Link

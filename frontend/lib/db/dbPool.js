@@ -15,17 +15,7 @@ try {
   const pgModule = require("pg");
   Pool = pgModule.Pool || pgModule.default?.Pool || pgModule;
 } catch {
-  try {
-    const pgModule = require("../../../frontend/node_modules/pg");
-    Pool = pgModule.Pool || pgModule.default?.Pool || pgModule;
-  } catch {
-    try {
-      const pgModule = require("../../node_modules/pg");
-      Pool = pgModule.Pool || pgModule.default?.Pool || pgModule;
-    } catch {
-      // Fallback mode when running outside Docker without local pg
-    }
-  }
+  // Fallback mode when running outside Docker without local pg
 }
 
 const DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgrespassword@localhost:5432/ess_chatbot?schema=public";

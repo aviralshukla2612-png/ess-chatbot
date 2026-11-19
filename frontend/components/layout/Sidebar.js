@@ -422,11 +422,7 @@ export default function Sidebar({
                   <CreditCard className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                   <span>Subscription</span>
                 </div>
-                {isTrial ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                    {subMeta?.trialDaysRemaining ?? 7}d trial
-                  </span>
-                ) : hasActiveSub ? (
+                {hasActiveSub ? (
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
                     Active
                   </span>
@@ -439,23 +435,19 @@ export default function Sidebar({
 
               <div className="flex items-baseline justify-between gap-1 mb-1">
                 <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
-                  {isTrial
-                    ? "Starter Trial"
-                    : subscription?.plan?.name
+                  {subscription?.plan?.name
                     ? `${subscription.plan.name}`
                     : "Starter Plan"}
                 </span>
                 <span className="text-[11px] font-mono font-medium text-[var(--text-muted)] shrink-0">
-                  {isTrial ? "₹0 today" : planPriceLabel}
+                  {planPriceLabel}
                 </span>
               </div>
 
               <p className="text-[11px] text-[var(--text-muted)] leading-snug mb-2.5">
-                {isTrial
-                  ? `Autopay scheduled ${subMeta?.autopayDate || "Day 8"}. Cancel anytime.`
-                  : hasActiveSub
+                {hasActiveSub
                   ? "Live chat, vector RAG & lead capture active."
-                  : "Activate trial autopay to deploy chatbots."}
+                  : "Activate your plan to deploy chatbots."}
               </p>
 
               {hasActiveSub ? (

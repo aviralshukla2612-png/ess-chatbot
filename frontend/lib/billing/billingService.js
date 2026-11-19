@@ -207,7 +207,7 @@ export const billingService = {
       [subId, organizationId, "razorpay", subId, plan.id, status, currentPeriodStart, currentPeriodEnd, true]
     );
 
-    await queryDb('UPDATE "Organization" SET "plan" = $1 WHERE "id" = $2;', [isTrial ? `${plan.name} (7-Day Trial)` : plan.name, organizationId]);
+    await queryDb('UPDATE "Organization" SET "plan" = $1 WHERE "id" = $2;', [plan.name, organizationId]);
 
     return { success: true, subscription: subRecord };
   },
@@ -388,7 +388,7 @@ export const billingService = {
       sub.trialUsed = true;
     }
 
-    return { success: true, message: "Subscription cancelled successfully. Free trial has ended." };
+    return { success: true, message: "Subscription cancelled successfully." };
   },
 
   /**

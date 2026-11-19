@@ -439,7 +439,7 @@ export function createPlan({
       "1 AI Sales Bot (Strict Limit)",
       "Unlimited Messages & Token Inquiries",
       `${numPrice >= 9999 ? 500 : numPrice >= 5000 ? 150 : 50} Knowledge pages`,
-      `${Number(trialDays) || 7}-Day Free Trial (₹0 charged today)`,
+      "Instant Setup & Deployment",
       "Live Lead CRM capture",
       "Razorpay Autopay Protection",
     ],

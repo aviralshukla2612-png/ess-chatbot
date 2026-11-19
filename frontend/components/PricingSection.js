@@ -159,8 +159,6 @@ function mapAdminPlansToDisplay(rawPlans) {
       badgeText = `Most Popular · Save ${formatInr(savedAmount)}`;
     } else if (isAnnual) {
       badgeText = "Most Popular · Best Value";
-    } else if (Number(p.trialDays) > 0) {
-      savings = `${p.trialDays}-day free trial included`;
     }
 
     const fallbackMatch = PRICING_PLANS.find((fp) => fp.id === id.toLowerCase());
@@ -267,7 +265,7 @@ const BENTO_CAPABILITIES = [
 ];
 
 const TRUST_ITEMS = [
-  { icon: Clock, label: "7-Day Trial Ready" },
+  { icon: Clock, label: "Instant Activation" },
   { icon: CreditCard, label: "Secured by Razorpay UPI & Cards" },
   { icon: Zap, label: "2-Minute Zero-Code Embed" },
   { icon: ShieldCheck, label: "Multi-Tenant RBAC Security" },

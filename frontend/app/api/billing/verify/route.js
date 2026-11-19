@@ -76,7 +76,7 @@ export async function POST(request) {
         {
           success: false,
           code: "TRIAL_ALREADY_USED",
-          error: "Your organization has already used its 1-time 7-day free trial. Please subscribe to a paid plan to continue.",
+          error: "An active paid subscription is required to continue.",
         },
         { status: 400 }
       );

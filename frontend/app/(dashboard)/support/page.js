@@ -26,9 +26,9 @@ import { InlineAlert, useToast } from "@/components/ui/Toast";
 const FAQ_ITEMS = [
   {
     category: "Billing & Autopay",
-    question: "How does the 7-day free trial and Razorpay autopay work?",
+    question: "How does Razorpay billing work?",
     answer:
-      "When you start your 7-day free trial, ₹0 is charged upfront. Razorpay authorizes an autopay mandate scheduled after Day 7. You can cancel autopay with 1 click on the Billing page anytime before trial completion, or switch to a prepaid monthly/annual pass.",
+      "When you subscribe to a plan, billing is processed securely via Razorpay. You can manage your subscription, download invoices, or cancel with 1 click on the Billing page anytime.",
   },
   {
     category: "Bots & Creation",
@@ -84,8 +84,8 @@ const QUICK_GUIDES = [
     tag: "Training",
   },
   {
-    title: "Razorpay Autopay & Passes",
-    description: "Manage your 7-day trial, autopay mandate, or prepaid duration passes.",
+    title: "Razorpay Billing & Subscriptions",
+    description: "Manage your subscription, autopay mandate, or billing receipts.",
     icon: CreditCard,
     href: "/billing",
     tag: "Billing",

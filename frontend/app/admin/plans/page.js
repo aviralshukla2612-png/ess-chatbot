@@ -71,10 +71,10 @@ export default function AdminPlansPage() {
     setFormPrice("2499");
     setFormInterval("monthly");
     setFormIntervalCount(1);
-    setFormTrialDays(7);
-    setFormDescription("₹2,499/month after 7-day free trial. Full AI chatbot access.");
+    setFormTrialDays(0);
+    setFormDescription("₹2,499/month. Full AI chatbot access.");
     setFormFeatures(
-      "1 AI Sales Bot (Strict Limit)\nUnlimited Messages & Token Inquiries\n50 Website knowledge pages\n7-Day Free Trial (₹0 charged today)\nLead CRM capture"
+      "1 AI Sales Bot (Strict Limit)\nUnlimited Messages & Token Inquiries\n50 Website knowledge pages\nInstant Setup\nLead CRM capture"
     );
     setFormRazorpayPlanId("");
     setFormIsDefault(false);
@@ -234,9 +234,9 @@ export default function AdminPlansPage() {
           colorScheme="indigo"
         />
         <StatCard
-          title="Default Trial Tier"
+          title="Default Plan Tier"
           value={plans.find((p) => p.isDefault)?.name || "Starter"}
-          description="Applied on new 7-day trials"
+          description="Default workspace plan"
           icon={Check}
           colorScheme="emerald"
         />
@@ -335,9 +335,8 @@ export default function AdminPlansPage() {
                   </div>
                   <div className="flex items-center gap-2 mt-2 text-[11px] text-[var(--text-secondary)] font-medium">
                     <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] border border-indigo-500/20">
-                      {plan.trialDays ?? 7}-Day Free Trial
+                      Standard Plan
                     </span>
-                    <span className="text-[var(--text-muted)]">· ₹0 upfront</span>
                   </div>
                 </div>
 
@@ -538,7 +537,7 @@ export default function AdminPlansPage() {
                 className="w-4 h-4 accent-indigo-600 rounded"
               />
               <span className="font-semibold text-[var(--text-secondary)]">
-                Default Plan for 7-Day Trials
+                Default Workspace Plan
               </span>
             </label>
 

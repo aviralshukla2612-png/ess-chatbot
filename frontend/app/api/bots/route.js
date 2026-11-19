@@ -52,7 +52,7 @@ export async function POST(request) {
 
     const isSuperAdmin = principal.platformRole === ROLES.SUPER_ADMIN || principal.orgRole === ROLES.SUPER_ADMIN;
     if (!isSuperAdmin) {
-      // 1. Mandatory 7-day free trial & autopay check
+      // 1. Mandatory subscription check
       const sub = await billingService.getSubscription(principal.organizationId);
       const hasAutopay = Boolean(
         sub &&
@@ -65,9 +65,9 @@ export async function POST(request) {
         return NextResponse.json(
           {
             success: false,
-            error: "TRIAL_AUTOPAY_MANDATORY",
-            message: "Setting up your 7-day free trial with Razorpay autopay is mandatory before creating an AI chatbot.",
-            code: "TRIAL_AUTOPAY_MANDATORY",
+            error: "SUBSCRIPTION_MANDATORY",
+            message: "An active subscription is required before creating an AI chatbot.",
+            code: "SUBSCRIPTION_MANDATORY",
           },
           { status: 402 }
         );

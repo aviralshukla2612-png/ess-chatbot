@@ -124,9 +124,7 @@ export default function TrialOnboardingModal({
           key: checkout.keyId,
           ...(checkout.orderId ? { order_id: checkout.orderId } : {}),
           name: "Emperor Smart Solutions",
-          description: checkout.isTrial
-            ? `${selectedPlan?.name || "Starter"} - 7-Day Free Trial`
-            : `${selectedPlan?.name || "Starter"} Plan (${selectedPlan?.priceMonthly || "₹2,499"})`,
+          description: `${selectedPlan?.name || "Starter"} Plan (${selectedPlan?.priceMonthly || "₹2,499"})`,
           handler: async function (response) {
             try {
               const verifyRes = await fetch("/api/billing/verify", {
@@ -252,30 +250,18 @@ export default function TrialOnboardingModal({
           )}
 
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--accent-soft)] border border-[var(--accent-border)] text-[11px] font-semibold text-[var(--accent-text)] mb-2.5">
-            {isTrialExhausted ? (
-              <Lock className="w-3.5 h-3.5" />
-            ) : (
-              <Sparkles className="w-3.5 h-3.5" />
-            )}
-            <span>
-              {isTrialExhausted
-                ? "Subscription Required"
-                : "7-Day Free Trial · ₹0 Charged Today"}
-            </span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Workspace Subscription</span>
           </div>
 
           <h2
             id="trial-modal-title"
             className="text-lg sm:text-xl font-bold text-[var(--text-primary)] tracking-tight pr-8"
           >
-            {isTrialExhausted
-              ? "Choose a Plan to Activate Your Chatbot"
-              : "Start Your 7-Day Free Trial with Autopay"}
+            Choose a Plan to Activate Your Workspace
           </h2>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1 leading-relaxed">
-            {isTrialExhausted
-              ? "Your one-time 7-day free trial has already been used. Select a billing interval below to activate your workspace."
-              : "Configure your Razorpay mandate to create and deploy AI chatbots. You will not be charged today."}
+            Select a billing plan below to unlock AI chatbot creation, RAG knowledge indexing, and lead capture.
           </p>
         </div>
 

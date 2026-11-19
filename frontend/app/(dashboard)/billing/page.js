@@ -293,11 +293,10 @@ export default function BillingPage() {
   }, []);
 
   const planName =
-    billingData?.subscription?.plan?.name ||
-    (billingData?.isTrial ? "Starter Autopay (7-Day Trial)" : "Starter Autopay");
+    billingData?.subscription?.plan?.name || "Starter Plan";
 
   const hasActiveSub = Boolean(billingData?.hasActiveSubscription);
-  const isTrial = Boolean(billingData?.isTrial);
+  const isTrial = false;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-fade-in">
@@ -312,7 +311,7 @@ export default function BillingPage() {
             </div>
             <div>
               <span className="text-xs font-bold text-[var(--text-primary)] block">
-                {isTrial ? "7-Day Trial" : hasActiveSub ? "Active Plan" : "Action Needed"}
+                {hasActiveSub ? "Active Plan" : "Action Needed"}
               </span>
               <span className="text-[11px] text-[var(--text-muted)] font-mono">
                 {hasActiveSub
@@ -410,9 +409,7 @@ export default function BillingPage() {
                     : "bg-rose-500"
                 }`}
               />
-              {isTrial
-                ? "7-Day Free Trial Active"
-                : hasActiveSub
+              {hasActiveSub
                 ? "Active Subscription"
                 : "Inactive"}
             </span>
@@ -424,19 +421,17 @@ export default function BillingPage() {
                 {planName}
               </h3>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1.5 leading-relaxed">
-                {isTrial
-                  ? "Full access to AI Chatbots, RAG Vector Knowledge, and Leads CRM during your 7-day evaluation."
-                  : hasActiveSub
+                {hasActiveSub
                   ? "Production workspace tier with unlimited conversational turns, RAG indexing, and CRM lead sync."
-                  : "Activate a prepaid duration pass below to resume uninterrupted visitor assistance."}
+                  : "Activate a plan below to start automating visitor assistance and capturing leads."}
               </p>
             </div>
 
             <div className="sm:text-right flex flex-col justify-center sm:items-end">
               <div className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] font-mono tabular-nums">
-                {isTrial ? "₹0.00" : "₹2,499"}
+                {"₹2,499"}
                 <span className="text-xs sm:text-sm font-normal text-[var(--text-muted)] font-sans">
-                  {isTrial ? " upfront" : " / month mandate"}
+                  {" / month"}
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)] mt-1">

@@ -22,6 +22,46 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+const STATS = [
+  {
+    label: "Always-On Sales",
+    value: "24/7/365",
+    desc: "Captures buyers outside office hours",
+    icon: Clock,
+    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+  },
+  {
+    label: "Response Latency",
+    value: "1.2s",
+    desc: "Instant answers with zero wait queues",
+    icon: Zap,
+    color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+  },
+  {
+    label: "Conversion Boost",
+    value: "+35%",
+    desc: "Higher visitor-to-lead engagement",
+    icon: TrendingUp,
+    color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+  },
+  {
+    label: "Routine Automation",
+    value: "80%",
+    desc: "Of repetitive inquiries resolved automatically",
+    icon: Bot,
+    color: "text-violet-600 dark:text-violet-400 bg-violet-500/10",
+  },
+];
+
+const ENTERPRISE_FEATURES = [
+  { label: "Multilingual Chat", desc: "English, Hindi & 20+ languages" },
+  { label: "Lead Alerts", desc: "Direct Webhook & WhatsApp sync" },
+  { label: "Knowledge Gaps", desc: "Auto-detect unanswered questions" },
+  { label: "DLT SMS OTP", desc: "100% genuine contact numbers" },
+  { label: "ISO 27001 Data", desc: "Dedicated PostgreSQL tenant isolation" },
+  { label: "Analytics Suite", desc: "Real-time engagement metrics" },
+];
+
 export default function BotBenefitsView({ onGetStarted }) {
   const handleStart = () => {
     if (typeof onGetStarted === "function") {
@@ -58,7 +98,7 @@ export default function BotBenefitsView({ onGetStarted }) {
               onClick={handleStart}
               className="w-full sm:w-auto h-12 px-7 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition-all transform hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2.5"
             >
-              <span>Get Started — Free for 7 Days</span>
+              <span>Get Started Now</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -75,7 +115,7 @@ export default function BotBenefitsView({ onGetStarted }) {
           <div className="pt-3 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-[var(--text-muted)] font-medium">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>7-Day Free Trial (₹0 charged today)</span>
+              <span>Instant AI Activation &amp; Setup</span>
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -83,7 +123,7 @@ export default function BotBenefitsView({ onGetStarted }) {
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span>2-Minute Instant Setup</span>
+              <span>Full Access to Chatbot &amp; Leads CRM</span>
             </span>
           </div>
         </div>
@@ -91,36 +131,7 @@ export default function BotBenefitsView({ onGetStarted }) {
 
       {/* 2. STATS / ROI METRICS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-        {[
-          {
-            label: "Always-On Sales",
-            value: "24/7/365",
-            desc: "Captures buyers outside office hours",
-            icon: Clock,
-            color: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
-          },
-          {
-            label: "Response Latency",
-            value: "1.2s",
-            desc: "Instant answers with zero wait queues",
-            icon: Zap,
-            color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
-          },
-          {
-            label: "Conversion Boost",
-            value: "+35%",
-            desc: "Higher visitor-to-lead engagement",
-            icon: TrendingUp,
-            color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-          },
-          {
-            label: "Routine Automation",
-            value: "80%",
-            desc: "Of repetitive inquiries resolved automatically",
-            icon: Bot,
-            color: "text-violet-600 dark:text-violet-400 bg-violet-500/10",
-          },
-        ]}?.map((stat, idx) => {
+        {STATS.map((stat, idx) => {
           const Icon = stat.icon;
           return (
             <div
@@ -278,14 +289,7 @@ export default function BotBenefitsView({ onGetStarted }) {
           Enterprise Features Included in Every Plan
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[
-            { label: "Multilingual Chat", desc: "English, Hindi & 20+ languages" },
-            { label: "Lead Alerts", desc: "Direct Webhook & WhatsApp sync" },
-            { label: "Knowledge Gaps", desc: "Auto-detect unanswered questions" },
-            { label: "DLT SMS OTP", desc: "100% genuine contact numbers" },
-            { label: "ISO 27001 Data", desc: "Dedicated PostgreSQL tenant isolation" },
-            { label: "Analytics Suite", desc: "Real-time engagement metrics" },
-          ]?.map((feat, i) => (
+          {ENTERPRISE_FEATURES.map((feat, i) => (
             <div
               key={i}
               className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] text-center space-y-1"
@@ -304,7 +308,7 @@ export default function BotBenefitsView({ onGetStarted }) {
             Ready to Put Your Sales &amp; Support on Autopilot?
           </h3>
           <p className="text-xs sm:text-sm text-indigo-200/90 leading-relaxed">
-            Activate your 7-day free trial right now. ₹0 charged today, cancel anytime with one click from your billing dashboard.
+            Activate your workspace plan today and launch your custom AI assistant in under 2 minutes. Cancel anytime with one click from your billing dashboard.
           </p>
           <div className="pt-2">
             <button
@@ -317,9 +321,9 @@ export default function BotBenefitsView({ onGetStarted }) {
             </button>
           </div>
           <div className="pt-2 flex items-center justify-center gap-4 text-[11px] text-indigo-300">
-            <span>🔒 Secure Razorpay Autopay</span>
+            <span>🔒 Secure Razorpay Payment</span>
             <span>⚡ Instant AI Activation</span>
-            <span>🤝 No Contract</span>
+            <span>🤝 Cancel Anytime</span>
           </div>
         </div>
       </div>
