@@ -50,13 +50,14 @@ fi
 # 3. Parse and Validate Heartbeat Payload
 HEARTBEAT_RAW=$(cat "$HEARTBEAT_FILE" 2>/dev/null || echo "{}")
 WATCHDOG_STATUS=$(python3 -c "import json; d=json.loads('''$HEARTBEAT_RAW'''); print(d.get('status',''))" 2>/dev/null || echo "")
+WATCHDOG_REASON=$(python3 -c "import json; d=json.loads('''$HEARTBEAT_RAW'''); print(d.get('reason',''))" 2>/dev/null || echo "")
 WATCHDOG_PID=$(python3 -c "import json; d=json.loads('''$HEARTBEAT_RAW'''); print(d.get('pid',''))" 2>/dev/null || echo "")
 WATCHDOG_TS=$(python3 -c "import json; d=json.loads('''$HEARTBEAT_RAW'''); print(d.get('timestamp',0))" 2>/dev/null || echo "0")
 NOW_TS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || echo "0")
 AGE_MS=$((NOW_TS - WATCHDOG_TS))
 
 if [ "$WATCHDOG_STATUS" != "HEALTHY" ]; then
-  echo "[FATAL SAFETY BARRIER] Watchdog status is not HEALTHY (Current: '${WATCHDOG_STATUS}')." >&2
+  echo "[FATAL SAFETY BARRIER] Watchdog status is not HEALTHY (Current: '${WATCHDOG_STATUS}', Reason: '${WATCHDOG_REASON}')." >&2
   exit 1
 fi
 
