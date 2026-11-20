@@ -15,6 +15,7 @@ function resolveDataFile() {
 
 const DATA_FILE = resolveDataFile();
 let memoryCache = null;
+let lastLoadedMtimeMs = 0;
 
 function loadFromDisk() {
   try {
@@ -23,12 +24,26 @@ function loadFromDisk() {
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), "utf8");
       memoryCache = [];
+      try { lastLoadedMtimeMs = fs.statSync(DATA_FILE).mtimeMs; } catch {}
       return memoryCache;
     }
+
+    if (memoryCache && Array.isArray(memoryCache)) {
+      try {
+        const stat = fs.statSync(DATA_FILE);
+        if (stat.mtimeMs === lastLoadedMtimeMs) {
+          return memoryCache;
+        }
+      } catch {
+        return memoryCache;
+      }
+    }
+
     const raw = fs.readFileSync(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       memoryCache = parsed;
+      try { lastLoadedMtimeMs = fs.statSync(DATA_FILE).mtimeMs; } catch {}
       return memoryCache;
     }
     fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), "utf8");
@@ -50,6 +65,7 @@ function saveToDisk(data) {
       const dir = path.dirname(DATA_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(DATA_FILE, JSON.stringify(data), "utf8");
+      try { lastLoadedMtimeMs = fs.statSync(DATA_FILE).mtimeMs; } catch {}
     } catch (err) {
       console.error("Error saving visitors store:", err);
     }
@@ -65,7 +81,9 @@ function saveToDisk(data) {
     try {
       const dir = path.dirname(DATA_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.promises.writeFile(DATA_FILE, JSON.stringify(toWrite), "utf8").catch((err) => {
+      fs.promises.writeFile(DATA_FILE, JSON.stringify(toWrite), "utf8").then(() => {
+        try { lastLoadedMtimeMs = Date.now(); } catch {}
+      }).catch((err) => {
         console.error("Error saving visitors store asynchronously:", err);
       });
     } catch (err) {
@@ -123,13 +141,16 @@ export const visitorsStore = {
         [botId, tokenHash]
       );
       if (res.ok && res.rows.length > 0) {
+        if (memoryCache && Array.isArray(memoryCache)) {
+          memoryCache.unshift(res.rows[0]);
+        }
         return res.rows[0];
       }
     } catch (e) {
       // Fall through to file store
     }
 
-    return null;
+    return this.getVisitorByToken(botId, rawToken);
   },
 
   getVisitorById(id, organizationId = null) {

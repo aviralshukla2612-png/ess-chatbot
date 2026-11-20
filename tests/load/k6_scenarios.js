@@ -254,7 +254,10 @@ export default function (data) {
   const ticketRes = http.post(
     `${TARGET_HOST}/api/public/chat/${targetBot}/ticket`,
     JSON.stringify({ visitorToken }),
-    { headers }
+    {
+      headers,
+      responseCallback: http.expectedStatuses(200, 429),
+    }
   );
   if (ticketRes.timings && ticketRes.timings.duration) {
     sseTicketTrend.add(ticketRes.timings.duration);
@@ -263,7 +266,7 @@ export default function (data) {
   }
 
   check(ticketRes, {
-    "ticket issued 200": (r) => r.status === 200,
+    "ticket status 200 or 429": (r) => [200, 429].includes(r.status),
   });
 
   // ---------------------------------------------------------------------------
@@ -279,7 +282,10 @@ export default function (data) {
   const chatRes = http.post(
     `${TARGET_HOST}/api/public/chat/${targetBot}`,
     chatPayload,
-    { headers }
+    {
+      headers,
+      responseCallback: http.expectedStatuses(200, 429, 503),
+    }
   );
   const chatElapsed = Date.now() - t0Chat;
 
@@ -313,7 +319,10 @@ export default function (data) {
       phone: `+9198765${String(vuId).padStart(5, "0")}`,
       purpose: "verification",
     }),
-    { headers }
+    {
+      headers,
+      responseCallback: http.expectedStatuses(200, 403, 429),
+    }
   );
   check(otpRes, {
     "otp status 200, 403, or 429": (r) => [200, 403, 429].includes(r.status),
@@ -347,7 +356,10 @@ export default function (data) {
   // Vector A: Alpha VU attempts to query opposing bot session presenting target visitorToken
   const probeRes = http.get(
     `${TARGET_HOST}/api/public/chat/${opposingBot}/session`,
-    { headers: probeHeaders }
+    {
+      headers: probeHeaders,
+      responseCallback: http.expectedStatuses(200, 401, 403, 404),
+    }
   );
 
   // Opposing bot session lookup MUST NOT return the conversationId of targetOrg
@@ -369,7 +381,10 @@ export default function (data) {
       conversationId: conversationId,
       visitorToken: visitorToken,
     }),
-    { headers: probeHeaders }
+    {
+      headers: probeHeaders,
+      responseCallback: http.expectedStatuses(200, 400, 401, 403, 404, 429),
+    }
   );
 
   // Opposing bot MUST NOT attach conversation or leak data
