@@ -66,6 +66,8 @@ export async function GET(request) {
     status: isReadinessHealthy ? "healthy" : "degraded",
     liveness: isLivenessHealthy,
     readiness: isReadinessHealthy,
+    commit: process.env.GIT_COMMIT || "06e2097",
+    aiProvider: DEFAULT_PROVIDER,
     timestamp: new Date().toISOString(),
     latencyMs,
   };

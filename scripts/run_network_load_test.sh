@@ -64,11 +64,12 @@ if command -v docker >/dev/null 2>&1; then
   LAST_STAMP=$(cat "$BUILD_STAMP_FILE" 2>/dev/null || echo "")
   if [ "$GIT_HEAD" != "$LAST_STAMP" ] || [ "${REBUILD_STAGING:-0}" = "1" ]; then
     echo "[BUILD] Staging code has updated (Commit: ${GIT_HEAD}, Previous: ${LAST_STAMP}). Rebuilding staging frontend container..."
+    export GIT_COMMIT="$GIT_HEAD"
     docker compose -f docker-compose.staging.yml build frontend
-    docker compose -f docker-compose.staging.yml up -d frontend
+    docker compose -f docker-compose.staging.yml up -d --force-recreate frontend
     echo "$GIT_HEAD" > "$BUILD_STAMP_FILE" 2>/dev/null || true
-    echo "[BUILD] Waiting 12s for rebuilt staging container to become healthy..."
-    sleep 12
+    echo "[BUILD] Waiting 15s for rebuilt staging container to become healthy..."
+    sleep 15
   fi
 fi
 
