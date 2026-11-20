@@ -57,6 +57,19 @@ if command -v docker >/dev/null 2>&1; then
   else
     echo "[PASS] Staging stack (ess-frontend-staging) is active on 127.0.0.1:3301."
   fi
+
+  # Auto-rebuild container if commit changed
+  GIT_HEAD=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+  BUILD_STAMP_FILE="frontend/.build_stamp_staging"
+  LAST_STAMP=$(cat "$BUILD_STAMP_FILE" 2>/dev/null || echo "")
+  if [ "$GIT_HEAD" != "$LAST_STAMP" ] || [ "${REBUILD_STAGING:-0}" = "1" ]; then
+    echo "[BUILD] Staging code has updated (Commit: ${GIT_HEAD}, Previous: ${LAST_STAMP}). Rebuilding staging frontend container..."
+    docker compose -f docker-compose.staging.yml build frontend
+    docker compose -f docker-compose.staging.yml up -d frontend
+    echo "$GIT_HEAD" > "$BUILD_STAMP_FILE" 2>/dev/null || true
+    echo "[BUILD] Waiting 12s for rebuilt staging container to become healthy..."
+    sleep 12
+  fi
 fi
 
 # 3. Ensure Safety Watchdog Daemon is Running

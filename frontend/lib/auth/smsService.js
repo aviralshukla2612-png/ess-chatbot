@@ -508,17 +508,22 @@ export const smsService = {
       };
     }
 
-    // Never send real external SMS during automated test suites unless explicitly enabled
-    if (process.env.NODE_ENV === "test" && process.env.ALLOW_LIVE_SMS_IN_TEST !== "true") {
+    const cfg = getDltConfig();
+
+    // Fast-path mock SMS handling for tests and staging mock gateway
+    if (
+      (process.env.NODE_ENV === "test" && process.env.ALLOW_LIVE_SMS_IN_TEST !== "true") ||
+      cfg.uri.includes("mock") ||
+      cfg.apikey === "MOCK_KEY_NO_CHARGES" ||
+      process.env.MOCK_SMS === "true"
+    ) {
       return {
         success: true,
-        provider: "test_mock",
-        messageId: `test_msg_${Date.now()}`,
+        provider: "mock_sms_gateway",
+        messageId: `mock_msg_${Date.now()}`,
         latencyMs: 1,
       };
     }
-
-    const cfg = getDltConfig();
     const var1 = (recipientName || "User").trim() || "User";
     const var2 = otpCode;
     const var3 = (cfg.signOff || "Team Nexus").trim();
