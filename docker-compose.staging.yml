@@ -90,6 +90,7 @@ services:
       - OTP_SECRET=${OTP_SECRET}
       - COOKIE_SECURE=${COOKIE_SECURE:-false}
       - DEFAULT_AI_PROVIDER=mock
+      - IS_LOAD_TEST=true
       - DLT_SMS_URI=http://mock-sms-service
       - DLT_SMS_APIKEY=MOCK_KEY_NO_CHARGES
       - AI_FAIL_CLOSED_ON_REDIS_OUTAGE=true

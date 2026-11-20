@@ -92,6 +92,13 @@ export class InferenceProvider {
           ? "mock"
           : (defaultEnvProvider || (hasValidGroqKey ? "groq" : "mock"))).toLowerCase();
 
+      // Permanent Ollama decoupling: System uses Groq. Never route to offline Ollama.
+      if (selectedProvider === "ollama") {
+        selectedProvider = (defaultEnvProvider === "mock" || process.env.IS_LOAD_TEST === "true")
+          ? "mock"
+          : (hasValidGroqKey ? "groq" : "mock");
+      }
+
       // If groq was requested but no valid key exists, failover to mock in test/staging or throw
       if (selectedProvider === "groq" && !hasValidGroqKey) {
         if (defaultEnvProvider === "mock" || process.env.NODE_ENV === "test") {

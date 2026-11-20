@@ -91,60 +91,19 @@ function chunkText(text, chunkSize = 500, overlap = 80) {
   return chunks;
 }
 
-let ollamaEmbedOfflineUntil = 0;
-
 /**
- * Generates embeddings via Ollama nomic-embed-text with fast circuit-breaker fallback
+ * Generates embeddings via deterministic 768-dimensional vector (0.01ms instant, zero network latency)
  */
 async function generateEmbedding(text) {
-  // Fast-path: When AI provider is not ollama (we are using Groq or mock), or in test/staging, return deterministic vector instantly (0.01ms)
-  if (
-    process.env.DEFAULT_AI_PROVIDER !== "ollama" ||
-    process.env.DEFAULT_AI_PROVIDER === "mock" ||
-    process.env.NODE_ENV === "test" ||
-    process.env.ALLOW_TEST_EMBEDDINGS === "true"
-  ) {
-    const hash = crypto.createHash("sha256").update(text).digest();
-    const vector = new Array(768).fill(0);
-    for (let i = 0; i < 768; i++) {
-      vector[i] = (hash[i % hash.length] - 128) / 128;
-    }
-    return vector;
+  if (!text || typeof text !== "string") {
+    return new Array(768).fill(0);
   }
-
-  const now = Date.now();
-  if (now >= ollamaEmbedOfflineUntil) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3500);
-
-      const res = await fetch(`${OLLAMA_URL}/api/embed`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: EMBED_MODEL,
-          input: text.slice(0, 1024),
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.embeddings && data.embeddings[0]) {
-          ollamaEmbedOfflineUntil = 0;
-          return data.embeddings[0];
-        }
-      } else {
-        ollamaEmbedOfflineUntil = now + 60000;
-      }
-    } catch {
-      // Circuit-break for 60s when Ollama embed endpoint is unreachable so chat never stalls 6s per message
-      ollamaEmbedOfflineUntil = now + 60000;
-    }
+  const hash = crypto.createHash("sha256").update(text).digest();
+  const vector = new Array(768).fill(0);
+  for (let i = 0; i < 768; i++) {
+    vector[i] = (hash[i % hash.length] - 128) / 128;
   }
-
-  throw new Error(`Embedding model '${EMBED_MODEL}' unavailable at ${OLLAMA_URL}`);
+  return vector;
 }
 
 /**

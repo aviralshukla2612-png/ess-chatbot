@@ -32,13 +32,16 @@ export function getPlatformSettings() {
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
       const raw = fs.readFileSync(SETTINGS_FILE, "utf8");
-      cachedSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      if (parsed.aiProvider === "ollama") parsed.aiProvider = "groq";
+      cachedSettings = { ...DEFAULT_SETTINGS, ...parsed };
       return cachedSettings;
     }
   } catch (err) {
     console.warn("[SETTINGS_STORE] Failed to read platform_settings.json, using defaults:", err.message);
   }
   cachedSettings = { ...DEFAULT_SETTINGS };
+  if (cachedSettings.aiProvider === "ollama") cachedSettings.aiProvider = "groq";
   return cachedSettings;
 }
 

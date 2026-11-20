@@ -23,24 +23,25 @@ export async function GET(request) {
     dbStatus = "error: " + err.message;
   }
 
-  // Test live status of Ollama & fetch available models
-  let ollamaStatus = "unreachable";
+  // Test live status of Ollama & fetch available models only if explicitly configured
+  let ollamaStatus = "standby";
   let availableModels = [];
   const ollamaUrl = settings.ollamaUrl || process.env.OLLAMA_URL || "http://ollama:11434";
-  try {
-    const tagsRes = await fetch(`${ollamaUrl}/api/tags`, {
-      signal: AbortSignal.timeout(3000),
-    });
-    if (tagsRes.ok) {
-      const data = await tagsRes.json();
-      ollamaStatus = "connected";
-      availableModels = (data.models || []).map((m) => m.name);
-    } else {
-      ollamaStatus = `http_${tagsRes.status}`;
+  if (settings.aiProvider === "ollama") {
+    try {
+      const tagsRes = await fetch(`${ollamaUrl}/api/tags`, {
+        signal: AbortSignal.timeout(1000),
+      });
+      if (tagsRes.ok) {
+        const data = await tagsRes.json();
+        ollamaStatus = "connected";
+        availableModels = (data.models || []).map((m) => m.name);
+      } else {
+        ollamaStatus = `http_${tagsRes.status}`;
+      }
+    } catch (err) {
+      ollamaStatus = "unreachable";
     }
-  } catch (err) {
-    // If inside docker or local dev
-    ollamaStatus = "unreachable";
   }
 
   return NextResponse.json({

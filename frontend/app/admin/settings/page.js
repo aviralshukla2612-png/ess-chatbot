@@ -20,7 +20,7 @@ export default function AdminSettingsPage() {
   const [diagnostics, setDiagnostics] = useState(null);
 
   const [formData, setFormData] = useState({
-    aiProvider: "ollama",
+    aiProvider: "groq",
     ollamaUrl: "http://ollama:11434",
     chatModel: "qwen2.5:3b",
     embeddingModel: "nomic-embed-text",

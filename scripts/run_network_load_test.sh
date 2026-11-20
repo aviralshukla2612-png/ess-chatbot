@@ -41,6 +41,9 @@ if command -v docker >/dev/null 2>&1; then
     echo "[DATA_SEED] Copying synthetic seed bots into frontend/data-staging/..."
     cp -rf frontend/data/* frontend/data-staging/ 2>/dev/null || true
     chmod -R 777 frontend/data-staging 2>/dev/null || true
+    if [ -f "frontend/data-staging/platform_settings.json" ]; then
+      sed -i 's/"aiProvider"[[:space:]]*:[[:space:]]*"ollama"/"aiProvider": "mock"/g' "frontend/data-staging/platform_settings.json" 2>/dev/null || true
+    fi
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "ess-frontend-staging"; then
       echo "[DATA_SEED] Restarting ess-frontend-staging to mount seed data..."
       docker restart ess-frontend-staging 2>/dev/null || true
