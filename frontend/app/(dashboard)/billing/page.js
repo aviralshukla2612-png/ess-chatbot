@@ -105,7 +105,7 @@ export default function BillingPage() {
       .then((d) => {
         if (d?.success) setBillingData(d);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   };
 
@@ -115,7 +115,7 @@ export default function BillingPage() {
       .then((d) => {
         if (d?.success && d?.user) setCurrentUser(d.user);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     loadBilling();
 
@@ -231,7 +231,7 @@ export default function BillingPage() {
                     window.location.href = `/bots/create?industry=${encodeURIComponent(targetInd)}`;
                   }, 1200);
                 }
-              } catch {}
+              } catch { }
             } else {
               setExtensionError(verifyData.error || "Payment signature verification failed.");
             }
@@ -392,22 +392,20 @@ export default function BillingPage() {
             </div>
 
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border w-fit ${
-                isTrial
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border w-fit ${isTrial
                   ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25"
                   : hasActiveSub
-                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25"
-                  : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25"
-              }`}
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25"
+                    : "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25"
+                }`}
             >
               <span
-                className={`w-2 h-2 rounded-full ${
-                  isTrial
+                className={`w-2 h-2 rounded-full ${isTrial
                     ? "bg-amber-500 animate-pulse"
                     : hasActiveSub
-                    ? "bg-emerald-500"
-                    : "bg-rose-500"
-                }`}
+                      ? "bg-emerald-500"
+                      : "bg-rose-500"
+                  }`}
               />
               {hasActiveSub
                 ? "Active Subscription"
@@ -524,11 +522,10 @@ export default function BillingPage() {
             return (
               <div
                 key={pkg.id}
-                className={`relative rounded-2xl p-6 transition-all flex flex-col justify-between bg-[var(--bg-surface)] ${
-                  pkg.isPopular
+                className={`relative rounded-2xl p-6 transition-all flex flex-col justify-between bg-[var(--bg-surface)] ${pkg.isPopular
                     ? "border-2 border-indigo-600 dark:border-indigo-500 shadow-xl shadow-indigo-500/10 md:-translate-y-1.5 z-10 ring-1 ring-indigo-500/25"
                     : "border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] hover:border-[var(--border-strong)]"
-                }`}
+                  }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-4">

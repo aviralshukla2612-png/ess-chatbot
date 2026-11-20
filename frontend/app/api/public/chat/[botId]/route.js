@@ -338,10 +338,20 @@ export async function POST(request, { params }) {
     // 3. Step 3: Resolve Persistent Database Conversation Memory (24-Hour Inactivity Window)
     let currentSessionId = sessionId;
     let existingConv = currentSessionId ? conversationsStore.getConversation(currentSessionId) : null;
-    if (existingConv && existingConv.botId && existingConv.botId !== bot.id) {
-      // Discard conversation belonging to a different bot to prevent cross-bot mix-up
-      existingConv = null;
-      currentSessionId = null;
+    if (existingConv) {
+      if (existingConv.botId && existingConv.botId !== bot.id) {
+        // Discard conversation belonging to a different bot to prevent cross-bot mix-up
+        existingConv = null;
+        currentSessionId = null;
+      } else if (
+        persistentVisitor?.id &&
+        existingConv.visitorId &&
+        existingConv.visitorId !== persistentVisitor.id
+      ) {
+        // Strict tenant/visitor isolation: prevent cross-visitor session hijacking / IDOR
+        existingConv = null;
+        currentSessionId = null;
+      }
     }
 
     // If no session or conversation not found by ID, look up the active conversation within 24h for this visitor

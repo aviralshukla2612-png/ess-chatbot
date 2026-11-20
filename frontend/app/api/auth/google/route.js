@@ -6,12 +6,30 @@ import { requireSuperAdmin } from "@/lib/auth/guard";
 import { extractClientIp, enforceRateLimit, applyRateLimitHeaders } from "@/lib/security/rateLimitPolicy";
 
 function resolveSafeBaseUrl(request) {
+  // 1. Prioritize active request host and proto (supports emperornexus.com, www, and local dev)
+  const host = request?.headers?.get("x-forwarded-host") || request?.headers?.get("host");
+  const proto = request?.headers?.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
+
+  if (host) {
+    const cleanHost = host.split(",")[0].trim();
+    const isAllowed =
+      cleanHost === "emperornexus.com" ||
+      cleanHost === "www.emperornexus.com" ||
+      cleanHost.startsWith("localhost") ||
+      cleanHost.startsWith("127.0.0.1") ||
+      (process.env.APP_URL && cleanHost === new URL(process.env.APP_URL).host);
+
+    if (isAllowed) {
+      return `${proto}://${cleanHost}`.replace(/\/+$/, "");
+    }
+  }
+
+  // 2. Fall back to environment configuration
   if (process.env.APP_URL) return process.env.APP_URL.replace(/\/+$/, "");
   if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL.replace(/\/+$/, "");
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
-  const proto = request.headers.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
-  const host = request.headers.get("host") || "localhost:3000";
-  return `${proto}://${host}`;
+
+  return "https://emperornexus.com";
 }
 
 function sanitizeRedirectPath(raw) {
