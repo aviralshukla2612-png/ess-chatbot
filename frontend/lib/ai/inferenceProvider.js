@@ -87,12 +87,16 @@ export class InferenceProvider {
         !process.env.GROQ_API_KEY.includes("your_groq_api_key")
       );
 
-      let selectedProvider = (provider || defaultEnvProvider || (hasValidGroqKey ? "groq" : "ollama")).toLowerCase();
+      let selectedProvider = (provider || defaultEnvProvider || (hasValidGroqKey ? "groq" : "mock")).toLowerCase();
 
-      // If groq was requested but no valid key exists, fallback immediately to local Ollama
+      // If groq was requested but no valid key exists, failover to mock in test/staging or throw
       if (selectedProvider === "groq" && !hasValidGroqKey) {
-        console.warn("[INFERENCE] GROQ_API_KEY is missing or placeholder. Using local Ollama...");
-        selectedProvider = "ollama";
+        if (defaultEnvProvider === "mock" || process.env.NODE_ENV === "test") {
+          console.warn("[INFERENCE] GROQ_API_KEY is missing in test/mock environment. Using mock provider.");
+          selectedProvider = "mock";
+        } else {
+          throw new Error("GROQ_API_KEY is missing or invalid in key pool.");
+        }
       }
 
       switch (selectedProvider) {
@@ -108,18 +112,11 @@ export class InferenceProvider {
               timeoutMs,
             });
           } catch (groqErr) {
-            console.warn(`[INFERENCE_FALLBACK] Groq error (${groqErr.message}). Automatically falling back to local Ollama container...`);
-            return await InferenceProvider._callOllama({
-              model: process.env.CHAT_MODEL || "llama3.2:1b",
-              endpoint: process.env.OLLAMA_URL || "http://127.0.0.1:11434",
-              messages,
-              temperature,
-              maxTokens,
-              stopTokens,
-              stream,
-              onToken,
-              timeoutMs,
-            });
+            console.warn(`[INFERENCE_GROQ_ERROR] Groq error: ${groqErr.message}`);
+            if (defaultEnvProvider === "mock" || process.env.NODE_ENV === "test") {
+              return await InferenceProvider._callMock({ messages, onToken, stream });
+            }
+            throw groqErr;
           }
 
         case "vllm":

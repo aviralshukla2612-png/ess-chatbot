@@ -13,7 +13,7 @@ function resolveSettingsFile() {
 const SETTINGS_FILE = resolveSettingsFile();
 
 const DEFAULT_SETTINGS = {
-  aiProvider: process.env.DEFAULT_AI_PROVIDER || (process.env.GROQ_API_KEY ? "groq" : "ollama"),
+  aiProvider: process.env.DEFAULT_AI_PROVIDER || "groq",
   ollamaUrl: process.env.OLLAMA_URL || "http://ollama:11434",
   chatModel: process.env.CHAT_MODEL || "llama3.2:1b",
   embeddingModel: process.env.EMBED_MODEL || "nomic-embed-text",

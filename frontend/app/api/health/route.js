@@ -7,7 +7,7 @@ import { getAuthenticatedPrincipal, isPlatformSuperAdmin } from "@/lib/auth/guar
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 const DEFAULT_PROVIDER = (
-  process.env.DEFAULT_AI_PROVIDER || (process.env.GROQ_API_KEY ? "groq" : "ollama")
+  process.env.DEFAULT_AI_PROVIDER || "groq"
 ).toLowerCase();
 
 export async function GET(request) {

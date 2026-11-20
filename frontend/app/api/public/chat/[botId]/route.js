@@ -33,7 +33,7 @@ import { acquireGenerationLocks, acquireWorkspaceLock, releaseGenerationLocks } 
 import { abuseDetectionService } from "@/lib/security/abuseDetectionService";
 import { aiTokenGuard } from "@/lib/security/aiTokenGuard";
 
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
+
 
 // --- PHASE 4: DOMAIN WHITELISTING (Origin Locking) ---
 // Guard logic imported from @/lib/security/domainGuard
@@ -56,34 +56,7 @@ function triggerLeadWebhookAsync(bot, leadPayload) {
   }).catch((err) => console.warn("[LEAD_WEBHOOK_FAIL]", err.message));
 }
 
-// Dynamic model resolver for local Ollama
-async function resolveOllamaModel() {
-  try {
-    const res = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    if (res.ok) {
-      const data = await res.json();
-      const available = (data.models || []).map((m) => m.name);
-      if (available.length > 0) {
-        const oneB = available.find(
-          (m) =>
-            m.toLowerCase().includes("llama3.2:1b") ||
-            m.toLowerCase().includes(":1b") ||
-            m.toLowerCase().includes("1.5b") ||
-            m.toLowerCase().includes(":0.5b")
-        );
-        if (oneB) return oneB;
 
-        const preferred = process.env.CHAT_MODEL;
-        if (preferred) {
-          const match = available.find((m) => m.toLowerCase().includes(preferred.toLowerCase()));
-          if (match) return match;
-        }
-        return available[0];
-      }
-    }
-  } catch (err) { }
-  return "llama3.2:1b";
-}
 
 // --- PHASE 2: UNIFIED INFERENCE PROVIDER ROUTER ---
 async function executeChatInference({

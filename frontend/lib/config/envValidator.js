@@ -55,7 +55,7 @@ export function validateEnvironment(env = process.env) {
   }
 
   // 2. AI Inference Provider Validation
-  const provider = (env.DEFAULT_AI_PROVIDER || (env.GROQ_API_KEY ? "groq" : "ollama")).toLowerCase();
+  const provider = (env.DEFAULT_AI_PROVIDER || "groq").toLowerCase();
   if (!ALLOWED_PROVIDERS.has(provider)) {
     errors.push(`DEFAULT_AI_PROVIDER '${provider}' is not supported. Must be one of: ${Array.from(ALLOWED_PROVIDERS).join(", ")}`);
   }
