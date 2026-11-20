@@ -12,13 +12,16 @@ class ConcurrencyLimiter {
     this.queue = [];
   }
 
-  async acquire(waitTimeoutMs = 15000) {
+  async acquire(waitTimeoutMs = 5000) {
     if (this.activeCount < this.maxConcurrent) {
       this.activeCount++;
       return () => this.release();
     }
     if (this.queue.length >= this.maxQueue) {
-      throw new Error("Provider overloaded: concurrency limit and queue capacity reached.");
+      const err = new Error("Provider overloaded: concurrency limit and queue capacity reached.");
+      err.code = "CONCURRENCY_LIMIT_REACHED";
+      err.retryAfterSec = 5;
+      throw err;
     }
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -27,7 +30,10 @@ class ConcurrencyLimiter {
         settled = true;
         const idx = this.queue.indexOf(entry);
         if (idx >= 0) this.queue.splice(idx, 1);
-        reject(new Error("Inference queue wait timeout exceeded. Please retry shortly."));
+        const timeoutErr = new Error("Inference queue wait timeout exceeded. Please retry shortly.");
+        timeoutErr.code = "INFERENCE_QUEUE_TIMEOUT";
+        timeoutErr.retryAfterSec = 5;
+        reject(timeoutErr);
       }, waitTimeoutMs);
       if (typeof timer.unref === "function") timer.unref();
 

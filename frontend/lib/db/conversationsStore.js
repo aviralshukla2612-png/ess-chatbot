@@ -90,19 +90,50 @@ function loadFromDisk() {
   }
 }
 
+let convSaveTimeout = null;
+let pendingConvData = null;
+
 function saveToDisk(data) {
   const dataFile = resolveDataFile();
-  try {
-    memoryCache = data;
-    const dir = path.dirname(dataFile);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), "utf8");
-    lastLoadedPath = dataFile;
+  memoryCache = data;
+  lastLoadedPath = dataFile;
+
+  if (process.env.NODE_ENV === "test") {
     try {
-      lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
-    } catch {}
-  } catch (err) {
-    console.error("Error saving conversations store:", err);
+      const dir = path.dirname(dataFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(dataFile, JSON.stringify(data), "utf8");
+      try {
+        lastLoadedMtimeMs = fs.statSync(dataFile).mtimeMs;
+      } catch {}
+    } catch (err) {
+      console.error("Error saving conversations store:", err);
+    }
+    return;
+  }
+
+  pendingConvData = data;
+  if (convSaveTimeout) return;
+  convSaveTimeout = setTimeout(() => {
+    convSaveTimeout = null;
+    const toWrite = pendingConvData;
+    if (!toWrite) return;
+    try {
+      const dir = path.dirname(dataFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.promises.writeFile(dataFile, JSON.stringify(toWrite), "utf8").then(() => {
+        try {
+          lastLoadedMtimeMs = Date.now();
+        } catch {}
+      }).catch((err) => {
+        console.error("Error saving conversations store asynchronously:", err);
+      });
+    } catch (err) {
+      console.error("Error in scheduled conversation save:", err);
+    }
+  }, 100);
+  if (typeof convSaveTimeout.unref === "function") {
+    convSaveTimeout.unref();
   }
 }
 

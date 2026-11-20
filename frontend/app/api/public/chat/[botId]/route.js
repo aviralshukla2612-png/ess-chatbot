@@ -29,7 +29,7 @@ import {
   applyRateLimitHeaders,
   validateChatPayloadAndBudget,
 } from "@/lib/security/rateLimitPolicy";
-import { acquireGenerationLocks, releaseGenerationLocks } from "@/lib/security/concurrencyLock";
+import { acquireGenerationLocks, acquireWorkspaceLock, releaseGenerationLocks } from "@/lib/security/concurrencyLock";
 import { abuseDetectionService } from "@/lib/security/abuseDetectionService";
 import { aiTokenGuard } from "@/lib/security/aiTokenGuard";
 
@@ -81,7 +81,7 @@ async function resolveOllamaModel() {
         return available[0];
       }
     }
-  } catch (err) {}
+  } catch (err) { }
   return "llama3.2:1b";
 }
 
@@ -91,14 +91,33 @@ async function executeChatInference({
   temperature = 0.3,
   num_predict = 512,
   onToken = null,
+  organizationId = null,
 }) {
-  return await InferenceProvider.generate({
-    messages,
-    temperature,
-    maxTokens: num_predict,
-    stream: Boolean(onToken),
-    onToken,
-  });
+  let wsTokens = [];
+  if (organizationId && organizationId !== "org_ess_default") {
+    const wsLock = await acquireWorkspaceLock({ organizationId });
+    if (!wsLock.ok) {
+      const lockErr = new Error(wsLock.error);
+      lockErr.code = "CONCURRENCY_LIMIT_REACHED";
+      lockErr.retryAfterSec = wsLock.retryAfterSec || 5;
+      throw lockErr;
+    }
+    wsTokens = wsLock.lockTokens || [];
+  }
+
+  try {
+    return await InferenceProvider.generate({
+      messages,
+      temperature,
+      maxTokens: num_predict,
+      stream: Boolean(onToken),
+      onToken,
+    });
+  } finally {
+    if (wsTokens.length > 0) {
+      await releaseGenerationLocks(wsTokens);
+    }
+  }
 }
 
 function getCorsOrigin(request) {
@@ -111,7 +130,7 @@ function getCorsOrigin(request) {
       const u = new URL(referer);
       return u.origin;
     }
-  } catch (e) {}
+  } catch (e) { }
   return "*";
 }
 
@@ -337,7 +356,7 @@ export async function POST(request, { params }) {
 
     if (providedToken) {
       persistentVisitor = (await visitorsStore.getVisitorByTokenAsync(bot.id, providedToken)) ||
-                          visitorsStore.getVisitorByToken(bot.id, providedToken);
+        visitorsStore.getVisitorByToken(bot.id, providedToken);
     }
 
     if (!persistentVisitor) {
@@ -410,11 +429,11 @@ export async function POST(request, { params }) {
       return corsResponse(convRateCheck.response, request);
     }
 
-    // 4. Concurrency Control (Max 1 per conversation, Max 1 per visitor, Max N per workspace)
+    // 4. Concurrency Control (Max 1 per conversation, Max 1 per visitor)
+    // Defer workspace lock to active inference to avoid holding locks while queued or on deterministic replies
     const generationLocks = await acquireGenerationLocks({
       conversationId: currentSessionId,
       visitorId: persistentVisitor?.id,
-      organizationId: bot.organizationId,
     });
     if (!generationLocks.ok) {
       return corsResponse(
@@ -446,148 +465,115 @@ export async function POST(request, { params }) {
 
     try {
       // --- PHASE 6 & 12: GLOBAL BOT CHECK ---
-    if (bot.globalBotEnabled === false) {
-      const fallbackText = bot.fallbackMessage || "Our automated assistant is temporarily paused. A team member will assist you shortly.";
-      conversationsStore.addMessage(
-        currentSessionId,
-        { role: "user", content: message },
-        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-      );
-      conversationsStore.addMessage(
-        currentSessionId,
-        { role: "system", senderType: "system", content: fallbackText },
-        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-      );
-      if (existingConv && existingConv.status !== "HUMAN_ACTIVE") {
-        conversationsStore.updateConversation(currentSessionId, { status: "WAITING_FOR_HUMAN" });
-      }
-      return corsResponse(
-        NextResponse.json({
-          success: true,
-          botDisabled: true,
-          reply: fallbackText,
-          sessionId: currentSessionId,
-          visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
-        }),
-        request
-      );
-    }
-
-    // --- PHASE 5 & 12: CONVERSATION-LEVEL HUMAN TAKEOVER CHECK ---
-    if (existingConv && (existingConv.handlingMode === "HUMAN" || existingConv.status === "HUMAN_ACTIVE")) {
-      // Human takeover is active! Record visitor's message and pause AI response completely
-      conversationsStore.addMessage(
-        currentSessionId,
-        { role: "user", content: message },
-        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-      );
-      return corsResponse(
-        NextResponse.json({
-          success: true,
-          humanActive: true,
-          reply: "", // Silence AI reply so visitor only receives human messages
-          assignedToName: existingConv.assignedToName || "Support Agent",
-          sessionId: currentSessionId,
-          visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
-        }),
-        request
-      );
-    }
-
-    const latestConvForVisitor = persistentVisitor ? conversationsStore.getLatestConversationForVisitor(persistentVisitor.id, bot.id) : null;
-    const restoredQual = existingConv?.qualification || latestConvForVisitor?.qualification || null;
-
-    let sessionHistory = [];
-    if (existingConv && Array.isArray(existingConv.messages)) {
-      sessionHistory = existingConv.messages
-        .filter((m) => m.role === "user" || m.role === "assistant")
-        .slice(-12)
-        .map((m) => ({ role: m.role, content: m.content }));
-    } else if (Array.isArray(history) && history.length > 0) {
-      sessionHistory = history
-        .filter((m) => m.role === "user" || m.role === "assistant")
-        .slice(-12)
-        .map((m) => ({ role: m.role, content: m.content }));
-    }
-
-    // Maintain language continuity across multi-turn sessions
-    if (lang === "english" && sessionHistory.length > 0) {
-      const explicitEnglishRequest = /\b(?:speak\s+in\s+english|talk\s+in\s+english|switch\s+to\s+english|in\s+english\s+please)\b/i.test(message);
-      if (!explicitEnglishRequest) {
-        const priorUserMsgs = sessionHistory.filter((m) => m.role === "user").slice(-3);
-        for (let i = priorUserMsgs.length - 1; i >= 0; i--) {
-          const priorLang = detectLanguage(priorUserMsgs[i].content);
-          if (priorLang === "hindi" || priorLang === "hinglish") {
-            lang = priorLang;
-            break;
-          }
+      if (bot.globalBotEnabled === false) {
+        const fallbackText = bot.fallbackMessage || "Our automated assistant is temporarily paused. A team member will assist you shortly.";
+        conversationsStore.addMessage(
+          currentSessionId,
+          { role: "user", content: message },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+        );
+        conversationsStore.addMessage(
+          currentSessionId,
+          { role: "system", senderType: "system", content: fallbackText },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+        );
+        if (existingConv && existingConv.status !== "HUMAN_ACTIVE") {
+          conversationsStore.updateConversation(currentSessionId, { status: "WAITING_FOR_HUMAN" });
         }
-      }
-    }
-
-    // Step 3.1: Server-Side Intent Classification & Business Scope Gate
-    const intentResult = classifyMessageIntent({
-      message,
-      bot,
-      history: sessionHistory,
-      lang,
-    });
-
-    if (intentResult.action === "REFUSE" || intentResult.action === "RESTRICT") {
-      const defaultPills = isEssBot
-        ? ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"]
-        : (bot?.quickReplies || []);
-      return corsResponse(
-        NextResponse.json({
-          success: true,
-          reply: intentResult.refusalReply,
-          intent: intentResult.intent,
-          quickReplies: defaultPills,
-          sources: [],
-          sessionId: currentSessionId,
-        })
-      );
-    }
-
-    if (intentResult.action === "CLARIFY" && intentResult.clarificationPrompt) {
-      if (sessionHistory.length === 0) {
         return corsResponse(
           NextResponse.json({
             success: true,
-            reply: intentResult.clarificationPrompt,
+            botDisabled: true,
+            reply: fallbackText,
+            sessionId: currentSessionId,
+            visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
+          }),
+          request
+        );
+      }
+
+      // --- PHASE 5 & 12: CONVERSATION-LEVEL HUMAN TAKEOVER CHECK ---
+      if (existingConv && (existingConv.handlingMode === "HUMAN" || existingConv.status === "HUMAN_ACTIVE")) {
+        // Human takeover is active! Record visitor's message and pause AI response completely
+        conversationsStore.addMessage(
+          currentSessionId,
+          { role: "user", content: message },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+        );
+        return corsResponse(
+          NextResponse.json({
+            success: true,
+            humanActive: true,
+            reply: "", // Silence AI reply so visitor only receives human messages
+            assignedToName: existingConv.assignedToName || "Support Agent",
+            sessionId: currentSessionId,
+            visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
+          }),
+          request
+        );
+      }
+
+      const latestConvForVisitor = persistentVisitor ? conversationsStore.getLatestConversationForVisitor(persistentVisitor.id, bot.id) : null;
+      const restoredQual = existingConv?.qualification || latestConvForVisitor?.qualification || null;
+
+      let sessionHistory = [];
+      if (existingConv && Array.isArray(existingConv.messages)) {
+        sessionHistory = existingConv.messages
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .slice(-12)
+          .map((m) => ({ role: m.role, content: m.content }));
+      } else if (Array.isArray(history) && history.length > 0) {
+        sessionHistory = history
+          .filter((m) => m.role === "user" || m.role === "assistant")
+          .slice(-12)
+          .map((m) => ({ role: m.role, content: m.content }));
+      }
+
+      // Maintain language continuity across multi-turn sessions
+      if (lang === "english" && sessionHistory.length > 0) {
+        const explicitEnglishRequest = /\b(?:speak\s+in\s+english|talk\s+in\s+english|switch\s+to\s+english|in\s+english\s+please)\b/i.test(message);
+        if (!explicitEnglishRequest) {
+          const priorUserMsgs = sessionHistory.filter((m) => m.role === "user").slice(-3);
+          for (let i = priorUserMsgs.length - 1; i >= 0; i--) {
+            const priorLang = detectLanguage(priorUserMsgs[i].content);
+            if (priorLang === "hindi" || priorLang === "hinglish") {
+              lang = priorLang;
+              break;
+            }
+          }
+        }
+      }
+
+      // Step 3.1: Server-Side Intent Classification & Business Scope Gate
+      const intentResult = classifyMessageIntent({
+        message,
+        bot,
+        history: sessionHistory,
+        lang,
+      });
+
+      if (intentResult.action === "REFUSE" || intentResult.action === "RESTRICT") {
+        const defaultPills = isEssBot
+          ? ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"]
+          : (bot?.quickReplies || []);
+        return corsResponse(
+          NextResponse.json({
+            success: true,
+            reply: intentResult.refusalReply,
             intent: intentResult.intent,
+            quickReplies: defaultPills,
             sources: [],
             sessionId: currentSessionId,
           })
         );
       }
-    }
 
-    // Handle CUSTOMER_SPECIFIC memory recall queries deterministically
-    if (intentResult.intent === "CUSTOMER_SPECIFIC") {
-      const priorUserText = sessionHistory.filter((m) => m.role === "user").map((m) => m.content).join(" ");
-      const budgetMatch = priorUserText.match(/(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]+)?|[0-9]+(?:\.[0-9]+)?\s*(?:k|lakh|lac|cr)?)/i);
-      const techMatch = priorUserText.match(/\b(flutter|react native|next\.?js|node\.?js|react|python|fastapi|vue|angular)\b/i);
-      const projectMatch = priorUserText.match(/\b(e-commerce|ecommerce|mobile app|web platform|saas|ai chatbot|crm|erp)\b/i);
-
-      if (/\b(?:what\s+is\s+my\s+budget|which\s+technology|what\s+did\s+i\s+choose|my\s+requirements?|what\s+do\s+you\s+remember)\b/i.test(message)) {
-        const recalledBudget = budgetMatch ? (budgetMatch[0].startsWith("₹") ? budgetMatch[0] : `₹${budgetMatch[0]}`) : null;
-        const recalledTech = techMatch ? techMatch[0] : null;
-        const recalledProject = projectMatch ? projectMatch[0] : null;
-
-        if (recalledBudget || recalledTech) {
-          const parts = [];
-          if (recalledBudget) parts.push(`your stated budget is **${recalledBudget}**`);
-          if (recalledTech) parts.push(`the technology you chose is **${recalledTech}**`);
-          
-          let memoryReply = `Based on our conversation, ${parts.join(" and ")}`;
-          if (recalledProject) memoryReply += ` for your **${recalledProject}** app`;
-          memoryReply += `. How would you like to proceed with your project?`;
-
+      if (intentResult.action === "CLARIFY" && intentResult.clarificationPrompt) {
+        if (sessionHistory.length === 0) {
           return corsResponse(
             NextResponse.json({
               success: true,
-              reply: memoryReply,
+              reply: intentResult.clarificationPrompt,
               intent: intentResult.intent,
               sources: [],
               sessionId: currentSessionId,
@@ -595,754 +581,787 @@ export async function POST(request, { params }) {
           );
         }
       }
-    }
 
-    // 4. Step 4: Multi-Tenant Vector Search over Authorized Knowledge (Top 2 chunks for fast evaluation)
-    const relevantChunks = await searchWebsiteKnowledge(botId, message, 2);
-    const contextText = relevantChunks
-      .map((c) => `[Source: ${c.pageTitle || c.pageUrl}]:\n${c.content}`)
-      .join("\n\n");
+      // Handle CUSTOMER_SPECIFIC memory recall queries deterministically
+      if (intentResult.intent === "CUSTOMER_SPECIFIC") {
+        const priorUserText = sessionHistory.filter((m) => m.role === "user").map((m) => m.content).join(" ");
+        const budgetMatch = priorUserText.match(/(?:₹|rs\.?|inr)?\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]+)?|[0-9]+(?:\.[0-9]+)?\s*(?:k|lakh|lac|cr)?)/i);
+        const techMatch = priorUserText.match(/\b(flutter|react native|next\.?js|node\.?js|react|python|fastapi|vue|angular)\b/i);
+        const projectMatch = priorUserText.match(/\b(e-commerce|ecommerce|mobile app|web platform|saas|ai chatbot|crm|erp)\b/i);
 
-    // 5. Step 5: Extract lead details and resolve visitor identity
-    const currentMsgLead = extractLeadDetails(message, sessionHistory);
-    const sessionLead = currentMsgLead;
-    const leadDetails = sessionLead;
+        if (/\b(?:what\s+is\s+my\s+budget|which\s+technology|what\s+did\s+i\s+choose|my\s+requirements?|what\s+do\s+you\s+remember)\b/i.test(message)) {
+          const recalledBudget = budgetMatch ? (budgetMatch[0].startsWith("₹") ? budgetMatch[0] : `₹${budgetMatch[0]}`) : null;
+          const recalledTech = techMatch ? techMatch[0] : null;
+          const recalledProject = projectMatch ? projectMatch[0] : null;
 
-    const isCompanyEmail = (em) =>
-      /emperorsmartsolutions\.com|emperorsmartsolutions@gmail\.com|^contact@|^sales@|^info@|^support@|^careers@/i.test(em || "");
-    const isCompanyPhone = (ph) => /63591\s*20081/.test((ph || "").replace(/\D/g, ""));
-    const isPlaceholderName = (n) =>
-      !n ||
-      typeof n !== "string" ||
-      /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(n.trim());
+          if (recalledBudget || recalledTech) {
+            const parts = [];
+            if (recalledBudget) parts.push(`your stated budget is **${recalledBudget}**`);
+            if (recalledTech) parts.push(`the technology you chose is **${recalledTech}**`);
 
-    // 1. Phone Resolution (Current message has top priority!)
-    let resolvedPhone = "";
-    if (currentMsgLead.phone) {
-      resolvedPhone = currentMsgLead.phone;
-    } else if (sessionLead.phone && !isCompanyPhone(sessionLead.phone)) {
-      resolvedPhone = sessionLead.phone;
-    } else if (existingConv?.visitorPhone && !isCompanyPhone(existingConv.visitorPhone)) {
-      resolvedPhone = existingConv.visitorPhone;
-    } else if (persistentVisitor?.phone && !isCompanyPhone(persistentVisitor.phone)) {
-      resolvedPhone = persistentVisitor.phone;
-    } else if (visitor?.phone && !isCompanyPhone(visitor.phone)) {
-      resolvedPhone = visitor.phone;
-    }
+            let memoryReply = `Based on our conversation, ${parts.join(" and ")}`;
+            if (recalledProject) memoryReply += ` for your **${recalledProject}** app`;
+            memoryReply += `. How would you like to proceed with your project?`;
 
-    // 2. Email Resolution (Current message has top priority!)
-    let resolvedEmail = "";
-    if (currentMsgLead.email && !isCompanyEmail(currentMsgLead.email)) {
-      resolvedEmail = currentMsgLead.email;
-    } else if (sessionLead.email && !isCompanyEmail(sessionLead.email)) {
-      resolvedEmail = sessionLead.email;
-    } else if (existingConv?.visitorEmail && !isCompanyEmail(existingConv.visitorEmail)) {
-      resolvedEmail = existingConv.visitorEmail;
-    } else if (persistentVisitor?.email && !isCompanyEmail(persistentVisitor.email)) {
-      resolvedEmail = persistentVisitor.email;
-    } else if (visitor?.email && !isCompanyEmail(visitor.email)) {
-      resolvedEmail = visitor.email;
-    }
+            return corsResponse(
+              NextResponse.json({
+                success: true,
+                reply: memoryReply,
+                intent: intentResult.intent,
+                sources: [],
+                sessionId: currentSessionId,
+              })
+            );
+          }
+        }
+      }
 
-    // 3. Name Resolution (Freshly extracted real name always takes priority over placeholders!)
-    const hasExplicitNameIntro = /(?:my\s+name\s+is|i\s+am|call\s+me|mera\s+naam|this\s+is)\b/i.test(message);
-    const knownVisitorName = (persistentVisitor?.name && !isPlaceholderName(persistentVisitor.name))
-      ? persistentVisitor.name
-      : (existingConv?.visitorName && !isPlaceholderName(existingConv.visitorName) ? existingConv.visitorName : "");
+      // 4. Step 4: Multi-Tenant Vector Search over Authorized Knowledge (Top 2 chunks for fast evaluation)
+      const relevantChunks = await searchWebsiteKnowledge(botId, message, 2);
+      const contextText = relevantChunks
+        .map((c) => `[Source: ${c.pageTitle || c.pageUrl}]:\n${c.content}`)
+        .join("\n\n");
 
-    let resolvedName = "";
-    if (currentMsgLead.name && !isPlaceholderName(currentMsgLead.name)) {
-      resolvedName = currentMsgLead.name;
-    } else if (knownVisitorName && !isPlaceholderName(knownVisitorName)) {
-      resolvedName = knownVisitorName;
-    } else if (visitor?.name && !isPlaceholderName(visitor.name)) {
-      resolvedName = visitor.name;
-    } else if (sessionLead.name && !isPlaceholderName(sessionLead.name)) {
-      resolvedName = sessionLead.name;
-    }
+      // 5. Step 5: Extract lead details and resolve visitor identity
+      const currentMsgLead = extractLeadDetails(message, sessionHistory);
+      const sessionLead = currentMsgLead;
+      const leadDetails = sessionLead;
 
-    // Sync verified details back to persistent visitor profile
-    if (persistentVisitor && (resolvedName || resolvedPhone || resolvedEmail)) {
-      visitorsStore.updateVisitor(persistentVisitor.id, {
-        ...(resolvedName && !isPlaceholderName(resolvedName) ? { name: resolvedName } : {}),
-        ...(resolvedPhone ? { phone: resolvedPhone } : {}),
-        ...(resolvedEmail ? { email: resolvedEmail } : {}),
+      const isCompanyEmail = (em) =>
+        /emperorsmartsolutions\.com|emperorsmartsolutions@gmail\.com|^contact@|^sales@|^info@|^support@|^careers@/i.test(em || "");
+      const isCompanyPhone = (ph) => /63591\s*20081/.test((ph || "").replace(/\D/g, ""));
+      const isPlaceholderName = (n) =>
+        !n ||
+        typeof n !== "string" ||
+        /^(?:website\s+visitor|website\s+prospect|client\s+inquiry|client\s+lead|prospective\s+client|direct\s+session|visitor|prospect|user|guest|client(?:\s*\(.*|\s*#\d+)?)$/i.test(n.trim());
+
+      // 1. Phone Resolution (Current message has top priority!)
+      let resolvedPhone = "";
+      if (currentMsgLead.phone) {
+        resolvedPhone = currentMsgLead.phone;
+      } else if (sessionLead.phone && !isCompanyPhone(sessionLead.phone)) {
+        resolvedPhone = sessionLead.phone;
+      } else if (existingConv?.visitorPhone && !isCompanyPhone(existingConv.visitorPhone)) {
+        resolvedPhone = existingConv.visitorPhone;
+      } else if (persistentVisitor?.phone && !isCompanyPhone(persistentVisitor.phone)) {
+        resolvedPhone = persistentVisitor.phone;
+      } else if (visitor?.phone && !isCompanyPhone(visitor.phone)) {
+        resolvedPhone = visitor.phone;
+      }
+
+      // 2. Email Resolution (Current message has top priority!)
+      let resolvedEmail = "";
+      if (currentMsgLead.email && !isCompanyEmail(currentMsgLead.email)) {
+        resolvedEmail = currentMsgLead.email;
+      } else if (sessionLead.email && !isCompanyEmail(sessionLead.email)) {
+        resolvedEmail = sessionLead.email;
+      } else if (existingConv?.visitorEmail && !isCompanyEmail(existingConv.visitorEmail)) {
+        resolvedEmail = existingConv.visitorEmail;
+      } else if (persistentVisitor?.email && !isCompanyEmail(persistentVisitor.email)) {
+        resolvedEmail = persistentVisitor.email;
+      } else if (visitor?.email && !isCompanyEmail(visitor.email)) {
+        resolvedEmail = visitor.email;
+      }
+
+      // 3. Name Resolution (Freshly extracted real name always takes priority over placeholders!)
+      const hasExplicitNameIntro = /(?:my\s+name\s+is|i\s+am|call\s+me|mera\s+naam|this\s+is)\b/i.test(message);
+      const knownVisitorName = (persistentVisitor?.name && !isPlaceholderName(persistentVisitor.name))
+        ? persistentVisitor.name
+        : (existingConv?.visitorName && !isPlaceholderName(existingConv.visitorName) ? existingConv.visitorName : "");
+
+      let resolvedName = "";
+      if (currentMsgLead.name && !isPlaceholderName(currentMsgLead.name)) {
+        resolvedName = currentMsgLead.name;
+      } else if (knownVisitorName && !isPlaceholderName(knownVisitorName)) {
+        resolvedName = knownVisitorName;
+      } else if (visitor?.name && !isPlaceholderName(visitor.name)) {
+        resolvedName = visitor.name;
+      } else if (sessionLead.name && !isPlaceholderName(sessionLead.name)) {
+        resolvedName = sessionLead.name;
+      }
+
+      // Sync verified details back to persistent visitor profile
+      if (persistentVisitor && (resolvedName || resolvedPhone || resolvedEmail)) {
+        visitorsStore.updateVisitor(persistentVisitor.id, {
+          ...(resolvedName && !isPlaceholderName(resolvedName) ? { name: resolvedName } : {}),
+          ...(resolvedPhone ? { phone: resolvedPhone } : {}),
+          ...(resolvedEmail ? { email: resolvedEmail } : {}),
+        });
+      }
+
+      const hasVisitorDetails = Boolean(
+        resolvedPhone ||
+        resolvedEmail ||
+        !isPlaceholderName(resolvedName) ||
+        sessionHistory
+          .filter((m) => m.role === "user")
+          .some((m) =>
+            (/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(m.content || "") && !isCompanyEmail(m.content)) ||
+            (/(?:(?:\+|00)91[\s.-]?|0)?[6-9]\d{4}[\s.-]?\d{5}\b/.test(m.content || "") && !isCompanyPhone(m.content))
+          )
+      );
+
+      // Build Master System Prompt with personalized visitorName
+      const masterSystemPrompt = buildMasterSystemPrompt({
+        assistantName: botName,
+        businessName: businessName,
+        tenantId: tenantId,
+        retrievedContext: contextText,
+        chatHistory: "",
+        customInstructions: bot?.systemPrompt || bot?.instructions || "",
+        userLanguage: lang,
+        collectLeads: bot?.collectLeads !== false,
+        hasVisitorDetails,
+        visitorName: resolvedName,
+        businessPhone: bot?.phoneNumber || "",
+        websiteUrl: bot?.websiteUrl || "",
+        botDescription: bot?.description || "",
       });
-    }
 
-    const hasVisitorDetails = Boolean(
-      resolvedPhone ||
-      resolvedEmail ||
-      !isPlaceholderName(resolvedName) ||
-      sessionHistory
-        .filter((m) => m.role === "user")
-        .some((m) =>
-          (/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(m.content || "") && !isCompanyEmail(m.content)) ||
-          (/(?:(?:\+|00)91[\s.-]?|0)?[6-9]\d{4}[\s.-]?\d{5}\b/.test(m.content || "") && !isCompanyPhone(m.content))
-        )
-    );
+      const llmMessages = [
+        { role: "system", content: masterSystemPrompt },
+        ...sessionHistory.slice(-8),
+        { role: "user", content: message },
+      ];
 
-    // Build Master System Prompt with personalized visitorName
-    const masterSystemPrompt = buildMasterSystemPrompt({
-      assistantName: botName,
-      businessName: businessName,
-      tenantId: tenantId,
-      retrievedContext: contextText,
-      chatHistory: "",
-      customInstructions: bot?.systemPrompt || bot?.instructions || "",
-      userLanguage: lang,
-      collectLeads: bot?.collectLeads !== false,
-      hasVisitorDetails,
-      visitorName: resolvedName,
-      businessPhone: bot?.phoneNumber || "",
-      websiteUrl: bot?.websiteUrl || "",
-      botDescription: bot?.description || "",
-    });
+      // Fast-path deterministic handling for greetings and contact introductions
+      const cleanLower = message.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+      const trimmedMsg = message.trim().toLowerCase();
+      const isPureGreeting =
+        /^(?:hi+|hello+|hey+|what'?s?\s*up|sup|yo|greetings|namaste|good\s*(?:morning|afternoon|evening|day))\b/i.test(trimmedMsg) ||
+        /^(?:hi+|hello+|hey+)\b/i.test(trimmedMsg) ||
+        ["whatsup", "whats up", "sup", "yo", "hi", "hii", "hello", "hey", "namaste", "greetings"].includes(cleanLower);
+      const hasTechnicalKeywords = Boolean(message.toLowerCase().match(/\b(cost|price|quote|how much|build|flutter|app|website|software|ai|service|hire|develop|office|address)\b/i));
+      const hasSoftwareOrCompanyContext = Boolean(message.toLowerCase().match(/\b(flutter|react|native|next\.?js|node|python|backend|frontend|fullstack|api|database|postgres|aws|cloud|ai|rag|llm|agent|chatbot|automation|erp|crm|saas|mvp|prototype|architecture|ui|ux|design|dev|code|coding|software|website|web|app|apps|application|mobile|ios|android|ecommerce|e-commerce|store|portal|platform|custom\s*software|cost|price|pricing|quote|budget|hire|developer|engineer|timeline|sprint|estimate|proposal|package|5k|10k|50k|rupees|inr|rs|ess|emperor|smart\s*solutions|yash|karan|sharma|makwana|shitiratna|panchvati|navrangpura|ahmedabad|consultation|meeting|demo|service|services|provide|provides|providing|offer|offers|offering|offerings|solution|solutions|work|works|working|build|building|make|create|features?|technology|tech|stack|capabilities|expertise|company|business|client|clients)\b/i));
 
-    const llmMessages = [
-      { role: "system", content: masterSystemPrompt },
-      ...sessionHistory.slice(-8),
-      { role: "user", content: message },
-    ];
+      const isBotIdentityQuery =
+        /\bwho\s+(?:are\s+you|are\s+u|is\s+this|made\s+you|created\s+you)\b/i.test(trimmedMsg) ||
+        /\b(?:what\s+are\s+you|tell\s+me\s+about\s+yourself|who\s+am\s+i\s+talking\s+to|what\s+do\s+you\s+do)\b/i.test(trimmedMsg) ||
+        /\b(?:aap\s+kaun\s+h[a-z]*|tum\s+kaun\s+h[a-z]*|kaun\s+ho\s+tum|kaun\s+hai\s+tu|kaun\s+ho)\b/i.test(trimmedMsg);
 
-    // Fast-path deterministic handling for greetings and contact introductions
-    const cleanLower = message.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-    const trimmedMsg = message.trim().toLowerCase();
-    const isPureGreeting =
-      /^(?:hi+|hello+|hey+|what'?s?\s*up|sup|yo|greetings|namaste|good\s*(?:morning|afternoon|evening|day))\b/i.test(trimmedMsg) ||
-      /^(?:hi+|hello+|hey+)\b/i.test(trimmedMsg) ||
-      ["whatsup", "whats up", "sup", "yo", "hi", "hii", "hello", "hey", "namaste", "greetings"].includes(cleanLower);
-    const hasTechnicalKeywords = Boolean(message.toLowerCase().match(/\b(cost|price|quote|how much|build|flutter|app|website|software|ai|service|hire|develop|office|address)\b/i));
-    const hasSoftwareOrCompanyContext = Boolean(message.toLowerCase().match(/\b(flutter|react|native|next\.?js|node|python|backend|frontend|fullstack|api|database|postgres|aws|cloud|ai|rag|llm|agent|chatbot|automation|erp|crm|saas|mvp|prototype|architecture|ui|ux|design|dev|code|coding|software|website|web|app|apps|application|mobile|ios|android|ecommerce|e-commerce|store|portal|platform|custom\s*software|cost|price|pricing|quote|budget|hire|developer|engineer|timeline|sprint|estimate|proposal|package|5k|10k|50k|rupees|inr|rs|ess|emperor|smart\s*solutions|yash|karan|sharma|makwana|shitiratna|panchvati|navrangpura|ahmedabad|consultation|meeting|demo|service|services|provide|provides|providing|offer|offers|offering|offerings|solution|solutions|work|works|working|build|building|make|create|features?|technology|tech|stack|capabilities|expertise|company|business|client|clients)\b/i));
+      const isExplicitPlatformProviderQuery =
+        !isEssBot &&
+        /\b(?:emperor\s+smart\s+solutions?|ess)\b/i.test(message) &&
+        /\b(?:what\s+(?:is|does|services?)|who\s+(?:is|are)|tell\s+me\s+about|provide|offer)\b/i.test(message);
 
-    const isBotIdentityQuery =
-      /\bwho\s+(?:are\s+you|are\s+u|is\s+this|made\s+you|created\s+you)\b/i.test(trimmedMsg) ||
-      /\b(?:what\s+are\s+you|tell\s+me\s+about\s+yourself|who\s+am\s+i\s+talking\s+to|what\s+do\s+you\s+do)\b/i.test(trimmedMsg) ||
-      /\b(?:aap\s+kaun\s+h[a-z]*|tum\s+kaun\s+h[a-z]*|kaun\s+ho\s+tum|kaun\s+hai\s+tu|kaun\s+ho)\b/i.test(trimmedMsg);
+      const isOfferingToShareContact =
+        !hasTechnicalKeywords &&
+        (/\b(?:note|save|take|record|write|keep)\s+(?:down\s+)?(?:my\s+)?(?:name|number|phone|details|contact|whatsapp)\b/i.test(message) ||
+          /\b(?:my\s+name\s+and\s+number|my\s+name\s+&\s+number)\b/i.test(message));
 
-    const isExplicitPlatformProviderQuery =
-      !isEssBot &&
-      /\b(?:emperor\s+smart\s+solutions?|ess)\b/i.test(message) &&
-      /\b(?:what\s+(?:is|does|services?)|who\s+(?:is|are)|tell\s+me\s+about|provide|offer)\b/i.test(message);
+      const isSavedUserDetailsQuery =
+        /\b(?:what\s+details?\s+(?:you\s+(?:have\s+)?(?:saved|hared|recorded)|did\s+you\s+save|are\s+saved)|what\s+did\s+you\s+save|show\s+(?:my\s+)?(?:details?|info)|what\s+have\s+you\s+(?:saved|noted))\b/i.test(message) ||
+        /\b(?:what\s+details?\s+you\s+ha[a-z]*e\s+hared)\b/i.test(message);
 
-    const isOfferingToShareContact =
-      !hasTechnicalKeywords &&
-      (/\b(?:note|save|take|record|write|keep)\s+(?:down\s+)?(?:my\s+)?(?:name|number|phone|details|contact|whatsapp)\b/i.test(message) ||
-       /\b(?:my\s+name\s+and\s+number|my\s+name\s+&\s+number)\b/i.test(message));
+      const isContactDetailsQuery =
+        !isOfferingToShareContact &&
+        !isSavedUserDetailsQuery &&
+        !/\b(?:my\s+(?:name|number|phone|contact|details|email))\b/i.test(message) &&
+        !/\b(?:laptop|desktop|pc|computer|tablet|ipad|better\s+than|worse\s+than|vs\.?|versus|compare)\b/i.test(message) &&
+        (/\b(?:c?o[in]*tact\s*(?:details?|number|info|us)?|cont[ae]ct|head\s*office|office\s*(?:address|location)|phone\s*number|whatsapp\s*number|speak\s*to\s*(?:someone|team)|talk\s*to\s*human|sampark|office\s*kahan\s*hai)\b/i.test(message) ||
+          /^(?:contact|phone\s*number|call|whatsapp|email|address|office|location|details)$/i.test(message.trim()) ||
+          (/\b(?:phone|whatsapp|email|address|office|location)\b/i.test(message) &&
+            /\b(?:give|tell|what|share|show|provide|how\s+to|where|send|ess|emperor|your|company|chahiye|chaiye|vchaiye|mangta|batao|dedo|de\s*do|bhejo|kahan|kidhar|kaha|kya\s+hai)\b/i.test(message)));
 
-    const isSavedUserDetailsQuery =
-      /\b(?:what\s+details?\s+(?:you\s+(?:have\s+)?(?:saved|hared|recorded)|did\s+you\s+save|are\s+saved)|what\s+did\s+you\s+save|show\s+(?:my\s+)?(?:details?|info)|what\s+have\s+you\s+(?:saved|noted))\b/i.test(message) ||
-      /\b(?:what\s+details?\s+you\s+ha[a-z]*e\s+hared)\b/i.test(message);
+      const isLanguageSwitchQuery =
+        !hasTechnicalKeywords &&
+        /\b(?:hindi|hinglish)\b/i.test(message) &&
+        (/\b(?:baat|bol|bolte|bolna|bolo|aati|aata|aate|sakte|sakta|saktee|sakti|kar\s+sakte|samajhte|samajh)\b/i.test(message) ||
+          /\b(?:speak|talk|know|understand|switch|change|converse|support)\b/i.test(message));
 
-    const isContactDetailsQuery =
-      !isOfferingToShareContact &&
-      !isSavedUserDetailsQuery &&
-      !/\b(?:my\s+(?:name|number|phone|contact|details|email))\b/i.test(message) &&
-      !/\b(?:laptop|desktop|pc|computer|tablet|ipad|better\s+than|worse\s+than|vs\.?|versus|compare)\b/i.test(message) &&
-      (/\b(?:c?o[in]*tact\s*(?:details?|number|info|us)?|cont[ae]ct|head\s*office|office\s*(?:address|location)|phone\s*number|whatsapp\s*number|speak\s*to\s*(?:someone|team)|talk\s*to\s*human|sampark|office\s*kahan\s*hai)\b/i.test(message) ||
-       /^(?:contact|phone\s*number|call|whatsapp|email|address|office|location|details)$/i.test(message.trim()) ||
-       (/\b(?:phone|whatsapp|email|address|office|location)\b/i.test(message) &&
-        /\b(?:give|tell|what|share|show|provide|how\s+to|where|send|ess|emperor|your|company|chahiye|chaiye|vchaiye|mangta|batao|dedo|de\s*do|bhejo|kahan|kidhar|kaha|kya\s+hai)\b/i.test(message)));
+      const isEnglishSwitchQuery =
+        !hasTechnicalKeywords &&
+        /\b(?:english)\b/i.test(message) &&
+        (/\b(?:baat|bol|bolte|bolna|bolo|sakte|sakta|kar\s+sakte)\b/i.test(message) ||
+          /\b(?:speak|talk|know|understand|switch|change|converse|support)\b/i.test(message));
 
-    const isLanguageSwitchQuery =
-      !hasTechnicalKeywords &&
-      /\b(?:hindi|hinglish)\b/i.test(message) &&
-      (/\b(?:baat|bol|bolte|bolna|bolo|aati|aata|aate|sakte|sakta|saktee|sakti|kar\s+sakte|samajhte|samajh)\b/i.test(message) ||
-       /\b(?:speak|talk|know|understand|switch|change|converse|support)\b/i.test(message));
+      const isLowBudgetQuery =
+        /\b(?:[1-9]k|[1-4]\d\s*k|[1-9]\d{2,4})\b/i.test(message) &&
+        /\b(?:budget|only|have|afford|pay|give|price|cost|rs|inr|rupees)\b/i.test(message);
 
-    const isEnglishSwitchQuery =
-      !hasTechnicalKeywords &&
-      /\b(?:english)\b/i.test(message) &&
-      (/\b(?:baat|bol|bolte|bolna|bolo|sakte|sakta|kar\s+sakte)\b/i.test(message) ||
-       /\b(?:speak|talk|know|understand|switch|change|converse|support)\b/i.test(message));
+      const isExternalEntityQuery =
+        !hasSoftwareOrCompanyContext &&
+        !hasTechnicalKeywords &&
+        (/\b(?:owner|founder|co-founder|ceo|cto|leader|chairman|director|president|creator)\s+of\s+(?!ess\b|emperor\b|this\b|your\b)[a-z\s]+/i.test(message) ||
+          /\bwho\s+(?:is|was|are)\s+(?:the\s+)?(?:founder|ceo|cto|owner|leader|chairman|director|president|creator)\s+of\s+(?!ess\b|emperor\b|this\b|your\b)[a-z\s]+/i.test(message) ||
+          /\b(?:mahindra|reliance|adani|tesla|netflix|infosys|tcs|wipro|twitter|bjp|congress)\b/i.test(message));
 
-    const isLowBudgetQuery =
-      /\b(?:[1-9]k|[1-4]\d\s*k|[1-9]\d{2,4})\b/i.test(message) &&
-      /\b(?:budget|only|have|afford|pay|give|price|cost|rs|inr|rupees)\b/i.test(message);
+      const isEssLeadershipQuery =
+        !isExternalEntityQuery &&
+        (/\b(?:who\s+(?:is|are|was)\s+(?:the\s+)?(?:founder|co-founder|founder's|ceo|cto|owner|leader|team|boss))\b/i.test(message) ||
+          /\b(?:founder|co-founder|owner|ceo|cto|leader|boss)\b/i.test(message) && /\b(?:who|what|name|kiska|kisne|kon|kaun|ess|emperor|emepror|company|agency|details?)\b/i.test(message) ||
+          /\b(?:founder|co-founder|owner|ceo|cto|leader|boss)\s*(?:of\s+.*|name)?$/i.test(message) ||
+          /\b(?:who\s+(?:is|was|are)\s+)?\b(?:yash\s+sharma|karan\s+makwana)\b/i.test(message) ||
+          /\bwho\s+(?:is|was)\s+(?:yash|karan)\b/i.test(message) ||
+          /\b(?:who\s+is|who's)\s+karan\b/i.test(message) ||
+          /\b(?:who\s+is|who's)\s+yash\b/i.test(message) ||
+          /\b(?:kisne|kone)\s+(?:banaya|banayi|start\s*ki|start\s*kiya|shuru\s*kiya|shuru\s*ki|create\s*kiya|setup\s*kiya|found\s*kiya)\b/i.test(message) ||
+          /\b(?:kiski|kiska)\s+(?:company|firm|agency|startup|hai)\b/i.test(message) ||
+          /\b(?:founder|owner|malik|ceo|cto|leader)\s+(?:kaun|kon)\s+(?:hai|h)\b/i.test(message) ||
+          /\b(?:kaun|kon)\s+(?:hai|h)\s+(?:founder|owner|malik|ceo)\b/i.test(message) ||
+          /\b(?:ess|emperor|emepror)\s+(?:kisne|kiska|kiski|kaun|founder)\b/i.test(message) ||
+          /[\u0900-\u097F].*(?:संस्थापक|मालिक|किसने बनाया|किसकी कंपनी)/i.test(message));
 
-    const isExternalEntityQuery =
-      !hasSoftwareOrCompanyContext &&
-      !hasTechnicalKeywords &&
-      (/\b(?:owner|founder|co-founder|ceo|cto|leader|chairman|director|president|creator)\s+of\s+(?!ess\b|emperor\b|this\b|your\b)[a-z\s]+/i.test(message) ||
-       /\bwho\s+(?:is|was|are)\s+(?:the\s+)?(?:founder|ceo|cto|owner|leader|chairman|director|president|creator)\s+of\s+(?!ess\b|emperor\b|this\b|your\b)[a-z\s]+/i.test(message) ||
-       /\b(?:mahindra|reliance|adani|tesla|netflix|infosys|tcs|wipro|twitter|bjp|congress)\b/i.test(message));
+      const lastAssistantMessage = (sessionHistory || []).filter((m) => m.role === "assistant").slice(-1)[0]?.content || "";
+      const activeQual = restoredQual || existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
+      const hasActiveProject = Boolean(activeQual && activeQual.service && activeQual.status !== "completed");
 
-    const isEssLeadershipQuery =
-      !isExternalEntityQuery &&
-      (/\b(?:who\s+(?:is|are|was)\s+(?:the\s+)?(?:founder|co-founder|founder's|ceo|cto|owner|leader|team|boss))\b/i.test(message) ||
-       /\b(?:founder|co-founder|owner|ceo|cto|leader|boss)\b/i.test(message) && /\b(?:who|what|name|kiska|kisne|kon|kaun|ess|emperor|emepror|company|agency|details?)\b/i.test(message) ||
-       /\b(?:founder|co-founder|owner|ceo|cto|leader|boss)\s*(?:of\s+.*|name)?$/i.test(message) ||
-       /\b(?:who\s+(?:is|was|are)\s+)?\b(?:yash\s+sharma|karan\s+makwana)\b/i.test(message) ||
-       /\bwho\s+(?:is|was)\s+(?:yash|karan)\b/i.test(message) ||
-       /\b(?:who\s+is|who's)\s+karan\b/i.test(message) ||
-       /\b(?:who\s+is|who's)\s+yash\b/i.test(message) ||
-       /\b(?:kisne|kone)\s+(?:banaya|banayi|start\s*ki|start\s*kiya|shuru\s*kiya|shuru\s*ki|create\s*kiya|setup\s*kiya|found\s*kiya)\b/i.test(message) ||
-       /\b(?:kiski|kiska)\s+(?:company|firm|agency|startup|hai)\b/i.test(message) ||
-       /\b(?:founder|owner|malik|ceo|cto|leader)\s+(?:kaun|kon)\s+(?:hai|h)\b/i.test(message) ||
-       /\b(?:kaun|kon)\s+(?:hai|h)\s+(?:founder|owner|malik|ceo)\b/i.test(message) ||
-       /\b(?:ess|emperor|emepror)\s+(?:kisne|kiska|kiski|kaun|founder)\b/i.test(message) ||
-       /[\u0900-\u097F].*(?:संस्थापक|मालिक|किसने बनाया|किसकी कंपनी)/i.test(message));
+      const isCompanyOverviewQuery =
+        (/\b(?:tell\s+me\s+about\s+(?:ess|emperor|company)|about\s+(?:ess|emperor|the\s+company)|who\s+(?:is|are)\s+(?:ess|emperor\s*smart\s*solutions)|what\s+is\s+(?:ess|emperor\s*smart\s*solutions)|company\s+overview|company\s+details|introduce\s+(?:ess|emperor))\b/i.test(message) ||
+          /^(?:tell\s+me\s+about\s+ess|about\s+ess|what\s+is\s+ess|who\s+is\s+ess|overview|about\s+the\s+company)$/i.test(message.trim()));
 
-    const lastAssistantMessage = (sessionHistory || []).filter((m) => m.role === "assistant").slice(-1)[0]?.content || "";
-    const activeQual = restoredQual || existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
-    const hasActiveProject = Boolean(activeQual && activeQual.service && activeQual.status !== "completed");
+      const isWebsiteUrlQuery =
+        /\b(?:emperorsmartsolutions\.com|official\s+website|website\s+link|website\s+url|share\s+(?:the\s+)?website|your\s+website|link\s+of\s+(?:your\s+)?website)\b/i.test(message) ||
+        /^\[?https?:\/\/(?:www\.)?emperorsmartsolutions\.com\/?\]?(?:\(https?:\/\/(?:www\.)?emperorsmartsolutions\.com\/?\))?$/i.test(message.trim());
 
-    const isCompanyOverviewQuery =
-      (/\b(?:tell\s+me\s+about\s+(?:ess|emperor|company)|about\s+(?:ess|emperor|the\s+company)|who\s+(?:is|are)\s+(?:ess|emperor\s*smart\s*solutions)|what\s+is\s+(?:ess|emperor\s*smart\s*solutions)|company\s+overview|company\s+details|introduce\s+(?:ess|emperor))\b/i.test(message) ||
-       /^(?:tell\s+me\s+about\s+ess|about\s+ess|what\s+is\s+ess|who\s+is\s+ess|overview|about\s+the\s+company)$/i.test(message.trim()));
+      const isAnsweringQualificationOption =
+        hasActiveProject &&
+        (/\b(?:portfolio|e-commerce|business\s*website|web\s*application|not\s*sure|new\s*website|redesign|yes|no|personal\s*portfolio|blog|student|ngo|non-profit|android|ios|cross-platform|custom|full-stack|mvp|prototype|under\s*₹?50|₹?50,000|above\s*₹?1|₹?1,00,000|aws|google\s*cloud|google|gcp|docker|vps|azure|microsoft|recommendation|enterprise\s*erp|erp|crm|sales|operations|portal|whatsapp|lead\s*collection|customer\s*support|figma|branding|wireframes|ranking|speed|cro)\b/i.test(message) ||
+          /\b(?:business\s+website,\s+e-commerce\s+store,\s+portfolio|new\s+website\s+or\s+a\s+redesign|website\s+for\s+your\s+business|personal\s+portfolio,\s+blog|approximate\s+budget|which\s+cloud\s+platform|android\s+app,\s+ios\s+app|website,\s+whatsapp|enterprise\s+erp,\s+crm)\b/i.test(lastAssistantMessage));
 
-    const isWebsiteUrlQuery =
-      /\b(?:emperorsmartsolutions\.com|official\s+website|website\s+link|website\s+url|share\s+(?:the\s+)?website|your\s+website|link\s+of\s+(?:your\s+)?website)\b/i.test(message) ||
-      /^\[?https?:\/\/(?:www\.)?emperorsmartsolutions\.com\/?\]?(?:\(https?:\/\/(?:www\.)?emperorsmartsolutions\.com\/?\))?$/i.test(message.trim());
+      const isProjectsPortfolioQuery =
+        !hasTechnicalKeywords &&
+        !isAnsweringQualificationOption &&
+        !isCompanyOverviewQuery &&
+        /\b(?:projects?|portfolio|recent\s*works?|past\s*works?|case\s*studies|clients?|completed\s*projects?|live\s*projects?)\b/i.test(message) &&
+        (/\b(?:how\s+many|show|give|list|tell|view|see|completed|done|worked|details?|sample|example|what|share)\b/i.test(message) ||
+          (!hasActiveProject && message.trim().length <= 35));
 
-    const isAnsweringQualificationOption =
-      hasActiveProject &&
-      (/\b(?:portfolio|e-commerce|business\s*website|web\s*application|not\s*sure|new\s*website|redesign|yes|no|personal\s*portfolio|blog|student|ngo|non-profit|android|ios|cross-platform|custom|full-stack|mvp|prototype|under\s*₹?50|₹?50,000|above\s*₹?1|₹?1,00,000|aws|google\s*cloud|google|gcp|docker|vps|azure|microsoft|recommendation|enterprise\s*erp|erp|crm|sales|operations|portal|whatsapp|lead\s*collection|customer\s*support|figma|branding|wireframes|ranking|speed|cro)\b/i.test(message) ||
-       /\b(?:business\s+website,\s+e-commerce\s+store,\s+portfolio|new\s+website\s+or\s+a\s+redesign|website\s+for\s+your\s+business|personal\s+portfolio,\s+blog|approximate\s+budget|which\s+cloud\s+platform|android\s+app,\s+ios\s+app|website,\s+whatsapp|enterprise\s+erp,\s+crm)\b/i.test(lastAssistantMessage));
+      const isServicesQuery =
+        !isContactDetailsQuery &&
+        !isCompanyOverviewQuery &&
+        !isProjectsPortfolioQuery &&
+        !isAnsweringQualificationOption &&
+        !isEssLeadershipQuery &&
+        (/\b(?:services?|offerings?|capabilities|expertise)\b/i.test(message) ||
+          /\bwhat\s+(?:services?|solutions?)\s+(?:they|you|do\s+you|are|does\s+ess|does\s+emperor)\b/i.test(message) ||
+          /\bwhat\s+(?:do\s+you|they|does\s+(?:ess|emperor))\s+(?:do|provide|offer|build|make)\b/i.test(message) ||
+          /\bwhat\s+can\s+you\s+(?:do|build|make|provide|offer)\b/i.test(message) ||
+          /\b(?:kya|konsi|kaunsi)\s+(?:service|services|kaam|suvidha)\b/i.test(message) ||
+          /\b(?:kya\s+karte\s+ho|kya\s+karti\s+hai|kya\s+service\s+dete\s+ho)\b/i.test(message) ||
+          /\b(?:everything\s+in\s+details?|all\s+services?\s+in\s+details?|tell\s+me\s+in\s+details?|explain\s+in\s+details?|give\s+me\s+details?|want\s+everything\s+in\s+details?|full\s+details?)\b/i.test(message));
 
-    const isProjectsPortfolioQuery =
-      !hasTechnicalKeywords &&
-      !isAnsweringQualificationOption &&
-      !isCompanyOverviewQuery &&
-      /\b(?:projects?|portfolio|recent\s*works?|past\s*works?|case\s*studies|clients?|completed\s*projects?|live\s*projects?)\b/i.test(message) &&
-      (/\b(?:how\s+many|show|give|list|tell|view|see|completed|done|worked|details?|sample|example|what|share)\b/i.test(message) ||
-       (!hasActiveProject && message.trim().length <= 35));
+      const isFirstMessageQuery = /\bwhat\s+(?:was|is)\s+(?:my\s+)?(?:first|1st|1)\s*(?:message|msg|messgae)\b/i.test(message);
+      const wasAskedForName =
+        /\b(?:name|naam|may\s+i\s+know\s+your\s+name|share\s+your\s+name|apna\s+name)\b/i.test(lastAssistantMessage) ||
+        lastAssistantMessage.includes("May I know your name") ||
+        lastAssistantMessage.includes("अपना नाम") ||
+        lastAssistantMessage.includes("apna Name");
 
-    const isServicesQuery =
-      !isContactDetailsQuery &&
-      !isCompanyOverviewQuery &&
-      !isProjectsPortfolioQuery &&
-      !isAnsweringQualificationOption &&
-      !isEssLeadershipQuery &&
-      (/\b(?:services?|offerings?|capabilities|expertise)\b/i.test(message) ||
-       /\bwhat\s+(?:services?|solutions?)\s+(?:they|you|do\s+you|are|does\s+ess|does\s+emperor)\b/i.test(message) ||
-       /\bwhat\s+(?:do\s+you|they|does\s+(?:ess|emperor))\s+(?:do|provide|offer|build|make)\b/i.test(message) ||
-       /\bwhat\s+can\s+you\s+(?:do|build|make|provide|offer)\b/i.test(message) ||
-       /\b(?:kya|konsi|kaunsi)\s+(?:service|services|kaam|suvidha)\b/i.test(message) ||
-       /\b(?:kya\s+karte\s+ho|kya\s+karti\s+hai|kya\s+service\s+dete\s+ho)\b/i.test(message) ||
-       /\b(?:everything\s+in\s+details?|all\s+services?\s+in\s+details?|tell\s+me\s+in\s+details?|explain\s+in\s+details?|give\s+me\s+details?|want\s+everything\s+in\s+details?|full\s+details?)\b/i.test(message));
+      const isNameIntroductionOnly =
+        !hasTechnicalKeywords &&
+        !hasActiveProject &&
+        !isAnsweringQualificationOption &&
+        !resolvedPhone &&
+        !resolvedEmail &&
+        Boolean(resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect" &&
+          (cleanLower === resolvedName.toLowerCase().replace(/[^a-z0-9]/g, "") ||
+            trimmedMsg.startsWith("i am ") ||
+            trimmedMsg.startsWith("my name is ") ||
+            trimmedMsg.startsWith("my name ") ||
+            trimmedMsg.startsWith("mera naam ") ||
+            trimmedMsg.endsWith(" here") ||
+            /\b(?:i am|my name|mera naam|call me|myself)\b/i.test(trimmedMsg) ||
+            wasAskedForName));
 
-    const isFirstMessageQuery = /\bwhat\s+(?:was|is)\s+(?:my\s+)?(?:first|1st|1)\s*(?:message|msg|messgae)\b/i.test(message);
-    const wasAskedForName =
-      /\b(?:name|naam|may\s+i\s+know\s+your\s+name|share\s+your\s+name|apna\s+name)\b/i.test(lastAssistantMessage) ||
-      lastAssistantMessage.includes("May I know your name") ||
-      lastAssistantMessage.includes("अपना नाम") ||
-      lastAssistantMessage.includes("apna Name");
+      const messageHasDigits = /\b\d{7,14}\b/.test(message) || /^\s*(?:\+|00)?[\d\s().-]{7,20}\s*$/.test(message);
+      const messageHasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message);
+      const messageHasExplicitContactKeyword = /\b(?:my\s+(?:number|phone|mobile|whatsapp|email)|number\s+is|phone\s+is|call\s+me\s+at)\b/i.test(message);
 
-    const isNameIntroductionOnly =
-      !hasTechnicalKeywords &&
-      !hasActiveProject &&
-      !isAnsweringQualificationOption &&
-      !resolvedPhone &&
-      !resolvedEmail &&
-      Boolean(resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect" &&
-        (cleanLower === resolvedName.toLowerCase().replace(/[^a-z0-9]/g, "") ||
-         trimmedMsg.startsWith("i am ") ||
-         trimmedMsg.startsWith("my name is ") ||
-         trimmedMsg.startsWith("my name ") ||
-         trimmedMsg.startsWith("mera naam ") ||
-         trimmedMsg.endsWith(" here") ||
-         /\b(?:i am|my name|mera naam|call me|myself)\b/i.test(trimmedMsg) ||
-         wasAskedForName));
+      // Is the assistant actively waiting for contact details? (exclude thank-you/recorded state)
+      const assistantIsAskingForContact =
+        !/\b(?:have\s+recorded|recorded\s+your|thank\s+you|dhanyawad)\b/i.test(lastAssistantMessage) &&
+        (/\b(?:share\s+your\s+phone|share\s+your\s+number|share\s+your\s+contact|share\s+your\s+name\s+and\s+phone|what\s+is\s+your\s+phone|may\s+i\s+have\s+your\s+phone|please\s+provide\s+your\s+phone|apna\s+number\s+share)\b/i.test(lastAssistantMessage) ||
+          activeQual?.status === "summary_ready");
 
-    const messageHasDigits = /\b\d{7,14}\b/.test(message) || /^\s*(?:\+|00)?[\d\s().-]{7,20}\s*$/.test(message);
-    const messageHasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/.test(message);
-    const messageHasExplicitContactKeyword = /\b(?:my\s+(?:number|phone|mobile|whatsapp|email)|number\s+is|phone\s+is|call\s+me\s+at)\b/i.test(message);
+      const assistantIsAskingForName =
+        !/\b(?:have\s+recorded|recorded\s+your|thank\s+you|dhanyawad)\b/i.test(lastAssistantMessage) &&
+        (/\b(?:share\s+your\s+name|may\s+i\s+know\s+your\s+name|whom\s+to\s+contact|whom\s+to\s+address|apna\s+naam)\b/i.test(lastAssistantMessage) ||
+          activeQual?.status === "awaiting_name");
 
-    // Is the assistant actively waiting for contact details? (exclude thank-you/recorded state)
-    const assistantIsAskingForContact =
-      !/\b(?:have\s+recorded|recorded\s+your|thank\s+you|dhanyawad)\b/i.test(lastAssistantMessage) &&
-      (/\b(?:share\s+your\s+phone|share\s+your\s+number|share\s+your\s+contact|share\s+your\s+name\s+and\s+phone|what\s+is\s+your\s+phone|may\s+i\s+have\s+your\s+phone|please\s+provide\s+your\s+phone|apna\s+number\s+share)\b/i.test(lastAssistantMessage) ||
-       activeQual?.status === "summary_ready");
+      const isContactSubmission =
+        !hasTechnicalKeywords &&
+        !isContactDetailsQuery &&
+        !isOfferingToShareContact &&
+        !isCompanyOverviewQuery &&
+        !isProjectsPortfolioQuery &&
+        !isServicesQuery &&
+        (isNameIntroductionOnly ||
+          ((messageHasDigits || messageHasEmail || messageHasExplicitContactKeyword) &&
+            (assistantIsAskingForContact || !hasActiveProject || messageHasDigits || messageHasEmail)) ||
+          (assistantIsAskingForName && Boolean(resolvedName && !isPlaceholderName(resolvedName)) && !isAnsweringQualificationOption));
 
-    const assistantIsAskingForName =
-      !/\b(?:have\s+recorded|recorded\s+your|thank\s+you|dhanyawad)\b/i.test(lastAssistantMessage) &&
-      (/\b(?:share\s+your\s+name|may\s+i\s+know\s+your\s+name|whom\s+to\s+contact|whom\s+to\s+address|apna\s+naam)\b/i.test(lastAssistantMessage) ||
-       activeQual?.status === "awaiting_name");
+      // 1. Personal advice and relationships
+      const isRomanceOrRelationships =
+        /\b(?:love|relationship|girlfriend|boyfriend|husband|wife|marriage|marry|dating|date|breakup|heartbreak|crush|romance|romantic|soulmate|flirting|flirt|proposal|propose|divorce|family\s+problems?|friendship\s+problems?|personal\s+advice|emotional\s+support|loneliness|jealousy|trust\s+issues?|cheating\s+partner|parenting\s+advice|family\s+conflict|affair|kiss|kissing|sex|sexy|sexual|intimacy|feelings|emotions|pyar|pyaar|ishq|mohabbat|shadi)\b/i.test(message);
 
-    const isContactSubmission =
-      !hasTechnicalKeywords &&
-      !isContactDetailsQuery &&
-      !isOfferingToShareContact &&
-      !isCompanyOverviewQuery &&
-      !isProjectsPortfolioQuery &&
-      !isServicesQuery &&
-      (isNameIntroductionOnly ||
-       ((messageHasDigits || messageHasEmail || messageHasExplicitContactKeyword) &&
-        (assistantIsAskingForContact || !hasActiveProject || messageHasDigits || messageHasEmail)) ||
-       (assistantIsAskingForName && Boolean(resolvedName && !isPlaceholderName(resolvedName)) && !isAnsweringQualificationOption));
+      // 2. Entertainment and celebrity topics
+      const isEntertainmentOrTrivia =
+        /\b(?:movies?|films?|web\s*series|tv\s*shows?|actors?|actresses?|celebrity\s*gossip|celebrity\s*news|songs?|music\s*lyrics|lyrics|singers?|albums?|entertainment\s*news|movie\s*reviews?|movie\s*recommendations?|memes?|jokes?|comedy|funny\s*stories|cartoons?|anime|manga|gaming|video\s*games?|game\s*cheats?|gaming\s*walkthroughs?|sports\s*entertainment|comedian|comedians|stand-?up|standup|roast|cricket|ipl|bcci|icc|world\s*cup|trophy|match|tournament|football|fifa|goal|messi|ronaldo|batting|bowling|wicket|toss|stadium|tennis|badminton|olympics|medal|chess|grandmaster|pubg|free\s*fire|bgmi|fortnite|gameplay|dialogue|trailer|box\s*office|bollywood|hollywood)\b/i.test(message) ||
+        /\b(?:give|tell|name|list|suggest|recommend|write|show)\s+(?:me\s+)?(?:the\s+)?(?:names?\s+of\s+)?(?:\d+|some|few|top)\b/i.test(message) ||
+        /\b(?:salman|shah\s*rukh|srk|aamir|akshay|deepika|katrina|alia|ranbir|ranveer|kareena|priyanka|amitabh|bachchan|hrithik|rajinikanth|prabhas|allu\s*arjun|modi|rahul\s*gandhi|nehru|gandhi|bjp|congress|trump|biden|putin|obama|elon\s*musk|ambani|adani|tata|mahindra|bill\s*gates|steve\s*jobs|zuckerberg|sundar\s*pichai|satya\s*nadella|hasan\s*minhaj|john\s*mulaney|ali\s*wong|trevor\s*noah|zakir\s*khan|bassie|samay\s*raina|munawar)\b/i.test(message);
 
-    // 1. Personal advice and relationships
-    const isRomanceOrRelationships =
-      /\b(?:love|relationship|girlfriend|boyfriend|husband|wife|marriage|marry|dating|date|breakup|heartbreak|crush|romance|romantic|soulmate|flirting|flirt|proposal|propose|divorce|family\s+problems?|friendship\s+problems?|personal\s+advice|emotional\s+support|loneliness|jealousy|trust\s+issues?|cheating\s+partner|parenting\s+advice|family\s+conflict|affair|kiss|kissing|sex|sexy|sexual|intimacy|feelings|emotions|pyar|pyaar|ishq|mohabbat|shadi)\b/i.test(message);
+      // 3. General knowledge and trivia
+      const isGeneralKnowledgeAndTrivia =
+        /\b(?:general\s*knowledge|trivia|quiz|random\s*facts?|fun\s*facts?|history\s*questions?|geography\s*questions?|world\s*capitals?|capital\s*of|country\s*population|famous\s*personalities|scientific\s*trivia|space\s*trivia|animal\s*facts?|riddles?|puzzles?|brain\s*teasers?|crossword\s*answers?|word\s*games?|dictionary\s*questions?|unrelated\s*facts?|solar\s*system|mars|jupiter|moon|galaxy|universe|black\s*hole|gravity|quantum\s*physics|photosynthesis|dna|evolution|dinosaurs?|longest\s*river|highest\s*mountain|mythology|ramayana|mahabharata|zeus|gods)\b/i.test(message) ||
+        (/\bwho\s+(?:is|was|are|were)(?!\s+(?:you|u|this|your\s+company|the\s+(?:founder|ceo|owner|team))\b)/i.test(message) ||
+          /\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i.test(message));
 
-    // 2. Entertainment and celebrity topics
-    const isEntertainmentOrTrivia =
-      /\b(?:movies?|films?|web\s*series|tv\s*shows?|actors?|actresses?|celebrity\s*gossip|celebrity\s*news|songs?|music\s*lyrics|lyrics|singers?|albums?|entertainment\s*news|movie\s*reviews?|movie\s*recommendations?|memes?|jokes?|comedy|funny\s*stories|cartoons?|anime|manga|gaming|video\s*games?|game\s*cheats?|gaming\s*walkthroughs?|sports\s*entertainment|comedian|comedians|stand-?up|standup|roast|cricket|ipl|bcci|icc|world\s*cup|trophy|match|tournament|football|fifa|goal|messi|ronaldo|batting|bowling|wicket|toss|stadium|tennis|badminton|olympics|medal|chess|grandmaster|pubg|free\s*fire|bgmi|fortnite|gameplay|dialogue|trailer|box\s*office|bollywood|hollywood)\b/i.test(message) ||
-      /\b(?:give|tell|name|list|suggest|recommend|write|show)\s+(?:me\s+)?(?:the\s+)?(?:names?\s+of\s+)?(?:\d+|some|few|top)\b/i.test(message) ||
-      /\b(?:salman|shah\s*rukh|srk|aamir|akshay|deepika|katrina|alia|ranbir|ranveer|kareena|priyanka|amitabh|bachchan|hrithik|rajinikanth|prabhas|allu\s*arjun|modi|rahul\s*gandhi|nehru|gandhi|bjp|congress|trump|biden|putin|obama|elon\s*musk|ambani|adani|tata|mahindra|bill\s*gates|steve\s*jobs|zuckerberg|sundar\s*pichai|satya\s*nadella|hasan\s*minhaj|john\s*mulaney|ali\s*wong|trevor\s*noah|zakir\s*khan|bassie|samay\s*raina|munawar)\b/i.test(message);
+      // 4. Health and medical advice
+      const isHealthAndMedical =
+        /\b(?:medical\s*advice|symptoms?|disease\s*diagnosis|medicine\s*dosage|prescription\s*advice|treatment\s*recommendations?|home\s*remedies|pregnancy\s*advice|mental\s*health\s*diagnosis|therapy\s*advice|medical\s*emergency|doctor\s*consultation|fitness\s*diagnosis|nutrition\s*treatment|drug\s*interactions?|headache|fever|cough|flu|covid|cancer\s*cure|paracetamol|antibiotics?|prescription|dosage)\b/i.test(message);
 
-    // 3. General knowledge and trivia
-    const isGeneralKnowledgeAndTrivia =
-      /\b(?:general\s*knowledge|trivia|quiz|random\s*facts?|fun\s*facts?|history\s*questions?|geography\s*questions?|world\s*capitals?|capital\s*of|country\s*population|famous\s*personalities|scientific\s*trivia|space\s*trivia|animal\s*facts?|riddles?|puzzles?|brain\s*teasers?|crossword\s*answers?|word\s*games?|dictionary\s*questions?|unrelated\s*facts?|solar\s*system|mars|jupiter|moon|galaxy|universe|black\s*hole|gravity|quantum\s*physics|photosynthesis|dna|evolution|dinosaurs?|longest\s*river|highest\s*mountain|mythology|ramayana|mahabharata|zeus|gods)\b/i.test(message) ||
-      (/\bwho\s+(?:is|was|are|were)(?!\s+(?:you|u|this|your\s+company|the\s+(?:founder|ceo|owner|team))\b)/i.test(message) ||
-       /\bwho\s+(?:act|acted|directed|wrote|invented|discovered|created|owns|played|won|scored|killed|sang)\b/i.test(message));
+      // 5. Politics and religion
+      const isPoliticsAndReligion =
+        /\b(?:politics|political\s*parties?|elections?|voting\s*advice|political\s*debates?|politicians?|political\s*campaigns?|government\s*controversies|religious\s*debates?|religious\s*conversion|religious\s*disputes?|theological\s*arguments?|political\s*propaganda|political\s*predictions?|meaning\s+of\s+life|purpose\s+of\s+life|why\s+(?:do\s+we|are\s+we)\s+(?:exist|alive|born)|is\s+god\s+real|does\s+god\s+exist|afterlife|heaven|hell|reincarnation|spirituality|destiny|karma|meaning\s+of\s+death|ghosts?|aliens?|extraterrestrial)\b/i.test(message);
 
-    // 4. Health and medical advice
-    const isHealthAndMedical =
-      /\b(?:medical\s*advice|symptoms?|disease\s*diagnosis|medicine\s*dosage|prescription\s*advice|treatment\s*recommendations?|home\s*remedies|pregnancy\s*advice|mental\s*health\s*diagnosis|therapy\s*advice|medical\s*emergency|doctor\s*consultation|fitness\s*diagnosis|nutrition\s*treatment|drug\s*interactions?|headache|fever|cough|flu|covid|cancer\s*cure|paracetamol|antibiotics?|prescription|dosage)\b/i.test(message);
+      // 6. Financial and legal personal advice
+      const isFinancialAndLegalAdvice =
+        /\b(?:personal\s*investment\s*advice|stock\s*tips?|cryptocurrency\s*predictions?|crypto\s*predictions?|trading\s*signals?|loan\s*advice|tax\s*evasion|personal\s*budgeting|legal\s*advice|lawsuit\s*advice|divorce\s*law\s*advice|criminal\s*defense\s*advice|immigration\s*advice|personal\s*insurance\s*advice|gambling\s*tips?|betting\s*predictions?|lottery\s*numbers?|stock\s*market|crypto\s*price|bitcoin\s*rate|gold\s*rate|court\s*lawyer|sue\s+someone|lawsuit)\b/i.test(message);
 
-    // 5. Politics and religion
-    const isPoliticsAndReligion =
-      /\b(?:politics|political\s*parties?|elections?|voting\s*advice|political\s*debates?|politicians?|political\s*campaigns?|government\s*controversies|religious\s*debates?|religious\s*conversion|religious\s*disputes?|theological\s*arguments?|political\s*propaganda|political\s*predictions?|meaning\s+of\s+life|purpose\s+of\s+life|why\s+(?:do\s+we|are\s+we)\s+(?:exist|alive|born)|is\s+god\s+real|does\s+god\s+exist|afterlife|heaven|hell|reincarnation|spirituality|destiny|karma|meaning\s+of\s+death|ghosts?|aliens?|extraterrestrial)\b/i.test(message);
+      // 7. Cooking, travel and lifestyle
+      const isCookingTravelLifestyle =
+        /\b(?:recipes?|cooking\s*instructions?|food\s*recommendations?|restaurant\s*recommendations?|travel\s*itinerary|tourist\s*attractions?|hotel\s*recommendations?|flight\s*booking|vacation\s*planning|fashion\s*advice|outfit\s*recommendations?|beauty\s*tips?|makeup\s*tutorials?|gardening\s*tips?|home\s*decoration|diy\s*crafts?|workout\s*routines?|hobby\s*recommendations?|cook|cooking|bake|baking|fry|boil|ingredients|dish|dishes|curry|paneer|chicken|biryani|pizza|burger|pasta|noodles|cake|dessert|calories|diet|workout|gym)\b/i.test(message);
 
-    // 6. Financial and legal personal advice
-    const isFinancialAndLegalAdvice =
-      /\b(?:personal\s*investment\s*advice|stock\s*tips?|cryptocurrency\s*predictions?|crypto\s*predictions?|trading\s*signals?|loan\s*advice|tax\s*evasion|personal\s*budgeting|legal\s*advice|lawsuit\s*advice|divorce\s*law\s*advice|criminal\s*defense\s*advice|immigration\s*advice|personal\s*insurance\s*advice|gambling\s*tips?|betting\s*predictions?|lottery\s*numbers?|stock\s*market|crypto\s*price|bitcoin\s*rate|gold\s*rate|court\s*lawyer|sue\s+someone|lawsuit)\b/i.test(message);
+      // 8. Homework and unrelated academic work
+      const isHomeworkAndAcademic =
+        /\b(?:homework\s*answers?|homework|school\s*assignments?|essay\s*writing|poetry\s*writing|literature\s*analysis|exam\s*preparation|math\s*homework|physics\s*problems?|chemistry\s*homework|biology\s*homework|history\s*assignments?|language\s*translation|general\s*tutoring|college\s*admission\s*advice|unrelated\s*research\s*topics?|write\s+(?:an?\s+)?(?:essay|poem|song|story|letter|speech|article)|solve\s+(?:this\s+)?(?:math|equation|problem)|puzzle|horoscope|astrology|zodiac)\b/i.test(message);
 
-    // 7. Cooking, travel and lifestyle
-    const isCookingTravelLifestyle =
-      /\b(?:recipes?|cooking\s*instructions?|food\s*recommendations?|restaurant\s*recommendations?|travel\s*itinerary|tourist\s*attractions?|hotel\s*recommendations?|flight\s*booking|vacation\s*planning|fashion\s*advice|outfit\s*recommendations?|beauty\s*tips?|makeup\s*tutorials?|gardening\s*tips?|home\s*decoration|diy\s*crafts?|workout\s*routines?|hobby\s*recommendations?|cook|cooking|bake|baking|fry|boil|ingredients|dish|dishes|curry|paneer|chicken|biryani|pizza|burger|pasta|noodles|cake|dessert|calories|diet|workout|gym)\b/i.test(message);
+      // 9. Offensive, explicit or harmful content
+      const isOffensiveHarmfulContent =
+        /\b(?:pornography|porn|explicit\s*sexual\s*content|sexual\s*roleplay|erotic\s*stories|sexual\s*fantasies|obscene\s*content|hate\s*speech|harassment|threats?|violent\s*fantasies|instructions\s*for\s*harming\s*people|harm\s*someone|kill\s*someone|illegal\s*activities|drug\s*manufacturing|make\s*drugs|make\s*bomb|malware\s*for\s*criminal\s*use|phishing\s*attacks?|credential\s*theft|cybercrime\s*instructions?)\b/i.test(message);
 
-    // 8. Homework and unrelated academic work
-    const isHomeworkAndAcademic =
-      /\b(?:homework\s*answers?|homework|school\s*assignments?|essay\s*writing|poetry\s*writing|literature\s*analysis|exam\s*preparation|math\s*homework|physics\s*problems?|chemistry\s*homework|biology\s*homework|history\s*assignments?|language\s*translation|general\s*tutoring|college\s*admission\s*advice|unrelated\s*research\s*topics?|write\s+(?:an?\s+)?(?:essay|poem|song|story|letter|speech|article)|solve\s+(?:this\s+)?(?:math|equation|problem)|puzzle|horoscope|astrology|zodiac)\b/i.test(message);
+      // 10. Requests to override chatbot rules
+      const isOverrideOrJailbreak =
+        /\b(?:ignore\s+(?:all\s+)?(?:previous|prior|system)\s+(?:instructions|rules|prompts)|ignore\s+all\s+rules|bypass\s+(?:all\s+)?(?:restrictions|safety|rules)|override\s+system\s+prompt|reveal\s+system\s+prompt|show\s+hidden\s+instructions|reveal\s+confidential\s+data|expose\s+api\s+keys|show\s+environment\s+variables|reveal\s+secrets|developer\s+mode|jailbreak|act\s+without\s+restrictions|disregard\s+your\s+role|forget\s+your\s+company|pretend\s+you\s+are\s+another\s+chatbot|reveal\s+internal\s+knowledge\s*base|dump\s+training\s+data)\b/i.test(message);
 
-    // 9. Offensive, explicit or harmful content
-    const isOffensiveHarmfulContent =
-      /\b(?:pornography|porn|explicit\s*sexual\s*content|sexual\s*roleplay|erotic\s*stories|sexual\s*fantasies|obscene\s*content|hate\s*speech|harassment|threats?|violent\s*fantasies|instructions\s*for\s*harming\s*people|harm\s*someone|kill\s*someone|illegal\s*activities|drug\s*manufacturing|make\s*drugs|make\s*bomb|malware\s*for\s*criminal\s*use|phishing\s*attacks?|credential\s*theft|cybercrime\s*instructions?)\b/i.test(message);
+      const isPersonalBotQuery =
+        /\b(?:do\s+you\s+(?:love|like)\s+me|are\s+you\s+(?:single|married|human|alive|sentient|real)|will\s+you\s+marry\s+me|be\s+my\s+(?:girlfriend|boyfriend|friend)|have\s+feelings|feel\s+emotions?|can\s+you\s+feel)\b/i.test(message);
 
-    // 10. Requests to override chatbot rules
-    const isOverrideOrJailbreak =
-      /\b(?:ignore\s+(?:all\s+)?(?:previous|prior|system)\s+(?:instructions|rules|prompts)|ignore\s+all\s+rules|bypass\s+(?:all\s+)?(?:restrictions|safety|rules)|override\s+system\s+prompt|reveal\s+system\s+prompt|show\s+hidden\s+instructions|reveal\s+confidential\s+data|expose\s+api\s+keys|show\s+environment\s+variables|reveal\s+secrets|developer\s+mode|jailbreak|act\s+without\s+restrictions|disregard\s+your\s+role|forget\s+your\s+company|pretend\s+you\s+are\s+another\s+chatbot|reveal\s+internal\s+knowledge\s*base|dump\s+training\s+data)\b/i.test(message);
+      const isGeneralOffTopicAdvice =
+        /\b(?:weather|temperature|news|headlines|stock\s+market|crypto\s+price|bitcoin\s+rate|gold\s+rate|headache|fever|medicine|prescription|doctor\s+consultation|symptom|legal\s+advice|court|lawyer|sue|lawsuit)\b/i.test(message);
 
-    const isPersonalBotQuery =
-      /\b(?:do\s+you\s+(?:love|like)\s+me|are\s+you\s+(?:single|married|human|alive|sentient|real)|will\s+you\s+marry\s+me|be\s+my\s+(?:girlfriend|boyfriend|friend)|have\s+feelings|feel\s+emotions?|can\s+you\s+feel)\b/i.test(message);
+      const isOffTopicDilemma =
+        (/^[a-zA-Z\s]{2,30}\s+or\s+[a-zA-Z\s]{2,30}\??$/i.test(message.trim()) ||
+          /\b(?:laptop|desktop|computer|pc|tablet|ipad|iphone|macbook|smartphone)\b.*\b(?:better\s+than|worse\s+than|vs\.?|versus|compare|which\s+(?:one\s+)?(?:is|should)|difference)\b/i.test(message) ||
+          /\b(?:better\s+than|worse\s+than|vs\.?|versus|compare|which\s+(?:one\s+)?(?:is|should)|difference)\b.*\b(?:laptop|desktop|computer|pc|tablet|ipad|iphone|macbook|smartphone|phone)\b/i.test(message) ||
+          /\b(?:is|does|which\s+is)\s+[a-z\s]+\s+better\s+than\s+[a-z\s]+/i.test(message) ||
+          /\b(?:which\s+(?:is|one\s+is)\s+better)\b/i.test(message) ||
+          /\b(?:should\s+i\s+buy|which\s+(?:phone|laptop|car|bike|tv|gadget)\s+(?:should|to)\s+buy)\b/i.test(message)) &&
+        !/\b(?:web|website|app|mobile|android|ios|flutter|react|native|next\.?js|node|python|ai|bot|chatbot|saas|software|ecommerce|cloud|devops|design|redesign|new|existing|fixed|hourly|sprint|timeline|budget|inr|usd|yes|no)\b/i.test(message.replace(/\b(?:laptop|phone|computer|pc)\b/gi, ""));
 
-    const isGeneralOffTopicAdvice =
-      /\b(?:weather|temperature|news|headlines|stock\s+market|crypto\s+price|bitcoin\s+rate|gold\s+rate|headache|fever|medicine|prescription|doctor\s+consultation|symptom|legal\s+advice|court|lawyer|sue|lawsuit)\b/i.test(message);
+      const isCelebrityOrTriviaQuery =
+        !hasActiveProject &&
+        !isAnsweringQualificationOption &&
+        !hasTechnicalKeywords &&
+        !hasSoftwareOrCompanyContext &&
+        !isContactDetailsQuery &&
+        !isLanguageSwitchQuery &&
+        !isEnglishSwitchQuery &&
+        !isOfferingToShareContact &&
+        !isProjectsPortfolioQuery &&
+        !isCompanyOverviewQuery &&
+        !isWebsiteUrlQuery &&
+        !isServicesQuery &&
+        !isContactSubmission &&
+        !isBotIdentityQuery &&
+        !isExplicitPlatformProviderQuery &&
+        (isExternalEntityQuery ||
+          isRomanceOrRelationships ||
+          isGeneralKnowledgeAndTrivia ||
+          isHealthAndMedical ||
+          isPoliticsAndReligion ||
+          isFinancialAndLegalAdvice ||
+          isCookingTravelLifestyle ||
+          isHomeworkAndAcademic ||
+          isOffensiveHarmfulContent ||
+          isOverrideOrJailbreak ||
+          isPersonalBotQuery ||
+          isGeneralOffTopicAdvice ||
+          isOffTopicDilemma ||
+          (isEntertainmentOrTrivia && !isEssLeadershipQuery) ||
+          (!hasSoftwareOrCompanyContext && !isPureGreeting && !isFirstMessageQuery && !isNameIntroductionOnly && !isBotIdentityQuery && !isExplicitPlatformProviderQuery && /\b(who|what|where|how|why|when|can you|give me|tell me|name|list)\b/i.test(message) && !isEssLeadershipQuery && !/\b(office|address|contact|email|phone)\b/i.test(message)));
 
-    const isOffTopicDilemma =
-      (/^[a-zA-Z\s]{2,30}\s+or\s+[a-zA-Z\s]{2,30}\??$/i.test(message.trim()) ||
-       /\b(?:laptop|desktop|computer|pc|tablet|ipad|iphone|macbook|smartphone)\b.*\b(?:better\s+than|worse\s+than|vs\.?|versus|compare|which\s+(?:one\s+)?(?:is|should)|difference)\b/i.test(message) ||
-       /\b(?:better\s+than|worse\s+than|vs\.?|versus|compare|which\s+(?:one\s+)?(?:is|should)|difference)\b.*\b(?:laptop|desktop|computer|pc|tablet|ipad|iphone|macbook|smartphone|phone)\b/i.test(message) ||
-       /\b(?:is|does|which\s+is)\s+[a-z\s]+\s+better\s+than\s+[a-z\s]+/i.test(message) ||
-       /\b(?:which\s+(?:is|one\s+is)\s+better)\b/i.test(message) ||
-       /\b(?:should\s+i\s+buy|which\s+(?:phone|laptop|car|bike|tv|gadget)\s+(?:should|to)\s+buy)\b/i.test(message)) &&
-      !/\b(?:web|website|app|mobile|android|ios|flutter|react|native|next\.?js|node|python|ai|bot|chatbot|saas|software|ecommerce|cloud|devops|design|redesign|new|existing|fixed|hourly|sprint|timeline|budget|inr|usd|yes|no)\b/i.test(message.replace(/\b(?:laptop|phone|computer|pc)\b/gi, ""));
-
-    const isCelebrityOrTriviaQuery =
-      !hasActiveProject &&
-      !isAnsweringQualificationOption &&
-      !hasTechnicalKeywords &&
-      !hasSoftwareOrCompanyContext &&
-      !isContactDetailsQuery &&
-      !isLanguageSwitchQuery &&
-      !isEnglishSwitchQuery &&
-      !isOfferingToShareContact &&
-      !isProjectsPortfolioQuery &&
-      !isCompanyOverviewQuery &&
-      !isWebsiteUrlQuery &&
-      !isServicesQuery &&
-      !isContactSubmission &&
-      !isBotIdentityQuery &&
-      !isExplicitPlatformProviderQuery &&
-      (isExternalEntityQuery ||
-      isRomanceOrRelationships ||
-      isGeneralKnowledgeAndTrivia ||
-      isHealthAndMedical ||
-      isPoliticsAndReligion ||
-      isFinancialAndLegalAdvice ||
-      isCookingTravelLifestyle ||
-      isHomeworkAndAcademic ||
-      isOffensiveHarmfulContent ||
-      isOverrideOrJailbreak ||
-      isPersonalBotQuery ||
-      isGeneralOffTopicAdvice ||
-      isOffTopicDilemma ||
-      (isEntertainmentOrTrivia && !isEssLeadershipQuery) ||
-      (!hasSoftwareOrCompanyContext && !isPureGreeting && !isFirstMessageQuery && !isNameIntroductionOnly && !isBotIdentityQuery && !isExplicitPlatformProviderQuery && /\b(who|what|where|how|why|when|can you|give me|tell me|name|list)\b/i.test(message) && !isEssLeadershipQuery && !/\b(office|address|contact|email|phone)\b/i.test(message)));
-
-    let deterministicReply = null;
-    let quickReplies = [];
-    if (isLanguageSwitchQuery) {
-      lang = /[\u0900-\u097F]/.test(message) ? "hindi" : "hinglish";
-      if (isEssBot) {
-        quickReplies = [...ALL_ESS_SERVICES];
-        if (lang === "hindi") {
-          deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। Emperor Smart Solutions में आपका स्वागत है! मैं आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ? क्या आप कोई मोबाइल ऐप, वेबसाइट या कस्टम AI समाधान बनवाना चाहते हैं?`;
-        } else {
-          deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. Emperor Smart Solutions ki taraf se main aapke digital project mein kaise help kar sakta hoon? Aapko mobile app, website, ya custom AI solution banwana hai?`;
-        }
-      } else {
-        quickReplies = bot?.quickReplies || [];
-        if (lang === "hindi") {
-          deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। ${businessName} में आपका स्वागत है! मैं आपकी किस प्रकार सहायता कर सकता हूँ?`;
-        } else {
-          deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. ${businessName} mein aapka swagat hai. Main aapki kya madad kar sakta hoon?`;
-        }
-      }
-    } else if (isEnglishSwitchQuery) {
-      lang = "english";
-      if (isEssBot) {
-        quickReplies = [...ALL_ESS_SERVICES];
-        deterministicReply = `Yes, absolutely! I can converse fluently in English. Emperor Smart Solutions specializes in custom mobile apps, web platforms, and enterprise AI solutions. What kind of project are you looking to build?`;
-      } else {
-        quickReplies = bot?.quickReplies || [];
-        deterministicReply = `Yes, absolutely! I can converse fluently in English. Welcome to ${businessName}! How can I assist you today?`;
-      }
-    } else if (isOfferingToShareContact) {
-      deterministicReply = lang === "hindi"
-        ? `जरूर! कृपया अपना **नाम और फ़ोन नंबर (या WhatsApp)** साझा करें, ताकि हम इसे सुरक्षित रूप से नोट कर सकें और हमारी तकनीकी टीम आपसे संपर्क कर सके।`
-        : lang === "hinglish"
-        ? `Sure! Please apna **Name aur Phone Number (ya WhatsApp)** share karein, hum ise note kar lenge aur hamari technical team aapse connect karegi.`
-        : `Sure! Please share your **Name and Phone Number (or WhatsApp)** here, and I'll make sure our technical team connects with you promptly.`;
-    } else if (/^(?:what(?:'s|\s+is)\s+my\s+name|do\s+you\s+(?:know|remember)\s+my\s+name|can\s+you\s+tell\s+me\s+my\s+name|who\s+am\s+i|mera\s+naam\s+kya\s+hai|mera\s+naam\s+batao|tell\s+me\s+my\s+name|what\s+name\s+do\s+you\s+have\s+for\s+me)\??$/i.test(message.trim())) {
-      if (resolvedName && !isPlaceholderName(resolvedName)) {
-        deterministicReply = lang === "hindi"
-          ? `आपका नाम **${resolvedName}** है! 👤\n\nमैं Emperor Smart Solutions की ओर से आज आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ?`
-          : lang === "hinglish"
-          ? `Aapka naam **${resolvedName}** hai! 👤\n\nMain Emperor Smart Solutions ki taraf se aapke project mein kaise help kar sakta hoon?`
-          : `Your name is **${resolvedName}**! 👤\n\nHow can Emperor Smart Solutions assist you with your digital project today?`;
-      } else {
-        deterministicReply = lang === "hindi"
-          ? `मेरे पास अभी आपका नाम दर्ज नहीं है। कृपया अपना **नाम** साझा करें!`
-          : lang === "hinglish"
-          ? `Mere paas abhi aapka name recorded nahi hai. Please apna **Name** share karein!`
-          : `I don't have your name recorded yet. Could you please share your **Name**?`;
-      }
-      quickReplies = isEssBot ? [...ALL_ESS_SERVICES] : (bot?.quickReplies || []);
-    } else if (isCompanyOverviewQuery) {
-      if (lang === "hindi") {
-        deterministicReply = `**Emperor Smart Solutions (ESS)** अहमदाबाद, गुजरात में स्थित एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज समाधान कंपनी है। 🏢🚀\n\n**हमारी मुख्य सेवाएँ:**\n• **वेबसाइट एवं वेब पोर्टल्स:** Next.js, React और Node.js पर निर्मित 95+ लाइटहाउस स्कोर वाले हाई-स्पीड वेब प्लेटफॉर्म और ई-कॉमर्स।\n• **मोबाइल ऐप्स:** iOS और Android के लिए स्केलेबल React Native और Flutter ऐप्स।\n• **कस्टम AI चैटबॉट्स:** आपके व्यापार के लिए प्रशिक्षित स्वायत्त AI सेल्स व सपोर्ट एजेंट्स (RAG आर्किटेक्चर)।\n• **एंटरप्राइज सॉफ्टवेयर:** कस्टम ERP, CRM और ऑटोमेशन सिस्टम।\n• **क्लाउड एवं डेवऑप्स:** AWS, Docker और सुरक्षित स्केलेबल इंफ्रास्ट्रक्चर।\n\n🏢 **मुख्यालय:** C-1002, सिद्धि विनायक टावर्स, मकरबा, एस.जी. हाईवे, अहमदाबाद, गुजरात 380051\n🌐 **वेबसाइट:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **संपर्क:** +91 73831 98435 | info@emperorsmartsolutions.com`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `**Emperor Smart Solutions (ESS)** Ahmedabad, Gujarat based premier digital engineering aur enterprise technology solutions company hai. 🏢🚀\n\n**Hamari Core Capabilities:**\n• **High-Performance Web Platforms:** Next.js, React aur Node.js par ultra-fast websites, e-commerce aur custom admin dashboards.\n• **Mobile Applications:** iOS aur Android ke liye custom React Native & Flutter mobile apps.\n• **AI Chatbots & RAG Systems:** Business-specific knowledge base par trained autonomous AI sales & support bots.\n• **Enterprise Software:** Custom ERP, CRM, inventory aur business automation systems.\n• **Cloud Architecture & DevOps:** AWS, Docker aur secure scalable databases.\n\n🏢 **Office:** C-1002, Siddhi Vinayak Towers, Makarba, SG Highway, Ahmedabad 380051\n🌐 **Website:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **Contact:** +91 73831 98435 | info@emperorsmartsolutions.com`;
-      } else {
-        deterministicReply = `**Emperor Smart Solutions (ESS)** is a premier digital engineering and enterprise technology solutions company headquartered in Ahmedabad, Gujarat. 🏢🚀\n\n**Our Core Capabilities:**\n• **High-Performance Web Platforms:** Modern full-stack web applications, e-commerce, and admin portals built on Next.js, React, Node.js, and PostgreSQL/MongoDB with 95+ Lighthouse scores.\n• **Mobile Applications:** Scalable iOS & Android mobile applications engineered with React Native and Flutter.\n• **AI Chatbots & RAG Systems:** Custom-trained conversational AI, autonomous sales & support agents, and domain-specific knowledge bots.\n• **Custom Enterprise Software:** Scalable ERP, CRM, inventory management, and automated business workflows.\n• **Cloud Architecture & DevOps:** AWS, Docker, automated CI/CD pipelines, and robust security.\n\n🏢 **Headquarters:** C-1002, Siddhi Vinayak Towers, Makarba, SG Highway, Ahmedabad, Gujarat 380051\n🌐 **Website:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **Contact:** +91 73831 98435 | info@emperorsmartsolutions.com`;
-      }
-      quickReplies = ["Services", "Recent projects", "Office location"];
-    } else if (isProjectsPortfolioQuery) {
-      if (lang === "hindi") {
-        deterministicReply = `यहाँ **Emperor Smart Solutions** के कुछ प्रमुख लाइव प्रोजेक्ट्स और डिजिटल समाधान हैं: 💻🌟\n\n1. **NexusAI एंटरप्राइज प्लेटफॉर्म:** मल्टी-टेनेंट ऑटोनॉमस AI चैटबॉट सास प्लेटफॉर्म।\n2. **Vardaan Smart Solutions ई-कॉमर्स पोर्टल:** नेक्स्ट-जेन ई-कॉमर्स, ऑनलाइन पेमेंट व इन्वेंटरी मैनेजमेंट।\n3. **ग्लोबल लॉजिस्टिक्स ट्रैकिंग सिस्टम:** रियल-टाइम फ्लीट ट्रैकिंग व सप्लाई चेन ऑटोमेशन।\n4. **हेल्थकेयर टेली-कंसल्टेशन मोबाइल ऐप:** लाइव डॉक्टर अपॉइंटमेंट व ई-प्रिस्क्रिप्शन ऐप।\n5. **मैन्युफैक्चरिंग ERP डैशबोर्ड:** रियल-टाइम प्रोडक्शन व वेयरहाउस मैनेजमेंट सिस्टम।\n\nक्या आप इनमें से किसी समाधान के बारे में विस्तार से जानना चाहते हैं?`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Ye hain **Emperor Smart Solutions** ke kuch featured enterprise projects & digital solutions: 💻🌟\n\n1. **NexusAI Enterprise Platform:** Multi-tenant autonomous sales & support chatbot platform with RAG architecture.\n2. **Vardaan Smart Solutions E-Commerce Portal:** Ultra-fast e-commerce platform with automated payment gateways & inventory dashboard.\n3. **Global Logistics & Supply Chain Tracker:** Real-time fleet tracking, automated dispatch & invoicing.\n4. **Healthcare Tele-Consultation App:** Doctor appointments, video consultations & digital health records.\n5. **Manufacturing ERP Engine:** Custom cloud dashboard for production lines and warehouse ledger.\n\nAap inme se kis project ke baare mein discuss karna chahte hain?`;
-      } else {
-        deterministicReply = `Here are some of **Emperor Smart Solutions'** featured enterprise projects & digital solutions: 💻🌟\n\n1. **NexusAI Enterprise Platform:** Multi-tenant autonomous sales & support chatbot SaaS platform with enterprise RAG.\n2. **Vardaan Smart Solutions E-Commerce Portal:** Ultra-fast Next.js store with Razorpay/Stripe checkout, order tracking, and inventory management.\n3. **Global Logistics & Supply Chain Tracker:** Real-time fleet tracking, automated dispatch scheduling, and invoice generation.\n4. **Healthcare Tele-Consultation App:** Tele-medicine mobile app with instant doctor appointments, video calling, and digital prescriptions.\n5. **Manufacturing ERP Engine:** Custom cloud dashboard for production lines, batch management, and real-time inventory ledger.\n\nWould you like to explore how we can build a similar customized solution for your business?`;
-      }
-      quickReplies = ["Website Development", "Mobile Application", "AI Chatbot", "Office location"];
-    } else if (isContactSubmission) {
-      const activeQual = existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
-      const displayName = (resolvedName && !isPlaceholderName(resolvedName)) ? resolvedName : "";
-
-      if (hasActiveProject && (resolvedPhone || resolvedEmail)) {
-        const serviceTitle = QUALIFICATION_FLOWS[activeQual.service]?.serviceName || "Digital Project";
-        const contactVal = resolvedPhone || resolvedEmail;
-
-        if (!displayName) {
-          // Contact number recorded, but visitor Name is still missing! Ask for Name!
-          const waitingNameQual = {
-            ...activeQual,
-            status: "awaiting_name",
-            consentAsked: true,
-            answers: {
-              ...(activeQual.answers || {}),
-            },
-          };
-
-          quickReplies = [];
-
-          if (lang === "hindi") {
-            deterministicReply = `शानदार! धन्यवाद! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका फ़ोन नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nकृपया अपना **शुभ नाम** साझा करें ताकि हमारी तकनीकी टीम आपसे सही प्रकार से संपर्क कर सके?`;
-          } else if (lang === "hinglish") {
-            deterministicReply = `Great! Thank you! Humne aapke **${serviceTitle}** project ke liye aapka contact number (**${contactVal}**) note kar liya hai.\n\nPlease apna **Name** share karein taaki hamari technical team aapse connect kar sake?`;
-          } else {
-            deterministicReply = `Thank you! We have recorded your contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nCould you please share your **Name** so our technical team knows whom to contact?`;
-          }
-
-          const inquirySummary = formatQualificationInquiry(waitingNameQual);
-          const qAnswers = waitingNameQual.answers || {};
-
-          leadsStore.createLead({
-            sessionId: currentSessionId,
-            botId: bot?.id || botId,
-            organizationId: bot.organizationId,
-            name: "Website Prospect",
-            email: resolvedEmail || leadDetails.email || "",
-            phone: resolvedPhone || leadDetails.phone || "",
-            company: bot?.company || "Direct Inbound",
-            bot: botName,
-            inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
-            budget: qAnswers.budget || "₹50,000+",
-            source: "Web Chatbot Widget",
-            answers: qAnswers,
-            qualification: waitingNameQual,
-          });
-
-          conversationsStore.updateConversation(currentSessionId, {
-            qualification: waitingNameQual,
-            status: "in_progress",
-            ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
-            ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
-          });
-        } else {
-          // Both Name and Phone are provided! Finalize the qualified lead!
-          const completedQual = {
-            ...activeQual,
-            status: "completed",
-            consentAsked: false,
-            answers: {
-              ...(activeQual.answers || {}),
-            },
-          };
-
-          quickReplies = ["Tell me about ESS", "Recent projects", "Office location"];
-
-          if (lang === "hindi") {
-            deterministicReply = `शानदार! धन्यवाद **${displayName}**! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका संपर्क नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nहमारी तकनीकी टीम जल्द ही एक कस्टमाइज्ड प्रस्ताव और कार्ययोजना के साथ आपसे संपर्क करेगी! 🚀`;
-          } else if (lang === "hinglish") {
-            deterministicReply = `Great! Thank you **${displayName}**! Humne aapke **${serviceTitle}** project ke liye aapka contact details (**${contactVal}**) note kar liya hai.\n\nHamari technical team jald hi customized proposal aur project roadmap ke saath aapse connect karegi! 🚀`;
-          } else {
-            deterministicReply = `Thank you, **${displayName}**! We have recorded all your requirements and contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nOur technical team will reach out to you shortly with a customized proposal and project roadmap! 🚀`;
-          }
-
-          const inquirySummary = formatQualificationInquiry(completedQual);
-          const qAnswers = completedQual.answers || {};
-
-          leadsStore.createLead({
-            sessionId: currentSessionId,
-            botId: bot?.id || botId,
-            organizationId: bot.organizationId,
-            name: displayName,
-            email: resolvedEmail || leadDetails.email || "",
-            phone: resolvedPhone || leadDetails.phone || "",
-            company: bot?.company || "Direct Inbound",
-            bot: botName,
-            inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
-            budget: qAnswers.budget || "₹50,000+",
-            source: "Web Chatbot Widget",
-            answers: qAnswers,
-            qualification: completedQual,
-          });
-
-          conversationsStore.updateConversation(currentSessionId, {
-            qualification: completedQual,
-            status: "completed",
-            visitorName: displayName,
-            ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
-            ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
-          });
-        }
-      } else {
+      let deterministicReply = null;
+      let quickReplies = [];
+      if (isLanguageSwitchQuery) {
+        lang = /[\u0900-\u097F]/.test(message) ? "hindi" : "hinglish";
         if (isEssBot) {
           quickReplies = [...ALL_ESS_SERVICES];
-          if (displayName) {
-            if (!resolvedPhone && !resolvedEmail) {
-              deterministicReply = lang === "hindi"
-                ? `नमस्ते ${displayName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
-                : lang === "hinglish"
-                ? `Nice to meet you, ${displayName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
-                : `Nice to meet you, ${displayName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
-            } else {
-              deterministicReply = lang === "hindi"
-                ? `धन्यवाद ${displayName}! आपका संपर्क विवरण नोट कर लिया गया है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
-                : lang === "hinglish"
-                ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Aap kaunsa digital solution develop karwana chahte hain?`
-                : `Thank you, ${displayName}! Your contact details have been recorded. Which digital solution are you planning to build?`;
-            }
+          if (lang === "hindi") {
+            deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। Emperor Smart Solutions में आपका स्वागत है! मैं आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ? क्या आप कोई मोबाइल ऐप, वेबसाइट या कस्टम AI समाधान बनवाना चाहते हैं?`;
+          } else {
+            deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. Emperor Smart Solutions ki taraf se main aapke digital project mein kaise help kar sakta hoon? Aapko mobile app, website, ya custom AI solution banwana hai?`;
           }
         } else {
           quickReplies = bot?.quickReplies || [];
-          if (displayName) {
-            if (!resolvedPhone && !resolvedEmail) {
-              deterministicReply = lang === "hindi"
-                ? `नमस्ते ${displayName}! ${businessName} में आपका स्वागत है। आज मैं आपकी किस प्रकार सहायता कर सकता हूँ?`
-                : lang === "hinglish"
-                ? `Nice to meet you, ${displayName}! ${businessName} mein aapka swagat hai. Aaj main aapki kya madad kar sakta hoon?`
-                : `Nice to meet you, ${displayName}! Welcome to ${businessName}. How can I assist you today?`;
-            } else {
-              deterministicReply = lang === "hindi"
-                ? `धन्यवाद ${displayName}! आपका विवरण नोट कर लिया गया है। मैं ${businessName} के संबंध में आपकी किस प्रकार सहायता कर सकता हूँ?`
-                : lang === "hinglish"
-                ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Main ${businessName} ke baare mein aapki kya madad kar sakta hoon?`
-                : `Thank you, ${displayName}! Your contact details have been recorded. How can I assist you with ${businessName} today?`;
-            }
+          if (lang === "hindi") {
+            deterministicReply = `हाँ बिल्कुल! मैं हिंदी में बात कर सकता हूँ। ${businessName} में आपका स्वागत है! मैं आपकी किस प्रकार सहायता कर सकता हूँ?`;
+          } else {
+            deterministicReply = `Haan bilkul! Main Hindi aur Hinglish dono mein baat kar sakta hoon. ${businessName} mein aapka swagat hai. Main aapki kya madad kar sakta hoon?`;
           }
         }
-
-        if (!displayName && (resolvedPhone || resolvedEmail)) {
-          const contactVal = resolvedPhone || resolvedEmail;
-          deterministicReply = lang === "hindi"
-            ? `धन्यवाद! आपका संपर्क नंबर (**${contactVal}**) नोट कर लिया गया है। कृपया अपना **शुभ नाम** साझा करें ताकि हम आपसे उचित प्रकार से संपर्क कर सकें।`
-            : lang === "hinglish"
-            ? `Thank you! Humne aapka contact number (**${contactVal}**) note kar liya hai. Please apna **Name** share karein taaki hum aapse connect kar sakein.`
-            : `Thank you! We have recorded your contact number (**${contactVal}**). Could you please share your **Name** so we know whom to address?`;
-          quickReplies = [];
+      } else if (isEnglishSwitchQuery) {
+        lang = "english";
+        if (isEssBot) {
+          quickReplies = [...ALL_ESS_SERVICES];
+          deterministicReply = `Yes, absolutely! I can converse fluently in English. Emperor Smart Solutions specializes in custom mobile apps, web platforms, and enterprise AI solutions. What kind of project are you looking to build?`;
+        } else {
+          quickReplies = bot?.quickReplies || [];
+          deterministicReply = `Yes, absolutely! I can converse fluently in English. Welcome to ${businessName}! How can I assist you today?`;
         }
+      } else if (isOfferingToShareContact) {
+        deterministicReply = lang === "hindi"
+          ? `जरूर! कृपया अपना **नाम और फ़ोन नंबर (या WhatsApp)** साझा करें, ताकि हम इसे सुरक्षित रूप से नोट कर सकें और हमारी तकनीकी टीम आपसे संपर्क कर सके।`
+          : lang === "hinglish"
+            ? `Sure! Please apna **Name aur Phone Number (ya WhatsApp)** share karein, hum ise note kar lenge aur hamari technical team aapse connect karegi.`
+            : `Sure! Please share your **Name and Phone Number (or WhatsApp)** here, and I'll make sure our technical team connects with you promptly.`;
+      } else if (/^(?:what(?:'s|\s+is)\s+my\s+name|do\s+you\s+(?:know|remember)\s+my\s+name|can\s+you\s+tell\s+me\s+my\s+name|who\s+am\s+i|mera\s+naam\s+kya\s+hai|mera\s+naam\s+batao|tell\s+me\s+my\s+name|what\s+name\s+do\s+you\s+have\s+for\s+me)\??$/i.test(message.trim())) {
+        if (resolvedName && !isPlaceholderName(resolvedName)) {
+          deterministicReply = lang === "hindi"
+            ? `आपका नाम **${resolvedName}** है! 👤\n\nमैं Emperor Smart Solutions की ओर से आज आपके डिजिटल प्रोजेक्ट में किस प्रकार सहायता कर सकता हूँ?`
+            : lang === "hinglish"
+              ? `Aapka naam **${resolvedName}** hai! 👤\n\nMain Emperor Smart Solutions ki taraf se aapke project mein kaise help kar sakta hoon?`
+              : `Your name is **${resolvedName}**! 👤\n\nHow can Emperor Smart Solutions assist you with your digital project today?`;
+        } else {
+          deterministicReply = lang === "hindi"
+            ? `मेरे पास अभी आपका नाम दर्ज नहीं है। कृपया अपना **नाम** साझा करें!`
+            : lang === "hinglish"
+              ? `Mere paas abhi aapka name recorded nahi hai. Please apna **Name** share karein!`
+              : `I don't have your name recorded yet. Could you please share your **Name**?`;
+        }
+        quickReplies = isEssBot ? [...ALL_ESS_SERVICES] : (bot?.quickReplies || []);
+      } else if (isCompanyOverviewQuery) {
+        if (lang === "hindi") {
+          deterministicReply = `**Emperor Smart Solutions (ESS)** अहमदाबाद, गुजरात में स्थित एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज समाधान कंपनी है। 🏢🚀\n\n**हमारी मुख्य सेवाएँ:**\n• **वेबसाइट एवं वेब पोर्टल्स:** Next.js, React और Node.js पर निर्मित 95+ लाइटहाउस स्कोर वाले हाई-स्पीड वेब प्लेटफॉर्म और ई-कॉमर्स।\n• **मोबाइल ऐप्स:** iOS और Android के लिए स्केलेबल React Native और Flutter ऐप्स।\n• **कस्टम AI चैटबॉट्स:** आपके व्यापार के लिए प्रशिक्षित स्वायत्त AI सेल्स व सपोर्ट एजेंट्स (RAG आर्किटेक्चर)।\n• **एंटरप्राइज सॉफ्टवेयर:** कस्टम ERP, CRM और ऑटोमेशन सिस्टम।\n• **क्लाउड एवं डेवऑप्स:** AWS, Docker और सुरक्षित स्केलेबल इंफ्रास्ट्रक्चर।\n\n🏢 **मुख्यालय:** C-1002, सिद्धि विनायक टावर्स, मकरबा, एस.जी. हाईवे, अहमदाबाद, गुजरात 380051\n🌐 **वेबसाइट:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **संपर्क:** +91 73831 98435 | info@emperorsmartsolutions.com`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `**Emperor Smart Solutions (ESS)** Ahmedabad, Gujarat based premier digital engineering aur enterprise technology solutions company hai. 🏢🚀\n\n**Hamari Core Capabilities:**\n• **High-Performance Web Platforms:** Next.js, React aur Node.js par ultra-fast websites, e-commerce aur custom admin dashboards.\n• **Mobile Applications:** iOS aur Android ke liye custom React Native & Flutter mobile apps.\n• **AI Chatbots & RAG Systems:** Business-specific knowledge base par trained autonomous AI sales & support bots.\n• **Enterprise Software:** Custom ERP, CRM, inventory aur business automation systems.\n• **Cloud Architecture & DevOps:** AWS, Docker aur secure scalable databases.\n\n🏢 **Office:** C-1002, Siddhi Vinayak Towers, Makarba, SG Highway, Ahmedabad 380051\n🌐 **Website:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **Contact:** +91 73831 98435 | info@emperorsmartsolutions.com`;
+        } else {
+          deterministicReply = `**Emperor Smart Solutions (ESS)** is a premier digital engineering and enterprise technology solutions company headquartered in Ahmedabad, Gujarat. 🏢🚀\n\n**Our Core Capabilities:**\n• **High-Performance Web Platforms:** Modern full-stack web applications, e-commerce, and admin portals built on Next.js, React, Node.js, and PostgreSQL/MongoDB with 95+ Lighthouse scores.\n• **Mobile Applications:** Scalable iOS & Android mobile applications engineered with React Native and Flutter.\n• **AI Chatbots & RAG Systems:** Custom-trained conversational AI, autonomous sales & support agents, and domain-specific knowledge bots.\n• **Custom Enterprise Software:** Scalable ERP, CRM, inventory management, and automated business workflows.\n• **Cloud Architecture & DevOps:** AWS, Docker, automated CI/CD pipelines, and robust security.\n\n🏢 **Headquarters:** C-1002, Siddhi Vinayak Towers, Makarba, SG Highway, Ahmedabad, Gujarat 380051\n🌐 **Website:** [emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n📞 **Contact:** +91 73831 98435 | info@emperorsmartsolutions.com`;
+        }
+        quickReplies = ["Services", "Recent projects", "Office location"];
+      } else if (isProjectsPortfolioQuery) {
+        if (lang === "hindi") {
+          deterministicReply = `यहाँ **Emperor Smart Solutions** के कुछ प्रमुख लाइव प्रोजेक्ट्स और डिजिटल समाधान हैं: 💻🌟\n\n1. **NexusAI एंटरप्राइज प्लेटफॉर्म:** मल्टी-टेनेंट ऑटोनॉमस AI चैटबॉट सास प्लेटफॉर्म।\n2. **Vardaan Smart Solutions ई-कॉमर्स पोर्टल:** नेक्स्ट-जेन ई-कॉमर्स, ऑनलाइन पेमेंट व इन्वेंटरी मैनेजमेंट।\n3. **ग्लोबल लॉजिस्टिक्स ट्रैकिंग सिस्टम:** रियल-टाइम फ्लीट ट्रैकिंग व सप्लाई चेन ऑटोमेशन।\n4. **हेल्थकेयर टेली-कंसल्टेशन मोबाइल ऐप:** लाइव डॉक्टर अपॉइंटमेंट व ई-प्रिस्क्रिप्शन ऐप।\n5. **मैन्युफैक्चरिंग ERP डैशबोर्ड:** रियल-टाइम प्रोडक्शन व वेयरहाउस मैनेजमेंट सिस्टम।\n\nक्या आप इनमें से किसी समाधान के बारे में विस्तार से जानना चाहते हैं?`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Ye hain **Emperor Smart Solutions** ke kuch featured enterprise projects & digital solutions: 💻🌟\n\n1. **NexusAI Enterprise Platform:** Multi-tenant autonomous sales & support chatbot platform with RAG architecture.\n2. **Vardaan Smart Solutions E-Commerce Portal:** Ultra-fast e-commerce platform with automated payment gateways & inventory dashboard.\n3. **Global Logistics & Supply Chain Tracker:** Real-time fleet tracking, automated dispatch & invoicing.\n4. **Healthcare Tele-Consultation App:** Doctor appointments, video consultations & digital health records.\n5. **Manufacturing ERP Engine:** Custom cloud dashboard for production lines and warehouse ledger.\n\nAap inme se kis project ke baare mein discuss karna chahte hain?`;
+        } else {
+          deterministicReply = `Here are some of **Emperor Smart Solutions'** featured enterprise projects & digital solutions: 💻🌟\n\n1. **NexusAI Enterprise Platform:** Multi-tenant autonomous sales & support chatbot SaaS platform with enterprise RAG.\n2. **Vardaan Smart Solutions E-Commerce Portal:** Ultra-fast Next.js store with Razorpay/Stripe checkout, order tracking, and inventory management.\n3. **Global Logistics & Supply Chain Tracker:** Real-time fleet tracking, automated dispatch scheduling, and invoice generation.\n4. **Healthcare Tele-Consultation App:** Tele-medicine mobile app with instant doctor appointments, video calling, and digital prescriptions.\n5. **Manufacturing ERP Engine:** Custom cloud dashboard for production lines, batch management, and real-time inventory ledger.\n\nWould you like to explore how we can build a similar customized solution for your business?`;
+        }
+        quickReplies = ["Website Development", "Mobile Application", "AI Chatbot", "Office location"];
+      } else if (isContactSubmission) {
+        const activeQual = existingConv?.qualification || recoverQualificationFromHistory(sessionHistory);
+        const displayName = (resolvedName && !isPlaceholderName(resolvedName)) ? resolvedName : "";
 
-        if (displayName) {
-          // Immediately register lead with the visitor's name
-          leadsStore.createLead({
-            sessionId: currentSessionId,
-            botId: bot?.id || botId,
-            organizationId: bot.organizationId,
-            name: displayName,
-            email: resolvedEmail || "",
-            phone: resolvedPhone || "",
-            company: bot?.company || "Direct Inbound",
-            bot: botName,
-            inquiry: "Visitor introduced themselves. Offered services options.",
-            budget: "₹50,000+",
-            source: "Web Chatbot Widget",
-          });
+        if (hasActiveProject && (resolvedPhone || resolvedEmail)) {
+          const serviceTitle = QUALIFICATION_FLOWS[activeQual.service]?.serviceName || "Digital Project";
+          const contactVal = resolvedPhone || resolvedEmail;
 
-          const existingC = conversationsStore.getConversation(currentSessionId);
-          if (existingC) {
+          if (!displayName) {
+            // Contact number recorded, but visitor Name is still missing! Ask for Name!
+            const waitingNameQual = {
+              ...activeQual,
+              status: "awaiting_name",
+              consentAsked: true,
+              answers: {
+                ...(activeQual.answers || {}),
+              },
+            };
+
+            quickReplies = [];
+
+            if (lang === "hindi") {
+              deterministicReply = `शानदार! धन्यवाद! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका फ़ोन नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nकृपया अपना **शुभ नाम** साझा करें ताकि हमारी तकनीकी टीम आपसे सही प्रकार से संपर्क कर सके?`;
+            } else if (lang === "hinglish") {
+              deterministicReply = `Great! Thank you! Humne aapke **${serviceTitle}** project ke liye aapka contact number (**${contactVal}**) note kar liya hai.\n\nPlease apna **Name** share karein taaki hamari technical team aapse connect kar sake?`;
+            } else {
+              deterministicReply = `Thank you! We have recorded your contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nCould you please share your **Name** so our technical team knows whom to contact?`;
+            }
+
+            const inquirySummary = formatQualificationInquiry(waitingNameQual);
+            const qAnswers = waitingNameQual.answers || {};
+
+            leadsStore.createLead({
+              sessionId: currentSessionId,
+              botId: bot?.id || botId,
+              organizationId: bot.organizationId,
+              name: "Website Prospect",
+              email: resolvedEmail || leadDetails.email || "",
+              phone: resolvedPhone || leadDetails.phone || "",
+              company: bot?.company || "Direct Inbound",
+              bot: botName,
+              inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
+              budget: qAnswers.budget || "₹50,000+",
+              source: "Web Chatbot Widget",
+              answers: qAnswers,
+              qualification: waitingNameQual,
+            });
+
             conversationsStore.updateConversation(currentSessionId, {
+              qualification: waitingNameQual,
+              status: "in_progress",
+              ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+              ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+            });
+          } else {
+            // Both Name and Phone are provided! Finalize the qualified lead!
+            const completedQual = {
+              ...activeQual,
+              status: "completed",
+              consentAsked: false,
+              answers: {
+                ...(activeQual.answers || {}),
+              },
+            };
+
+            quickReplies = ["Tell me about ESS", "Recent projects", "Office location"];
+
+            if (lang === "hindi") {
+              deterministicReply = `शानदार! धन्यवाद **${displayName}**! हमने आपके **${serviceTitle}** प्रोजेक्ट के लिए आपका संपर्क नंबर (**${contactVal}**) सुरक्षित रूप से नोट कर लिया है।\n\nहमारी तकनीकी टीम जल्द ही एक कस्टमाइज्ड प्रस्ताव और कार्ययोजना के साथ आपसे संपर्क करेगी! 🚀`;
+            } else if (lang === "hinglish") {
+              deterministicReply = `Great! Thank you **${displayName}**! Humne aapke **${serviceTitle}** project ke liye aapka contact details (**${contactVal}**) note kar liya hai.\n\nHamari technical team jald hi customized proposal aur project roadmap ke saath aapse connect karegi! 🚀`;
+            } else {
+              deterministicReply = `Thank you, **${displayName}**! We have recorded all your requirements and contact number (**${contactVal}**) for your **${serviceTitle}** project.\n\nOur technical team will reach out to you shortly with a customized proposal and project roadmap! 🚀`;
+            }
+
+            const inquirySummary = formatQualificationInquiry(completedQual);
+            const qAnswers = completedQual.answers || {};
+
+            leadsStore.createLead({
+              sessionId: currentSessionId,
+              botId: bot?.id || botId,
+              organizationId: bot.organizationId,
+              name: displayName,
+              email: resolvedEmail || leadDetails.email || "",
+              phone: resolvedPhone || leadDetails.phone || "",
+              company: bot?.company || "Direct Inbound",
+              bot: botName,
+              inquiry: inquirySummary || `Qualified ${serviceTitle} Project Inbound`,
+              budget: qAnswers.budget || "₹50,000+",
+              source: "Web Chatbot Widget",
+              answers: qAnswers,
+              qualification: completedQual,
+            });
+
+            conversationsStore.updateConversation(currentSessionId, {
+              qualification: completedQual,
+              status: "completed",
               visitorName: displayName,
               ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
               ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
             });
           }
         } else {
-          deterministicReply = lang === "hindi"
-            ? `धन्यवाद! आपका संपर्क विवरण नोट कर लिया गया है। क्या आप अपना **नाम** भी साझा कर सकते हैं ताकि हमारी तकनीकी टीम आपसे व्यक्तिगत रूप से संपर्क कर सके?`
-            : lang === "hinglish"
-            ? `Thank you! Aapka contact number note kar liya gaya hai. Kya aap apna **Name** bhi share kar sakte hain taaki hamari technical team aapse personally connect kar sakein?`
-            : `Thank you! Your contact details have been noted. Could you also please share your **Name** so our technical team can address you personally?`;
-        }
-      }
-    } else if (isPureGreeting && !hasTechnicalKeywords) {
-      if (isEssBot) {
-        quickReplies = [...ALL_ESS_SERVICES];
-        if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
-          deterministicReply = lang === "hindi"
-            ? `नमस्ते ${resolvedName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
-            : lang === "hinglish"
-            ? `Hi ${resolvedName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
-            : `Hi ${resolvedName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
-        } else {
-          deterministicReply = lang === "hindi"
-            ? `नमस्ते! Emperor Smart Solutions में आपका स्वागत है। क्या आप अपना नाम साझा कर सकते हैं ताकि हम बेहतर सहायता कर सकें?`
-            : lang === "hinglish"
-            ? `Hello! Emperor Smart Solutions mein aapka swagat hai. Kya aap apna Name share kar sakte hain taaki hum aapko personalize assist kar sakein?`
-            : `Hello! Welcome to Emperor Smart Solutions. May I know your name so I can assist you better and personalize our conversation?`;
-        }
-      } else {
-        quickReplies = bot?.quickReplies || [];
-        const botWelcome = bot?.welcomeMessage && !bot.welcomeMessage.includes("Emperor AI") && !bot.welcomeMessage.includes("Emperor Smart Solutions")
-          ? bot.welcomeMessage
-          : null;
-        if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
-          deterministicReply = lang === "hindi"
-            ? `नमस्ते ${resolvedName}! ${businessName} में आपका स्वागत है। मैं आपकी किस प्रकार सहायता कर सकता हूँ?`
-            : lang === "hinglish"
-            ? `Hi ${resolvedName}! ${businessName} mein aapka swagat hai. Main aapki kya madad kar sakta hoon?`
-            : `Hi ${resolvedName}! Welcome to ${businessName}. How can I assist you today?`;
-        } else {
-          deterministicReply = botWelcome || (lang === "hindi"
-            ? `नमस्ते! ${businessName} में आपका स्वागत है। मैं आज आपकी क्या सहायता कर सकता हूँ?`
-            : lang === "hinglish"
-            ? `Hello! ${businessName} mein aapka swagat hai. Aaj main aapki kya madad kar sakta hoon?`
-            : `Hello! Welcome to ${businessName}. How can I assist you today?`);
-        }
-      }
-    } else if (isBotIdentityQuery) {
-      if (isEssBot) {
-        quickReplies = [...ALL_ESS_SERVICES];
-        if (lang === "hindi") {
-          deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI सेल्स कंसल्टेंट और टेक्नोलॉजी एडवाइजर हूँ। मैं कस्टम सॉफ्टवेयर इंजीनियरिंग, मोबाइल ऐप्स (iOS और Android), वेब प्लेटफॉर्म और एंटरप्राइज AI सॉल्यूशंस में विशेषज्ञता रखता हूँ। आप किस तरह का डिजिटल समाधान बनवाना चाहते हैं?`;
-        } else if (lang === "hinglish") {
-          deterministicReply = `Main Emperor Smart Solutions ka official AI Sales Consultant hoon. Main custom software engineering, mobile apps, web platforms, aur enterprise AI solutions mein assist karta hoon. Aap kaunsa project plan kar rahe hain?`;
-        } else {
-          deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize in custom software engineering, mobile applications, full-stack web platforms, and enterprise AI solutions. What kind of digital project are you looking to build today?`;
-        }
-      } else {
-        quickReplies = bot?.quickReplies || [];
-        const botDesc = bot?.description ? ` ${bot.description}` : "";
-        if (lang === "hindi") {
-          deterministicReply = `मैं ${businessName} का आधिकारिक AI सहायक हूँ।${botDesc} मैं ${businessName} के उत्पादों, सेवाओं और पूछताछ में आपकी सहायता के लिए यहाँ उपलब्ध हूँ। आज मैं आपकी किस प्रकार सहायता कर सकता हूँ?`;
-        } else if (lang === "hinglish") {
-          deterministicReply = `Main ${businessName} ka official AI assistant hoon.${botDesc} Main ${businessName} ke products, services aur inquiries mein aapki help karne ke liye available hoon. Aaj main aapki kya madad kar sakta hoon?`;
-        } else {
-          deterministicReply = `I am the official AI assistant for ${businessName}.${botDesc} I am here to help you with inquiries regarding our products, services, and policies. How can I assist you with ${businessName} today?`;
-        }
-      }
-    } else if (isExplicitPlatformProviderQuery) {
-      quickReplies = bot?.quickReplies || [];
-      if (lang === "hindi") {
-        deterministicReply = `Emperor Smart Solutions एक AI और डिजिटल इंजीनियरिंग प्रदाता है जो ${businessName} के इस चैटबॉट प्लेटफॉर्म को संचालित करता है। मैं यहाँ विशेष रूप से ${businessName} और उसके उत्पादों के संबंध में आपकी सहायता के लिए उपलब्ध हूँ। क्या मैं ${businessName} से संबंधित किसी विषय में आपकी सहायता कर सकता हूँ?`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Emperor Smart Solutions ek AI aur digital engineering provider hai jo ${businessName} ke is chatbot platform ko power karta hai. Main yahan specifically ${businessName} aur uske products ke liye assist karta hoon. Kya main ${businessName} ke regarding aapki help kar sakta hoon?`;
-      } else {
-        deterministicReply = `Emperor Smart Solutions is the technology provider and AI platform that powers this chatbot for ${businessName}. As the AI assistant for ${businessName}, my focus is on assisting you with our timepieces and business inquiries. How can I help you with ${businessName} today?`;
-      }
-    } else if (isFirstMessageQuery) {
-      let firstUserMsg = "";
-      if (existingConv && Array.isArray(existingConv.messages)) {
-        const firstM = existingConv.messages.find((m) => m.role === "user");
-        if (firstM) firstUserMsg = firstM.content;
-      }
-      if (!firstUserMsg && Array.isArray(history)) {
-        const firstM = history.find((m) => m.role === "user");
-        if (firstM) firstUserMsg = firstM.content;
-      }
-      if (!firstUserMsg) {
-        const userMessages = sessionHistory.filter((m) => m.role === "user");
-        firstUserMsg = userMessages.length > 0 ? userMessages[0].content : message;
-      }
-      deterministicReply = `Your first message was:\n\n"${firstUserMsg}"`;
-    } else if (isSavedUserDetailsQuery) {
-      const savedName = (!isPlaceholderName(resolvedName))
-        ? resolvedName
-        : (leadDetails.name || "Not specified");
-      const savedPhone = resolvedPhone || (leadDetails.phone ? leadDetails.phone : "Not specified");
-      const savedEmail = resolvedEmail || (leadDetails.email ? leadDetails.email : "Not specified");
+          if (isEssBot) {
+            quickReplies = [...ALL_ESS_SERVICES];
+            if (displayName) {
+              if (!resolvedPhone && !resolvedEmail) {
+                deterministicReply = lang === "hindi"
+                  ? `नमस्ते ${displayName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
+                  : lang === "hinglish"
+                    ? `Nice to meet you, ${displayName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
+                    : `Nice to meet you, ${displayName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
+              } else {
+                deterministicReply = lang === "hindi"
+                  ? `धन्यवाद ${displayName}! आपका संपर्क विवरण नोट कर लिया गया है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
+                  : lang === "hinglish"
+                    ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Aap kaunsa digital solution develop karwana chahte hain?`
+                    : `Thank you, ${displayName}! Your contact details have been recorded. Which digital solution are you planning to build?`;
+              }
+            }
+          } else {
+            quickReplies = bot?.quickReplies || [];
+            if (displayName) {
+              if (!resolvedPhone && !resolvedEmail) {
+                deterministicReply = lang === "hindi"
+                  ? `नमस्ते ${displayName}! ${businessName} में आपका स्वागत है। आज मैं आपकी किस प्रकार सहायता कर सकता हूँ?`
+                  : lang === "hinglish"
+                    ? `Nice to meet you, ${displayName}! ${businessName} mein aapka swagat hai. Aaj main aapki kya madad kar sakta hoon?`
+                    : `Nice to meet you, ${displayName}! Welcome to ${businessName}. How can I assist you today?`;
+              } else {
+                deterministicReply = lang === "hindi"
+                  ? `धन्यवाद ${displayName}! आपका विवरण नोट कर लिया गया है। मैं ${businessName} के संबंध में आपकी किस प्रकार सहायता कर सकता हूँ?`
+                  : lang === "hinglish"
+                    ? `Thank you ${displayName}! Aapki details note kar li gayi hain. Main ${businessName} ke baare mein aapki kya madad kar sakta hoon?`
+                    : `Thank you, ${displayName}! Your contact details have been recorded. How can I assist you with ${businessName} today?`;
+              }
+            }
+          }
 
-      if (lang === "hindi") {
-        deterministicReply = `यहाँ आपके प्रोजेक्ट पूछताछ के लिए वर्तमान में रिकॉर्ड किए गए संपर्क विवरण हैं:
+          if (!displayName && (resolvedPhone || resolvedEmail)) {
+            const contactVal = resolvedPhone || resolvedEmail;
+            deterministicReply = lang === "hindi"
+              ? `धन्यवाद! आपका संपर्क नंबर (**${contactVal}**) नोट कर लिया गया है। कृपया अपना **शुभ नाम** साझा करें ताकि हम आपसे उचित प्रकार से संपर्क कर सकें।`
+              : lang === "hinglish"
+                ? `Thank you! Humne aapka contact number (**${contactVal}**) note kar liya hai. Please apna **Name** share karein taaki hum aapse connect kar sakein.`
+                : `Thank you! We have recorded your contact number (**${contactVal}**). Could you please share your **Name** so we know whom to address?`;
+            quickReplies = [];
+          }
+
+          if (displayName) {
+            // Immediately register lead with the visitor's name
+            leadsStore.createLead({
+              sessionId: currentSessionId,
+              botId: bot?.id || botId,
+              organizationId: bot.organizationId,
+              name: displayName,
+              email: resolvedEmail || "",
+              phone: resolvedPhone || "",
+              company: bot?.company || "Direct Inbound",
+              bot: botName,
+              inquiry: "Visitor introduced themselves. Offered services options.",
+              budget: "₹50,000+",
+              source: "Web Chatbot Widget",
+            });
+
+            const existingC = conversationsStore.getConversation(currentSessionId);
+            if (existingC) {
+              conversationsStore.updateConversation(currentSessionId, {
+                visitorName: displayName,
+                ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+                ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+              });
+            }
+          } else {
+            deterministicReply = lang === "hindi"
+              ? `धन्यवाद! आपका संपर्क विवरण नोट कर लिया गया है। क्या आप अपना **नाम** भी साझा कर सकते हैं ताकि हमारी तकनीकी टीम आपसे व्यक्तिगत रूप से संपर्क कर सके?`
+              : lang === "hinglish"
+                ? `Thank you! Aapka contact number note kar liya gaya hai. Kya aap apna **Name** bhi share kar sakte hain taaki hamari technical team aapse personally connect kar sakein?`
+                : `Thank you! Your contact details have been noted. Could you also please share your **Name** so our technical team can address you personally?`;
+          }
+        }
+      } else if (isPureGreeting && !hasTechnicalKeywords) {
+        if (isEssBot) {
+          quickReplies = [...ALL_ESS_SERVICES];
+          if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
+            deterministicReply = lang === "hindi"
+              ? `नमस्ते ${resolvedName}! Emperor Smart Solutions में आपका स्वागत है। आप कौन सा प्रोजेक्ट या समाधान बनवाना चाहते हैं?`
+              : lang === "hinglish"
+                ? `Hi ${resolvedName}! Emperor Smart Solutions mein aapka swagat hai. Aap kaunsa project plan kar rahe hain?`
+                : `Hi ${resolvedName}! Welcome to Emperor Smart Solutions. Which solution are you planning to build?`;
+          } else {
+            deterministicReply = lang === "hindi"
+              ? `नमस्ते! Emperor Smart Solutions में आपका स्वागत है। क्या आप अपना नाम साझा कर सकते हैं ताकि हम बेहतर सहायता कर सकें?`
+              : lang === "hinglish"
+                ? `Hello! Emperor Smart Solutions mein aapka swagat hai. Kya aap apna Name share kar sakte hain taaki hum aapko personalize assist kar sakein?`
+                : `Hello! Welcome to Emperor Smart Solutions. May I know your name so I can assist you better and personalize our conversation?`;
+          }
+        } else {
+          quickReplies = bot?.quickReplies || [];
+          const botWelcome = bot?.welcomeMessage && !bot.welcomeMessage.includes("Emperor AI") && !bot.welcomeMessage.includes("Emperor Smart Solutions")
+            ? bot.welcomeMessage
+            : null;
+          if (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect") {
+            deterministicReply = lang === "hindi"
+              ? `नमस्ते ${resolvedName}! ${businessName} में आपका स्वागत है। मैं आपकी किस प्रकार सहायता कर सकता हूँ?`
+              : lang === "hinglish"
+                ? `Hi ${resolvedName}! ${businessName} mein aapka swagat hai. Main aapki kya madad kar sakta hoon?`
+                : `Hi ${resolvedName}! Welcome to ${businessName}. How can I assist you today?`;
+          } else {
+            deterministicReply = botWelcome || (lang === "hindi"
+              ? `नमस्ते! ${businessName} में आपका स्वागत है। मैं आज आपकी क्या सहायता कर सकता हूँ?`
+              : lang === "hinglish"
+                ? `Hello! ${businessName} mein aapka swagat hai. Aaj main aapki kya madad kar sakta hoon?`
+                : `Hello! Welcome to ${businessName}. How can I assist you today?`);
+          }
+        }
+      } else if (isBotIdentityQuery) {
+        if (isEssBot) {
+          quickReplies = [...ALL_ESS_SERVICES];
+          if (lang === "hindi") {
+            deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI सेल्स कंसल्टेंट और टेक्नोलॉजी एडवाइजर हूँ। मैं कस्टम सॉफ्टवेयर इंजीनियरिंग, मोबाइल ऐप्स (iOS और Android), वेब प्लेटफॉर्म और एंटरप्राइज AI सॉल्यूशंस में विशेषज्ञता रखता हूँ। आप किस तरह का डिजिटल समाधान बनवाना चाहते हैं?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Main Emperor Smart Solutions ka official AI Sales Consultant hoon. Main custom software engineering, mobile apps, web platforms, aur enterprise AI solutions mein assist karta hoon. Aap kaunsa project plan kar rahe hain?`;
+          } else {
+            deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize in custom software engineering, mobile applications, full-stack web platforms, and enterprise AI solutions. What kind of digital project are you looking to build today?`;
+          }
+        } else {
+          quickReplies = bot?.quickReplies || [];
+          const botDesc = bot?.description ? ` ${bot.description}` : "";
+          if (lang === "hindi") {
+            deterministicReply = `मैं ${businessName} का आधिकारिक AI सहायक हूँ।${botDesc} मैं ${businessName} के उत्पादों, सेवाओं और पूछताछ में आपकी सहायता के लिए यहाँ उपलब्ध हूँ। आज मैं आपकी किस प्रकार सहायता कर सकता हूँ?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Main ${businessName} ka official AI assistant hoon.${botDesc} Main ${businessName} ke products, services aur inquiries mein aapki help karne ke liye available hoon. Aaj main aapki kya madad kar sakta hoon?`;
+          } else {
+            deterministicReply = `I am the official AI assistant for ${businessName}.${botDesc} I am here to help you with inquiries regarding our products, services, and policies. How can I assist you with ${businessName} today?`;
+          }
+        }
+      } else if (isExplicitPlatformProviderQuery) {
+        quickReplies = bot?.quickReplies || [];
+        if (lang === "hindi") {
+          deterministicReply = `Emperor Smart Solutions एक AI और डिजिटल इंजीनियरिंग प्रदाता है जो ${businessName} के इस चैटबॉट प्लेटफॉर्म को संचालित करता है। मैं यहाँ विशेष रूप से ${businessName} और उसके उत्पादों के संबंध में आपकी सहायता के लिए उपलब्ध हूँ। क्या मैं ${businessName} से संबंधित किसी विषय में आपकी सहायता कर सकता हूँ?`;
+        } else if (lang === "hinglish") {
+          deterministicReply = `Emperor Smart Solutions ek AI aur digital engineering provider hai jo ${businessName} ke is chatbot platform ko power karta hai. Main yahan specifically ${businessName} aur uske products ke liye assist karta hoon. Kya main ${businessName} ke regarding aapki help kar sakta hoon?`;
+        } else {
+          deterministicReply = `Emperor Smart Solutions is the technology provider and AI platform that powers this chatbot for ${businessName}. As the AI assistant for ${businessName}, my focus is on assisting you with our timepieces and business inquiries. How can I help you with ${businessName} today?`;
+        }
+      } else if (isFirstMessageQuery) {
+        let firstUserMsg = "";
+        if (existingConv && Array.isArray(existingConv.messages)) {
+          const firstM = existingConv.messages.find((m) => m.role === "user");
+          if (firstM) firstUserMsg = firstM.content;
+        }
+        if (!firstUserMsg && Array.isArray(history)) {
+          const firstM = history.find((m) => m.role === "user");
+          if (firstM) firstUserMsg = firstM.content;
+        }
+        if (!firstUserMsg) {
+          const userMessages = sessionHistory.filter((m) => m.role === "user");
+          firstUserMsg = userMessages.length > 0 ? userMessages[0].content : message;
+        }
+        deterministicReply = `Your first message was:\n\n"${firstUserMsg}"`;
+      } else if (isSavedUserDetailsQuery) {
+        const savedName = (!isPlaceholderName(resolvedName))
+          ? resolvedName
+          : (leadDetails.name || "Not specified");
+        const savedPhone = resolvedPhone || (leadDetails.phone ? leadDetails.phone : "Not specified");
+        const savedEmail = resolvedEmail || (leadDetails.email ? leadDetails.email : "Not specified");
+
+        if (lang === "hindi") {
+          deterministicReply = `यहाँ आपके प्रोजेक्ट पूछताछ के लिए वर्तमान में रिकॉर्ड किए गए संपर्क विवरण हैं:
 • **नाम:** ${savedName}
 • **फ़ोन / WhatsApp:** ${savedPhone}
 ${savedEmail !== "Not specified" ? `• **ईमेल:** ${savedEmail}\n` : ""}
 यदि आप अपना फ़ोन नंबर, ईमेल या प्रोजेक्ट विवरण अपडेट करना चाहते हैं, तो कृपया साझा करें और मैं तुरंत आपका रिकॉर्ड अपडेट कर दूँगा!`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Yeh rahe aapke project inquiry ke liye currently recorded contact details:
+        } else if (lang === "hinglish") {
+          deterministicReply = `Yeh rahe aapke project inquiry ke liye currently recorded contact details:
 • **Name:** ${savedName}
 • **Phone / WhatsApp:** ${savedPhone}
 ${savedEmail !== "Not specified" ? `• **Email:** ${savedEmail}\n` : ""}
 Agar aap apna phone number, email ya project requirements update karna chahte hain, toh please share karein aur main turant aapka record update kar dunga!`;
-      } else {
-        deterministicReply = `Here are the contact details I currently have recorded for your project inquiry:
+        } else {
+          deterministicReply = `Here are the contact details I currently have recorded for your project inquiry:
 • **Name:** ${savedName}
 • **Phone / WhatsApp:** ${savedPhone}
 ${savedEmail !== "Not specified" ? `• **Email:** ${savedEmail}\n` : ""}
 If you would like to update your phone number, email, or project requirements, please feel free to share them and I will immediately update your record!`;
-      }
-    } else if (isContactDetailsQuery) {
-      if (!isEssBot) {
-        const contactParts = [];
-        if (bot?.websiteUrl) contactParts.push(`🌐 **Website:** [${bot.websiteUrl}](${bot.websiteUrl})`);
-        if (bot?.phoneNumber) contactParts.push(`📞 **Phone / WhatsApp:** ${bot.phoneNumber}`);
+        }
+      } else if (isContactDetailsQuery) {
+        if (!isEssBot) {
+          const contactParts = [];
+          if (bot?.websiteUrl) contactParts.push(`🌐 **Website:** [${bot.websiteUrl}](${bot.websiteUrl})`);
+          if (bot?.phoneNumber) contactParts.push(`📞 **Phone / WhatsApp:** ${bot.phoneNumber}`);
 
-        if (contactParts.length > 0) {
-          if (lang === "hindi") {
-            deterministicReply = `${businessName} के आधिकारिक संपर्क विवरण:\n\n${contactParts.join("\n")}\n\nहम आपकी किस प्रकार सहायता कर सकते हैं?`;
-          } else if (lang === "hinglish") {
-            deterministicReply = `${businessName} ke official contact details yeh hain:\n\n${contactParts.join("\n")}\n\nAapko kis cheez mein help chahiye?`;
+          if (contactParts.length > 0) {
+            if (lang === "hindi") {
+              deterministicReply = `${businessName} के आधिकारिक संपर्क विवरण:\n\n${contactParts.join("\n")}\n\nहम आपकी किस प्रकार सहायता कर सकते हैं?`;
+            } else if (lang === "hinglish") {
+              deterministicReply = `${businessName} ke official contact details yeh hain:\n\n${contactParts.join("\n")}\n\nAapko kis cheez mein help chahiye?`;
+            } else {
+              deterministicReply = `Here are the official contact details for ${businessName}:\n\n${contactParts.join("\n")}\n\nHow can we assist you today?`;
+            }
           } else {
-            deterministicReply = `Here are the official contact details for ${businessName}:\n\n${contactParts.join("\n")}\n\nHow can we assist you today?`;
+            if (lang === "hindi") {
+              deterministicReply = `${businessName} के लिए वर्तमान में कोई संपर्क विवरण कॉन्फ़िगर नहीं किया गया है। क्या मैं आपके किसी अन्य प्रश्न में सहायता कर सकता हूँ?`;
+            } else if (lang === "hinglish") {
+              deterministicReply = `${businessName} ke liye currently koi contact details configure nahi hain. Kya main aapke kisi aur sawal mein help kar sakta hoon?`;
+            } else {
+              deterministicReply = `Official contact details are not currently configured for ${businessName}. How else can I assist you today?`;
+            }
           }
         } else {
           if (lang === "hindi") {
-            deterministicReply = `${businessName} के लिए वर्तमान में कोई संपर्क विवरण कॉन्फ़िगर नहीं किया गया है। क्या मैं आपके किसी अन्य प्रश्न में सहायता कर सकता हूँ?`;
-          } else if (lang === "hinglish") {
-            deterministicReply = `${businessName} ke liye currently koi contact details configure nahi hain. Kya main aapke kisi aur sawal mein help kar sakta hoon?`;
-          } else {
-            deterministicReply = `Official contact details are not currently configured for ${businessName}. How else can I assist you today?`;
-          }
-        }
-      } else {
-        if (lang === "hindi") {
-          deterministicReply = `Emperor Smart Solutions के आधिकारिक संपर्क विवरण और मुख्य कार्यालय का पता इस प्रकार है:
+            deterministicReply = `Emperor Smart Solutions के आधिकारिक संपर्क विवरण और मुख्य कार्यालय का पता इस प्रकार है:
 
 🌐 **आधिकारिक वेबसाइट:** https://emperorsmartsolutions.com
 📍 **मुख्य कार्यालय:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
@@ -1351,8 +1370,8 @@ If you would like to update your phone number, email, or project requirements, p
 ⏰ **कार्य समय:** सोमवार से शनिवार: 10:00 AM – 7:00 PM IST
 
 आप हमारे कार्यालय आ सकते हैं या सीधे WhatsApp/ईमेल द्वारा संपर्क कर सकते हैं! हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`;
-        } else if (lang === "hinglish") {
-          deterministicReply = `Emperor Smart Solutions ke official contact details aur head office address yeh hain:
+          } else if (lang === "hinglish") {
+            deterministicReply = `Emperor Smart Solutions ke official contact details aur head office address yeh hain:
 
 🌐 **Official Website:** https://emperorsmartsolutions.com
 📍 **Head Office:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
@@ -1361,8 +1380,8 @@ If you would like to update your phone number, email, or project requirements, p
 ⏰ **Business Hours:** Monday to Saturday: 10:00 AM – 7:00 PM IST
 
 Aap hamare office visit kar sakte hain ya directly WhatsApp/email par connect kar sakte hain! Hum aapke project mein kaise help kar sakte hain?`;
-        } else {
-          deterministicReply = `Here are the official contact details and head office address for Emperor Smart Solutions:
+          } else {
+            deterministicReply = `Here are the official contact details and head office address for Emperor Smart Solutions:
 
 🌐 **Official Website:** https://emperorsmartsolutions.com
 📍 **Head Office:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
@@ -1371,24 +1390,24 @@ Aap hamare office visit kar sakte hain ya directly WhatsApp/email par connect ka
 ⏰ **Business Hours:** Monday to Saturday: 10:00 AM – 7:00 PM IST
 
 Feel free to visit our office or reach out via WhatsApp/email! How else can we assist you with your project?`;
+          }
         }
-      }
-    } else if (isEssBot && isProjectsPortfolioQuery) {
-      const knownContact = resolvedPhone || resolvedEmail;
-      const portfolioContactText = knownContact
-        ? (lang === "hindi"
+      } else if (isEssBot && isProjectsPortfolioQuery) {
+        const knownContact = resolvedPhone || resolvedEmail;
+        const portfolioContactText = knownContact
+          ? (lang === "hindi"
             ? `शानदार! हमारी तकनीकी टीम के पास आपका संपर्क विवरण (**${knownContact}**) पहले से दर्ज है और वे जल्द ही आपके डोमेन के लिए प्रासंगिक केस स्टडीज और लाइव डेमो आपके साथ साझा करेंगे!`
             : lang === "hinglish"
-            ? `Great! Hamari technical team ke paas aapka contact details (**${knownContact}**) already recorded hai aur hamari team jald hi aapke domain ki case studies aur live demos share karegi!`
-            : `Our technical team already has your contact details (**${knownContact}**) recorded and will share relevant case studies and live demos with you promptly!`)
-        : (lang === "hindi"
+              ? `Great! Hamari technical team ke paas aapka contact details (**${knownContact}**) already recorded hai aur hamari team jald hi aapke domain ki case studies aur live demos share karegi!`
+              : `Our technical team already has your contact details (**${knownContact}**) recorded and will share relevant case studies and live demos with you promptly!`)
+          : (lang === "hindi"
             ? `क्या आप अपने डोमेन के अनुसार केस स्टडीज या लाइव डेमो देखना चाहेंगे? कृपया अपना **नाम और फ़ोन नंबर (या WhatsApp)** साझा करें ताकि हमारी टीम आपके साथ कस्टमाइज्ड पोर्टफोलियो साझा कर सके!`
             : lang === "hinglish"
-            ? `Kya aap apne domain ke related case studies ya live demos dekhna chahenge? Please apna **Name aur Phone Number (ya WhatsApp)** share karein taaki hamari technical team aapko relevant portfolio share kar sake!`
-            : `Would you like to see relevant case studies or a live demo for your industry? Could you please share your **Name and Phone Number (or WhatsApp)** so our team can send over a tailored portfolio?`);
+              ? `Kya aap apne domain ke related case studies ya live demos dekhna chahenge? Please apna **Name aur Phone Number (ya WhatsApp)** share karein taaki hamari technical team aapko relevant portfolio share kar sake!`
+              : `Would you like to see relevant case studies or a live demo for your industry? Could you please share your **Name and Phone Number (or WhatsApp)** so our team can send over a tailored portfolio?`);
 
-      deterministicReply = lang === "hindi"
-        ? `Emperor Smart Solutions ने मोबाइल ऐप्स, एंटरप्राइज वेब प्लेटफ़ॉर्म और कस्टम AI सिस्टम में **50 से अधिक सफल प्रोजेक्ट्स** पूरे किए हैं! 🚀
+        deterministicReply = lang === "hindi"
+          ? `Emperor Smart Solutions ने मोबाइल ऐप्स, एंटरप्राइज वेब प्लेटफ़ॉर्म और कस्टम AI सिस्टम में **50 से अधिक सफल प्रोजेक्ट्स** पूरे किए हैं! 🚀
 
 हमारे प्रमुख डोमेन:
 • **कस्टम मोबाइल ऐप्स:** Flutter, iOS और Android (ई-कॉमर्स, फिनटेक, लॉजिस्टिक्स)
@@ -1396,8 +1415,8 @@ Feel free to visit our office or reach out via WhatsApp/email! How else can we a
 • **एंटरप्राइज AI:** कस्टम RAG पाइपलाइन, स्वायत्त AI एजेंट्स और वर्कफ़्लो ऑटोमेशन
 
 ${portfolioContactText}`
-        : lang === "hinglish"
-        ? `Emperor Smart Solutions ne mobile apps, enterprise web platforms, aur custom AI systems mein **50+ successful projects** deliver kiye hain! 🚀
+          : lang === "hinglish"
+            ? `Emperor Smart Solutions ne mobile apps, enterprise web platforms, aur custom AI systems mein **50+ successful projects** deliver kiye hain! 🚀
 
 Hamare key domains:
 • **Custom Mobile Apps:** Flutter, iOS & Android (E-commerce, FinTech, Logistics)
@@ -1405,7 +1424,7 @@ Hamare key domains:
 • **Enterprise AI:** Custom RAG pipelines, autonomous AI agents & workflow automation
 
 ${portfolioContactText}`
-        : `Emperor Smart Solutions has successfully delivered **over 50+ projects** across mobile applications, enterprise web platforms, and custom AI systems! 🚀
+            : `Emperor Smart Solutions has successfully delivered **over 50+ projects** across mobile applications, enterprise web platforms, and custom AI systems! 🚀
 
 Our key portfolio areas include:
 • **Custom Mobile Applications:** High-performance apps in Flutter, iOS, and Android for E-Commerce, FinTech, and Logistics.
@@ -1413,10 +1432,10 @@ Our key portfolio areas include:
 • **Enterprise AI Solutions:** Production RAG pipelines, autonomous AI agents, and enterprise workflow automation.
 
 ${portfolioContactText}`;
-    } else if (isEssBot && isCompanyOverviewQuery) {
-      quickReplies = ["Recent projects", "Office location", "Website Development", "Mobile Applications"];
-      if (lang === "hindi") {
-        deterministicReply = `**Emperor Smart Solutions (ESS)** एक प्रमुख डिजिटल इंजीनियरिंग, कस्टम सॉफ्टवेयर और एंटरप्राइज AI सॉल्यूशंस कंसल्टेंसी है। 🚀
+      } else if (isEssBot && isCompanyOverviewQuery) {
+        quickReplies = ["Recent projects", "Office location", "Website Development", "Mobile Applications"];
+        if (lang === "hindi") {
+          deterministicReply = `**Emperor Smart Solutions (ESS)** एक प्रमुख डिजिटल इंजीनियरिंग, कस्टम सॉफ्टवेयर और एंटरप्राइज AI सॉल्यूशंस कंसल्टेंसी है। 🚀
 
 🔹 **हमारी प्रमुख विशेषज्ञता:**
 • **कस्टम मोबाइल ऐप्स:** Flutter, React Native, iOS और Android में स्केलेबल व सिक्योर ऐप्स
@@ -1427,8 +1446,8 @@ ${portfolioContactText}`;
 🏢 **मुख्यालय:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
 👥 **संस्थापक:** यश शर्मा (Yash Sharma) और करण मकवाना (Karan Makwana)।
 50+ सफल प्रोजेक्ट्स के ट्रैक रिकॉर्ड के साथ, हम उद्योग मानकों के अनुसार गुणवत्ता और सुरक्षा सुनिश्चित करते हैं। क्या आप किसी नए प्रोजेक्ट पर चर्चा करना चाहते हैं?`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `**Emperor Smart Solutions (ESS)** ek premier digital engineering, custom software, aur enterprise AI solutions company hai. 🚀
+        } else if (lang === "hinglish") {
+          deterministicReply = `**Emperor Smart Solutions (ESS)** ek premier digital engineering, custom software, aur enterprise AI solutions company hai. 🚀
 
 🔹 **Hamari Key Capabilities:**
 • **Custom Mobile Apps:** Scalable apps in Flutter, React Native, iOS & Android
@@ -1439,8 +1458,8 @@ ${portfolioContactText}`;
 🏢 **Head Office:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat.
 👥 **Founders:** Yash Sharma & Karan Makwana.
 50+ se zyada successful projects deliver karne ke track record ke saath hum enterprise-grade engineering provide karte hain! Kya aap kisi naye project ke bare mein baat karna chahte hain?`;
-      } else {
-        deterministicReply = `**Emperor Smart Solutions (ESS)** is a premier digital engineering, custom software, and enterprise AI consultancy. 🚀
+        } else {
+          deterministicReply = `**Emperor Smart Solutions (ESS)** is a premier digital engineering, custom software, and enterprise AI consultancy. 🚀
 
 🔹 **Our Core Capabilities:**
 • **Custom Mobile Applications:** High-performance native & cross-platform apps in Flutter, React Native, iOS, and Android.
@@ -1451,34 +1470,34 @@ ${portfolioContactText}`;
 🏢 **Headquarters:** 202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India.
 👥 **Founders:** Yash Sharma & Karan Makwana.
 With a proven track record of 50+ delivered projects across FinTech, Healthcare, E-Commerce, and Education, we engineer scalable, secure, and production-ready digital products! How else can we assist you with your project?`;
-      }
-    } else if (isWebsiteUrlQuery) {
-      if (!isEssBot) {
-        if (bot?.websiteUrl) {
-          if (lang === "hindi") {
-            deterministicReply = `हाँ बिल्कुल! **${businessName}** की आधिकारिक वेबसाइट [${bot.websiteUrl}](${bot.websiteUrl}) है। 🌐\n\nक्या मैं आपकी किसी अन्य जानकारी में सहायता कर सकता हूँ?`;
-          } else if (lang === "hinglish") {
-            deterministicReply = `Haan bilkul! **${businessName}** ki official website [${bot.websiteUrl}](${bot.websiteUrl}) hai. 🌐\n\nKya main aapki kisi aur cheez mein help kar sakta hoon?`;
+        }
+      } else if (isWebsiteUrlQuery) {
+        if (!isEssBot) {
+          if (bot?.websiteUrl) {
+            if (lang === "hindi") {
+              deterministicReply = `हाँ बिल्कुल! **${businessName}** की आधिकारिक वेबसाइट [${bot.websiteUrl}](${bot.websiteUrl}) है। 🌐\n\nक्या मैं आपकी किसी अन्य जानकारी में सहायता कर सकता हूँ?`;
+            } else if (lang === "hinglish") {
+              deterministicReply = `Haan bilkul! **${businessName}** ki official website [${bot.websiteUrl}](${bot.websiteUrl}) hai. 🌐\n\nKya main aapki kisi aur cheez mein help kar sakta hoon?`;
+            } else {
+              deterministicReply = `Yes! The official website for **${businessName}** is: 🌐 [${bot.websiteUrl}](${bot.websiteUrl})\n\nHow else can I assist you today?`;
+            }
           } else {
-            deterministicReply = `Yes! The official website for **${businessName}** is: 🌐 [${bot.websiteUrl}](${bot.websiteUrl})\n\nHow else can I assist you today?`;
+            deterministicReply = `An official website is not currently configured for **${businessName}**. How else can I assist you today?`;
           }
         } else {
-          deterministicReply = `An official website is not currently configured for **${businessName}**. How else can I assist you today?`;
+          quickReplies = ["Website Development", "Mobile Applications", "Recent projects", "Office location"];
+          if (lang === "hindi") {
+            deterministicReply = `हाँ बिल्कुल! **Emperor Smart Solutions** की आधिकारिक वेबसाइट [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) है। 🌐\n\nयहाँ आप हमारे संपूर्ण डिजिटल इंजीनियरिंग पोर्टफोलियो, एंटरप्राइज AI समाधान और केस स्टडीज देख सकते हैं। क्या आप किसी विशिष्ट डिजिटल प्रोजेक्ट (वेबसाइट, मोबाइल ऐप या AI समाधान) पर चर्चा करना चाहते हैं?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Haan bilkul! **Emperor Smart Solutions** ki official website [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) hai. 🌐\n\nYahan aap hamara digital engineering portfolio, enterprise AI capabilities, aur software services explore kar sakte hain. Kya aap kisi specific digital project par discuss karna chahte hain?`;
+          } else {
+            deterministicReply = `Yes! That is the official website for **Emperor Smart Solutions**: 🌐 [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n\nYou can explore our full-stack engineering portfolio, case studies, and enterprise AI solutions there. Which digital solution (website, mobile app, AI, or custom software) would you like to build?`;
+          }
         }
-      } else {
-        quickReplies = ["Website Development", "Mobile Applications", "Recent projects", "Office location"];
-        if (lang === "hindi") {
-          deterministicReply = `हाँ बिल्कुल! **Emperor Smart Solutions** की आधिकारिक वेबसाइट [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) है। 🌐\n\nयहाँ आप हमारे संपूर्ण डिजिटल इंजीनियरिंग पोर्टफोलियो, एंटरप्राइज AI समाधान और केस स्टडीज देख सकते हैं। क्या आप किसी विशिष्ट डिजिटल प्रोजेक्ट (वेबसाइट, मोबाइल ऐप या AI समाधान) पर चर्चा करना चाहते हैं?`;
-        } else if (lang === "hinglish") {
-          deterministicReply = `Haan bilkul! **Emperor Smart Solutions** ki official website [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com) hai. 🌐\n\nYahan aap hamara digital engineering portfolio, enterprise AI capabilities, aur software services explore kar sakte hain. Kya aap kisi specific digital project par discuss karna chahte hain?`;
-        } else {
-          deterministicReply = `Yes! That is the official website for **Emperor Smart Solutions**: 🌐 [https://emperorsmartsolutions.com](https://emperorsmartsolutions.com)\n\nYou can explore our full-stack engineering portfolio, case studies, and enterprise AI solutions there. Which digital solution (website, mobile app, AI, or custom software) would you like to build?`;
-        }
-      }
-    } else if (isEssBot && isServicesQuery) {
-      quickReplies = ["Mobile Applications", "Website Development", "AI Chatbot & Automation", "Custom Software & ERP"];
-      deterministicReply = lang === "hindi"
-        ? `Emperor Smart Solutions (ESS) एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज AI डेवलपमेंट कंपनी है। हमारी मुख्य सेवाएं इस प्रकार हैं:
+      } else if (isEssBot && isServicesQuery) {
+        quickReplies = ["Mobile Applications", "Website Development", "AI Chatbot & Automation", "Custom Software & ERP"];
+        deterministicReply = lang === "hindi"
+          ? `Emperor Smart Solutions (ESS) एक प्रमुख डिजिटल इंजीनियरिंग और एंटरप्राइज AI डेवलपमेंट कंपनी है। हमारी मुख्य सेवाएं इस प्रकार हैं:
 
 1. **कस्टम मोबाइल ऐप डेवलपमेंट:** Flutter और React Native द्वारा निर्मित हाई-परफॉर्मेंस iOS और Android ऐप्स।
 2. **वेब प्लेटफ़ॉर्म और SaaS डेवलपमेंट:** Next.js, React और Node.js आधारित स्केलेबल वेब ऐप्स, कस्टम पोर्टल्स और क्लाउड SaaS प्लेटफ़ॉर्म।
@@ -1489,8 +1508,8 @@ With a proven track record of 50+ delivered projects across FinTech, Healthcare,
 प्रत्येक प्रोजेक्ट में एंड-टू-एंड डिज़ाइन, इंजीनियरिंग, कठोर QA टेस्टिंग और 30 दिनों का निःशुल्क पोस्ट-लॉन्च सपोर्ट शामिल है।
 
 आप किस प्रकार का प्रोजेक्ट बनवाना चाहते हैं? कृपया अपनी आवश्यकताएं या अपना **नाम और फ़ोन नंबर (या WhatsApp)** साझा करें, हमारी तकनीकी टीम आपसे संपर्क करेगी!`
-        : lang === "hinglish"
-        ? `Emperor Smart Solutions (ESS) ek premier digital engineering aur enterprise AI development company hai. Hamari core services yeh hain:
+          : lang === "hinglish"
+            ? `Emperor Smart Solutions (ESS) ek premier digital engineering aur enterprise AI development company hai. Hamari core services yeh hain:
 
 1. **Custom Mobile App Development:** Flutter aur React Native par high-performance iOS aur Android apps.
 2. **Web Platforms & Enterprise SaaS:** Next.js, React, aur Node.js par scalable web applications, client portals aur SaaS platforms.
@@ -1501,7 +1520,7 @@ With a proven track record of 50+ delivered projects across FinTech, Healthcare,
 Har project mein end-to-end design, development, QA testing, aur 30 days ka free post-launch support included hota hai.
 
 Aap kis tarah ka digital project build karwana chahte hain? Apna idea ya **Name aur Phone/WhatsApp number** share karein, hamari team aapse jald hi connect karegi!`
-        : `Emperor Smart Solutions (ESS) is a full-cycle digital engineering and enterprise AI development company. Here are our core services:
+            : `Emperor Smart Solutions (ESS) is a full-cycle digital engineering and enterprise AI development company. Here are our core services:
 
 1. **Custom Mobile App Development:** High-performance iOS and Android applications built with Flutter and React Native.
 2. **Web Platforms & Enterprise SaaS:** Scalable web applications, customer portals, and cloud SaaS platforms using Next.js, React, Node.js, and modern backends.
@@ -1512,52 +1531,52 @@ Aap kis tarah ka digital project build karwana chahte hain? Apna idea ya **Name 
 Every project includes full turnkey execution: end-to-end design, development, rigorous QA testing, and 30 days of free post-launch support.
 
 What kind of digital project are you looking to build? Feel free to share your requirements or your **Name and Phone Number (or WhatsApp)**, and our technical team will prepare a tailored proposal for you!`;
-    } else if (isEssBot && isEssLeadershipQuery) {
-      if (/\b(?:karan|karan\s+makwana)\b/i.test(message) && !/\byash\b/i.test(message)) {
-        deterministicReply = lang === "hindi"
-          ? `करण मकवाना (Karan Makwana) Emperor Smart Solutions के सह-संस्थापक (Co-Founder) हैं। वे कंपनी के रणनीतिक विकास और तकनीकी पहलों का नेतृत्व करते हैं। आज हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`
-          : lang === "hinglish"
-          ? `Karan Makwana Emperor Smart Solutions ke Co-Founder hain. Woh company ke strategic growth aur technology initiatives lead karte hain. Aaj hum aapke digital project mein kaise help kar sakte hain?`
-          : `Karan Makwana is the Co-Founder of Emperor Smart Solutions. He leads strategic growth and technology initiatives at ESS. How can Emperor Smart Solutions assist you with your project today?`;
-      } else if (/\b(?:yash|yash\s+sharma)\b/i.test(message) && !/\bkaran\b/i.test(message)) {
-        deterministicReply = lang === "hindi"
-          ? `यश शर्मा (Yash Sharma) Emperor Smart Solutions के संस्थापक (Founder) हैं। वे एंटरप्राइज AI और कस्टम सॉफ्टवेयर इंजीनियरिंग का नेतृत्व करते हैं। आज हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`
-          : lang === "hinglish"
-          ? `Yash Sharma Emperor Smart Solutions ke Founder hain. Woh enterprise AI aur custom software engineering lead karte hain. Aaj hum aapke digital project mein kaise help kar sakte hain?`
-          : `Yash Sharma is the Founder of Emperor Smart Solutions. He leads custom engineering and enterprise AI initiatives at ESS. How can Emperor Smart Solutions assist you with your project today?`;
-      } else {
-        deterministicReply = lang === "hindi"
-          ? `Emperor Smart Solutions (ESS) के संस्थापक और नेतृत्व हैं:
+      } else if (isEssBot && isEssLeadershipQuery) {
+        if (/\b(?:karan|karan\s+makwana)\b/i.test(message) && !/\byash\b/i.test(message)) {
+          deterministicReply = lang === "hindi"
+            ? `करण मकवाना (Karan Makwana) Emperor Smart Solutions के सह-संस्थापक (Co-Founder) हैं। वे कंपनी के रणनीतिक विकास और तकनीकी पहलों का नेतृत्व करते हैं। आज हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`
+            : lang === "hinglish"
+              ? `Karan Makwana Emperor Smart Solutions ke Co-Founder hain. Woh company ke strategic growth aur technology initiatives lead karte hain. Aaj hum aapke digital project mein kaise help kar sakte hain?`
+              : `Karan Makwana is the Co-Founder of Emperor Smart Solutions. He leads strategic growth and technology initiatives at ESS. How can Emperor Smart Solutions assist you with your project today?`;
+        } else if (/\b(?:yash|yash\s+sharma)\b/i.test(message) && !/\bkaran\b/i.test(message)) {
+          deterministicReply = lang === "hindi"
+            ? `यश शर्मा (Yash Sharma) Emperor Smart Solutions के संस्थापक (Founder) हैं। वे एंटरप्राइज AI और कस्टम सॉफ्टवेयर इंजीनियरिंग का नेतृत्व करते हैं। आज हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`
+            : lang === "hinglish"
+              ? `Yash Sharma Emperor Smart Solutions ke Founder hain. Woh enterprise AI aur custom software engineering lead karte hain. Aaj hum aapke digital project mein kaise help kar sakte hain?`
+              : `Yash Sharma is the Founder of Emperor Smart Solutions. He leads custom engineering and enterprise AI initiatives at ESS. How can Emperor Smart Solutions assist you with your project today?`;
+        } else {
+          deterministicReply = lang === "hindi"
+            ? `Emperor Smart Solutions (ESS) के संस्थापक और नेतृत्व हैं:
 
 1. **Yash Sharma** — Founder (संस्थापक)
 2. **Karan Makwana** — Co-Founder (सह-संस्थापक)
 
 Emperor Smart Solutions एक प्रमुख कस्टम सॉफ्टवेयर इंजीनियरिंग और एंटरप्राइज AI डेवलपमेंट कंपनी है, जिसका मुख्यालय अहमदाबाद, गुजरात में स्थित है। आज हम आपके प्रोजेक्ट में किस प्रकार सहायता कर सकते हैं?`
-          : lang === "hinglish"
-          ? `Emperor Smart Solutions (ESS) ke founders aur leadership yeh hain:
+            : lang === "hinglish"
+              ? `Emperor Smart Solutions (ESS) ke founders aur leadership yeh hain:
 
 1. **Yash Sharma** — Founder
 2. **Karan Makwana** — Co-Founder
 
 Emperor Smart Solutions ek premier custom software engineering aur enterprise AI development company hai, jiska head office Ahmedabad, Gujarat mein hai. Aaj hum aapke digital project mein kaise help kar sakte hain?`
-          : `The founders and leadership of Emperor Smart Solutions (ESS) are:
+              : `The founders and leadership of Emperor Smart Solutions (ESS) are:
 
 1. **Yash Sharma** — Founder
 2. **Karan Makwana** — Co-Founder
 
 Emperor Smart Solutions is a premier custom software engineering and enterprise AI development company headquartered in Ahmedabad, Gujarat. How can we assist you with your project today?`;
-      }
-    } else if (isEssBot && /\b(?:guarantee\s+delivery|delivery\s+(?:within|in)?\s*(?:7|seven)\s*days?|7\s*day\s*(?:delivery|guarantee)|seven\s*day\s*(?:delivery|guarantee))\b/i.test(message)) {
-      deterministicReply = `Emperor Smart Solutions (ESS) does not guarantee delivery of every mobile app within seven days. Production-grade custom mobile and web applications require structured UI/UX architecture, end-to-end engineering, and rigorous QA testing, which typically takes between 2 to 6 weeks depending on requirements and milestones. We do not provide unrealistic 7-day guarantees, as quality, security, and scalability are our top priorities.
+        }
+      } else if (isEssBot && /\b(?:guarantee\s+delivery|delivery\s+(?:within|in)?\s*(?:7|seven)\s*days?|7\s*day\s*(?:delivery|guarantee)|seven\s*day\s*(?:delivery|guarantee))\b/i.test(message)) {
+        deterministicReply = `Emperor Smart Solutions (ESS) does not guarantee delivery of every mobile app within seven days. Production-grade custom mobile and web applications require structured UI/UX architecture, end-to-end engineering, and rigorous QA testing, which typically takes between 2 to 6 weeks depending on requirements and milestones. We do not provide unrealistic 7-day guarantees, as quality, security, and scalability are our top priorities.
 
 Would you like to discuss your project requirements and receive a realistic timeline? Feel free to share your **Name and Phone Number (or WhatsApp)** so our technical team can prepare a customized proposal!`;
-    } else if (
-      isEssBot &&
-      /\b(?:what\s+features|feature\s*list|tell\s+me\s+all\s+features|explain\s+all\s+features|clinic\s+features)\b/i.test(message) &&
-      /\b(?:clinic|hospital|doctor|healthcare|medical)\b/i.test(message)
-    ) {
-      quickReplies = ["Book a live demo", "Get formal quotation", "Tech stack"];
-      deterministicReply = `At Emperor Smart Solutions, we specialize in building custom, high-performance websites, patient portals, and digital healthcare platforms tailored specifically for clinics and healthcare providers! 🏥
+      } else if (
+        isEssBot &&
+        /\b(?:what\s+features|feature\s*list|tell\s+me\s+all\s+features|explain\s+all\s+features|clinic\s+features)\b/i.test(message) &&
+        /\b(?:clinic|hospital|doctor|healthcare|medical)\b/i.test(message)
+      ) {
+        quickReplies = ["Book a live demo", "Get formal quotation", "Tech stack"];
+        deterministicReply = `At Emperor Smart Solutions, we specialize in building custom, high-performance websites, patient portals, and digital healthcare platforms tailored specifically for clinics and healthcare providers! 🏥
 
 Here is what our software engineering team builds for your clinic:
 1. **Online Patient Appointment Booking:** Real-time doctor calendar scheduling, department filtering, and automated WhatsApp/SMS appointment confirmations.
@@ -1566,272 +1585,130 @@ Here is what our software engineering team builds for your clinic:
 4. **Modern, High-Speed Architecture:** Engineered on Next.js and React with PostgreSQL, ensuring sub-second page loads and top local patient Google SEO rankings.
 
 Our custom clinic website & MVP packages start from **₹50,000** (18% GST extra), which includes complete UI/UX design, full-stack engineering, QA testing, and 30 days of free post-launch support.`;
-    } else if (isCelebrityOrTriviaQuery) {
-      if (!isEssBot) {
-        deterministicReply = `I am the official AI assistant for ${businessName}. I specialize exclusively in verified business topics for ${businessName}. How can I assist you with ${businessName} today?`;
-      } else {
-        if (lang === "hindi") {
-          deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI बिजनेस कंसल्टेंट हूँ और केवल कस्टम सॉफ्टवेयर, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और AI समाधानों में सहायता करता हूँ। मैं व्यक्तिगत सलाह, सामान्य ज्ञान या गैर-व्यावसायिक विषयों पर चर्चा नहीं करता। क्या आपके पास कोई डिजिटल प्रोजेक्ट है जिस पर हम चर्चा कर सकते हैं?`;
-        } else if (lang === "hinglish") {
-          deterministicReply = `Main Emperor Smart Solutions ka official AI Business Consultant hoon aur sirf custom software, mobile apps, websites aur AI solutions mein help karta hoon. Main personal advice, entertainment ya non-business topics discuss nahi karta. Kya aap kisi digital project par kaam kar rahe hain?`;
+      } else if (isCelebrityOrTriviaQuery) {
+        if (!isEssBot) {
+          deterministicReply = `I am the official AI assistant for ${businessName}. I specialize exclusively in verified business topics for ${businessName}. How can I assist you with ${businessName} today?`;
         } else {
-          deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize exclusively in custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+          if (lang === "hindi") {
+            deterministicReply = `मैं Emperor Smart Solutions का आधिकारिक AI बिजनेस कंसल्टेंट हूँ और केवल कस्टम सॉफ्टवेयर, मोबाइल ऐप्स, वेब प्लेटफ़ॉर्म और AI समाधानों में सहायता करता हूँ। मैं व्यक्तिगत सलाह, सामान्य ज्ञान या गैर-व्यावसायिक विषयों पर चर्चा नहीं करता। क्या आपके पास कोई डिजिटल प्रोजेक्ट है जिस पर हम चर्चा कर सकते हैं?`;
+          } else if (lang === "hinglish") {
+            deterministicReply = `Main Emperor Smart Solutions ka official AI Business Consultant hoon aur sirf custom software, mobile apps, websites aur AI solutions mein help karta hoon. Main personal advice, entertainment ya non-business topics discuss nahi karta. Kya aap kisi digital project par kaam kar rahe hain?`;
+          } else {
+            deterministicReply = `I am the official AI Sales Consultant for Emperor Smart Solutions. I specialize exclusively in custom software engineering, mobile applications, web platforms, and enterprise AI solutions. I don't provide personal advice, relationship guidance, entertainment, or general trivia, but I'd be delighted to discuss how we can build or scale your digital project! Which solution are you planning to build?`;
+          }
+          quickReplies = ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"];
         }
-        quickReplies = ["Website Development", "Mobile Applications", "AI Chatbots & Automation", "Custom Business Software"];
-      }
-    } else if (isEssBot && isLowBudgetQuery) {
-      const askForLead = (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect")
-        ? (resolvedPhone ? "" : (
+      } else if (isEssBot && isLowBudgetQuery) {
+        const askForLead = (resolvedName && resolvedName !== "Website Visitor" && resolvedName !== "Website Prospect")
+          ? (resolvedPhone ? "" : (
             lang === "hindi"
               ? "\n\nक्या आप अपना **फ़ोन नंबर (या WhatsApp)** साझा कर सकते हैं ताकि हमारे तकनीकी विशेषज्ञ सीधे आपसे संपर्क कर सकें?"
               : lang === "hinglish"
-              ? "\n\nKya aap apna **Phone Number (ya WhatsApp)** share kar sakte hain taaki hamari technical team aapse directly connect kar sake?"
-              : "\n\nCould you please share your **Phone Number (or WhatsApp)** so our technical specialists can connect with you directly to explore your options?"
+                ? "\n\nKya aap apna **Phone Number (ya WhatsApp)** share kar sakte hain taaki hamari technical team aapse directly connect kar sake?"
+                : "\n\nCould you please share your **Phone Number (or WhatsApp)** so our technical specialists can connect with you directly to explore your options?"
           ))
-        : (
+          : (
             lang === "hindi"
               ? "\n\nक्या आप अपना **नाम और फ़ोन नंबर (या WhatsApp)** साझा कर सकते हैं ताकि हमारे तकनीकी विशेषज्ञ सीधे आपसे संपर्क कर सकें?"
               : lang === "hinglish"
-              ? "\n\nKya aap apna **Name aur Phone Number (ya WhatsApp)** share kar sakte hain taaki hamari technical team aapse directly connect kar sake?"
-              : "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical specialists can connect with you directly to explore your options?"
+                ? "\n\nKya aap apna **Name aur Phone Number (ya WhatsApp)** share kar sakte hain taaki hamari technical team aapse directly connect kar sake?"
+                : "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical specialists can connect with you directly to explore your options?"
           );
 
-      if (lang === "hindi") {
-        deterministicReply = `हम आपके बजट का पूरा सम्मान करते हैं! हालांकि हमारे पूर्ण-स्तरीय कस्टम सॉफ़्टवेयर और एप्लिकेशन व्यापक आर्किटेक्चर, UI/UX और गुणवत्ता इंजीनियरिंग सुनिश्चित करने के लिए आमतौर पर ₹50,000 से शुरू होते हैं, लेकिन हमें आपके प्रोजेक्ट के लक्ष्यों को समझने और एक हल्के MVP या चरणबद्ध रोडमैप पर चर्चा करने में खुशी होगी जो आपके बजट के अनुकूल हो!
+        if (lang === "hindi") {
+          deterministicReply = `हम आपके बजट का पूरा सम्मान करते हैं! हालांकि हमारे पूर्ण-स्तरीय कस्टम सॉफ़्टवेयर और एप्लिकेशन व्यापक आर्किटेक्चर, UI/UX और गुणवत्ता इंजीनियरिंग सुनिश्चित करने के लिए आमतौर पर ₹50,000 से शुरू होते हैं, लेकिन हमें आपके प्रोजेक्ट के लक्ष्यों को समझने और एक हल्के MVP या चरणबद्ध रोडमैप पर चर्चा करने में खुशी होगी जो आपके बजट के अनुकूल हो!
 
 हमारे आधिकारिक संपर्क विवरण:
 📞 **फ़ोन और WhatsApp:** +91 63591 20081
 📧 **ईमेल:** contact@emperorsmartsolutions.com
 🌐 **वेबसाइट:** https://emperorsmartsolutions.com${askForLead}`;
-      } else if (lang === "hinglish") {
-        deterministicReply = `Hum aapke budget ki poori respect karte hain! Halanki hamare custom software aur applications comprehensive architecture, UI/UX, aur quality engineering ensure karne ke liye normally ₹50,000 se start hote hain, par hum aapke goals ko samajhkar ek scoped MVP ya phased roadmap explore karne mein khush honge jo aapke budget mein fit ho sake!
+        } else if (lang === "hinglish") {
+          deterministicReply = `Hum aapke budget ki poori respect karte hain! Halanki hamare custom software aur applications comprehensive architecture, UI/UX, aur quality engineering ensure karne ke liye normally ₹50,000 se start hote hain, par hum aapke goals ko samajhkar ek scoped MVP ya phased roadmap explore karne mein khush honge jo aapke budget mein fit ho sake!
 
 Official contact details:
 📞 **Phone & WhatsApp:** +91 63591 20081
 📧 **Email:** contact@emperorsmartsolutions.com
 🌐 **Website:** https://emperorsmartsolutions.com${askForLead}`;
-      } else {
-        deterministicReply = `We completely respect your budget! While our full-scale custom software and bespoke applications typically start from ₹50,000 to cover comprehensive architecture, UI/UX, and quality engineering, we would be delighted to learn about your goals and explore a lightweight MVP, pre-built modules, or a phased roadmap that fits your budget!
+        } else {
+          deterministicReply = `We completely respect your budget! While our full-scale custom software and bespoke applications typically start from ₹50,000 to cover comprehensive architecture, UI/UX, and quality engineering, we would be delighted to learn about your goals and explore a lightweight MVP, pre-built modules, or a phased roadmap that fits your budget!
 
 Here are our official contact details to speak with our engineering leadership:
 📞 **Phone & WhatsApp:** +91 63591 20081
 📧 **Email:** contact@emperorsmartsolutions.com
 🌐 **Website:** https://emperorsmartsolutions.com${askForLead}`;
+        }
       }
-    }
 
-    // Consultative Adaptive Sales Flow Handler (ESS bots only)
-    if (!deterministicReply && isEssBot) {
-      const salesResult = handleSalesFlowTurn({
-        message,
-        existingQualification: existingConv?.qualification || activeQual,
-        sessionHistory,
-        lang,
-        visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "",
-        visitorPhone: resolvedPhone,
-        visitorEmail: resolvedEmail,
-      });
+      // Consultative Adaptive Sales Flow Handler (ESS bots only)
+      if (!deterministicReply && isEssBot) {
+        const salesResult = handleSalesFlowTurn({
+          message,
+          existingQualification: existingConv?.qualification || activeQual,
+          sessionHistory,
+          lang,
+          visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "",
+          visitorPhone: resolvedPhone,
+          visitorEmail: resolvedEmail,
+        });
 
-      if (salesResult.shouldHandle) {
-        deterministicReply = salesResult.reply;
-        quickReplies = salesResult.quickReplies || [];
-        if (salesResult.updatedQualification) {
-          const conv = conversationsStore.getConversation(currentSessionId);
-          if (conv) {
-            conversationsStore.updateConversation(currentSessionId, {
-              qualification: salesResult.updatedQualification,
-              visitorId: persistentVisitor?.id || conv.visitorId,
-              ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
-              ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
-              ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
-            });
-          } else {
-            conversationsStore.createConversation({
-              id: currentSessionId,
-              organizationId: bot.organizationId,
+        if (salesResult.shouldHandle) {
+          deterministicReply = salesResult.reply;
+          quickReplies = salesResult.quickReplies || [];
+          if (salesResult.updatedQualification) {
+            const conv = conversationsStore.getConversation(currentSessionId);
+            if (conv) {
+              conversationsStore.updateConversation(currentSessionId, {
+                qualification: salesResult.updatedQualification,
+                visitorId: persistentVisitor?.id || conv.visitorId,
+                ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
+                ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+                ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+              });
+            } else {
+              conversationsStore.createConversation({
+                id: currentSessionId,
+                organizationId: bot.organizationId,
+                visitorId: persistentVisitor?.id || null,
+                botId: bot?.id || botId,
+                botName: botName,
+                visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "Website Visitor",
+                visitorEmail: resolvedEmail || "",
+                visitorPhone: resolvedPhone || "",
+                qualification: salesResult.updatedQualification,
+                messages: [],
+              });
+            }
+
+            // Persist real-time qualification progress and every Yes/No answer to the Lead
+            const qAnswers = salesResult.updatedQualification.answers || {};
+            const inquirySummary = salesResult.leadDataToSave?.summary || formatQualificationInquiry(salesResult.updatedQualification);
+            leadsStore.createLead({
+              sessionId: currentSessionId,
               visitorId: persistentVisitor?.id || null,
               botId: bot?.id || botId,
-              botName: botName,
-              visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "Website Visitor",
-              visitorEmail: resolvedEmail || "",
-              visitorPhone: resolvedPhone || "",
+              organizationId: bot.organizationId,
+              name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
+              email: resolvedEmail || "",
+              phone: resolvedPhone || "",
+              company: bot?.company || "Direct Inbound",
+              bot: botName,
+              inquiry: inquirySummary,
+              budget: qAnswers.budget || "₹50,000+",
+              answers: qAnswers,
               qualification: salesResult.updatedQualification,
-              messages: [],
+              source: "Web Chatbot Widget",
             });
           }
-
-          // Persist real-time qualification progress and every Yes/No answer to the Lead
-          const qAnswers = salesResult.updatedQualification.answers || {};
-          const inquirySummary = salesResult.leadDataToSave?.summary || formatQualificationInquiry(salesResult.updatedQualification);
-          leadsStore.createLead({
-            sessionId: currentSessionId,
-            visitorId: persistentVisitor?.id || null,
-            botId: bot?.id || botId,
-            organizationId: bot.organizationId,
-            name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
-            email: resolvedEmail || "",
-            phone: resolvedPhone || "",
-            company: bot?.company || "Direct Inbound",
-            bot: botName,
-            inquiry: inquirySummary,
-            budget: qAnswers.budget || "₹50,000+",
-            answers: qAnswers,
-            qualification: salesResult.updatedQualification,
-            source: "Web Chatbot Widget",
-          });
         }
       }
-    }
 
-    // --- PHASE 3: REAL-TIME SSE STREAMING (if requested) ---
-    const isSseRequested =
-      Boolean(requestStream) ||
-      request.headers.get("accept")?.includes("text/event-stream");
+      // --- PHASE 3: REAL-TIME SSE STREAMING (if requested) ---
+      const isSseRequested =
+        Boolean(requestStream) ||
+        request.headers.get("accept")?.includes("text/event-stream");
 
-    if (isSseRequested) {
-      if (deterministicReply) {
-        conversationsStore.addMessage(
-          currentSessionId,
-          { role: "user", content: message },
-          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-        );
-        conversationsStore.addMessage(
-          currentSessionId,
-          {
-            role: "assistant",
-            content: deterministicReply,
-            quickReplies: quickReplies || [],
-          },
-          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-        );
-        if (resolvedName || resolvedPhone || resolvedEmail) {
-          conversationsStore.updateConversation(currentSessionId, {
-            ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
-            ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
-            ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
-            ...(resolvedPhone || resolvedEmail ? { isLead: true } : {}),
-          });
-        }
-        const hasActionableContact = Boolean(resolvedEmail || resolvedPhone);
-        if (hasActionableContact) {
-          const currentConv = conversationsStore.getConversation(currentSessionId);
-          const qual = currentConv?.qualification || activeQual;
-          const qualAnswers = qual?.answers || {};
-          const qualInquiry = qual ? formatQualificationInquiry(qual) : "";
-
-          const leadData = {
-            sessionId: currentSessionId,
-            visitorId: persistentVisitor?.id || null,
-            botId: bot.id,
-            organizationId: bot.organizationId,
-            name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
-            email: resolvedEmail,
-            phone: resolvedPhone,
-            company: bot?.company || "Direct Inbound",
-            bot: botName,
-            score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
-            inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
-            answers: qualAnswers,
-            qualification: qual,
-            budget: qualAnswers.budget || "₹50,000+",
-            source: "Web Chatbot Widget",
-          };
-          leadsStore.createLead(leadData);
-          triggerLeadWebhookAsync(bot, leadData);
-        }
-
-        let streamPayload = `data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`;
-        streamPayload += `data: ${JSON.stringify({ token: deterministicReply })}\n\n`;
-        if (quickReplies && quickReplies.length > 0) {
-          streamPayload += `data: ${JSON.stringify({ quickReplies })}\n\n`;
-        }
-        streamPayload += `data: [DONE]\n\n`;
-        return applyRateLimitHeaders(sseResponse(streamPayload, request), ipRateCheck.result);
-      }
-
-      const responseStream = new TransformStream();
-      const writer = responseStream.writable.getWriter();
-      const encoder = new TextEncoder();
-
-      // Emit session metadata immediately so widget locks on to active conversation
-      writer.write(encoder.encode(`data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`));
-
-      let accumulatedReply = "";
-
-      // Asynchronous streaming inference pipeline
-      (async () => {
-        try {
-          let preambleBuffer = "";
-          let preambleFlushed = false;
-          let isIntercepted = false;
-          const PREAMBLE_THRESHOLD = 180;
-
-          accumulatedReply = await executeChatInference({
-            messages: llmMessages,
-            temperature: 0.3,
-            num_predict: 512,
-            onToken: (token) => {
-              if (isIntercepted) return;
-              if (!preambleFlushed) {
-                preambleBuffer += token;
-                if (preambleBuffer.length >= PREAMBLE_THRESHOLD || preambleBuffer.includes("\n\n")) {
-                  const cleanedPreamble = validateOutput(preambleBuffer, businessName, lang, botName, resolvedName);
-                  if (cleanedPreamble !== preambleBuffer.trim() && (cleanedPreamble.includes("I don't provide") || cleanedPreamble.includes("At Emperor Smart Solutions"))) {
-                    isIntercepted = true;
-                    writer.write(encoder.encode(`data: ${JSON.stringify({ token: cleanedPreamble })}\n\n`));
-                    accumulatedReply = cleanedPreamble;
-                    preambleFlushed = true;
-                    return;
-                  }
-                  if (cleanedPreamble) {
-                    writer.write(encoder.encode(`data: ${JSON.stringify({ token: cleanedPreamble })}\n\n`));
-                  }
-                  preambleFlushed = true;
-                  preambleBuffer = "";
-                }
-              } else {
-                writer.write(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
-              }
-            },
-          });
-
-          let validated = "";
-          if (isIntercepted) {
-            validated = accumulatedReply;
-          } else {
-            if (!preambleFlushed && preambleBuffer) {
-              const cleanedPreamble = validateOutput(preambleBuffer, businessName, lang, botName, resolvedName);
-              if (cleanedPreamble) {
-                writer.write(encoder.encode(`data: ${JSON.stringify({ token: cleanedPreamble })}\n\n`));
-              }
-            }
-
-            // Post-validate output with resolvedName
-            validated = validateOutput(accumulatedReply, businessName, lang, botName, resolvedName);
-
-            const askedForContact = /(?:name|phone|whatsapp|contact number|email)/i.test(accumulatedReply) &&
-              /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(accumulatedReply);
-
-            if (!hasVisitorDetails && !askedForContact && !resolvedName) {
-              const leadAsk = isEssBot
-                ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
-                : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
-              if (leadAsk) {
-                writer.write(encoder.encode(`data: ${JSON.stringify({ token: leadAsk })}\n\n`));
-                validated += leadAsk;
-              }
-            }
-          }
-
-          // Concurrency check: If human takeover occurred mid-generation, discard AI reply
-          const convMidStream = conversationsStore.getConversation(currentSessionId);
-          if (convMidStream && (convMidStream.handlingMode === "HUMAN" || convMidStream.status === "HUMAN_ACTIVE")) {
-            console.log(`[PublicChat] Discarding streaming AI reply for ${currentSessionId}: Human takeover is active.`);
-            writer.close();
-            return;
-          }
-
-          // Save message to conversation store
+      if (isSseRequested) {
+        if (deterministicReply) {
           conversationsStore.addMessage(
             currentSessionId,
             { role: "user", content: message },
@@ -1839,10 +1716,13 @@ Here are our official contact details to speak with our engineering leadership:
           );
           conversationsStore.addMessage(
             currentSessionId,
-            { role: "assistant", content: validated },
+            {
+              role: "assistant",
+              content: deterministicReply,
+              quickReplies: quickReplies || [],
+            },
             { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
           );
-
           if (resolvedName || resolvedPhone || resolvedEmail) {
             conversationsStore.updateConversation(currentSessionId, {
               ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
@@ -1851,7 +1731,6 @@ Here are our official contact details to speak with our engineering leadership:
               ...(resolvedPhone || resolvedEmail ? { isLead: true } : {}),
             });
           }
-
           const hasActionableContact = Boolean(resolvedEmail || resolvedPhone);
           if (hasActionableContact) {
             const currentConv = conversationsStore.getConversation(currentSessionId);
@@ -1880,201 +1759,365 @@ Here are our official contact details to speak with our engineering leadership:
             triggerLeadWebhookAsync(bot, leadData);
           }
 
-          if (!quickReplies || quickReplies.length === 0) {
-            const replyLower = (accumulatedReply || "").toLowerCase();
-            const msgLower = (message || "").toLowerCase();
-            if (replyLower.includes("type of website") || replyLower.includes("create") || msgLower.includes("website") || msgLower.includes("web development")) {
-              quickReplies = ["Business website", "New website", "Revamp / Redesign", "E-commerce store", "Custom Web App"];
-            } else if (replyLower.includes("mobile app") || msgLower.includes("mobile") || msgLower.includes("android") || msgLower.includes("flutter")) {
-              quickReplies = ["New Mobile App", "Revamp Existing App", "Android & iOS (Flutter)", "Get Price Quote"];
-            } else if (replyLower.includes("ai chatbot") || msgLower.includes("chatbot") || msgLower.includes("ai")) {
-              quickReplies = ["Customer Support AI", "WhatsApp AI Bot", "Website RAG Bot", "Custom AI Solution"];
-            }
-          }
-
+          let streamPayload = `data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`;
+          streamPayload += `data: ${JSON.stringify({ token: deterministicReply })}\n\n`;
           if (quickReplies && quickReplies.length > 0) {
-            writer.write(encoder.encode(`data: ${JSON.stringify({ quickReplies })}\n\n`));
+            streamPayload += `data: ${JSON.stringify({ quickReplies })}\n\n`;
           }
-
-          writer.write(encoder.encode(`data: [DONE]\n\n`));
-        } catch (streamErr) {
-          writer.write(encoder.encode(`data: ${JSON.stringify({ token: " I'm ready to assist you. Please ask your question again!" })}\n\n`));
-          writer.write(encoder.encode(`data: [DONE]\n\n`));
-        } finally {
-          writer.close();
+          streamPayload += `data: [DONE]\n\n`;
+          return applyRateLimitHeaders(sseResponse(streamPayload, request), ipRateCheck.result);
         }
-      })();
 
-      return applyRateLimitHeaders(sseResponse(responseStream.readable, request), ipRateCheck.result);
-    }
+        const responseStream = new TransformStream();
+        const writer = responseStream.writable.getWriter();
+        const encoder = new TextEncoder();
 
-    // --- STANDARD JSON RESPONSE PIPELINE ---
-    let botReply = deterministicReply;
-    if (!botReply) {
-      botReply = await executeChatInference({
-        messages: llmMessages,
-        temperature: 0.3,
-        num_predict: payloadGuard.maxOutputTokens || 512,
-      });
+        // Emit session metadata immediately so widget locks on to active conversation
+        writer.write(encoder.encode(`data: ${JSON.stringify({ sessionId: currentSessionId, conversationId: currentSessionId })}\n\n`));
 
-      botReply = validateOutput(botReply, businessName, lang, botName, resolvedName);
+        let accumulatedReply = "";
 
-      const askedForContact = /(?:name|phone|whatsapp|contact number|email)/i.test(botReply) &&
-        /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(botReply);
+        // Asynchronous streaming inference pipeline
+        (async () => {
+          try {
+            let preambleBuffer = "";
+            let preambleFlushed = false;
+            let isIntercepted = false;
+            const PREAMBLE_THRESHOLD = 180;
 
-      if (!hasVisitorDetails && !askedForContact && !resolvedName) {
-        const leadAsk = isEssBot
-          ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
-          : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
-        if (leadAsk) {
-          botReply += leadAsk;
+            accumulatedReply = await executeChatInference({
+              messages: llmMessages,
+              temperature: 0.3,
+              num_predict: 512,
+              organizationId: bot.organizationId,
+              onToken: (token) => {
+                if (isIntercepted) return;
+                if (!preambleFlushed) {
+                  preambleBuffer += token;
+                  if (preambleBuffer.length >= PREAMBLE_THRESHOLD || preambleBuffer.includes("\n\n")) {
+                    const cleanedPreamble = validateOutput(preambleBuffer, businessName, lang, botName, resolvedName);
+                    if (cleanedPreamble !== preambleBuffer.trim() && (cleanedPreamble.includes("I don't provide") || cleanedPreamble.includes("At Emperor Smart Solutions"))) {
+                      isIntercepted = true;
+                      writer.write(encoder.encode(`data: ${JSON.stringify({ token: cleanedPreamble })}\n\n`));
+                      accumulatedReply = cleanedPreamble;
+                      preambleFlushed = true;
+                      return;
+                    }
+                    if (cleanedPreamble) {
+                      writer.write(encoder.encode(`data: ${JSON.stringify({ token: cleanedPreamble })}\n\n`));
+                    }
+                    preambleFlushed = true;
+                    preambleBuffer = "";
+                  }
+                } else {
+                  writer.write(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
+                }
+              },
+            });
+
+            let validated = "";
+            if (isIntercepted) {
+              validated = accumulatedReply;
+            } else {
+              if (!preambleFlushed && preambleBuffer) {
+                const cleanedPreamble = validateOutput(preambleBuffer, businessName, lang, botName, resolvedName);
+                if (cleanedPreamble) {
+                  writer.write(encoder.encode(`data: ${JSON.stringify({ token: cleanedPreamble })}\n\n`));
+                }
+              }
+
+              // Post-validate output with resolvedName
+              validated = validateOutput(accumulatedReply, businessName, lang, botName, resolvedName);
+
+              const askedForContact = /(?:name|phone|whatsapp|contact number|email)/i.test(accumulatedReply) &&
+                /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(accumulatedReply);
+
+              if (!hasVisitorDetails && !askedForContact && !resolvedName) {
+                const leadAsk = isEssBot
+                  ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
+                  : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
+                if (leadAsk) {
+                  writer.write(encoder.encode(`data: ${JSON.stringify({ token: leadAsk })}\n\n`));
+                  validated += leadAsk;
+                }
+              }
+            }
+
+            // Concurrency check: If human takeover occurred mid-generation, discard AI reply
+            const convMidStream = conversationsStore.getConversation(currentSessionId);
+            if (convMidStream && (convMidStream.handlingMode === "HUMAN" || convMidStream.status === "HUMAN_ACTIVE")) {
+              console.log(`[PublicChat] Discarding streaming AI reply for ${currentSessionId}: Human takeover is active.`);
+              writer.close();
+              return;
+            }
+
+            // Save message to conversation store
+            conversationsStore.addMessage(
+              currentSessionId,
+              { role: "user", content: message },
+              { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+            );
+            conversationsStore.addMessage(
+              currentSessionId,
+              { role: "assistant", content: validated },
+              { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+            );
+
+            if (resolvedName || resolvedPhone || resolvedEmail) {
+              conversationsStore.updateConversation(currentSessionId, {
+                ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
+                ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+                ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+                ...(resolvedPhone || resolvedEmail ? { isLead: true } : {}),
+              });
+            }
+
+            const hasActionableContact = Boolean(resolvedEmail || resolvedPhone);
+            if (hasActionableContact) {
+              const currentConv = conversationsStore.getConversation(currentSessionId);
+              const qual = currentConv?.qualification || activeQual;
+              const qualAnswers = qual?.answers || {};
+              const qualInquiry = qual ? formatQualificationInquiry(qual) : "";
+
+              const leadData = {
+                sessionId: currentSessionId,
+                visitorId: persistentVisitor?.id || null,
+                botId: bot.id,
+                organizationId: bot.organizationId,
+                name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
+                email: resolvedEmail,
+                phone: resolvedPhone,
+                company: bot?.company || "Direct Inbound",
+                bot: botName,
+                score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
+                inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
+                answers: qualAnswers,
+                qualification: qual,
+                budget: qualAnswers.budget || "₹50,000+",
+                source: "Web Chatbot Widget",
+              };
+              leadsStore.createLead(leadData);
+              triggerLeadWebhookAsync(bot, leadData);
+            }
+
+            if (!quickReplies || quickReplies.length === 0) {
+              const replyLower = (accumulatedReply || "").toLowerCase();
+              const msgLower = (message || "").toLowerCase();
+              if (replyLower.includes("type of website") || replyLower.includes("create") || msgLower.includes("website") || msgLower.includes("web development")) {
+                quickReplies = ["Business website", "New website", "Revamp / Redesign", "E-commerce store", "Custom Web App"];
+              } else if (replyLower.includes("mobile app") || msgLower.includes("mobile") || msgLower.includes("android") || msgLower.includes("flutter")) {
+                quickReplies = ["New Mobile App", "Revamp Existing App", "Android & iOS (Flutter)", "Get Price Quote"];
+              } else if (replyLower.includes("ai chatbot") || msgLower.includes("chatbot") || msgLower.includes("ai")) {
+                quickReplies = ["Customer Support AI", "WhatsApp AI Bot", "Website RAG Bot", "Custom AI Solution"];
+              }
+            }
+
+            if (quickReplies && quickReplies.length > 0) {
+              writer.write(encoder.encode(`data: ${JSON.stringify({ quickReplies })}\n\n`));
+            }
+
+            writer.write(encoder.encode(`data: [DONE]\n\n`));
+          } catch (streamErr) {
+            if (streamErr.code === "INFERENCE_QUEUE_TIMEOUT" || streamErr.code === "CONCURRENCY_LIMIT_REACHED") {
+              writer.write(encoder.encode(`data: ${JSON.stringify({ error: "AI assistant is at maximum capacity. Please retry shortly.", code: streamErr.code })}\n\n`));
+            } else {
+              writer.write(encoder.encode(`data: ${JSON.stringify({ token: " I'm ready to assist you. Please ask your question again!" })}\n\n`));
+            }
+            writer.write(encoder.encode(`data: [DONE]\n\n`));
+          } finally {
+            writer.close();
+          }
+        })();
+
+        return applyRateLimitHeaders(sseResponse(responseStream.readable, request), ipRateCheck.result);
+      }
+
+      // --- STANDARD JSON RESPONSE PIPELINE ---
+      let botReply = deterministicReply;
+      if (!botReply) {
+        botReply = await executeChatInference({
+          messages: llmMessages,
+          temperature: 0.3,
+          num_predict: payloadGuard.maxOutputTokens || 512,
+          organizationId: bot.organizationId,
+        });
+
+        botReply = validateOutput(botReply, businessName, lang, botName, resolvedName);
+
+        const askedForContact = /(?:name|phone|whatsapp|contact number|email)/i.test(botReply) &&
+          /(?:share|provide|tell|know|reach|call|give|leave|drop|connect|send)/i.test(botReply);
+
+        if (!hasVisitorDetails && !askedForContact && !resolvedName) {
+          const leadAsk = isEssBot
+            ? "\n\nCould you please share your **Name and Phone Number (or WhatsApp)** so our technical team can connect with you and prepare a customized proposal?"
+            : (bot?.collectLeads !== false ? `\n\nCould you please share your **Name and Contact details** so our team at ${businessName} can follow up with you?` : "");
+          if (leadAsk) {
+            botReply += leadAsk;
+          }
         }
       }
-    }
 
-    // Capture Lead: require email or phone before creating a CRM lead
-    const hasActionableContact = Boolean(resolvedEmail || resolvedPhone);
-    if (hasActionableContact) {
-      const currentConv = conversationsStore.getConversation(currentSessionId);
-      const qual = currentConv?.qualification || activeQual;
-      const qualAnswers = qual?.answers || {};
-      const qualInquiry = qual ? formatQualificationInquiry(qual) : "";
+      // Capture Lead: require email or phone before creating a CRM lead
+      const hasActionableContact = Boolean(resolvedEmail || resolvedPhone);
+      if (hasActionableContact) {
+        const currentConv = conversationsStore.getConversation(currentSessionId);
+        const qual = currentConv?.qualification || activeQual;
+        const qualAnswers = qual?.answers || {};
+        const qualInquiry = qual ? formatQualificationInquiry(qual) : "";
 
-      const leadData = {
-        sessionId: currentSessionId,
-        visitorId: persistentVisitor?.id || null,
-        botId: bot.id,
-        organizationId: bot.organizationId,
-        name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
-        email: resolvedEmail,
-        phone: resolvedPhone,
-        company: bot?.company || "Direct Inbound",
-        bot: botName,
-        score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
-        inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
-        answers: qualAnswers,
-        qualification: qual,
-        budget: qualAnswers.budget || "₹50,000+",
-        source: "Web Chatbot Widget",
-      };
-      leadsStore.createLead(leadData);
-      triggerLeadWebhookAsync(bot, leadData);
-    }
+        const leadData = {
+          sessionId: currentSessionId,
+          visitorId: persistentVisitor?.id || null,
+          botId: bot.id,
+          organizationId: bot.organizationId,
+          name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
+          email: resolvedEmail,
+          phone: resolvedPhone,
+          company: bot?.company || "Direct Inbound",
+          bot: botName,
+          score: (resolvedPhone && resolvedEmail) ? "Hot" : (leadDetails.score || "High"),
+          inquiry: qualInquiry || leadDetails.inquiry || "Inquired via live chat widget",
+          answers: qualAnswers,
+          qualification: qual,
+          budget: qualAnswers.budget || "₹50,000+",
+          source: "Web Chatbot Widget",
+        };
+        leadsStore.createLead(leadData);
+        triggerLeadWebhookAsync(bot, leadData);
+      }
 
-    // Store conversation
-    const reloadedConv = conversationsStore.getConversation(currentSessionId);
-    if (reloadedConv) {
-      conversationsStore.addMessage(
-        currentSessionId,
-        { role: "user", content: message },
-        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-      );
-
-      // Concurrency check: If human takeover occurred during inference, do not output AI assistant reply
-      if (reloadedConv.handlingMode === "HUMAN" || reloadedConv.status === "HUMAN_ACTIVE") {
-        console.log(`[PublicChat] Discarding non-streaming AI reply for ${currentSessionId}: Human takeover active.`);
-        return corsResponse(
-          NextResponse.json({
-            success: true,
-            humanActive: true,
-            reply: "",
-            assignedToName: reloadedConv.assignedToName || "Support Agent",
-            sessionId: currentSessionId,
-            visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
-          }),
-          request
+      // Store conversation
+      const reloadedConv = conversationsStore.getConversation(currentSessionId);
+      if (reloadedConv) {
+        conversationsStore.addMessage(
+          currentSessionId,
+          { role: "user", content: message },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
         );
-      }
 
-      conversationsStore.addMessage(
-        currentSessionId,
-        {
-          role: "assistant",
-          content: botReply,
-        },
-        { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
-      );
-      if (resolvedName || resolvedPhone || resolvedEmail || persistentVisitor?.id) {
-        conversationsStore.updateConversation(currentSessionId, {
-          ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
-          ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
-          ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
-          ...(persistentVisitor?.id ? { visitorId: persistentVisitor.id } : {}),
-          ...(resolvedPhone || resolvedEmail ? { isLead: true } : {}),
+        // Concurrency check: If human takeover occurred during inference, do not output AI assistant reply
+        if (reloadedConv.handlingMode === "HUMAN" || reloadedConv.status === "HUMAN_ACTIVE") {
+          console.log(`[PublicChat] Discarding non-streaming AI reply for ${currentSessionId}: Human takeover active.`);
+          return corsResponse(
+            NextResponse.json({
+              success: true,
+              humanActive: true,
+              reply: "",
+              assignedToName: reloadedConv.assignedToName || "Support Agent",
+              sessionId: currentSessionId,
+              visitorToken: isNewVisitorTokenIssued ? rawTokenToSet : undefined,
+            }),
+            request
+          );
+        }
+
+        conversationsStore.addMessage(
+          currentSessionId,
+          {
+            role: "assistant",
+            content: botReply,
+          },
+          { botId: bot.id, botName, organizationId: bot.organizationId, visitorId: persistentVisitor?.id }
+        );
+        if (resolvedName || resolvedPhone || resolvedEmail || persistentVisitor?.id) {
+          conversationsStore.updateConversation(currentSessionId, {
+            ...(!isPlaceholderName(resolvedName) ? { visitorName: resolvedName } : {}),
+            ...(resolvedPhone ? { visitorPhone: resolvedPhone } : {}),
+            ...(resolvedEmail ? { visitorEmail: resolvedEmail } : {}),
+            ...(persistentVisitor?.id ? { visitorId: persistentVisitor.id } : {}),
+            ...(resolvedPhone || resolvedEmail ? { isLead: true } : {}),
+          });
+        }
+      } else {
+        conversationsStore.createConversation({
+          id: currentSessionId,
+          organizationId: bot.organizationId,
+          visitorId: persistentVisitor?.id || null,
+          botId: bot.id,
+          botName: botName,
+          visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "Website Visitor",
+          visitorEmail: resolvedEmail,
+          visitorPhone: resolvedPhone,
+          isLead: Boolean(leadDetails.hasLeadData || resolvedEmail || resolvedPhone),
+          lastMessage: message,
+          messages: [
+            { role: "user", content: message, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
+            { role: "assistant", content: botReply, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
+          ],
         });
       }
-    } else {
-      conversationsStore.createConversation({
-        id: currentSessionId,
-        organizationId: bot.organizationId,
-        visitorId: persistentVisitor?.id || null,
-        botId: bot.id,
-        botName: botName,
-        visitorName: (!isPlaceholderName(resolvedName)) ? resolvedName : "Website Visitor",
-        visitorEmail: resolvedEmail,
-        visitorPhone: resolvedPhone,
-        isLead: Boolean(leadDetails.hasLeadData || resolvedEmail || resolvedPhone),
-        lastMessage: message,
-        messages: [
-          { role: "user", content: message, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
-          { role: "assistant", content: botReply, timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) },
-        ],
-      });
-    }
 
-    if (!quickReplies || quickReplies.length === 0) {
-      const replyLower = (botReply || "").toLowerCase();
-      const msgLower = (message || "").toLowerCase();
-      if (replyLower.includes("type of website") || replyLower.includes("create") || msgLower.includes("website") || msgLower.includes("web development")) {
-        quickReplies = ["Business website", "New website", "Revamp / Redesign", "E-commerce store", "Custom Web App"];
-      } else if (replyLower.includes("mobile app") || msgLower.includes("mobile") || msgLower.includes("android") || msgLower.includes("flutter")) {
-        quickReplies = ["New Mobile App", "Revamp Existing App", "Android & iOS (Flutter)", "Get Price Quote"];
-      } else if (replyLower.includes("ai chatbot") || msgLower.includes("chatbot") || msgLower.includes("ai")) {
-        quickReplies = ["Customer Support AI", "WhatsApp AI Bot", "Website RAG Bot", "Custom AI Solution"];
+      if (!quickReplies || quickReplies.length === 0) {
+        const replyLower = (botReply || "").toLowerCase();
+        const msgLower = (message || "").toLowerCase();
+        if (replyLower.includes("type of website") || replyLower.includes("create") || msgLower.includes("website") || msgLower.includes("web development")) {
+          quickReplies = ["Business website", "New website", "Revamp / Redesign", "E-commerce store", "Custom Web App"];
+        } else if (replyLower.includes("mobile app") || msgLower.includes("mobile") || msgLower.includes("android") || msgLower.includes("flutter")) {
+          quickReplies = ["New Mobile App", "Revamp Existing App", "Android & iOS (Flutter)", "Get Price Quote"];
+        } else if (replyLower.includes("ai chatbot") || msgLower.includes("chatbot") || msgLower.includes("ai")) {
+          quickReplies = ["Customer Support AI", "WhatsApp AI Bot", "Website RAG Bot", "Custom AI Solution"];
+        }
+      }
+
+      const finalRes = applyRateLimitHeaders(
+        corsResponse(
+          NextResponse.json({
+            success: true,
+            reply: botReply,
+            quickReplies: quickReplies || [],
+            sources: relevantChunks.map((c) => c.pageTitle || c.pageUrl).filter(Boolean),
+            sessionId: currentSessionId,
+          }),
+          request
+        ),
+        ipRateCheck.result
+      );
+
+      if (isNewVisitorTokenIssued && rawTokenToSet) {
+        setVisitorCookie(finalRes, bot.id, rawTokenToSet);
+      }
+
+      // Reconcile actual token consumption
+      await aiTokenGuard.reconcileActualTokens({
+        reservationId: tokenReserve.reservationId,
+        organizationId: bot.organizationId,
+        botId: bot.id,
+        conversationId: currentSessionId,
+        promptTokens: estTokens,
+        completionTokens: aiTokenGuard.estimateTokens(botReply),
+      });
+
+      return finalRes;
+    } catch (innerErr) {
+      await aiTokenGuard.cancelReservation(tokenReserve?.reservationId);
+      throw innerErr;
+    } finally {
+      if (generationLocks?.lockTokens) {
+        await releaseGenerationLocks(generationLocks.lockTokens);
       }
     }
-
-    const finalRes = applyRateLimitHeaders(
-      corsResponse(
-        NextResponse.json({
-          success: true,
-          reply: botReply,
-          quickReplies: quickReplies || [],
-          sources: relevantChunks.map((c) => c.pageTitle || c.pageUrl).filter(Boolean),
-          sessionId: currentSessionId,
-        }),
+  } catch (err) {
+    if (err.code === "INFERENCE_QUEUE_TIMEOUT") {
+      return corsResponse(
+        NextResponse.json(
+          { success: false, error: "AI assistant queue capacity reached. Please retry shortly.", code: "INFERENCE_QUEUE_TIMEOUT" },
+          { status: 503, headers: { "Retry-After": String(err.retryAfterSec || 5) } }
+        ),
         request
-      ),
-      ipRateCheck.result
+      );
+    }
+    if (err.code === "CONCURRENCY_LIMIT_REACHED") {
+      return corsResponse(
+        NextResponse.json(
+          { success: false, error: err.message || "Concurrent capacity reached. Please retry shortly.", code: "CONCURRENCY_LIMIT_REACHED" },
+          { status: 429, headers: { "Retry-After": String(err.retryAfterSec || 5) } }
+        ),
+        request
+      );
+    }
+    return corsResponse(
+      NextResponse.json({ success: false, error: err.message }, { status: 500 }),
+      request
     );
-
-    if (isNewVisitorTokenIssued && rawTokenToSet) {
-      setVisitorCookie(finalRes, bot.id, rawTokenToSet);
-    }
-
-    // Reconcile actual token consumption
-    await aiTokenGuard.reconcileActualTokens({
-      reservationId: tokenReserve.reservationId,
-      organizationId: bot.organizationId,
-      botId: bot.id,
-      conversationId: currentSessionId,
-      promptTokens: estTokens,
-      completionTokens: aiTokenGuard.estimateTokens(botReply),
-    });
-
-    return finalRes;
-  } catch (innerErr) {
-    await aiTokenGuard.cancelReservation(tokenReserve?.reservationId);
-    throw innerErr;
-  } finally {
-    if (generationLocks?.lockTokens) {
-      await releaseGenerationLocks(generationLocks.lockTokens);
-    }
   }
-} catch (err) {
-  return corsResponse(
-    NextResponse.json({ success: false, error: err.message }, { status: 500 }),
-    request
-  );
-}
 }

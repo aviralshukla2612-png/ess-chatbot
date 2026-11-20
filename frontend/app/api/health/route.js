@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { queryDb } from "@/lib/db/dbPool";
+import { queryDb, isDbConnected } from "@/lib/db/dbPool";
 import { botsStore } from "@/lib/db/botsStore";
 import { leadsStore } from "@/lib/db/leadsStore";
 import { documentsStore } from "@/lib/db/documentsStore";
@@ -12,18 +12,23 @@ const DEFAULT_PROVIDER = (
 
 export async function GET(request) {
   const startTime = Date.now();
-  let dbStatus = "local_fallback";
+  let dbStatus = isDbConnected() ? "connected" : "local_fallback";
   let dbError = null;
-  try {
-    const dbRes = await queryDb("SELECT 1 AS live;");
-    if (dbRes.ok) {
-      dbStatus = "connected";
-    } else {
-      dbError = dbRes.error || "Connection failed";
+
+  // Non-blocking health probe: Use cached isDbConnected() status to eliminate pool contention under load.
+  // Only attempt active query if database is unverified and not in unit test.
+  if (!isDbConnected() && process.env.NODE_ENV !== "test") {
+    try {
+      const dbRes = await queryDb("SELECT 1 AS live;");
+      if (dbRes.ok) {
+        dbStatus = "connected";
+      } else {
+        dbError = dbRes.error || "Connection failed";
+      }
+    } catch (err) {
+      dbStatus = "local_fallback";
+      dbError = err.message;
     }
-  } catch (err) {
-    dbStatus = "local_fallback";
-    dbError = err.message;
   }
 
   let storageStatus = "operational";

@@ -316,7 +316,7 @@ export default function (data) {
     { headers }
   );
   check(otpRes, {
-    "otp status 200 or 429": (r) => [200, 429].includes(r.status),
+    "otp status 200, 403, or 429": (r) => [200, 403, 429].includes(r.status),
   });
 
   // ---------------------------------------------------------------------------

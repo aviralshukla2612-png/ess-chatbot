@@ -40,14 +40,40 @@ function loadFromDisk() {
   }
 }
 
+let saveTimeout = null;
+let pendingSaveData = null;
+
 function saveToDisk(data) {
-  try {
-    memoryCache = data;
-    const dir = path.dirname(DATA_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
-  } catch (err) {
-    console.error("Error saving visitors store:", err);
+  memoryCache = data;
+  if (process.env.NODE_ENV === "test") {
+    try {
+      const dir = path.dirname(DATA_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(DATA_FILE, JSON.stringify(data), "utf8");
+    } catch (err) {
+      console.error("Error saving visitors store:", err);
+    }
+    return;
+  }
+
+  pendingSaveData = data;
+  if (saveTimeout) return;
+  saveTimeout = setTimeout(() => {
+    saveTimeout = null;
+    const toWrite = pendingSaveData;
+    if (!toWrite) return;
+    try {
+      const dir = path.dirname(DATA_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.promises.writeFile(DATA_FILE, JSON.stringify(toWrite), "utf8").catch((err) => {
+        console.error("Error saving visitors store asynchronously:", err);
+      });
+    } catch (err) {
+      console.error("Error in scheduled visitor save:", err);
+    }
+  }, 100);
+  if (typeof saveTimeout.unref === "function") {
+    saveTimeout.unref();
   }
 }
 
@@ -84,6 +110,11 @@ export const visitorsStore = {
 
   async getVisitorByTokenAsync(botId, rawToken) {
     if (!botId || !rawToken) return null;
+
+    // Fast path: In-memory cache lookup (sub-millisecond)
+    const cached = this.getVisitorByToken(botId, rawToken);
+    if (cached) return cached;
+
     const tokenHash = hashVisitorToken(rawToken);
 
     try {
@@ -98,7 +129,7 @@ export const visitorsStore = {
       // Fall through to file store
     }
 
-    return this.getVisitorByToken(botId, rawToken);
+    return null;
   },
 
   getVisitorById(id, organizationId = null) {

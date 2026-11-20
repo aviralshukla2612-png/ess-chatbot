@@ -292,6 +292,33 @@ export async function acquireGenerationLocks({
 }
 
 /**
+ * Acquire only the workspace-level concurrent AI inference lock.
+ * Enforces per-tenant capacity during active inference without blocking queued turns.
+ */
+export async function acquireWorkspaceLock({ organizationId, maxWorkspaceConcurrent = 10, ttlMs = 45000 }) {
+  if (!organizationId || organizationId === "org_ess_default") {
+    return { ok: true, lockTokens: [] };
+  }
+  const orgLock = await acquireConcurrencyLock({
+    key: `gen:org:${organizationId}`,
+    maxConcurrent: maxWorkspaceConcurrent,
+    ttlMs,
+  });
+  if (!orgLock.ok) {
+    return {
+      ok: false,
+      error: "Workspace concurrent AI capacity reached. Please try again shortly.",
+      retryAfterSec: orgLock.retryAfterSec || 5,
+      level: "workspace",
+    };
+  }
+  return {
+    ok: true,
+    lockTokens: [{ key: `gen:org:${organizationId}`, lockId: orgLock.lockId }],
+  };
+}
+
+/**
  * Release all generation locks held by a request (call inside finally block).
  * @param {Array<{ key: string, lockId: string }>} lockTokens
  */
