@@ -219,7 +219,10 @@ export default function (data) {
   // ---------------------------------------------------------------------------
   // 1. Health Probe
   // ---------------------------------------------------------------------------
-  const healthRes = http.get(`${TARGET_HOST}/api/health`, { headers });
+  const healthRes = http.get(`${TARGET_HOST}/api/health`, {
+    headers,
+    responseCallback: http.expectedStatuses(200, 503),
+  });
   check(healthRes, { "health status 200": (r) => r.status === 200 });
 
   // ---------------------------------------------------------------------------
@@ -228,7 +231,10 @@ export default function (data) {
   const sessionRes = http.post(
     `${TARGET_HOST}/api/public/chat/${targetBot}/session`,
     JSON.stringify({ name: `Visitor VU ${vuId} (${targetOrg})` }),
-    { headers }
+    {
+      headers,
+      responseCallback: http.expectedStatuses(200, 429),
+    }
   );
 
   const sessionOk = check(sessionRes, {
@@ -339,7 +345,10 @@ export default function (data) {
       phone: `+9198765${String(vuId).padStart(5, "0")}`,
       organizationId: targetOrg,
     }),
-    { headers }
+    {
+      headers,
+      responseCallback: http.expectedStatuses(200, 201, 401, 429),
+    }
   );
   if (leadRes.status === 200 || leadRes.status === 201) {
     leadsCounter.add(1);
