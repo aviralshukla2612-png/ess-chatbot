@@ -230,23 +230,36 @@ describe("Stage 3 Safety Watchdog Circuit Breaker Simulation Suite", () => {
     });
   });
 
-  // H. Precision Process Termination Matching
+  // H. Precision Process Termination Matching (Strict PID File Tracking)
   describe("H. Precision Process Termination Matching", () => {
-    function matchesTargetedProcess(cmdLine) {
-      const TARGET_PATTERNS = [/k6 run/i, /sseConcurrencyClient/i, /multiTenantConcurrency/i, /tests\/load\//i];
-      return TARGET_PATTERNS.some((p) => p.test(cmdLine));
+    function resolveTerminationTarget(pidFileContent, envPid) {
+      if (pidFileContent && pidFileContent.trim().length > 0) {
+        const parsed = parseInt(pidFileContent.trim(), 10);
+        if (Number.isFinite(parsed) && parsed > 0) return { targetPid: parsed, source: "pid_file" };
+      }
+      if (envPid) {
+        const parsed = parseInt(envPid, 10);
+        if (Number.isFinite(parsed) && parsed > 0) return { targetPid: parsed, source: "env" };
+      }
+      return { targetPid: null, source: "none" };
     }
 
-    test("Accurately identifies load testing processes", () => {
-      assert.equal(matchesTargetedProcess("k6 run tests/load/k6_scenarios.js"), true);
-      assert.equal(matchesTargetedProcess("node tests/load/sseConcurrencyTest.js"), true);
+    test("Accurately resolves runner PID from pid file", () => {
+      const res = resolveTerminationTarget("41924\n", null);
+      assert.equal(res.targetPid, 41924);
+      assert.equal(res.source, "pid_file");
     });
 
-    test("Never matches neighboring application processes", () => {
-      assert.equal(matchesTargetedProcess("node /opt/convoza/server.js"), false);
-      assert.equal(matchesTargetedProcess("mongod --config /etc/mongod.conf"), false);
-      assert.equal(matchesTargetedProcess("python3 /var/www/admafia/manage.py"), false);
-      assert.equal(matchesTargetedProcess("postgres -D /var/lib/postgresql/data"), false);
+    test("Falls back to env PID when pid file is absent", () => {
+      const res = resolveTerminationTarget("", "58210");
+      assert.equal(res.targetPid, 58210);
+      assert.equal(res.source, "env");
+    });
+
+    test("Rejects broad or non-numeric process targets", () => {
+      const res = resolveTerminationTarget("invalid_string", "");
+      assert.equal(res.targetPid, null);
+      assert.equal(res.source, "none");
     });
   });
 });

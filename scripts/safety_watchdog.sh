@@ -19,6 +19,7 @@ set -u
 AUDIT_LOG="${WATCHDOG_LOG_FILE:-./stage3_watchdog_audit.log}"
 ERROR_LOG="${TEST_ERROR_LOG:-/tmp/stage3_test_errors.log}"
 HEARTBEAT_FILE="${WATCHDOG_HEARTBEAT_FILE:-/tmp/watchdog_heartbeat.json}"
+RUNNER_PID_FILE="${TEST_RUNNER_PID_FILE:-/tmp/stage3_test_runner.pid}"
 TARGET_PG_CONTAINER="${TARGET_PG_CONTAINER:-ess-postgres-staging}"
 TARGET_PG_DB="${TARGET_PG_DB:-ess_chatbot_staging}"
 TARGET_REDIS_CONTAINER="${TARGET_REDIS_CONTAINER:-ess-redis-staging}"
@@ -68,6 +69,7 @@ write_heartbeat() {
   "timestamp": ${now_ts},
   "iso": "${now_iso}",
   "hostname": "${hostname_val}",
+  "pid": $$,
   "status": "${status}",
   "reason": "${reason}",
   "high_cpu_streak": ${HIGH_CPU_STREAK},
@@ -91,20 +93,32 @@ log_event() {
   echo "[$timestamp] [$level] [$trigger] $message" | tee -a "$AUDIT_LOG"
 }
 
-# Precision test runner process termination (avoids broad pkill that could hit neighbors)
+# Precision test runner process termination
+# STRICT SRE RULE: Zero broad 'pkill -f' commands. Only targets exact PID / PGID from RUNNER_PID_FILE.
 terminate_test_runners() {
-  log_event "ALERT" "PROCESS_TERMINATION" "Executing precision shutdown of active benchmark runners..."
-  if [ -n "${TEST_RUNNER_PID:-}" ] && kill -0 "$TEST_RUNNER_PID" 2>/dev/null; then
-    log_event "INFO" "PROCESS_TERMINATION" "Terminating target test runner PID: $TEST_RUNNER_PID"
-    kill -TERM "$TEST_RUNNER_PID" 2>/dev/null || true
-    sleep 1
-    kill -KILL "$TEST_RUNNER_PID" 2>/dev/null || true
+  log_event "ALERT" "PROCESS_TERMINATION" "Executing precision shutdown of active benchmark runner..."
+  local target_pid=""
+
+  if [ -f "$RUNNER_PID_FILE" ]; then
+    target_pid=$(cat "$RUNNER_PID_FILE" 2>/dev/null || echo "")
+  elif [ -n "${TEST_RUNNER_PID:-}" ]; then
+    target_pid="$TEST_RUNNER_PID"
   fi
-  pkill -f "k6 run" 2>/dev/null || true
-  pkill -f "sseConcurrencyClient" 2>/dev/null || true
-  pkill -f "multiTenantConcurrency" 2>/dev/null || true
-  pkill -f "level3StressRunner" 2>/dev/null || true
-  pkill -f "tests/load/" 2>/dev/null || true
+
+  if [ -n "$target_pid" ] && kill -0 "$target_pid" 2>/dev/null; then
+    log_event "INFO" "PROCESS_TERMINATION" "Terminating target test runner process group / PID: $target_pid"
+    # Attempt graceful shutdown of process group first, fallback to individual PID
+    kill -TERM -"$target_pid" 2>/dev/null || kill -TERM "$target_pid" 2>/dev/null || true
+    sleep 1
+    # Force kill if still active
+    if kill -0 "$target_pid" 2>/dev/null; then
+      kill -KILL -"$target_pid" 2>/dev/null || kill -KILL "$target_pid" 2>/dev/null || true
+    fi
+    rm -f "$RUNNER_PID_FILE" 2>/dev/null || true
+    log_event "INFO" "PROCESS_TERMINATION" "Target runner process $target_pid terminated successfully."
+  else
+    log_event "WARN" "PROCESS_TERMINATION" "No active test runner process found for PID: '${target_pid}'."
+  fi
 }
 
 # Circuit Breaker Trigger Function

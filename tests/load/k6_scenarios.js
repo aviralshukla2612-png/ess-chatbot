@@ -86,12 +86,20 @@ export const options = {
 export function setup() {
   console.log(`[SETUP] Initializing load test against target: ${TARGET_HOST}`);
 
+  // Hard anti-workstation fallback barrier
+  if (__ENV.OS === "Windows_NT" && !__ENV.ALLOW_LOCAL_DRY_RUN) {
+    throw new Error(
+      "[SAFETY_BARRIER_HALT] Load test execution is strictly forbidden on local Windows workstation. " +
+      "Must execute on target Contabo VPS (Ubuntu 24.04). Set ALLOW_LOCAL_DRY_RUN=1 only for offline syntax checks."
+    );
+  }
+
   // 1. Health Probe
   const healthRes = http.get(`${TARGET_HOST}/api/health`, { timeout: "5s" });
   if (healthRes.status !== 200) {
     throw new Error(`[SETUP_ABORT] Target ${TARGET_HOST} health check failed with status ${healthRes.status}. Staging stack is not running!`);
   }
-  console.log(`[SETUP] Health check passed: ${healthRes.body}`);
+  console.log(`[SETUP] Staging health check passed: ${healthRes.body}`);
 
   return {
     targetHost: TARGET_HOST,
@@ -228,20 +236,47 @@ export default function (data) {
   }
 
   // ---------------------------------------------------------------------------
-  // 7. Adversarial Cross-Tenant Security Probe
+  // 7. Adversarial Cross-Tenant Security Probe (Multi-Vector Tenant Isolation)
   // ---------------------------------------------------------------------------
-  // Alpha VU attempts to query opposing bot session
+  const probeHeaders = {
+    ...headers,
+    "x-visitor-token": visitorToken,
+  };
+
+  // Vector A: Alpha VU attempts to query opposing bot session presenting target visitorToken
   const probeRes = http.get(
-    `${TARGET_HOST}/api/public/chat/${opposingBot}/session?visitorToken=${visitorToken}`,
-    { headers }
+    `${TARGET_HOST}/api/public/chat/${opposingBot}/session`,
+    { headers: probeHeaders }
   );
 
-  // Opposing bot MUST NOT return this visitor's conversation
+  // Opposing bot session lookup MUST NOT return the conversationId of targetOrg
   if (probeRes.status === 200) {
     try {
       const probeBody = JSON.parse(probeRes.body);
       if (probeBody.conversationId === conversationId) {
         console.error(`[CRITICAL SECURITY LEAK] Visitor from ${targetOrg} accessed conversation in ${opposingOrg}!`);
+        securityLeakCounter.add(1);
+      }
+    } catch {}
+  }
+
+  // Vector B: Adversarial chat injection to opposing bot presenting target conversationId
+  const crossChatRes = http.post(
+    `${TARGET_HOST}/api/public/chat/${opposingBot}`,
+    JSON.stringify({
+      message: "Adversarial cross-tenant intrusion probe",
+      conversationId: conversationId,
+      visitorToken: visitorToken,
+    }),
+    { headers: probeHeaders }
+  );
+
+  // Opposing bot MUST NOT attach conversation or leak data
+  if (crossChatRes.status === 200) {
+    try {
+      const crossBody = JSON.parse(crossChatRes.body);
+      if (crossBody.conversationId === conversationId && crossBody.organizationId === targetOrg) {
+        console.error(`[CRITICAL SECURITY LEAK] Opposing bot ${opposingBot} attached turn to ${targetOrg} conversation!`);
         securityLeakCounter.add(1);
       }
     } catch {}
