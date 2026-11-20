@@ -179,7 +179,7 @@ export const conversationsStore = {
     return list.find((c) => {
       if (c.id !== id) return false;
       if (!organizationId) return true;
-      const cOrg = c.organizationId || "org_ess_default";
+      const cOrg = c.organizationId;
       return cOrg === organizationId;
     }) || null;
   },

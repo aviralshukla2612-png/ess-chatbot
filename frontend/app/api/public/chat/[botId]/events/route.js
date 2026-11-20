@@ -2,6 +2,7 @@ import { botsStore } from "@/lib/db/botsStore";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 import { visitorsStore } from "@/lib/db/visitorsStore";
 import { sseBroker } from "@/lib/db/sseBroker";
+import { sseTicketStore } from "@/lib/security/sseTicketStore";
 import { checkDomainAuthorization } from "@/lib/security/domainGuard";
 import { extractClientIp, enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
@@ -85,31 +86,42 @@ export async function GET(request, { params }) {
     return jsonError("Valid conversationId is required", 400, request);
   }
 
+  // Strict visitor authentication first: resolve via single-use ticket or authenticated credential (SEC-02)
+  const ticket = searchParams.get("ticket");
+  let resolvedVisitorId = null;
+
+  if (ticket) {
+    const consumed = await sseTicketStore.consumeTicket(bot.id, ticket);
+    if (!consumed) {
+      return jsonError("Invalid or expired exchange ticket", 403, request);
+    }
+    resolvedVisitorId = consumed.visitorId;
+  } else {
+    const token = extractVisitorToken(request, bot.id);
+    if (!token) {
+      return jsonError("Visitor token is required to access conversation events", 403, request);
+    }
+    const visitor =
+      (await visitorsStore.getVisitorByTokenAsync(bot.id, token)) ||
+      visitorsStore.getVisitorByToken(bot.id, token);
+    if (!visitor) {
+      return jsonError("Invalid or expired visitor token", 403, request);
+    }
+    resolvedVisitorId = visitor.id;
+  }
+
   // Verify conversation exists and belongs to this bot (SEC-02 / SEC-15)
   const conv = conversationsStore.getConversation(conversationId);
   if (!conv || (conv.botId && conv.botId !== bot.id)) {
     return jsonError("Conversation not found for this chatbot", 404, request);
   }
 
-  // Strict visitor token enforcement: reject missing, invalid, or mismatched tokens (SEC-02)
-  const token = extractVisitorToken(request, bot.id);
-  if (!token) {
-    return jsonError("Visitor token is required to access conversation events", 403, request);
-  }
-
-  const visitor =
-    (await visitorsStore.getVisitorByTokenAsync(bot.id, token)) ||
-    visitorsStore.getVisitorByToken(bot.id, token);
-  if (!visitor) {
-    return jsonError("Invalid or expired visitor token", 403, request);
-  }
-
-  if (conv.visitorId && visitor.id !== conv.visitorId) {
+  if (conv.visitorId && resolvedVisitorId !== conv.visitorId) {
     return jsonError("Unauthorized visitor token for conversation", 403, request);
   }
 
   if (!conv.visitorId) {
-    conv.visitorId = visitor.id;
+    conv.visitorId = resolvedVisitorId;
   }
 
   const handlingMode = conv?.handlingMode || "AI";

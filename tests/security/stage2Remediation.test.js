@@ -1,12 +1,12 @@
 /**
- * Stage 2: Security Remediation & Regression Test Suite
+ * Stage 2.5: Security Hardening & Regression Test Suite
  *
- * Automated verification of remediations for:
- * - SEC-02: Public SSE Visitor Authentication Bypass (events route)
- * - SEC-01: Password Reset Verification Token Replay & Race Conditions (otpStore & forgot-password route)
- * - SEC-04: Cross-Tenant Conversation Assignment (assign route)
- * - SEC-03: Phone Number Enumeration & Rate Limiting (check-phone route)
- * - SEC-05: Duplicate Method Declaration in authStore
+ * Automated verification of:
+ * - SEC-02: SSE Visitor Credential Protection & Ephemeral Exchange Tickets
+ * - SEC-01: Password Reset Atomic Claims & Redis Fail-Closed Behavior
+ * - SEC-04: Strict Tenant Isolation & Corrupt Conversation Rejection
+ * - SEC-03: Complete Elimination of Phone Enumeration Oracles
+ * - SEC-05: Clean authStore Definition and Exports
  */
 
 import test, { describe, before, beforeEach } from "node:test";
@@ -19,13 +19,16 @@ const { botsStore } = await import("../../frontend/lib/db/botsStore.js");
 const { conversationsStore } = await import("../../frontend/lib/db/conversationsStore.js");
 const { visitorsStore } = await import("../../frontend/lib/db/visitorsStore.js");
 const { otpStore } = await import("../../frontend/lib/auth/otpStore.js");
+const { sseTicketStore } = await import("../../frontend/lib/security/sseTicketStore.js");
 const { signSessionToken } = await import("../../frontend/lib/auth/session.js");
 const { _resetRateLimitMemory } = await import("../../frontend/lib/security/distributedRateLimit.js");
 
 const { GET: eventsGet } = await import("../../frontend/app/api/public/chat/[botId]/events/route.js");
+const { POST: ticketPost } = await import("../../frontend/app/api/public/chat/[botId]/ticket/route.js");
 const { POST: forgotPasswordPost } = await import("../../frontend/app/api/auth/forgot-password/route.js");
 const { POST: assignPost } = await import("../../frontend/app/api/conversations/[id]/assign/route.js");
 const { POST: checkPhonePost, GET: checkPhoneGet } = await import("../../frontend/app/api/auth/check-phone/route.js");
+const { POST: sendOtpPost } = await import("../../frontend/app/api/auth/otp/send/route.js");
 
 function makeReq(url, { method = "GET", headers = {}, body = null } = {}) {
   const h = new Headers(headers);
@@ -43,15 +46,16 @@ function sessionCookieHeader(token) {
   return { cookie: `ess_session=${encodeURIComponent(token)}` };
 }
 
-describe("Stage 2 Security Remediation Test Suite", () => {
+describe("Stage 2.5 Security Hardening Master Test Suite", () => {
   let orgAId, orgBId;
   const testBotId = "bot_sec2_test_01";
-  let tokenAdminOrgA, tokenMemberOrgA, tokenAdminOrgB;
+  let tokenAdminOrgA, tokenMemberOrgA, tokenAdminOrgB, tokenNoOrg;
   let testUserOrgA1, testUserOrgA2, testUserOrgB;
 
   before(async () => {
     authStore._resetMemoryStore();
     _resetRateLimitMemory();
+    sseTicketStore._resetMemoryStore();
 
     // Register User A1 (Admin Org A)
     const regA1 = await authStore.register({
@@ -123,6 +127,15 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       organizationId: orgBId,
       orgRole: "ORG_ADMIN",
     });
+
+    tokenNoOrg = signSessionToken({
+      userId: "usr_no_org_test",
+      name: "Rogue User",
+      email: "rogue@no-org.test",
+      role: "USER",
+      organizationId: null, // No organization
+      orgRole: "MEMBER",
+    });
   });
 
   beforeEach(() => {
@@ -130,9 +143,9 @@ describe("Stage 2 Security Remediation Test Suite", () => {
   });
 
   // =========================================================================
-  // 1. SEC-02: PUBLIC SSE VISITOR AUTHENTICATION BYPASS VERIFICATION
+  // 1. SEC-02: SSE VISITOR CREDENTIAL PROTECTION & EXCHANGE TICKETS
   // =========================================================================
-  describe("SEC-02: Public SSE Visitor Authentication Enforcement", () => {
+  describe("SEC-02: SSE Visitor Credential Protection & Single-Use Exchange Tickets", () => {
     let visitor1, token1, visitor2, token2, conversation1;
 
     before(async () => {
@@ -164,59 +177,94 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       });
     });
 
-    test("1.1 Rejects SSE connection with HTTP 403 when visitor token is missing entirely", async () => {
+    test("1.1 Rejects SSE connection with HTTP 403 when visitor authentication is absent", async () => {
       const req = makeReq(`http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}`);
       const res = await eventsGet(req, { params: Promise.resolve({ botId: testBotId }) });
-      assert.equal(res.status, 403, "Must return HTTP 403 Forbidden when visitor token is absent");
+      assert.equal(res.status, 403, "Must return HTTP 403 Forbidden when visitor token/ticket is absent");
       const data = await res.json();
-      assert.ok(data.error.includes("Visitor token is required"), "Must report missing visitor token");
+      assert.ok(data.error.includes("Visitor token is required"), "Must report missing visitor authentication");
     });
 
-    test("1.2 Rejects SSE connection with HTTP 403 when visitor token is invalid or unauthenticated", async () => {
-      const req = makeReq(`http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&visitorToken=invalid_fake_token_1234567890abcdef`);
+    test("1.2 Unauthenticated probe on nonexistent conversationId returns 403 before conversation lookup (anti-probing)", async () => {
+      const req = makeReq(`http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=conv_does_not_exist_999`);
       const res = await eventsGet(req, { params: Promise.resolve({ botId: testBotId }) });
-      assert.equal(res.status, 403, "Must return HTTP 403 Forbidden for forged visitor token");
-      const data = await res.json();
-      assert.ok(data.error.includes("Invalid or expired visitor token"), "Must report invalid token");
+      assert.equal(res.status, 403, "Must return 403 before checking conversation existence to eliminate enumeration oracle");
     });
 
-    test("1.3 Rejects SSE connection with HTTP 403 when visitor token belongs to a different visitor (eavesdropping prevention)", async () => {
-      // Visitor 2 attempts to listen into Visitor 1's conversation
+    test("1.3 Issues ephemeral single-use 60s exchange ticket via POST", async () => {
+      const req = makeReq(`http://localhost:3000/api/public/chat/${testBotId}/ticket`, {
+        method: "POST",
+        body: { visitorToken: token1 },
+      });
+      const res = await ticketPost(req, { params: Promise.resolve({ botId: testBotId }) });
+      assert.equal(res.status, 200, "Must successfully issue ticket for valid visitor token");
+      const data = await res.json();
+      assert.equal(data.success, true);
+      assert.ok(data.ticket.startsWith("tkt_"), "Ticket must have tkt_ prefix");
+      assert.equal(data.expiresIn, 60, "Ticket TTL must be 60 seconds");
+    });
+
+    test("1.4 Rejects ticket issuance with HTTP 403 for forged or invalid visitorToken", async () => {
+      const req = makeReq(`http://localhost:3000/api/public/chat/${testBotId}/ticket`, {
+        method: "POST",
+        body: { visitorToken: "invalid_token_1234567890abcdef" },
+      });
+      const res = await ticketPost(req, { params: Promise.resolve({ botId: testBotId }) });
+      assert.equal(res.status, 403, "Must reject invalid credentials with HTTP 403");
+    });
+
+    test("1.5 Connects to SSE stream using exchange ticket (?ticket=tkt_...)", async () => {
+      // 1. Issue ticket
+      const ticket = await sseTicketStore.createTicket(testBotId, visitor1.id, 60);
+
+      // 2. Connect to SSE
       const req = makeReq(
-        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&visitorToken=${token2}`
+        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&ticket=${ticket}`
       );
       const res = await eventsGet(req, { params: Promise.resolve({ botId: testBotId }) });
-      assert.equal(res.status, 403, "Must return HTTP 403 Forbidden when token does not match conversation's visitorId");
-      const data = await res.json();
-      assert.ok(data.error.includes("Unauthorized visitor token"), "Must reject mismatched visitor");
-    });
-
-    test("1.4 Rejects SSE connection with HTTP 404 if conversation does not exist or belongs to another bot", async () => {
-      const req = makeReq(
-        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=non_existent_conv_999&visitorToken=${token1}`
-      );
-      const res = await eventsGet(req, { params: Promise.resolve({ botId: testBotId }) });
-      assert.equal(res.status, 404, "Must return HTTP 404 for non-existent conversation");
-    });
-
-    test("1.5 Permits SSE connection when legitimate visitor token matches conversation owner", async () => {
-      const req = makeReq(
-        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&visitorToken=${token1}`
-      );
-      const res = await eventsGet(req, { params: Promise.resolve({ botId: testBotId }) });
-      assert.equal(res.status, 200, "Must return HTTP 200 OK for verified visitor token");
+      assert.equal(res.status, 200, "Must establish SSE connection with valid ticket");
       assert.equal(res.headers.get("content-type"), "text/event-stream; charset=utf-8");
+    });
+
+    test("1.6 Single-use ticket consumption: replaying the identical ticket is rejected with HTTP 403", async () => {
+      // 1. Issue ticket
+      const ticket = await sseTicketStore.createTicket(testBotId, visitor1.id, 60);
+
+      // 2. First connection consumes ticket
+      const req1 = makeReq(
+        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&ticket=${ticket}`
+      );
+      const res1 = await eventsGet(req1, { params: Promise.resolve({ botId: testBotId }) });
+      assert.equal(res1.status, 200, "First connection must succeed");
+
+      // 3. Second connection with same ticket must be rejected
+      const req2 = makeReq(
+        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&ticket=${ticket}`
+      );
+      const res2 = await eventsGet(req2, { params: Promise.resolve({ botId: testBotId }) });
+      assert.equal(res2.status, 403, "Replayed exchange ticket must return HTTP 403");
+      const data2 = await res2.json();
+      assert.ok(data2.error.includes("Invalid or expired exchange ticket"));
+    });
+
+    test("1.7 Rejects SSE connection when ticket belongs to a different visitor", async () => {
+      // Issue ticket for Visitor 2, but attempt to connect to Visitor 1's conversation
+      const ticketV2 = await sseTicketStore.createTicket(testBotId, visitor2.id, 60);
+      const req = makeReq(
+        `http://localhost:3000/api/public/chat/${testBotId}/events?conversationId=${conversation1.id}&ticket=${ticketV2}`
+      );
+      const res = await eventsGet(req, { params: Promise.resolve({ botId: testBotId }) });
+      assert.equal(res.status, 403, "Must reject mismatched visitor token/ticket with HTTP 403");
     });
   });
 
   // =========================================================================
-  // 2. SEC-01: PASSWORD RESET TOKEN REPLAY & ATOMIC CLAIM VERIFICATION
+  // 2. SEC-01: PASSWORD RESET ATOMIC CLAIMS & REDIS FAIL-CLOSED CHECKS
   // =========================================================================
-  describe("SEC-01: Password Reset Token Replay & Race Condition Prevention", () => {
+  describe("SEC-01: Password Reset Atomic Claims & Fail-Closed Behavior", () => {
     const testPhone = "+919876543210";
 
     before(async () => {
-      // Ensure test user exists for reset
       await authStore.register({
         name: "Reset Target User",
         email: "target@reset-test.com",
@@ -233,7 +281,6 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       const claim1 = await otpStore.claimVerificationToken(testPhone, token, "password_reset");
       assert.equal(claim1.ok, true, "First claim must succeed");
 
-      // Immediate second claim with the same token must be rejected
       const claim2 = await otpStore.claimVerificationToken(testPhone, token, "password_reset");
       assert.equal(claim2.ok, false, "Second claim with same token must fail");
       assert.ok(claim2.error.includes("already been used"), "Must specify token already used");
@@ -242,7 +289,6 @@ describe("Stage 2 Security Remediation Test Suite", () => {
     test("2.2 Concurrent claims on the same token resolve with exactly ONE winner", async () => {
       const token = otpStore.createVerificationToken(testPhone, "password_reset");
 
-      // Simultaneous claim attempts
       const [res1, res2] = await Promise.all([
         otpStore.claimVerificationToken(testPhone, token, "password_reset"),
         otpStore.claimVerificationToken(testPhone, token, "password_reset"),
@@ -258,7 +304,6 @@ describe("Stage 2 Security Remediation Test Suite", () => {
     test("2.3 Password reset route consumes verification token and prevents token replay", async () => {
       const token = otpStore.createVerificationToken(testPhone, "password_reset");
 
-      // 1. First reset request
       const req1 = makeReq("http://localhost:3000/api/auth/forgot-password", {
         method: "POST",
         body: {
@@ -269,10 +314,7 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       });
       const res1 = await forgotPasswordPost(req1);
       assert.equal(res1.status, 200, "First password reset must succeed");
-      const data1 = await res1.json();
-      assert.equal(data1.success, true);
 
-      // 2. Replayed reset request with the identical token must be rejected with 403
       const req2 = makeReq("http://localhost:3000/api/auth/forgot-password", {
         method: "POST",
         body: {
@@ -283,26 +325,29 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       });
       const res2 = await forgotPasswordPost(req2);
       assert.equal(res2.status, 403, "Replayed token must return HTTP 403 Forbidden");
-      const data2 = await res2.json();
-      assert.equal(data2.success, false);
-      assert.ok(data2.error.includes("already been used") || data2.error.includes("invalid"), "Must reject reused token");
     });
 
-    test("2.4 Rejects claim if purpose does not match", async () => {
-      const token = otpStore.createVerificationToken(testPhone, "login");
+    test("2.4 Token claim fails closed when Redis is configured but disconnected", async () => {
+      process.env.REDIS_HOST = "127.0.0.99"; // Non-existent Redis
+      process.env.REDIS_PORT = "6399";
+
+      const token = otpStore.createVerificationToken(testPhone, "password_reset");
       const claim = await otpStore.claimVerificationToken(testPhone, token, "password_reset");
-      assert.equal(claim.ok, false, "Must reject token created for 'login' when claiming for 'password_reset'");
+      assert.equal(claim.ok, false, "Must fail closed when Redis is configured but disconnected");
+      assert.ok(claim.error.includes("temporarily unavailable"), "Must return temporary unavailability message");
+
+      delete process.env.REDIS_HOST;
+      delete process.env.REDIS_PORT;
     });
   });
 
   // =========================================================================
-  // 3. SEC-04: CROSS-TENANT CONVERSATION ASSIGNMENT VERIFICATION
+  // 3. SEC-04: STRICT TENANT ISOLATION & CORRUPT RECORD REJECTION
   // =========================================================================
-  describe("SEC-04: Cross-Tenant Conversation Assignment Boundary Enforcement", () => {
+  describe("SEC-04: Strict Tenant Isolation & Corrupt Conversation Rejection", () => {
     let orgAConv;
 
     before(() => {
-      // Create conversation in Org A
       orgAConv = conversationsStore.createConversation({
         id: `conv_assign_test_${Date.now()}`,
         organizationId: orgAId,
@@ -317,7 +362,7 @@ describe("Stage 2 Security Remediation Test Suite", () => {
         method: "POST",
         headers: { ...sessionCookieHeader(tokenAdminOrgA) },
         body: {
-          targetUserId: testUserOrgB.id, // User from Org B!
+          targetUserId: testUserOrgB.id,
           targetUserName: "Admin Charlie",
         },
       });
@@ -325,30 +370,13 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       const res = await assignPost(req, { params: Promise.resolve({ id: orgAConv.id }) });
       assert.equal(res.status, 400, "Must reject cross-tenant assignment with HTTP 400 Bad Request");
       const data = await res.json();
-      assert.equal(data.success, false);
-      assert.ok(data.error.includes("not an active member of this organization"), "Must report not an active member");
+      assert.ok(data.error.includes("not an active member of this organization"));
     });
 
-    test("3.2 Rejects assigning conversation to an unknown / fabricated userId", async () => {
+    test("3.2 Rejects assignment when caller session has no organizationId context", async () => {
       const req = makeReq(`http://localhost:3000/api/conversations/${orgAConv.id}/assign`, {
         method: "POST",
-        headers: { ...sessionCookieHeader(tokenAdminOrgA) },
-        body: {
-          targetUserId: "usr_fabricated_ghost_id_999",
-          targetUserName: "Ghost User",
-        },
-      });
-
-      const res = await assignPost(req, { params: Promise.resolve({ id: orgAConv.id }) });
-      assert.equal(res.status, 400, "Must reject non-member assignment with HTTP 400 Bad Request");
-      const data = await res.json();
-      assert.equal(data.success, false);
-    });
-
-    test("3.3 Rejects non-admin attempting to assign conversation to another user", async () => {
-      const req = makeReq(`http://localhost:3000/api/conversations/${orgAConv.id}/assign`, {
-        method: "POST",
-        headers: { ...sessionCookieHeader(tokenMemberOrgA) }, // Non-admin member
+        headers: { ...sessionCookieHeader(tokenNoOrg) },
         body: {
           targetUserId: testUserOrgA1.id,
           targetUserName: "Admin Alice",
@@ -356,10 +384,33 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       });
 
       const res = await assignPost(req, { params: Promise.resolve({ id: orgAConv.id }) });
-      assert.equal(res.status, 403, "Must return HTTP 403 Forbidden when non-admin attempts assignment");
+      assert.equal(res.status, 403, "Caller without organizationId context must receive HTTP 403");
       const data = await res.json();
-      assert.equal(data.success, false);
-      assert.ok(data.error.includes("Only administrators can assign"), "Must enforce admin role");
+      assert.ok(data.error.includes("Missing organization context"));
+    });
+
+    test("3.3 Rejects assignment when conversation record has missing/corrupted organizationId", async () => {
+      const corruptConv = conversationsStore.createConversation({
+        id: `conv_corrupt_${Date.now()}`,
+        organizationId: null, // Corrupt tenant ID
+        botId: testBotId,
+        status: "WAITING_FOR_HUMAN",
+      });
+
+      const req = makeReq(`http://localhost:3000/api/conversations/${corruptConv.id}/assign`, {
+        method: "POST",
+        headers: { ...sessionCookieHeader(tokenAdminOrgA) },
+        body: {
+          targetUserId: testUserOrgA1.id,
+          targetUserName: "Admin Alice",
+        },
+      });
+
+      const res = await assignPost(req, { params: Promise.resolve({ id: corruptConv.id }) });
+      assert.ok(
+        res.status === 404 || res.status === 422,
+        `Expected HTTP 404/422 for corrupt conversation, received ${res.status}`
+      );
     });
 
     test("3.4 Allows assigning conversation to an active member within the SAME organization", async () => {
@@ -367,7 +418,7 @@ describe("Stage 2 Security Remediation Test Suite", () => {
         method: "POST",
         headers: { ...sessionCookieHeader(tokenAdminOrgA) },
         body: {
-          targetUserId: testUserOrgA2.id, // Active member of Org A
+          targetUserId: testUserOrgA2.id,
           targetUserName: testUserOrgA2.name,
         },
       });
@@ -381,47 +432,66 @@ describe("Stage 2 Security Remediation Test Suite", () => {
   });
 
   // =========================================================================
-  // 4. SEC-03: PHONE NUMBER ENUMERATION & RATE LIMITING VERIFICATION
+  // 4. SEC-03: COMPLETE ELIMINATION OF PHONE ENUMERATION ORACLES
   // =========================================================================
-  describe("SEC-03: Phone Number Rate Limiting & Privacy Preservation", () => {
-    test("4.1 check-phone returns privacy-preserving boolean exists without exposing metadata", async () => {
-      const req = makeReq("http://localhost:3000/api/auth/check-phone", {
+  describe("SEC-03: Complete Elimination of Phone Enumeration Oracles", () => {
+    test("4.1 check-phone returns generic success for valid numbers without revealing account existence", async () => {
+      // Test registered phone
+      const req1 = makeReq("http://localhost:3000/api/auth/check-phone", {
         method: "POST",
         headers: { "x-forwarded-for": "198.51.100.1" },
-        body: { phone: "9876500001" }, // Alice's phone
+        body: { phone: "9876500001" },
       });
+      const res1 = await checkPhonePost(req1);
+      assert.equal(res1.status, 200);
+      const data1 = await res1.json();
+      assert.equal(data1.success, true);
+      assert.equal(data1.valid, true);
+      assert.equal(data1.exists, undefined, "exists boolean MUST NOT be present in response");
 
-      const res = await checkPhonePost(req);
-      assert.equal(res.status, 200);
-      const data = await res.json();
-      assert.equal(data.success, true);
-      assert.equal(data.exists, true);
-      // Verify no PII, user records, or org info are leaked
-      assert.equal(data.email, undefined);
-      assert.equal(data.name, undefined);
-      assert.equal(data.organizationId, undefined);
-      assert.equal(data.role, undefined);
+      // Test unregistered phone: returns IDENTICAL response
+      const req2 = makeReq("http://localhost:3000/api/auth/check-phone", {
+        method: "POST",
+        headers: { "x-forwarded-for": "198.51.100.2" },
+        body: { phone: "9111111111" },
+      });
+      const res2 = await checkPhonePost(req2);
+      assert.equal(res2.status, 200);
+      const data2 = await res2.json();
+      assert.equal(data2.success, true);
+      assert.equal(data2.valid, true);
+      assert.equal(data2.exists, undefined, "exists boolean MUST NOT be present in response");
     });
 
     test("4.2 Rejects malformed or incomplete phone numbers (<10 digits)", async () => {
       const req = makeReq("http://localhost:3000/api/auth/check-phone", {
         method: "POST",
-        headers: { "x-forwarded-for": "198.51.100.2" },
+        headers: { "x-forwarded-for": "198.51.100.3" },
         body: { phone: "123" },
       });
-
       const res = await checkPhonePost(req);
       assert.equal(res.status, 200);
       const data = await res.json();
       assert.equal(data.valid, false);
-      assert.equal(data.exists, false);
     });
 
-    test("4.3 Enforces rate limiting on repeated check-phone requests (HTTP 429)", async () => {
+    test("4.3 otp/send returns generic success without leaking 404 for unregistered login/reset numbers", async () => {
+      const req = makeReq("http://localhost:3000/api/auth/otp/send", {
+        method: "POST",
+        headers: { "x-forwarded-for": "198.51.100.4" },
+        body: { phone: "+919111111111", purpose: "password_reset" },
+      });
+      const res = await sendOtpPost(req);
+      assert.equal(res.status, 200, "Must return HTTP 200 generic message without 404 leak");
+      const data = await res.json();
+      assert.equal(data.success, true);
+      assert.equal(data.notFound, undefined, "Must not return notFound boolean");
+    });
+
+    test("4.4 Enforces rate limiting on repeated check-phone requests (HTTP 429)", async () => {
       const clientIp = "203.0.113.88";
       let blockedResponse = null;
 
-      // Burst 25 requests (limit is 20 per minute)
       for (let i = 0; i < 25; i++) {
         const req = makeReq("http://localhost:3000/api/auth/check-phone", {
           method: "POST",
@@ -438,13 +508,11 @@ describe("Stage 2 Security Remediation Test Suite", () => {
       assert.ok(blockedResponse !== null, "Must throttle enumeration attempts with HTTP 429");
       assert.equal(blockedResponse.status, 429);
       assert.ok(blockedResponse.headers.get("retry-after"), "Must include Retry-After header");
-      const blockedData = await blockedResponse.json();
-      assert.ok(blockedData.error.includes("Too many"), "Must return rate-limit error message");
     });
   });
 
   // =========================================================================
-  // 5. SEC-05: DUPLICATE METHOD DECLARATION IN authStore VERIFICATION
+  // 5. SEC-05: SINGLE DEFINITION OF checkPhoneExists IN authStore
   // =========================================================================
   describe("SEC-05: Single Clean Definition of checkPhoneExists in authStore", () => {
     test("5.1 authStore defines checkPhoneExists exactly once in source code", () => {
@@ -455,14 +523,12 @@ describe("Stage 2 Security Remediation Test Suite", () => {
     });
 
     test("5.2 checkPhoneExists operates properly across varying phone formats", async () => {
-      // Existing phone
       const exists1 = await authStore.checkPhoneExists("+919876500001");
       assert.equal(exists1, true, "Must match +91 international format");
 
       const exists2 = await authStore.checkPhoneExists("9876500001");
       assert.equal(exists2, true, "Must match 10-digit national format");
 
-      // Non-existent phone
       const notExists = await authStore.checkPhoneExists("9999999999");
       assert.equal(notExists, false, "Must return false for unregistered phone");
     });

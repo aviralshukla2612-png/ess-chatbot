@@ -35,34 +35,19 @@ export async function POST(request) {
       );
     }
 
-    // 1. REGISTRATION GATE: If registering and number already exists, BLOCK OTP IMMEDIATELY!
-    if (purpose === "registration") {
-      const alreadyExists = await authStore.checkPhoneExists(phone);
-      if (alreadyExists) {
-        return NextResponse.json(
-          {
-            success: false,
-            alreadyExists: true,
-            error: "This mobile number is already registered. Please sign in instead.",
-            phone,
-          },
-          { status: 409 }
-        );
-      }
-    }
-
-    // 2. LOGIN & PASSWORD RESET GATE: If logging in or resetting password and number does not exist, BLOCK OTP IMMEDIATELY!
-    if (purpose === "login" || purpose === "password_reset" || purpose === "forgot_password") {
+    // Anti-enumeration protection (SEC-03):
+    // For password_reset, if phone not registered, return generic success without leaking existence or sending SMS
+    if (purpose === "password_reset" || purpose === "forgot_password") {
       const exists = await authStore.checkPhoneExists(phone);
       if (!exists) {
-        return NextResponse.json(
-          {
-            success: false,
-            notFound: true,
-            error: "No account found with this mobile number. Please check the number or create an account.",
+        return applyRateLimitHeaders(
+          NextResponse.json({
+            success: true,
+            message: `If an account is associated with this number, a verification code has been dispatched.`,
             phone,
-          },
-          { status: 404 }
+            cooldownSeconds: 60,
+          }),
+          ipCheck.result
         );
       }
     }

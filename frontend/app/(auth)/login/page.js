@@ -283,40 +283,7 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, [loginCooldown]);
 
-  // Live debounced check if mobile number already exists when typing in registration
-  useEffect(() => {
-    const cleanDigits = sanitizeTenDigitPhone(regPhone);
-    if (cleanDigits.length !== 10) {
-      if (regAlreadyExists) setRegAlreadyExists(false);
-      return;
-    }
-    let isCancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch("/api/auth/check-phone", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: cleanDigits }),
-        });
-        const data = await res.json();
-        if (!isCancelled) {
-          if (data.exists) {
-            setRegAlreadyExists(true);
-            setErrorMessage("This mobile number is already registered. Please sign in instead.");
-          } else {
-            setRegAlreadyExists(false);
-            setErrorMessage((prev) => (prev?.includes("already registered") ? "" : prev));
-          }
-        }
-      } catch (e) {
-      }
-    }, 350);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(timer);
-    };
-  }, [regPhone]);
+  // Handle URL error query parameters
 
   useEffect(() => {
     if (typeof window !== "undefined") {

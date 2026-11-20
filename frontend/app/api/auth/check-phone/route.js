@@ -34,11 +34,11 @@ export async function POST(request) {
       );
     }
 
-    const exists = await authStore.checkPhoneExists(phone);
+    // Anti-enumeration (SEC-03): validate syntax and return generic valid response without revealing account existence
     return applyRateLimitHeaders(
       NextResponse.json({
         success: true,
-        exists: Boolean(exists),
+        valid: true,
       }),
       ipCheck.result
     );
@@ -75,11 +75,11 @@ export async function GET(request) {
       );
     }
 
-    const exists = await authStore.checkPhoneExists(phone);
+    // Anti-enumeration (SEC-03): validate syntax and return generic valid response without revealing account existence
     return applyRateLimitHeaders(
       NextResponse.json({
         success: true,
-        exists: Boolean(exists),
+        valid: true,
       }),
       ipCheck.result
     );

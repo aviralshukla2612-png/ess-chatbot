@@ -173,15 +173,32 @@
 
   // 3.1. Fetch or Restore 24-Hour Active Conversation Session & Customer Identity
   let visitorEventSource = null;
-  function connectVisitorEvents(convId) {
+  async function connectVisitorEvents(convId) {
     if (!convId || typeof window === "undefined" || !window.EventSource) return;
     if (visitorEventSource) {
       try { visitorEventSource.close(); } catch (e) {}
       visitorEventSource = null;
     }
     try {
-      const sseTokenParam = visitorToken ? `&visitorToken=${encodeURIComponent(visitorToken)}` : "";
-      const sseUrl = `${apiBase}/api/public/chat/${encodeURIComponent(botId)}/events?conversationId=${encodeURIComponent(convId)}${sseTokenParam}`;
+      // Ephemeral single-use exchange ticket: exchange visitor token via POST so credentials never appear in URLs (SEC-02)
+      let ticketParam = "";
+      if (visitorToken) {
+        try {
+          const tktRes = await fetch(`${apiBase}/api/public/chat/${encodeURIComponent(botId)}/ticket`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-visitor-token": visitorToken },
+            body: JSON.stringify({ visitorToken }),
+          });
+          if (tktRes.ok) {
+            const tktData = await tktRes.json();
+            if (tktData && tktData.ticket) {
+              ticketParam = `&ticket=${encodeURIComponent(tktData.ticket)}`;
+            }
+          }
+        } catch (e) {}
+      }
+
+      const sseUrl = `${apiBase}/api/public/chat/${encodeURIComponent(botId)}/events?conversationId=${encodeURIComponent(convId)}${ticketParam}`;
       visitorEventSource = new EventSource(sseUrl, { withCredentials: true });
       visitorEventSource.onmessage = function(e) {
         try {

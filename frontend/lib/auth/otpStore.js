@@ -3,7 +3,7 @@ import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
 import { getDbPool, isDbConnected } from "../db/dbPool.js";
-import { getRedisClient, isRedisConnected } from "../redis/redisClient.js";
+import { getRedisClient, isRedisConnected, isRedisConfigured } from "../redis/redisClient.js";
 
 const DEV_OTP_SECRET = "nexus_otp_secret_key_dev_fallback_only_32chars";
 function getOtpSecret() {
@@ -55,7 +55,7 @@ function hydrateFromDiskOnce() {
         }
       }
     }
-  } catch {}
+  } catch { }
 }
 
 async function flushDiskStoreAsync() {
@@ -64,7 +64,7 @@ async function flushDiskStoreAsync() {
     await fsp.mkdir(DATA_DIR, { recursive: true });
     const snapshot = Object.fromEntries(memoryOtp.entries());
     await fsp.writeFile(OTP_FILE, JSON.stringify(snapshot, null, 2), "utf8");
-  } catch {}
+  } catch { }
 }
 
 /**
@@ -230,7 +230,7 @@ export const otpStore = {
 
     const redis = getRedisClient();
     if (redis && isRedisConnected()) {
-      redis.set(`vtoken:claimed:${tokenDigest}`, String(now), "EX", 1800).catch(() => {});
+      redis.set(`vtoken:claimed:${tokenDigest}`, String(now), "EX", 1800).catch(() => { });
     }
 
     if (consumedVerificationTokens.size > 5000) {
@@ -268,8 +268,16 @@ export const otpStore = {
     consumedVerificationTokens.set(tokenDigest, now);
 
     // 2. Distributed atomic reservation via Redis SET NX (1800s / 30m TTL)
-    const redis = getRedisClient();
-    if (redis && isRedisConnected()) {
+    if (isRedisConfigured()) {
+      if (!isRedisConnected()) {
+        console.warn("[OTP_REDIS_OUTAGE] Rejecting token claim: Redis is configured but disconnected (fail-closed)");
+        return {
+          ok: false,
+          error: "Authentication service temporarily unavailable. Please retry in a few moments.",
+        };
+      }
+
+      const redis = getRedisClient();
       try {
         const redisKey = `vtoken:claimed:${tokenDigest}`;
         const setResult = await redis.set(redisKey, String(now), "EX", 1800, "NX");
@@ -279,6 +287,10 @@ export const otpStore = {
         }
       } catch (err) {
         console.warn("[OTP_REDIS_CLAIM_WARN]", err.message);
+        return {
+          ok: false,
+          error: "Authentication service temporarily unavailable. Please retry in a few moments.",
+        };
       }
     }
 
@@ -356,7 +368,7 @@ export const otpStore = {
         now,
       ],
       1500
-    ).catch(() => {});
+    ).catch(() => { });
 
     return updated;
   },

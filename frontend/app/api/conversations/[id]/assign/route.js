@@ -17,12 +17,36 @@ export async function POST(request, { params }) {
       principal.orgRole === ROLES.ORG_OWNER ||
       principal.orgRole === ROLES.ORG_ADMIN;
 
+    // Strict tenant isolation: Non-superadmins must have a valid organization context (SEC-04)
+    if (!isSuperAdmin && !principal.organizationId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Missing organization context." },
+        { status: 403 }
+      );
+    }
+
     // Strict tenant isolation: ORG_OWNER/ORG_ADMIN can manage within THEIR org only
     const targetOrgId = isSuperAdmin ? null : principal.organizationId;
 
     const conv = conversationsStore.getConversation(id, targetOrgId);
     if (!conv) {
       return NextResponse.json({ success: false, error: "Conversation not found" }, { status: 404 });
+    }
+
+    // Strict tenant isolation: Reject corrupt conversations with missing organizationId (SEC-04)
+    if (!conv.organizationId) {
+      return NextResponse.json(
+        { success: false, error: "Conversation tenant metadata is missing or corrupted." },
+        { status: 422 }
+      );
+    }
+
+    // Strict boundary: non-superadmin can ONLY operate on conversations of their exact organization
+    if (!isSuperAdmin && conv.organizationId !== principal.organizationId) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden: Conversation belongs to a different organization." },
+        { status: 403 }
+      );
     }
 
     const body = await request.json().catch(() => ({}));
@@ -42,7 +66,7 @@ export async function POST(request, { params }) {
     }
 
     // Verify target user is an active member of the conversation's organization (SEC-04)
-    const effectiveOrgId = conv.organizationId || principal.organizationId || "org_ess_default";
+    const effectiveOrgId = conv.organizationId;
     const membership = await authStore.verifyOrgMembership(targetUserId, effectiveOrgId);
     if (!membership || membership.status !== "ACTIVE") {
       return NextResponse.json(
