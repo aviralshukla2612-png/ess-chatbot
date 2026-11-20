@@ -5,6 +5,7 @@ import { websitesDb } from "@/lib/db/websites";
 import { botsStore } from "@/lib/db/botsStore";
 import { n8nClient } from "@/lib/n8n/client";
 import { requireAuth, requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 export async function GET(request, { params }) {
   try {
@@ -52,6 +53,9 @@ export async function POST(request, { params }) {
     }
 
     const targetOrgId = bot.organizationId || principal.organizationId;
+    const rateCheck = await enforceRateLimit("website_crawl", targetOrgId);
+    if (!rateCheck.ok) return rateCheck.response;
+
     const body = await request.json();
 
     const {

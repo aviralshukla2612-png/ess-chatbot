@@ -3,6 +3,7 @@ import { conversationsStore } from "@/lib/db/conversationsStore";
 import { leadsStore } from "@/lib/db/leadsStore";
 import { botsStore } from "@/lib/db/botsStore";
 import { requireAuth, ROLES } from "@/lib/auth/guard";
+import { enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 export async function OPTIONS() {
   const res = new NextResponse(null, { status: 204 });
@@ -17,6 +18,9 @@ export async function GET(request) {
     if (!auth.ok) return auth.response;
 
     const { principal } = auth;
+    const rateCheck = await enforceRateLimit("user_api", principal.userId || principal.email);
+    if (!rateCheck.ok) return rateCheck.response;
+
     const { searchParams } = new URL(request.url);
     const requestedOrg = searchParams.get("organizationId");
 

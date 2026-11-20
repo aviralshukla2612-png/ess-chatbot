@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 import { requireAuth, requireOrgRole, isPlatformSuperAdmin, ROLES } from "@/lib/auth/guard";
+import { enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 export async function GET(request) {
   try {
@@ -8,6 +9,9 @@ export async function GET(request) {
     if (!auth.ok) return auth.response;
 
     const { principal } = auth;
+    const rateCheck = await enforceRateLimit("user_api", principal.userId || principal.email);
+    if (!rateCheck.ok) return rateCheck.response;
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "All";
     const handlingMode = searchParams.get("handlingMode") || "All";

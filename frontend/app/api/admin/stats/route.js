@@ -4,10 +4,14 @@ import { botsStore } from "@/lib/db/botsStore";
 import { conversationsStore } from "@/lib/db/conversationsStore";
 import { leadsStore } from "@/lib/db/leadsStore";
 import { requireSuperAdmin } from "@/lib/auth/guard";
+import { enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 export async function GET(request) {
   const auth = await requireSuperAdmin(request);
   if (!auth.ok) return auth.response;
+
+  const rateCheck = await enforceRateLimit("admin_api", auth.principal?.userId || "admin");
+  if (!rateCheck.ok) return rateCheck.response;
 
   try {
     // 1. Live count of Organizations

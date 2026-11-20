@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { queryDb } from "@/lib/db/dbPool";
 import { usersStore, isDummyOrTestAccount } from "@/lib/db/usersStore";
+import { enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 export async function GET(request) {
   const auth = await requireSuperAdmin(request);
   if (!auth.ok) return auth.response;
+
+  const rateCheck = await enforceRateLimit("admin_api", auth.principal?.userId || "admin");
+  if (!rateCheck.ok) return rateCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);

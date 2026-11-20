@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { websitesDb } from "@/lib/db/websites";
 import { n8nClient } from "@/lib/n8n/client";
 import { requireOrgRole, ROLES } from "@/lib/auth/guard";
+import { enforceRateLimit } from "@/lib/security/rateLimitPolicy";
 
 export async function POST(request, { params }) {
   try {
@@ -9,6 +10,9 @@ export async function POST(request, { params }) {
     if (!auth.ok) return auth.response;
 
     const { principal } = auth;
+    const rateCheck = await enforceRateLimit("website_crawl", principal.organizationId || principal.userId);
+    if (!rateCheck.ok) return rateCheck.response;
+
     const { websiteId } = await params;
     const source = await websitesDb.getWebsiteSourceById(websiteId);
     if (!source) {
