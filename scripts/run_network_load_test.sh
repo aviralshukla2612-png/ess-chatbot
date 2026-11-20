@@ -34,15 +34,23 @@ if [[ "$CURRENT_HOSTNAME" =~ LAPTOP|Windows|DESKTOP ]]; then
 fi
 echo "[PASS] Host check: Executing on target host '${CURRENT_HOSTNAME}' (Non-workstation verified)."
 
-# 2. Ensure Staging Stack is Running on 127.0.0.1:3301
+# 2. Ensure Staging Stack is Running on 127.0.0.1:3301 and Seed Data is Present
 if command -v docker >/dev/null 2>&1; then
+  mkdir -p frontend/data-staging 2>/dev/null || true
+  if [ ! -f "frontend/data-staging/bots.json" ] || ! grep -q "bot_stage3_alpha_01" "frontend/data-staging/bots.json" 2>/dev/null; then
+    echo "[DATA_SEED] Copying synthetic seed bots into frontend/data-staging/..."
+    cp -r frontend/data/* frontend/data-staging/ 2>/dev/null || true
+    chmod -R 777 frontend/data-staging 2>/dev/null || true
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "ess-frontend-staging"; then
+      echo "[DATA_SEED] Restarting ess-frontend-staging to mount seed data..."
+      docker restart ess-frontend-staging 2>/dev/null || true
+      sleep 5
+    fi
+  fi
+
   if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "ess-frontend-staging"; then
     echo "[STARTUP] Staging stack (ess-frontend-staging) is not running on 127.0.0.1:3301."
     echo "[STARTUP] Launching isolated staging stack via docker compose -f docker-compose.staging.yml up -d ..."
-    mkdir -p frontend/data-staging 2>/dev/null || true
-    if [ ! -f "frontend/data-staging/bots.json" ] && [ -d "frontend/data" ]; then
-      cp -r frontend/data/* frontend/data-staging/ 2>/dev/null || true
-    fi
     docker compose -f docker-compose.staging.yml up -d
     echo "[STARTUP] Waiting 12s for staging service health..."
     sleep 12

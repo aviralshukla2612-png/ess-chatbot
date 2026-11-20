@@ -183,6 +183,13 @@ export function setup() {
   }
   console.log(`[SETUP] Staging health check passed: ${healthRes.body}`);
 
+  // 2. Synthetic Bot Probe (Alpha & Beta bot availability verification)
+  const botAlphaRes = http.get(`${TARGET_HOST}/api/public/chat/${BOT_ALPHA}/session`, { timeout: "5s" });
+  if (botAlphaRes.status === 404) {
+    throw new Error(`[SETUP_ABORT] Bot '${BOT_ALPHA}' returned 404! Seed data is missing from staging.`);
+  }
+  console.log(`[SETUP] Staging synthetic bots verified (${BOT_ALPHA} status: ${botAlphaRes.status}).`);
+
   return {
     targetHost: TARGET_HOST,
     startedAt: new Date().toISOString(),
@@ -351,7 +358,7 @@ export default function (data) {
         console.error(`[CRITICAL SECURITY LEAK] Visitor from ${targetOrg} accessed conversation in ${opposingOrg}!`);
         securityLeakCounter.add(1);
       }
-    } catch {}
+    } catch { }
   }
 
   // Vector B: Adversarial chat injection to opposing bot presenting target conversationId
@@ -373,7 +380,7 @@ export default function (data) {
         console.error(`[CRITICAL SECURITY LEAK] Opposing bot ${opposingBot} attached turn to ${targetOrg} conversation!`);
         securityLeakCounter.add(1);
       }
-    } catch {}
+    } catch { }
   }
 
   // ---------------------------------------------------------------------------
