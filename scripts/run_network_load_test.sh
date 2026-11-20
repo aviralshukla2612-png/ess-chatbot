@@ -34,10 +34,16 @@ if [[ "$CURRENT_HOSTNAME" =~ LAPTOP|Windows|DESKTOP ]]; then
 fi
 echo "[PASS] Host check: Executing on target host '${CURRENT_HOSTNAME}' (Non-workstation verified)."
 
-# 2. Watchdog Heartbeat Existence Check
+# 2. Ensure Safety Watchdog Daemon is Running
+if ! pgrep -f "scripts/safety_watchdog.sh" > /dev/null 2>&1; then
+  echo "[STARTUP] Watchdog daemon is not running. Launching scripts/safety_watchdog.sh in background..."
+  chmod +x scripts/safety_watchdog.sh 2>/dev/null || true
+  nohup ./scripts/safety_watchdog.sh > stage3_watchdog.log 2>&1 &
+  sleep 3
+fi
+
 if [ ! -f "$HEARTBEAT_FILE" ]; then
-  echo "[FATAL SAFETY BARRIER] Watchdog heartbeat file not found: $HEARTBEAT_FILE" >&2
-  echo "Start scripts/safety_watchdog.sh in background before launching load test!" >&2
+  echo "[FATAL SAFETY BARRIER] Watchdog heartbeat file not found: $HEARTBEAT_FILE after startup attempt." >&2
   exit 1
 fi
 
