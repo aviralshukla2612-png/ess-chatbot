@@ -75,6 +75,10 @@ export function isRedisConnected() {
   return isConnected && Boolean(redisClient);
 }
 
+export function isRedisConfigured() {
+  return Boolean(resolveRedisUrl());
+}
+
 export async function closeRedisClient() {
   if (redisClient) {
     try {

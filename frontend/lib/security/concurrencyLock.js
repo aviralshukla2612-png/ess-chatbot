@@ -10,7 +10,7 @@
  */
 
 import crypto from "crypto";
-import { getRedisClient, isRedisConnected } from "../redis/redisClient.js";
+import { getRedisClient, isRedisConnected, isRedisConfigured } from "../redis/redisClient.js";
 
 const LUA_ACQUIRE_CONCURRENCY = `
 local key = KEYS[1]
@@ -82,7 +82,7 @@ function sweepMemoryLocks(now = Date.now()) {
  */
 export async function acquireConcurrencyLock({ key, maxConcurrent = 1, ttlMs = 45000 }) {
   const safeMax = Math.max(1, Number(maxConcurrent) || 1);
-  const safeTtlMs = Math.max(1000, Number(ttlMs) || 45000);
+  const safeTtlMs = Math.max(50, Number(ttlMs) || 45000);
   const now = Date.now();
   const lockId = `lock_${now}_${crypto.randomBytes(4).toString("hex")}`;
   const redis = getRedisClient();
@@ -217,6 +217,16 @@ export async function acquireGenerationLocks({
   maxWorkspaceConcurrent = 10,
   ttlMs = 45000,
 }) {
+  // Fail-closed for expensive AI generation when Redis is configured in production but disconnected
+  if (isRedisConfigured() && !isRedisConnected() && process.env.AI_FAIL_CLOSED_ON_REDIS_OUTAGE === "true") {
+    return {
+      ok: false,
+      error: "Distributed AI concurrency verification is temporarily unavailable. Please try again shortly.",
+      retryAfterSec: 10,
+      level: "fail-closed",
+    };
+  }
+
   const acquired = [];
 
   // 1. Conversation Level Concurrency Lock (Max 1)

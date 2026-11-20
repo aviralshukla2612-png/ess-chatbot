@@ -6,6 +6,7 @@
 import crypto from "crypto";
 import { checkDistributedRateLimit } from "./distributedRateLimit.js";
 import { abuseDetectionService } from "./abuseDetectionService.js";
+import { isRedisConnected, isRedisConfigured } from "../redis/redisClient.js";
 
 let NextResponse = globalThis.Response;
 try {
@@ -89,11 +90,13 @@ export function getRateLimitPolicies() {
       limit: envInt("RL_CHAT_IP_MAX", 40),
       windowMs: envInt("RL_CHAT_IP_WINDOW_MS", 60 * 1000),
       message: "Too many chat messages sent in a short period. Please wait a moment.",
+      failClosed: true,
     },
     chat_visitor: {
       limit: envInt("RL_CHAT_VISITOR_MAX", 20),
       windowMs: envInt("RL_CHAT_VISITOR_WINDOW_MS", 60 * 1000),
       message: "You're sending messages too quickly. Please wait a moment before trying again.",
+      failClosed: true,
     },
     chat_conversation: {
       limit: envInt("RL_CHAT_CONV_MAX", 15),
@@ -104,6 +107,7 @@ export function getRateLimitPolicies() {
       limit: envInt("RL_CHAT_ORG_MAX", 300),
       windowMs: envInt("RL_CHAT_ORG_WINDOW_MS", 60 * 1000),
       message: "This assistant is handling high traffic right now. Please retry in a few seconds.",
+      failClosed: true,
     },
     public_session_ip: {
       limit: envInt("RL_PUBLIC_SESSION_IP_MAX", 30),
@@ -303,7 +307,29 @@ export async function enforceRateLimit(policyName, subjectKey, overrides = {}) {
   const windowMs = overrides.windowMs ?? base.windowMs;
   const message = overrides.message ?? base.message;
 
-  // 1. Check if subject is actively blocked or under progressive cooldown
+  // 1. Safe fail-closed check: For expensive AI operations when Redis is configured but disconnected
+  if (base.failClosed && isRedisConfigured() && !isRedisConnected()) {
+    const isStrictFailClosed = process.env.AI_FAIL_CLOSED_ON_REDIS_OUTAGE !== "false";
+    if (isStrictFailClosed) {
+      const failClosedResult = {
+        ok: false,
+        limit,
+        remaining: 0,
+        retrySec: 15,
+        resetAt: Math.ceil(Date.now() / 1000) + 15,
+      };
+      return {
+        ok: false,
+        result: failClosedResult,
+        response: buildRateLimitResponse(
+          failClosedResult,
+          "Our automated assistant is temporarily operating in degraded safe mode. Please retry shortly."
+        ),
+      };
+    }
+  }
+
+  // 2. Check if subject is actively blocked or under progressive cooldown
   const subjectType = policyName.includes("ip") ? "ip" : policyName.includes("visitor") ? "visitor" : "user";
   const blockCheck = await abuseDetectionService.isSubjectBlocked(subjectType, subjectKey);
   if (blockCheck.blocked) {
