@@ -83,6 +83,14 @@ function setVisitorCookie(response, botId, rawToken) {
 async function handleSession(request, { params }) {
   try {
     const { botId } = await params;
+
+    // Rate Limit session initialization per IP
+    const clientIp = extractClientIp(request);
+    const sessionRateCheck = await enforceRateLimit("public_session_ip", `${clientIp}:${botId}`);
+    if (!sessionRateCheck.ok) {
+      return corsResponse(sessionRateCheck.response, request);
+    }
+
     // Strict resolution: Only support exact botId or legacy alias 'aa' -> 'bot_aa', never fall back to default/random bots
     const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
     let bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);

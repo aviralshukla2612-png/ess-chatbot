@@ -19,6 +19,7 @@ const ADMIN_SEARCH_ITEMS = [
   { label: "Plans & Pricing", href: "/admin/plans", keywords: "razorpay billing subscription" },
   { label: "Support Tickets", href: "/admin/tickets", keywords: "help customer issues" },
   { label: "Resource Usage", href: "/admin/usage", keywords: "storage vectors messages" },
+  { label: "Abuse & Security", href: "/admin/abuse", keywords: "rate limit ip block ddos bot traffic" },
   { label: "Platform Settings", href: "/admin/settings", keywords: "llm webhooks maintenance" },
 ];
 

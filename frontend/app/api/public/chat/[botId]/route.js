@@ -29,6 +29,9 @@ import {
   applyRateLimitHeaders,
   validateChatPayloadAndBudget,
 } from "@/lib/security/rateLimitPolicy";
+import { acquireGenerationLocks, releaseGenerationLocks } from "@/lib/security/concurrencyLock";
+import { abuseDetectionService } from "@/lib/security/abuseDetectionService";
+import { aiTokenGuard } from "@/lib/security/aiTokenGuard";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 
@@ -287,7 +290,7 @@ export async function POST(request, { params }) {
       return corsResponse(
         NextResponse.json(
           {
-            error: quotaCheck.error || "Monthly message limit reached for this chatbot. Please upgrade your plan in the dashboard.",
+            error: "This assistant has reached its current usage limit. Please contact the website administrator.",
             code: quotaCheck.reason,
             planId: quotaCheck.planId,
           },
@@ -366,7 +369,69 @@ export async function POST(request, { params }) {
       currentSessionId = `session_${botId}_${crypto.randomUUID()}`;
     }
 
-    // --- PHASE 6 & 12: GLOBAL BOT CHECK ---
+    // --- MULTI-LAYER TRAFFIC & ABUSE PROTECTION ---
+    // 1. Repetitive Identical Message Spam Protection
+    const repeatCheck = await abuseDetectionService.checkRepetitiveMessage(persistentVisitor?.id || clientIp, message);
+    if (!repeatCheck.allowed) {
+      return corsResponse(
+        NextResponse.json(
+          { error: repeatCheck.message, code: repeatCheck.reason, retryAfter: repeatCheck.retrySec },
+          { status: 429, headers: { "Retry-After": String(repeatCheck.retrySec) } }
+        ),
+        request
+      );
+    }
+
+    // 2. Visitor-Level Rate Limiting (Prevents bypassing IP limits via mobile networks/proxies)
+    if (persistentVisitor?.id) {
+      const visitorRateCheck = await enforceRateLimit("chat_visitor", `${persistentVisitor.id}:${bot.id}`);
+      if (!visitorRateCheck.ok) {
+        return corsResponse(visitorRateCheck.response, request);
+      }
+    }
+
+    // 3. Conversation-Level Rate Limiting
+    const convRateCheck = await enforceRateLimit("chat_conversation", currentSessionId);
+    if (!convRateCheck.ok) {
+      return corsResponse(convRateCheck.response, request);
+    }
+
+    // 4. Concurrency Control (Max 1 per conversation, Max 1 per visitor, Max N per workspace)
+    const generationLocks = await acquireGenerationLocks({
+      conversationId: currentSessionId,
+      visitorId: persistentVisitor?.id,
+      organizationId: bot.organizationId,
+    });
+    if (!generationLocks.ok) {
+      return corsResponse(
+        NextResponse.json(
+          { error: generationLocks.error, code: "CONCURRENCY_LIMIT_REACHED", retryAfter: generationLocks.retryAfterSec },
+          { status: 429, headers: { "Retry-After": String(generationLocks.retryAfterSec) } }
+        ),
+        request
+      );
+    }
+
+    // 5. Token Budget Reservation
+    const estTokens = aiTokenGuard.estimateTokens(message);
+    const tokenReserve = await aiTokenGuard.reserveTokenBudget({
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      estimatedTokens: estTokens,
+    });
+    if (!tokenReserve.allowed) {
+      await releaseGenerationLocks(generationLocks.lockTokens);
+      return corsResponse(
+        NextResponse.json(
+          { error: tokenReserve.error, code: tokenReserve.reason },
+          { status: 429 }
+        ),
+        request
+      );
+    }
+
+    try {
+      // --- PHASE 6 & 12: GLOBAL BOT CHECK ---
     if (bot.globalBotEnabled === false) {
       const fallbackText = bot.fallbackMessage || "Our automated assistant is temporarily paused. A team member will assist you shortly.";
       conversationsStore.addMessage(
@@ -1973,11 +2038,29 @@ Here are our official contact details to speak with our engineering leadership:
       setVisitorCookie(finalRes, bot.id, rawTokenToSet);
     }
 
+    // Reconcile actual token consumption
+    await aiTokenGuard.reconcileActualTokens({
+      reservationId: tokenReserve.reservationId,
+      organizationId: bot.organizationId,
+      botId: bot.id,
+      conversationId: currentSessionId,
+      promptTokens: estTokens,
+      completionTokens: aiTokenGuard.estimateTokens(botReply),
+    });
+
     return finalRes;
-  } catch (err) {
-    return corsResponse(
-      NextResponse.json({ success: false, error: err.message }, { status: 500 }),
-      request
-    );
+  } catch (innerErr) {
+    await aiTokenGuard.cancelReservation(tokenReserve?.reservationId);
+    throw innerErr;
+  } finally {
+    if (generationLocks?.lockTokens) {
+      await releaseGenerationLocks(generationLocks.lockTokens);
+    }
   }
+} catch (err) {
+  return corsResponse(
+    NextResponse.json({ success: false, error: err.message }, { status: 500 }),
+    request
+  );
+}
 }

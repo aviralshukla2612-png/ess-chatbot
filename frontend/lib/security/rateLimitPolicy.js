@@ -5,6 +5,7 @@
 
 import crypto from "crypto";
 import { checkDistributedRateLimit } from "./distributedRateLimit.js";
+import { abuseDetectionService } from "./abuseDetectionService.js";
 
 let NextResponse = globalThis.Response;
 try {
@@ -89,6 +90,16 @@ export function getRateLimitPolicies() {
       windowMs: envInt("RL_CHAT_IP_WINDOW_MS", 60 * 1000),
       message: "Too many chat messages sent in a short period. Please wait a moment.",
     },
+    chat_visitor: {
+      limit: envInt("RL_CHAT_VISITOR_MAX", 20),
+      windowMs: envInt("RL_CHAT_VISITOR_WINDOW_MS", 60 * 1000),
+      message: "You're sending messages too quickly. Please wait a moment before trying again.",
+    },
+    chat_conversation: {
+      limit: envInt("RL_CHAT_CONV_MAX", 15),
+      windowMs: envInt("RL_CHAT_CONV_WINDOW_MS", 60 * 1000),
+      message: "Too many messages in this conversation. Please wait a moment.",
+    },
     chat_org: {
       limit: envInt("RL_CHAT_ORG_MAX", 300),
       windowMs: envInt("RL_CHAT_ORG_WINDOW_MS", 60 * 1000),
@@ -98,6 +109,43 @@ export function getRateLimitPolicies() {
       limit: envInt("RL_PUBLIC_SESSION_IP_MAX", 30),
       windowMs: envInt("RL_PUBLIC_SESSION_IP_WINDOW_MS", 60 * 1000),
       message: "Too many session initialization requests. Please wait briefly.",
+    },
+    conversation_create_ip: {
+      limit: envInt("RL_CONV_CREATE_IP_MAX", 10),
+      windowMs: envInt("RL_CONV_CREATE_IP_WINDOW_MS", 5 * 60 * 1000),
+      message: "Too many conversations created from this IP address. Please continue in your active chat.",
+    },
+    conversation_create_visitor: {
+      limit: envInt("RL_CONV_CREATE_VISITOR_MAX", 5),
+      windowMs: envInt("RL_CONV_CREATE_VISITOR_WINDOW_MS", 5 * 60 * 1000),
+      message: "Too many new conversations created. Please continue in your active chat.",
+    },
+    // Realtime & Streaming
+    sse_connect_ip: {
+      limit: envInt("RL_SSE_CONNECT_IP_MAX", 15),
+      windowMs: envInt("RL_SSE_CONNECT_IP_WINDOW_MS", 60 * 1000),
+      message: "Too many real-time stream connections from this IP address.",
+    },
+    sse_connect_user: {
+      limit: envInt("RL_SSE_CONNECT_USER_MAX", 8),
+      windowMs: envInt("RL_SSE_CONNECT_USER_WINDOW_MS", 60 * 1000),
+      message: "Too many active real-time connections for this account.",
+    },
+    // Admin, Search & Export
+    admin_api: {
+      limit: envInt("RL_ADMIN_API_MAX", 100),
+      windowMs: envInt("RL_ADMIN_API_WINDOW_MS", 60 * 1000),
+      message: "Admin request rate limit reached. Please wait a moment.",
+    },
+    search_query: {
+      limit: envInt("RL_SEARCH_QUERY_MAX", 60),
+      windowMs: envInt("RL_SEARCH_QUERY_WINDOW_MS", 60 * 1000),
+      message: "Too many search requests. Please slow down.",
+    },
+    export_data: {
+      limit: envInt("RL_EXPORT_DATA_MAX", 5),
+      windowMs: envInt("RL_EXPORT_DATA_WINDOW_MS", 15 * 60 * 1000),
+      message: "Data export rate limit reached. Please wait before exporting again.",
     },
     // Storage, Ingestion & Crawling layers
     file_upload: {
@@ -255,10 +303,30 @@ export async function enforceRateLimit(policyName, subjectKey, overrides = {}) {
   const windowMs = overrides.windowMs ?? base.windowMs;
   const message = overrides.message ?? base.message;
 
+  // 1. Check if subject is actively blocked or under progressive cooldown
+  const subjectType = policyName.includes("ip") ? "ip" : policyName.includes("visitor") ? "visitor" : "user";
+  const blockCheck = await abuseDetectionService.isSubjectBlocked(subjectType, subjectKey);
+  if (blockCheck.blocked) {
+    const fakeRateResult = {
+      ok: false,
+      limit,
+      remaining: 0,
+      retrySec: blockCheck.retrySec || 60,
+      resetAt: Math.ceil(Date.now() / 1000) + (blockCheck.retrySec || 60),
+    };
+    return {
+      ok: false,
+      result: fakeRateResult,
+      response: buildRateLimitResponse(fakeRateResult, blockCheck.reason),
+    };
+  }
+
   const compositeKey = `${policyName}:${subjectKey}`;
   const result = await checkDistributedRateLimit(compositeKey, limit, windowMs);
 
   if (!result.ok) {
+    // Record violation for progressive cooldown escalation
+    abuseDetectionService.recordViolationAndGetCooldown(subjectKey, subjectType).catch(() => {});
     return {
       ok: false,
       result,

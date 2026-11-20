@@ -1,5 +1,9 @@
 import { sseBroker } from "@/lib/db/sseBroker";
 import { requireAuth, isPlatformSuperAdmin } from "@/lib/auth/guard";
+import {
+  extractClientIp,
+  enforceRateLimit,
+} from "@/lib/security/rateLimitPolicy";
 
 export async function GET(request) {
   const auth = await requireAuth(request);
@@ -7,6 +11,14 @@ export async function GET(request) {
 
   const { principal } = auth;
   const isSuperAdmin = isPlatformSuperAdmin(principal);
+
+  // Enforce Real-time SSE Connection Rate Limits
+  const clientIp = extractClientIp(request);
+  const ipRateCheck = await enforceRateLimit("sse_connect_ip", clientIp);
+  if (!ipRateCheck.ok) return ipRateCheck.response;
+
+  const userRateCheck = await enforceRateLimit("sse_connect_user", principal.userId || principal.email);
+  if (!userRateCheck.ok) return userRateCheck.response;
 
   let unsubscribe;
   let heartbeatInterval;

@@ -205,6 +205,17 @@ export async function POST(request, { params }) {
       );
     }
 
+    const MAX_EXTRACTED_CHARS = 500000;
+    if (textContent.length > MAX_EXTRACTED_CHARS) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Extracted text exceeds maximum length of ${MAX_EXTRACTED_CHARS.toLocaleString()} characters.`,
+        },
+        { status: 413 }
+      );
+    }
+
     const contentCheck = validateProhibitedContent({ name: fileName, content: textContent });
     if (!contentCheck.ok) {
       return NextResponse.json(

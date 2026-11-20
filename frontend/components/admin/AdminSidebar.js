@@ -18,6 +18,7 @@ import {
   CreditCard,
   LifeBuoy,
   Key,
+  ShieldAlert,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ const adminNavItems = [
   { name: "Plans & Pricing", href: "/admin/plans", icon: CreditCard },
   { name: "Support Tickets", href: "/admin/tickets", icon: LifeBuoy },
   { name: "Resource Usage", href: "/admin/usage", icon: HardDrive },
+  { name: "Abuse & Security", href: "/admin/abuse", icon: ShieldAlert },
   { name: "Platform Settings", href: "/admin/settings", icon: Settings },
 ];
 
