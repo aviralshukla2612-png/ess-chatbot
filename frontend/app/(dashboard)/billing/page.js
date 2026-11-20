@@ -41,6 +41,27 @@ const EXTENSION_PACKAGES = [
     cta: "Activate Monthly (₹999)",
   },
   {
+    id: "annual",
+    name: "Annual VIP Pass",
+    badge: "RECOMMENDED · SAVE ₹2,989",
+    badgeClass:
+      "bg-indigo-600 text-white border-indigo-600 shadow-xs",
+    duration: "+365 Days Access",
+    price: "₹8,999",
+    equivalent: "₹749 / month",
+    periodLabel: "12 months",
+    description: "Best annual value — save ₹2,989 compared with twelve monthly renewals.",
+    features: [
+      "1 workspace & chatbot",
+      "Full autonomous AI access",
+      "Save ₹2,989 vs monthly renewals",
+      "500 Knowledge Pages & PDFs",
+      "Priority onboarding support",
+    ],
+    isPopular: true,
+    cta: "Activate Annual VIP (₹8,999)",
+  },
+  {
     id: "six-months",
     name: "Six Months Pass",
     badge: "Half-Year Value",
@@ -60,27 +81,6 @@ const EXTENSION_PACKAGES = [
     ],
     isPopular: false,
     cta: "Activate 6 Months (₹5,999)",
-  },
-  {
-    id: "annual",
-    name: "Annual VIP Pass",
-    badge: "RECOMMENDED · SAVE ₹2,989",
-    badgeClass:
-      "bg-indigo-600 text-white border-indigo-600",
-    duration: "+365 Days Access",
-    price: "₹8,999",
-    equivalent: "₹749 / month",
-    periodLabel: "12 months",
-    description: "Best annual value — save ₹2,989 compared with twelve monthly renewals.",
-    features: [
-      "1 workspace & chatbot",
-      "Full autonomous AI access",
-      "Save ₹2,989 vs monthly renewals",
-      "500 Knowledge Pages & PDFs",
-      "Priority onboarding support",
-    ],
-    isPopular: true,
-    cta: "Activate Annual VIP (₹8,999)",
   },
 ];
 
@@ -526,7 +526,7 @@ export default function BillingPage() {
                 key={pkg.id}
                 className={`relative rounded-2xl p-6 transition-all flex flex-col justify-between bg-[var(--bg-surface)] ${
                   pkg.isPopular
-                    ? "border-2 border-indigo-600 dark:border-indigo-500 shadow-[var(--shadow-md)]"
+                    ? "border-2 border-indigo-600 dark:border-indigo-500 shadow-xl shadow-indigo-500/10 md:-translate-y-1.5 z-10 ring-1 ring-indigo-500/25"
                     : "border border-[var(--border-subtle)] shadow-[var(--shadow-xs)] hover:border-[var(--border-strong)]"
                 }`}
               >

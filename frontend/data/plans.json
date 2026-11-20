@@ -28,34 +28,6 @@
     "updatedAt": "2026-11-04T10:00:00.000Z"
   },
   {
-    "id": "six-months",
-    "name": "Six Months",
-    "description": "Commercial Half-Year Access. Lock in uninterrupted AI customer engagement.",
-    "priceINR": 5999,
-    "priceMonthly": "₹5,999",
-    "currency": "INR",
-    "interval": "monthly",
-    "intervalCount": 6,
-    "periodLabel": "per 6 months",
-    "trialDays": 0,
-    "maxBots": 1,
-    "maxMessagesPerMonth": null,
-    "maxKnowledgePages": 150,
-    "isDefault": false,
-    "isActive": true,
-    "features": [
-      "1 account",
-      "1 chatbot",
-      "Full autonomous AI access",
-      "Unlimited Messages & Inquiries",
-      "150 Website Knowledge Pages",
-      "WhatsApp Cloud API integration"
-    ],
-    "razorpayPlanId": "plan_six_months_5999",
-    "createdAt": "2026-11-04T10:00:00.000Z",
-    "updatedAt": "2026-11-04T10:00:00.000Z"
-  },
-  {
     "id": "annual",
     "name": "Annual",
     "description": "Full Year Maximum Value. Save ₹2,989 compared with twelve monthly payments.",
@@ -81,6 +53,34 @@
       "Priority VIP support"
     ],
     "razorpayPlanId": "plan_annual_8999",
+    "createdAt": "2026-11-04T10:00:00.000Z",
+    "updatedAt": "2026-11-04T10:00:00.000Z"
+  },
+  {
+    "id": "six-months",
+    "name": "Six Months",
+    "description": "Commercial Half-Year Access. Lock in uninterrupted AI customer engagement.",
+    "priceINR": 5999,
+    "priceMonthly": "₹5,999",
+    "currency": "INR",
+    "interval": "monthly",
+    "intervalCount": 6,
+    "periodLabel": "per 6 months",
+    "trialDays": 0,
+    "maxBots": 1,
+    "maxMessagesPerMonth": null,
+    "maxKnowledgePages": 150,
+    "isDefault": false,
+    "isActive": true,
+    "features": [
+      "1 account",
+      "1 chatbot",
+      "Full autonomous AI access",
+      "Unlimited Messages & Inquiries",
+      "150 Website Knowledge Pages",
+      "WhatsApp Cloud API integration"
+    ],
+    "razorpayPlanId": "plan_six_months_5999",
     "createdAt": "2026-11-04T10:00:00.000Z",
     "updatedAt": "2026-11-04T10:00:00.000Z"
   }
