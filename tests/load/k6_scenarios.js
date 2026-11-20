@@ -131,10 +131,20 @@ export const scenariosConfig = {
   },
 };
 
-// Aliases for backward compatibility
+// Aliases for backward compatibility and CLI convenience
 scenariosConfig.level1_baseline = scenariosConfig.level1_10vu;
 scenariosConfig.level2_normal = scenariosConfig.level2_25vu;
 scenariosConfig.level3_stress = scenariosConfig.level5_100vu;
+scenariosConfig["100vu"] = scenariosConfig.level5_100vu;
+scenariosConfig["100"] = scenariosConfig.level5_100vu;
+scenariosConfig["10vu"] = scenariosConfig.level1_10vu;
+scenariosConfig["10"] = scenariosConfig.level1_10vu;
+scenariosConfig["25vu"] = scenariosConfig.level2_25vu;
+scenariosConfig["25"] = scenariosConfig.level2_25vu;
+scenariosConfig["50vu"] = scenariosConfig.level3_50vu;
+scenariosConfig["50"] = scenariosConfig.level3_50vu;
+scenariosConfig["75vu"] = scenariosConfig.level4_75vu;
+scenariosConfig["75"] = scenariosConfig.level4_75vu;
 
 const selectedScenario = __ENV.SCENARIO || "level1_10vu";
 const activeScenarioConfig = scenariosConfig[selectedScenario] || scenariosConfig.level1_10vu;
