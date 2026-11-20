@@ -253,7 +253,7 @@ export const botsStore = {
    * Retrieve a bot by ID or Name, enforcing organizationId tenant boundary when provided.
    * Returns null if no exact matching bot is found. Never falls back to arbitrary bots.
    */
-  getBot(idOrName, organizationId = null) {
+  getBot(idOrName, organizationId = null, enrich = false) {
     if (!idOrName) return null;
     const query = String(idOrName).trim();
     if (!query) return null;
@@ -268,15 +268,15 @@ export const botsStore = {
 
     // 1. Exact ID match
     let match = scopedBots.find((b) => b.id === query);
-    if (match) return enrichBotWithMetrics(match, scopedBots.length);
+    if (match) return enrich ? enrichBotWithMetrics(match, scopedBots.length) : match;
 
     // 2. Case-insensitive ID match
     match = scopedBots.find((b) => b.id && b.id.toLowerCase() === queryLower);
-    if (match) return enrichBotWithMetrics(match, scopedBots.length);
+    if (match) return enrich ? enrichBotWithMetrics(match, scopedBots.length) : match;
 
     // 3. Exact Name match (case-insensitive)
     match = scopedBots.find((b) => b.name && b.name.trim().toLowerCase() === queryLower);
-    if (match) return enrichBotWithMetrics(match, scopedBots.length);
+    if (match) return enrich ? enrichBotWithMetrics(match, scopedBots.length) : match;
 
     // 4. Default seed bot fallback (ensure official default Emperor AI Assistant is always accessible)
     if (!organizationId || organizationId === DEFAULT_ORG_ID || organizationId === "org_default") {
@@ -287,7 +287,7 @@ export const botsStore = {
             bots.push(def);
             saveBotsToDisk(bots);
           }
-          return enrichBotWithMetrics(def, 1);
+          return enrich ? enrichBotWithMetrics(def, 1) : def;
         }
       }
     }
@@ -300,14 +300,14 @@ export const botsStore = {
    * Retrieve a bot by ID or Name asynchronously, checking PostgreSQL database first
    * and falling back to memory/disk store.
    */
-  async getBotAsync(idOrName, organizationId = null) {
+  async getBotAsync(idOrName, organizationId = null, enrich = false) {
     if (!idOrName) return null;
     const query = String(idOrName).trim();
     if (!query) return null;
     const queryLower = query.toLowerCase();
 
     // Check disk/memory first for speed
-    const localMatch = this.getBot(query, organizationId);
+    const localMatch = this.getBot(query, organizationId, enrich);
     if (localMatch) return localMatch;
 
     // Query PostgreSQL Database

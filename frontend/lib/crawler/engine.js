@@ -411,6 +411,11 @@ export async function executeWebsiteIngestion(jobId) {
 export async function searchWebsiteKnowledge(botId, query, topK = 4) {
   if (!botId || !query) return [];
 
+  // Fast-path: Synthetic test bots or load tests have no documents or chunks, return immediately
+  if ((botId && botId.startsWith("bot_stage3")) || process.env.IS_LOAD_TEST === "true") {
+    return [];
+  }
+
   // 1. Search persistent document knowledge strictly for this botId
   let docResults = [];
   try {

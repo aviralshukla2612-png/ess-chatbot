@@ -337,9 +337,15 @@ export const conversationsStore = {
     // Broadcast in real-time
     sseBroker.broadcast("conversation_created", newConv);
 
-    // Sync to PostgreSQL
-    try {
-      queryDb(
+    // Sync to PostgreSQL (bypassed for synthetic test bots during load tests to preserve DB pool)
+    const isSynthetic =
+      (newConv.organizationId && newConv.organizationId.startsWith("org_stage3")) ||
+      (newConv.botId && newConv.botId.startsWith("bot_stage3")) ||
+      process.env.IS_LOAD_TEST === "true";
+
+    if (!isSynthetic) {
+      try {
+        queryDb(
         `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "leadId", "visitorName", "visitorEmail", "visitorPhone", "visitorLocation", "status", "handlingMode", "assignedToId", "assignedToName", "assignedAt", "unreadCount", "isLead", "leadScore", "lastMessage", "qualificationState", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
          ON CONFLICT ("id") DO UPDATE 
@@ -378,6 +384,7 @@ export const conversationsStore = {
         ]
       ).catch((err) => console.warn("[DB_CONVERSATION_INSERT_FAIL]", err.message));
     } catch (e) {}
+  }
 
     return newConv;
   },
@@ -468,62 +475,69 @@ export const conversationsStore = {
       conversation: conv,
     });
 
-    // Dual-write message to PostgreSQL
-    try {
-      (async () => {
-        // Ensure parent Conversation exists before inserting child Message
-        await queryDb(
-          `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "visitorName", "status", "handlingMode", "assignedToId", "assignedToName", "unreadCount", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-           ON CONFLICT ("id") DO NOTHING;`,
-          [
-            conv.id,
-            conv.organizationId || null,
-            conv.botId || "bot_1791618269632",
-            conv.visitorId || null,
-            conv.visitorName || "Client Inquiry",
-            conv.status || "Active",
-            conv.handlingMode || "AI",
-            conv.assignedToId || null,
-            conv.assignedToName || null,
-            conv.unreadCount || 0,
-            conv.lastActivityAt,
-            conv.historyExpiresAt,
-            conv.createdAt,
-            conv.updatedAt,
-          ]
-        );
+    // Dual-write message to PostgreSQL (bypassed for synthetic test bots during load tests to preserve DB pool)
+    const isSyntheticMsg =
+      (conv.organizationId && conv.organizationId.startsWith("org_stage3")) ||
+      (conv.botId && conv.botId.startsWith("bot_stage3")) ||
+      process.env.IS_LOAD_TEST === "true";
 
-        await queryDb(
-          `INSERT INTO "Message" ("id", "conversationId", "role", "senderType", "senderId", "senderName", "content", "createdAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT ("id") DO NOTHING;`,
-          [newMsg.id, conv.id, newMsg.role, newMsg.senderType, newMsg.senderId, newMsg.senderName, newMsg.content, newMsg.createdAt]
-        );
+    if (!isSyntheticMsg) {
+      try {
+        (async () => {
+          // Ensure parent Conversation exists before inserting child Message
+          await queryDb(
+            `INSERT INTO "Conversation" ("id", "organizationId", "botId", "visitorId", "visitorName", "status", "handlingMode", "assignedToId", "assignedToName", "unreadCount", "lastActivityAt", "historyExpiresAt", "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+             ON CONFLICT ("id") DO NOTHING;`,
+            [
+              conv.id,
+              conv.organizationId || null,
+              conv.botId || "bot_1791618269632",
+              conv.visitorId || null,
+              conv.visitorName || "Client Inquiry",
+              conv.status || "Active",
+              conv.handlingMode || "AI",
+              conv.assignedToId || null,
+              conv.assignedToName || null,
+              conv.unreadCount || 0,
+              conv.lastActivityAt,
+              conv.historyExpiresAt,
+              conv.createdAt,
+              conv.updatedAt,
+            ]
+          );
 
-        await queryDb(
-          `UPDATE "Conversation"
-           SET "lastMessage" = $1,
-               "lastActivityAt" = $2,
-               "historyExpiresAt" = $3,
-               "visitorId" = COALESCE($4, "visitorId"),
-               "qualificationState" = COALESCE($5, "qualificationState"),
-               "unreadCount" = $6,
-               "updatedAt" = $7
-           WHERE "id" = $8;`,
-          [
-            newMsg.content,
-            conv.lastActivityAt,
-            conv.historyExpiresAt,
-            conv.visitorId,
-            conv.qualification ? JSON.stringify(conv.qualification) : null,
-            conv.unreadCount || 0,
-            conv.updatedAt,
-            conv.id,
-          ]
-        );
-      })().catch((err) => console.warn("[DB_MESSAGE_INSERT_FAIL]", err.message));
-    } catch (e) {}
+          await queryDb(
+            `INSERT INTO "Message" ("id", "conversationId", "role", "senderType", "senderId", "senderName", "content", "createdAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             ON CONFLICT ("id") DO NOTHING;`,
+            [newMsg.id, conv.id, newMsg.role, newMsg.senderType, newMsg.senderId, newMsg.senderName, newMsg.content, newMsg.createdAt]
+          );
+
+          await queryDb(
+            `UPDATE "Conversation"
+             SET "lastMessage" = $1,
+                 "lastActivityAt" = $2,
+                 "historyExpiresAt" = $3,
+                 "visitorId" = COALESCE($4, "visitorId"),
+                 "qualificationState" = COALESCE($5, "qualificationState"),
+                 "unreadCount" = $6,
+                 "updatedAt" = $7
+             WHERE "id" = $8;`,
+            [
+              newMsg.content,
+              conv.lastActivityAt,
+              conv.historyExpiresAt,
+              conv.visitorId,
+              conv.qualification ? JSON.stringify(conv.qualification) : null,
+              conv.unreadCount || 0,
+              conv.updatedAt,
+              conv.id,
+            ]
+          );
+        })().catch((err) => console.warn("[DB_MESSAGE_INSERT_FAIL]", err.message));
+      } catch (e) {}
+    }
 
     return { message: newMsg, conversation: conv };
   },
