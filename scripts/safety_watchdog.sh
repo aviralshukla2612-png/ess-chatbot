@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# EMPEROR NEXUS — STAGE 3 SRE SAFETY WATCHDOG & MULTI-METRIC CIRCUIT BREAKER
+# ==============================================================================
+# Monitors host and container health every 2 seconds during load tests.
+# Enforces non-negotiable abort gates to protect the host and 24 co-tenants:
+# A. Host CPU > 85% sustained for >10 seconds
+# B. Host MemAvailable < 15 GiB
+# C. Neighbor Containers: 24 specific containers checked via 'docker ps -a'
+# D. Target PostgreSQL active connections >= 40
+# E. Target Redis memory >= 80% of maxmemory
+# F. Root filesystem free disk < 50 GB
+# G. Application unexpected 5xx error rate > 5% sustained
+# H. Precision test process termination (k6, sseConcurrencyClient, node test runners)
+# ==============================================================================
+
+set -u
+
+AUDIT_LOG="${WATCHDOG_LOG_FILE:-./stage3_watchdog_audit.log}"
+ERROR_LOG="${TEST_ERROR_LOG:-/tmp/stage3_test_errors.log}"
+TARGET_PG_CONTAINER="${TARGET_PG_CONTAINER:-ess-postgres-staging}"
+TARGET_PG_DB="${TARGET_PG_DB:-ess_chatbot_staging}"
+TARGET_REDIS_CONTAINER="${TARGET_REDIS_CONTAINER:-ess-redis-staging}"
+
+# Baseline inventory of all 24 neighboring containers from Phase A discovery
+NEIGHBOR_INVENTORY=(
+  "admafia-frontend"
+  "admafia-backend"
+  "admafia-mongo"
+  "admafia-redis"
+  "admafia-mongo-express"
+  "knotelle-app"
+  "knotelle-db"
+  "nutsandnutrition-app"
+  "nutsandnutrition-db"
+  "convoza-nginx"
+  "convoza-admin"
+  "convoza-website"
+  "convoza-campaign-worker"
+  "convoza-webhook-worker"
+  "convoza-message-worker"
+  "convoza-api"
+  "convoza-postgres"
+  "convoza-dashboard"
+  "talknex-web"
+  "talknex-api"
+  "aviatorguide-app-1"
+  "aviatorguide-db-1"
+  "rockyblog-app-1"
+  "rockyblog-db-1"
+)
+
+# State trackers
+HIGH_CPU_STREAK=0
+HIGH_ERROR_STREAK=0
+
+# Log auditable message
+log_event() {
+  local level="$1"
+  local trigger="$2"
+  local message="$3"
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  echo "[$timestamp] [$level] [$trigger] $message" | tee -a "$AUDIT_LOG"
+}
+
+# Precision test runner process termination (avoids broad pkill that could hit neighbors)
+terminate_test_runners() {
+  log_event "ALERT" "PROCESS_TERMINATION" "Executing precision shutdown of active benchmark runners..."
+  pkill -f "k6 run" 2>/dev/null || true
+  pkill -f "sseConcurrencyClient" 2>/dev/null || true
+  pkill -f "multiTenantConcurrency" 2>/dev/null || true
+  pkill -f "tests/load/" 2>/dev/null || true
+}
+
+# Circuit Breaker Trigger Function
+trigger_abort() {
+  local trigger_code="$1"
+  local details="$2"
+  log_event "FATAL" "$trigger_code" "CIRCUIT BREAKER TRIPPED: $details. Aborting load test immediately!"
+  terminate_test_runners
+  echo "CIRCUIT_BREAKER_ABORT: $trigger_code - $details" > /tmp/stage3_abort_signal
+  exit 1
+}
+
+# ------------------------------------------------------------------------------
+# 1. CPU Utilization Check (2-sample delta calculation)
+# ------------------------------------------------------------------------------
+check_cpu_utilization() {
+  # Read /proc/stat
+  if [ -f "/proc/stat" ]; then
+    read -r cpu user nice system idle iowait irq softirq steal guest guest_nice < /proc/stat
+    local prev_idle=$((idle + iowait))
+    local prev_total=$((user + nice + system + idle + iowait + irq + softirq + steal))
+
+    sleep 1
+
+    read -r cpu user nice system idle iowait irq softirq steal guest guest_nice < /proc/stat
+    local idle_now=$((idle + iowait))
+    local total_now=$((user + nice + system + idle + iowait + irq + softirq + steal))
+
+    local total_diff=$((total_now - prev_total))
+    local idle_diff=$((idle_now - prev_idle))
+
+    if [ "$total_diff" -gt 0 ]; then
+      local cpu_utilization=$((100 * (total_diff - idle_diff) / total_diff))
+      if [ "$cpu_utilization" -gt 85 ]; then
+        HIGH_CPU_STREAK=$((HIGH_CPU_STREAK + 1))
+        log_event "WARN" "CPU_PRESSURE" "Host CPU at ${cpu_utilization}% (Streak: ${HIGH_CPU_STREAK}/5 ticks)"
+        if [ "$HIGH_CPU_STREAK" -ge 5 ]; then # 5 checks * ~2s = >10 seconds sustained
+          trigger_abort "CPU_SATURATION" "Host CPU sustained at ${cpu_utilization}% for >10 seconds"
+        fi
+      else
+        HIGH_CPU_STREAK=0
+      fi
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# 2. Host Memory (MemAvailable) Check
+# ------------------------------------------------------------------------------
+check_memory() {
+  if [ -f "/proc/meminfo" ]; then
+    local avail_kb
+    avail_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+    local limit_kb=15728640 # 15 GiB in KB
+    if [ "$avail_kb" -lt "$limit_kb" ]; then
+      local avail_gib=$((avail_kb / 1024 / 1024))
+      trigger_abort "MEMORY_EXHAUSTION" "Available host memory fell to ${avail_gib} GiB (<15 GiB threshold)"
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# 3. Neighboring Container Health Check (24 specific containers via docker ps -a)
+# ------------------------------------------------------------------------------
+check_neighbor_containers() {
+  if command -v docker >/dev/null 2>&1; then
+    local ps_output
+    ps_output=$(docker ps -a --format '{{.Names}}|{{.Status}}' 2>/dev/null || echo "")
+
+    for expected_name in "${NEIGHBOR_INVENTORY[@]}"; do
+      local line
+      line=$(echo "$ps_output" | grep -E "^${expected_name}\|" || true)
+
+      if [ -z "$line" ]; then
+        trigger_abort "NEIGHBOR_MISSING" "Neighbor container '${expected_name}' is missing from docker ps -a"
+      fi
+
+      local status
+      status=$(echo "$line" | cut -d '|' -f 2)
+
+      if echo "$status" | grep -iqE "restarting|dead|unhealthy"; then
+        trigger_abort "NEIGHBOR_UNHEALTHY" "Neighbor container '${expected_name}' entered unhealthy/restarting state: ${status}"
+      fi
+
+      if echo "$status" | grep -iqE "exited \([1-9]"; then
+        trigger_abort "NEIGHBOR_CRASHED" "Neighbor container '${expected_name}' crashed with non-zero exit: ${status}"
+      fi
+    done
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# 4. Target Staging PostgreSQL Connections Check
+# ------------------------------------------------------------------------------
+check_postgres_connections() {
+  if command -v docker >/dev/null 2>&1; then
+    local active_conns
+    active_conns=$(docker exec "$TARGET_PG_CONTAINER" psql -U postgres -d "$TARGET_PG_DB" -t -A -c "SELECT count(*) FROM pg_stat_activity WHERE state = 'active';" 2>/dev/null || echo "0")
+    if [ "$active_conns" =~ ^[0-9]+$ ] && [ "$active_conns" -ge 40 ]; then
+      trigger_abort "POSTGRES_POOL_SATURATION" "Target PostgreSQL active connections reached ${active_conns} (threshold: 40)"
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# 5. Target Staging Redis Memory Check
+# ------------------------------------------------------------------------------
+check_redis_memory() {
+  if command -v docker >/dev/null 2>&1; then
+    local mem_info
+    mem_info=$(docker exec "$TARGET_REDIS_CONTAINER" redis-cli INFO memory 2>/dev/null || true)
+    if [ -n "$mem_info" ]; then
+      local used
+      local max
+      used=$(echo "$mem_info" | grep -E "^used_memory:" | cut -d ':' -f 2 | tr -d '\r')
+      max=$(echo "$mem_info" | grep -E "^maxmemory:" | cut -d ':' -f 2 | tr -d '\r')
+
+      if [ -n "$used" ] && [ -n "$max" ] && [ "$max" -gt 0 ]; then
+        local pct=$((100 * used / max))
+        if [ "$pct" -ge 80 ]; then
+          trigger_abort "REDIS_MEMORY_SATURATION" "Target Redis memory at ${pct}% of maxmemory (threshold: 80%)"
+        fi
+      fi
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# 6. Disk Space Check
+# ------------------------------------------------------------------------------
+check_disk_space() {
+  local avail_kb
+  avail_kb=$(df -k / | awk 'NR==2 {print $4}')
+  local min_kb=52428800 # 50 GB in KB
+  if [ "$avail_kb" -lt "$min_kb" ]; then
+    local avail_gb=$((avail_kb / 1024 / 1024))
+    trigger_abort "DISK_HEADROOM_DEPLETED" "Root filesystem free space fell to ${avail_gb} GB (<50 GB threshold)"
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# 7. Sustained Application 5xx Error Rate Check
+# ------------------------------------------------------------------------------
+check_application_errors() {
+  if [ -f "$ERROR_LOG" ]; then
+    local total
+    local errors
+    total=$(tail -n 100 "$ERROR_LOG" | wc -l)
+    errors=$(tail -n 100 "$ERROR_LOG" | grep -c "HTTP_5" || true)
+
+    if [ "$total" -gt 20 ]; then
+      local err_pct=$((100 * errors / total))
+      if [ "$err_pct" -gt 5 ]; then
+        HIGH_ERROR_STREAK=$((HIGH_ERROR_STREAK + 1))
+        log_event "WARN" "ERROR_RATE_ELEVATED" "Sampled 5xx error rate at ${err_pct}% (Streak: ${HIGH_ERROR_STREAK}/3)"
+        if [ "$HIGH_ERROR_STREAK" -ge 3 ]; then # >6 seconds sustained
+          trigger_abort "HIGH_ERROR_RATE" "Sustained application 5xx error rate at ${err_pct}% (>5% threshold)"
+        fi
+      else
+        HIGH_ERROR_STREAK=0
+      fi
+    fi
+  fi
+}
+
+# ------------------------------------------------------------------------------
+# MAIN SUPERVISOR LOOP
+# ------------------------------------------------------------------------------
+log_event "INFO" "WATCHDOG_STARTUP" "Stage 3 Safety Watchdog initialized. Monitoring 24 neighbors and 7 circuit breakers."
+
+while true; do
+  check_cpu_utilization
+  check_memory
+  check_neighbor_containers
+  check_postgres_connections
+  check_redis_memory
+  check_disk_space
+  check_application_errors
+  sleep 1
+done
