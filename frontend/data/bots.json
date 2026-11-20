@@ -1,5 +1,23 @@
 [
   {
+    "id": "bot_stage3_alpha_01",
+    "organizationId": "org_stage3_alpha_test",
+    "status": "Active",
+    "name": "Alpha Bot",
+    "allowedDomains": ["*"],
+    "welcomeMessage": "Hello! I am Alpha Bot.",
+    "fallbackMessage": "Please wait for assistance."
+  },
+  {
+    "id": "bot_stage3_beta_01",
+    "organizationId": "org_stage3_beta_test",
+    "status": "Active",
+    "name": "Beta Bot",
+    "allowedDomains": ["*"],
+    "welcomeMessage": "Hello! I am Beta Bot.",
+    "fallbackMessage": "Please wait for assistance."
+  },
+  {
     "id": "bot_existing_1795003706114",
     "organizationId": "org_limit_test_second_1795003706114",
     "status": "Active",

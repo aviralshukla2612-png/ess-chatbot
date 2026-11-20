@@ -39,7 +39,7 @@ if command -v docker >/dev/null 2>&1; then
   mkdir -p frontend/data-staging 2>/dev/null || true
   if [ ! -f "frontend/data-staging/bots.json" ] || ! grep -q "bot_stage3_alpha_01" "frontend/data-staging/bots.json" 2>/dev/null; then
     echo "[DATA_SEED] Copying synthetic seed bots into frontend/data-staging/..."
-    cp -r frontend/data/* frontend/data-staging/ 2>/dev/null || true
+    cp -rf frontend/data/* frontend/data-staging/ 2>/dev/null || true
     chmod -R 777 frontend/data-staging 2>/dev/null || true
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "ess-frontend-staging"; then
       echo "[DATA_SEED] Restarting ess-frontend-staging to mount seed data..."
