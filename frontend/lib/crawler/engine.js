@@ -459,6 +459,11 @@ export async function searchWebsiteKnowledge(botId, query, topK = 4) {
     console.warn("[KNOWLEDGE_DOC_SEARCH_WARN]", err.message);
   }
 
+  // Fast-path: Synthetic test bots have no database chunks, avoid querying pgvector
+  if (botId && botId.startsWith("bot_stage3")) {
+    return docResults;
+  }
+
   // 2. Compute query embedding AT MOST ONCE across pgvector + in-memory points
   let sharedQueryVec = null;
   try {

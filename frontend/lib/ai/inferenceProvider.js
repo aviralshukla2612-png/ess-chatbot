@@ -159,16 +159,26 @@ export class InferenceProvider {
   static async _callGroq({ model, messages, temperature, maxTokens, stream, onToken, timeoutMs }) {
     const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
     
-    // Attempt across all keys in the pool before giving up
+    // Attempt across all distinct keys in the pool before giving up
     const poolStats = GroqKeyPoolManager.getPoolStats?.() || {};
-    const maxKeyAttempts = Math.max(6, (poolStats?.totalKeys || 1) + 2);
+    const maxKeyAttempts = Math.max(1, Math.min(poolStats?.totalKeys || 1, 3));
     let attempts = 0;
     let lastError = null;
+    const triedKeys = new Set();
 
     while (attempts < maxKeyAttempts) {
       attempts++;
       const keyObj = GroqKeyPoolManager.getNextKey();
-      const apiKey = keyObj?.apiKey || process.env.GROQ_API_KEY;
+      if (!keyObj) break;
+
+      const keyIdentifier = keyObj.id || keyObj.apiKey;
+      if (triedKeys.has(keyIdentifier)) {
+        // Prevent retry storms against the same exhausted key
+        break;
+      }
+      triedKeys.add(keyIdentifier);
+
+      const apiKey = keyObj.apiKey || process.env.GROQ_API_KEY;
 
       if (!apiKey) {
         throw new Error("GROQ_API_KEY or key pool is missing.");
