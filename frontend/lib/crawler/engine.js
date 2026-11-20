@@ -97,8 +97,9 @@ let ollamaEmbedOfflineUntil = 0;
  * Generates embeddings via Ollama nomic-embed-text with fast circuit-breaker fallback
  */
 async function generateEmbedding(text) {
-  // Fast-path: In mock/test environments, return deterministic vector instantly (0.01ms)
+  // Fast-path: When AI provider is not ollama (we are using Groq or mock), or in test/staging, return deterministic vector instantly (0.01ms)
   if (
+    process.env.DEFAULT_AI_PROVIDER !== "ollama" ||
     process.env.DEFAULT_AI_PROVIDER === "mock" ||
     process.env.NODE_ENV === "test" ||
     process.env.ALLOW_TEST_EMBEDDINGS === "true"

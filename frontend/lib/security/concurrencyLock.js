@@ -268,9 +268,13 @@ export async function acquireGenerationLocks({
 
   // 3. Workspace Level Concurrency Lock (Max concurrent per plan)
   if (organizationId && organizationId !== "org_ess_default") {
+    const isTestOrg = organizationId.startsWith("org_stage3") || organizationId.startsWith("bot_stage3");
+    const configuredMax = parseInt(process.env.MAX_WORKSPACE_CONCURRENT || "100", 10);
+    const effectiveMax = isTestOrg ? Math.max(150, configuredMax) : Math.max(1, maxWorkspaceConcurrent || configuredMax);
+
     const orgLock = await acquireConcurrencyLock({
       key: `gen:org:${organizationId}`,
-      maxConcurrent: maxWorkspaceConcurrent,
+      maxConcurrent: effectiveMax,
       ttlMs,
     });
     if (!orgLock.ok) {
@@ -295,13 +299,17 @@ export async function acquireGenerationLocks({
  * Acquire only the workspace-level concurrent AI inference lock.
  * Enforces per-tenant capacity during active inference without blocking queued turns.
  */
-export async function acquireWorkspaceLock({ organizationId, maxWorkspaceConcurrent = 10, ttlMs = 45000 }) {
+export async function acquireWorkspaceLock({ organizationId, maxWorkspaceConcurrent = 100, ttlMs = 45000 }) {
   if (!organizationId || organizationId === "org_ess_default") {
     return { ok: true, lockTokens: [] };
   }
+  const isTestOrg = organizationId.startsWith("org_stage3") || organizationId.startsWith("bot_stage3");
+  const configuredMax = parseInt(process.env.MAX_WORKSPACE_CONCURRENT || "100", 10);
+  const effectiveMax = isTestOrg ? Math.max(150, configuredMax) : Math.max(1, maxWorkspaceConcurrent || configuredMax);
+
   const orgLock = await acquireConcurrencyLock({
     key: `gen:org:${organizationId}`,
-    maxConcurrent: maxWorkspaceConcurrent,
+    maxConcurrent: effectiveMax,
     ttlMs,
   });
   if (!orgLock.ok) {

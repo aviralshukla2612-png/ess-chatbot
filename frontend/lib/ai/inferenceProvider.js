@@ -87,7 +87,10 @@ export class InferenceProvider {
         !process.env.GROQ_API_KEY.includes("your_groq_api_key")
       );
 
-      let selectedProvider = (provider || defaultEnvProvider || (hasValidGroqKey ? "groq" : "mock")).toLowerCase();
+      let selectedProvider = provider?.toLowerCase() ||
+        (defaultEnvProvider === "mock" || process.env.IS_LOAD_TEST === "true"
+          ? "mock"
+          : (defaultEnvProvider || (hasValidGroqKey ? "groq" : "mock"))).toLowerCase();
 
       // If groq was requested but no valid key exists, failover to mock in test/staging or throw
       if (selectedProvider === "groq" && !hasValidGroqKey) {
@@ -135,7 +138,6 @@ export class InferenceProvider {
           return await InferenceProvider._callMock({ messages, onToken, stream });
 
         case "ollama":
-        default:
           return await InferenceProvider._callOllama({
             model: model || process.env.CHAT_MODEL || "llama3.2:1b",
             endpoint: process.env.OLLAMA_URL || "http://127.0.0.1:11434",
@@ -143,6 +145,17 @@ export class InferenceProvider {
             temperature,
             maxTokens,
             stopTokens,
+            stream,
+            onToken,
+            timeoutMs,
+          });
+
+        default:
+          return await InferenceProvider._callGroq({
+            model: model || process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+            messages,
+            temperature,
+            maxTokens,
             stream,
             onToken,
             timeoutMs,

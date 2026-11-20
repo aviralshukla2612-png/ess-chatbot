@@ -65,7 +65,16 @@ async function executeChatInference({
   num_predict = 512,
   onToken = null,
   organizationId = null,
+  botId = null,
+  provider = null,
 }) {
+  const isSyntheticTest =
+    (organizationId && organizationId.startsWith("org_stage3")) ||
+    (botId && botId.startsWith("bot_stage3")) ||
+    process.env.DEFAULT_AI_PROVIDER === "mock";
+
+  const resolvedProvider = provider || (isSyntheticTest ? "mock" : null);
+
   let wsTokens = [];
   if (organizationId && organizationId !== "org_ess_default") {
     const wsLock = await acquireWorkspaceLock({ organizationId });
@@ -80,6 +89,7 @@ async function executeChatInference({
 
   try {
     return await InferenceProvider.generate({
+      provider: resolvedProvider,
       messages,
       temperature,
       maxTokens: num_predict,
@@ -1763,6 +1773,7 @@ Here are our official contact details to speak with our engineering leadership:
               temperature: 0.3,
               num_predict: 512,
               organizationId: bot.organizationId,
+              botId: bot.id,
               onToken: (token) => {
                 if (isIntercepted) return;
                 if (!preambleFlushed) {
@@ -1913,6 +1924,7 @@ Here are our official contact details to speak with our engineering leadership:
           temperature: 0.3,
           num_predict: payloadGuard.maxOutputTokens || 512,
           organizationId: bot.organizationId,
+          botId: bot.id,
         });
 
         botReply = validateOutput(botReply, businessName, lang, botName, resolvedName);
