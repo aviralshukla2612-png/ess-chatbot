@@ -16,7 +16,10 @@ set -euo pipefail
 HEARTBEAT_FILE="${WATCHDOG_HEARTBEAT_FILE:-/tmp/watchdog_heartbeat.json}"
 RUNNER_PID_FILE="${TEST_RUNNER_PID_FILE:-/tmp/stage3_test_runner.pid}"
 TARGET_HOST="${TARGET_HOST:-http://127.0.0.1:3301}"
-SCENARIO="${SCENARIO:-level1_baseline}"
+SCENARIO="${1:-${SCENARIO:-level1_10vu}}"
+if [ $# -ge 1 ]; then
+  shift
+fi
 
 echo "================================================================================"
 echo "EMPEROR NEXUS — PRE-FLIGHT LOAD RUNNER SAFETY BARRIER VERIFICATION"
@@ -76,12 +79,31 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # 6. Execute k6 Network Load Test
+OUTPUT_JSON="stage3_${SCENARIO}_raw_k6.json"
+SUMMARY_JSON="stage3_${SCENARIO}_summary.json"
+
 echo "================================================================================"
 echo "LAUNCHING K6 NETWORK LOAD TEST: SCENARIO=${SCENARIO} -> ${TARGET_HOST}"
+echo "Summary output: ${SUMMARY_JSON}"
+echo "Raw metrics:    ${OUTPUT_JSON}"
 echo "================================================================================"
 
-exec k6 run \
+k6 run \
   --env TARGET_HOST="${TARGET_HOST}" \
   --env SCENARIO="${SCENARIO}" \
-  --out json=stage3_level1_raw_k6.json \
+  --summary-export "${SUMMARY_JSON}" \
+  --out json="${OUTPUT_JSON}" \
   tests/load/k6_scenarios.js "$@"
+K6_EXIT_CODE=$?
+
+echo "================================================================================"
+echo "K6 RUN COMPLETED WITH EXIT CODE: ${K6_EXIT_CODE}"
+echo "================================================================================"
+
+# 7. Harvest Infrastructure & Database Telemetry
+if [ -f "scripts/collect_telemetry.sh" ]; then
+  echo "[TELEMETRY] Harvesting post-test infrastructure telemetry..."
+  bash scripts/collect_telemetry.sh "${SCENARIO}" || true
+fi
+
+exit ${K6_EXIT_CODE}

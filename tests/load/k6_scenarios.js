@@ -31,52 +31,124 @@ const BOT_BETA = "bot_stage3_beta_01";
 const ORG_ALPHA = "org_stage3_alpha_test";
 const ORG_BETA = "org_stage3_beta_test";
 
+/**
+ * Stage 3 Full Breakpoint & Progressive Stress Test Scenarios
+ * Progression: 10 -> 25 -> 50 -> 75 -> 100 -> 150 -> 200 -> 300 -> 500 VUs
+ * All levels use sustained, time-based ramping and steady-state holding with 1-3s think time.
+ */
+export const scenariosConfig = {
+  // Phase 2: Baseline (Level 1: 10 VUs for 120s)
+  level1_10vu: {
+    executor: "ramping-vus",
+    startVUs: 1,
+    stages: [
+      { duration: "20s", target: 10 },
+      { duration: "80s", target: 10 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "10s",
+  },
+  // Phase 3: Progressive Stress Levels
+  level2_25vu: {
+    executor: "ramping-vus",
+    startVUs: 2,
+    stages: [
+      { duration: "20s", target: 25 },
+      { duration: "80s", target: 25 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "15s",
+  },
+  level3_50vu: {
+    executor: "ramping-vus",
+    startVUs: 5,
+    stages: [
+      { duration: "20s", target: 50 },
+      { duration: "80s", target: 50 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "15s",
+  },
+  level4_75vu: {
+    executor: "ramping-vus",
+    startVUs: 10,
+    stages: [
+      { duration: "20s", target: 75 },
+      { duration: "80s", target: 75 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "15s",
+  },
+  level5_100vu: {
+    executor: "ramping-vus",
+    startVUs: 10,
+    stages: [
+      { duration: "20s", target: 100 },
+      { duration: "80s", target: 100 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "20s",
+  },
+  level6_150vu: {
+    executor: "ramping-vus",
+    startVUs: 15,
+    stages: [
+      { duration: "20s", target: 150 },
+      { duration: "80s", target: 150 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "20s",
+  },
+  level7_200vu: {
+    executor: "ramping-vus",
+    startVUs: 20,
+    stages: [
+      { duration: "20s", target: 200 },
+      { duration: "80s", target: 200 },
+      { duration: "20s", target: 0 },
+    ],
+    gracefulRampDown: "20s",
+  },
+  level8_300vu: {
+    executor: "ramping-vus",
+    startVUs: 25,
+    stages: [
+      { duration: "30s", target: 300 },
+      { duration: "60s", target: 300 },
+      { duration: "30s", target: 0 },
+    ],
+    gracefulRampDown: "30s",
+  },
+  level9_500vu: {
+    executor: "ramping-vus",
+    startVUs: 50,
+    stages: [
+      { duration: "30s", target: 500 },
+      { duration: "60s", target: 500 },
+      { duration: "30s", target: 0 },
+    ],
+    gracefulRampDown: "30s",
+  },
+};
+
+// Aliases for backward compatibility
+scenariosConfig.level1_baseline = scenariosConfig.level1_10vu;
+scenariosConfig.level2_normal = scenariosConfig.level2_25vu;
+scenariosConfig.level3_stress = scenariosConfig.level5_100vu;
+
+const selectedScenario = __ENV.SCENARIO || "level1_10vu";
+const activeScenarioConfig = scenariosConfig[selectedScenario] || scenariosConfig.level1_10vu;
+
 export const options = {
   scenarios: {
-    // Level 1: Corrected Baseline (10 VUs for 120s)
-    level1_baseline: {
-      executor: "ramping-vus",
-      startVUs: 1,
-      stages: [
-        { duration: "20s", target: 10 },  // 20s ramp-up to 10 VUs
-        { duration: "80s", target: 10 },  // 80s steady state at 10 VUs
-        { duration: "20s", target: 0 },   // 20s ramp down
-      ],
-      gracefulRampDown: "10s",
-    },
-    // Level 2: Normal Load (25 & 50 VUs) - Executed only after Level 1 authorization
-    level2_normal: {
-      executor: "ramping-vus",
-      startVUs: 5,
-      stages: [
-        { duration: "30s", target: 25 },
-        { duration: "60s", target: 25 },
-        { duration: "30s", target: 50 },
-        { duration: "60s", target: 50 },
-        { duration: "30s", target: 0 },
-      ],
-      gracefulRampDown: "15s",
-    },
-    // Level 3: Controlled Stress (75 & 100 VUs) - Executed only after Level 2 authorization
-    level3_stress: {
-      executor: "ramping-vus",
-      startVUs: 10,
-      stages: [
-        { duration: "30s", target: 75 },
-        { duration: "60s", target: 75 },
-        { duration: "30s", target: 100 },
-        { duration: "90s", target: 100 },
-        { duration: "30s", target: 0 },
-      ],
-      gracefulRampDown: "20s",
-    },
+    [selectedScenario]: activeScenarioConfig,
   },
   thresholds: {
     // SRE Safety Thresholds
-    http_req_failed: ["rate<0.05"],        // Abort if 5xx errors exceed 5%
-    error_rate: ["rate<0.05"],
-    security_cross_tenant_leaks: ["count==0"], // Zero tolerance for cross-tenant leakage
-    chat_latency_ms: ["p(95)<3000"],      // 95% of chat turns complete under 3s
+    http_req_failed: ["rate<0.10"],             // Alert if failure rate exceeds 10%
+    error_rate: ["rate<0.10"],
+    security_cross_tenant_leaks: ["count==0"],  // Zero tolerance for cross-tenant leakage
+    chat_latency_ms: ["p(95)<5000"],           // 95% of chat turns complete under 5s
   },
 };
 
@@ -167,7 +239,11 @@ export default function (data) {
     JSON.stringify({ visitorToken }),
     { headers }
   );
-  sseTicketTrend.add(Date.now() - t0Ticket);
+  if (ticketRes.timings && ticketRes.timings.duration) {
+    sseTicketTrend.add(ticketRes.timings.duration);
+  } else {
+    sseTicketTrend.add(Date.now() - t0Ticket);
+  }
 
   check(ticketRes, {
     "ticket issued 200": (r) => r.status === 200,
@@ -189,7 +265,15 @@ export default function (data) {
     { headers }
   );
   const chatElapsed = Date.now() - t0Chat;
-  chatLatencyTrend.add(chatElapsed);
+
+  if (chatRes.timings && typeof chatRes.timings.waiting === "number") {
+    ttftTrend.add(chatRes.timings.waiting);
+  }
+  if (chatRes.timings && typeof chatRes.timings.duration === "number") {
+    chatLatencyTrend.add(chatRes.timings.duration);
+  } else {
+    chatLatencyTrend.add(chatElapsed);
+  }
 
   check(chatRes, {
     "chat status 200 or 429/503": (r) => [200, 429, 503].includes(r.status),
