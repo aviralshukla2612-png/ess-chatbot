@@ -67,9 +67,16 @@ log_event() {
 # Precision test runner process termination (avoids broad pkill that could hit neighbors)
 terminate_test_runners() {
   log_event "ALERT" "PROCESS_TERMINATION" "Executing precision shutdown of active benchmark runners..."
+  if [ -n "${TEST_RUNNER_PID:-}" ] && kill -0 "$TEST_RUNNER_PID" 2>/dev/null; then
+    log_event "INFO" "PROCESS_TERMINATION" "Terminating target test runner PID: $TEST_RUNNER_PID"
+    kill -TERM "$TEST_RUNNER_PID" 2>/dev/null || true
+    sleep 1
+    kill -KILL "$TEST_RUNNER_PID" 2>/dev/null || true
+  fi
   pkill -f "k6 run" 2>/dev/null || true
   pkill -f "sseConcurrencyClient" 2>/dev/null || true
   pkill -f "multiTenantConcurrency" 2>/dev/null || true
+  pkill -f "level3StressRunner" 2>/dev/null || true
   pkill -f "tests/load/" 2>/dev/null || true
 }
 
@@ -169,7 +176,7 @@ check_postgres_connections() {
   if command -v docker >/dev/null 2>&1; then
     local active_conns
     active_conns=$(docker exec "$TARGET_PG_CONTAINER" psql -U postgres -d "$TARGET_PG_DB" -t -A -c "SELECT count(*) FROM pg_stat_activity WHERE state = 'active';" 2>/dev/null || echo "0")
-    if [ "$active_conns" =~ ^[0-9]+$ ] && [ "$active_conns" -ge 40 ]; then
+    if [[ "$active_conns" =~ ^[0-9]+$ ]] && [ "$active_conns" -ge 40 ]; then
       trigger_abort "POSTGRES_POOL_SATURATION" "Target PostgreSQL active connections reached ${active_conns} (threshold: 40)"
     fi
   fi
