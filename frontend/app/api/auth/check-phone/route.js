@@ -1,51 +1,88 @@
 import { NextResponse } from "next/server";
 import { authStore } from "@/lib/db/authStore";
+import {
+  extractClientIp,
+  enforceRateLimit,
+  applyRateLimitHeaders,
+} from "@/lib/security/rateLimitPolicy";
 
+/**
+ * POST /api/auth/check-phone
+ * Rate-limited pre-registration phone availability check (SEC-03).
+ */
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const clientIp = extractClientIp(request);
+    const ipCheck = await enforceRateLimit("phone_check_ip", clientIp);
+    if (!ipCheck.ok) return ipCheck.response;
+
+    const body = await request.json().catch(() => ({}));
     const { phone } = body || {};
 
     if (!phone) {
-      return NextResponse.json({ exists: false, error: "Phone number required" }, { status: 400 });
+      return applyRateLimitHeaders(
+        NextResponse.json({ exists: false, error: "Phone number required" }, { status: 400 }),
+        ipCheck.result
+      );
     }
 
     const rawDigits = String(phone).replace(/\D/g, "");
     if (rawDigits.length < 10) {
-      return NextResponse.json({ exists: false, valid: false });
+      return applyRateLimitHeaders(
+        NextResponse.json({ exists: false, valid: false }),
+        ipCheck.result
+      );
     }
 
     const exists = await authStore.checkPhoneExists(phone);
-    return NextResponse.json({
-      success: true,
-      exists: Boolean(exists),
-      phone: rawDigits.slice(-10),
-    });
+    return applyRateLimitHeaders(
+      NextResponse.json({
+        success: true,
+        exists: Boolean(exists),
+      }),
+      ipCheck.result
+    );
   } catch (err) {
     return NextResponse.json({ exists: false, error: err.message }, { status: 500 });
   }
 }
 
+/**
+ * GET /api/auth/check-phone
+ * Rate-limited pre-registration phone availability check (SEC-03).
+ */
 export async function GET(request) {
   try {
+    const clientIp = extractClientIp(request);
+    const ipCheck = await enforceRateLimit("phone_check_ip", clientIp);
+    if (!ipCheck.ok) return ipCheck.response;
+
     const { searchParams } = new URL(request.url);
     const phone = searchParams.get("phone");
 
     if (!phone) {
-      return NextResponse.json({ exists: false, error: "Phone parameter required" }, { status: 400 });
+      return applyRateLimitHeaders(
+        NextResponse.json({ exists: false, error: "Phone parameter required" }, { status: 400 }),
+        ipCheck.result
+      );
     }
 
     const rawDigits = String(phone).replace(/\D/g, "");
     if (rawDigits.length < 10) {
-      return NextResponse.json({ exists: false, valid: false });
+      return applyRateLimitHeaders(
+        NextResponse.json({ exists: false, valid: false }),
+        ipCheck.result
+      );
     }
 
     const exists = await authStore.checkPhoneExists(phone);
-    return NextResponse.json({
-      success: true,
-      exists: Boolean(exists),
-      phone: rawDigits.slice(-10),
-    });
+    return applyRateLimitHeaders(
+      NextResponse.json({
+        success: true,
+        exists: Boolean(exists),
+      }),
+      ipCheck.result
+    );
   } catch (err) {
     return NextResponse.json({ exists: false, error: err.message }, { status: 500 });
   }

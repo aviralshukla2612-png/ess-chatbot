@@ -85,6 +85,11 @@ export function getRateLimitPolicies() {
       windowMs: envInt("RL_OTP_VERIFY_IP_WINDOW_MS", 10 * 60 * 1000),
       message: "Too many OTP verification attempts from this network. Please wait before retrying.",
     },
+    phone_check_ip: {
+      limit: envInt("RL_PHONE_CHECK_IP_MAX", 20),
+      windowMs: envInt("RL_PHONE_CHECK_IP_WINDOW_MS", 60 * 1000),
+      message: "Too many phone lookup attempts from this IP address. Please slow down.",
+    },
     // Expensive AI Chat & Session layers
     chat_ip: {
       limit: envInt("RL_CHAT_IP_MAX", 40),

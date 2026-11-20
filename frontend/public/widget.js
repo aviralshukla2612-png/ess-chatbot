@@ -180,8 +180,9 @@
       visitorEventSource = null;
     }
     try {
-      const sseUrl = `${apiBase}/api/public/chat/${encodeURIComponent(botId)}/events?conversationId=${encodeURIComponent(convId)}`;
-      visitorEventSource = new EventSource(sseUrl);
+      const sseTokenParam = visitorToken ? `&visitorToken=${encodeURIComponent(visitorToken)}` : "";
+      const sseUrl = `${apiBase}/api/public/chat/${encodeURIComponent(botId)}/events?conversationId=${encodeURIComponent(convId)}${sseTokenParam}`;
+      visitorEventSource = new EventSource(sseUrl, { withCredentials: true });
       visitorEventSource.onmessage = function(e) {
         try {
           const payload = JSON.parse(e.data);

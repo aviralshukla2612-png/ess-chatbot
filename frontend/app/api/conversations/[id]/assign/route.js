@@ -39,10 +39,21 @@ export async function POST(request, { params }) {
           { status: 403 }
         );
       }
-      if (!targetUserName) {
-        const u = await authStore.getUserById(targetUserId);
-        targetUserName = u?.name || u?.email?.split("@")[0] || "Team Member";
-      }
+    }
+
+    // Verify target user is an active member of the conversation's organization (SEC-04)
+    const effectiveOrgId = conv.organizationId || principal.organizationId || "org_ess_default";
+    const membership = await authStore.verifyOrgMembership(targetUserId, effectiveOrgId);
+    if (!membership || membership.status !== "ACTIVE") {
+      return NextResponse.json(
+        { success: false, error: "Target user is not an active member of this organization." },
+        { status: 400 }
+      );
+    }
+
+    if (!targetUserName) {
+      const u = await authStore.getUserById(targetUserId);
+      targetUserName = u?.name || u?.email?.split("@")[0] || "Team Member";
     }
 
     const assignedByUser = {

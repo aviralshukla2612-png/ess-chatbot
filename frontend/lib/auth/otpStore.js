@@ -3,6 +3,7 @@ import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
 import { getDbPool, isDbConnected } from "../db/dbPool.js";
+import { getRedisClient, isRedisConnected } from "../redis/redisClient.js";
 
 const DEV_OTP_SECRET = "nexus_otp_secret_key_dev_fallback_only_32chars";
 function getOtpSecret() {
@@ -226,11 +227,62 @@ export const otpStore = {
     const tokenDigest = crypto.createHash("sha256").update(token).digest("hex");
     const now = Date.now();
     consumedVerificationTokens.set(tokenDigest, now);
+
+    const redis = getRedisClient();
+    if (redis && isRedisConnected()) {
+      redis.set(`vtoken:claimed:${tokenDigest}`, String(now), "EX", 1800).catch(() => {});
+    }
+
     if (consumedVerificationTokens.size > 5000) {
       for (const [k, ts] of consumedVerificationTokens.entries()) {
         if (now - ts > 25 * 60 * 1000) consumedVerificationTokens.delete(k);
       }
     }
+  },
+
+  /**
+   * Atomically claims and consumes a single-use OTP verification token (SEC-01).
+   * Enforces HMAC cryptographic validity, phone binding, purpose binding, 20-minute expiry,
+   * single-use consumption in-memory, and atomic SET NX in distributed Redis to prevent
+   * race conditions across concurrent requests and multiple application instances.
+   */
+  async claimVerificationToken(phone, token, purpose) {
+    if (!token || !phone) {
+      return { ok: false, error: "Token and phone number are required." };
+    }
+
+    const tokenDigest = crypto.createHash("sha256").update(token).digest("hex");
+    const now = Date.now();
+
+    // 1. In-memory check: if already claimed or consumed, reject replay immediately
+    if (consumedVerificationTokens.has(tokenDigest)) {
+      return { ok: false, error: "This verification token has already been used. Please request a new verification code." };
+    }
+
+    const isValid = this.verifyVerificationToken(phone, token, purpose);
+    if (!isValid) {
+      return { ok: false, error: "OTP verification expired or invalid. Please verify your mobile number again." };
+    }
+
+    // Mark in-memory immediately within this single tick
+    consumedVerificationTokens.set(tokenDigest, now);
+
+    // 2. Distributed atomic reservation via Redis SET NX (1800s / 30m TTL)
+    const redis = getRedisClient();
+    if (redis && isRedisConnected()) {
+      try {
+        const redisKey = `vtoken:claimed:${tokenDigest}`;
+        const setResult = await redis.set(redisKey, String(now), "EX", 1800, "NX");
+        if (!setResult) {
+          // Key already existed in Redis -> token was claimed by a concurrent or prior request
+          return { ok: false, error: "This verification token has already been used. Please request a new verification code." };
+        }
+      } catch (err) {
+        console.warn("[OTP_REDIS_CLAIM_WARN]", err.message);
+      }
+    }
+
+    return { ok: true };
   },
 
   /**

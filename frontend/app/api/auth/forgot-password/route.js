@@ -54,12 +54,12 @@ export async function POST(request) {
         );
       }
 
-      // Verify OTP verification token
-      const isTokenValid = otpStore.verifyVerificationToken(cleanPhone, verificationToken, "password_reset");
-      if (!isTokenValid) {
+      // Atomically claim OTP verification token to prevent replay & race conditions (SEC-01)
+      const claimResult = await otpStore.claimVerificationToken(cleanPhone, verificationToken, "password_reset");
+      if (!claimResult.ok) {
         return applyRateLimitHeaders(
           NextResponse.json(
-            { success: false, error: "OTP verification expired or invalid. Please verify your mobile number again." },
+            { success: false, error: claimResult.error || "OTP verification expired or invalid. Please verify your mobile number again." },
             { status: 403 }
           ),
           ipCheck.result

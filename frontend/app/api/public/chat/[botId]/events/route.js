@@ -32,6 +32,12 @@ function corsHeaders(request) {
   return headers;
 }
 
+function jsonError(message, status, request) {
+  const headers = corsHeaders(request);
+  headers.set("Content-Type", "application/json");
+  return new Response(JSON.stringify({ error: message }), { status, headers });
+}
+
 function extractVisitorToken(request, botId) {
   const cleanId = (botId || "default").replace(/[^a-zA-Z0-9_]/g, "_");
   const cookieVal = request.cookies?.get?.(`ess_visitor_${cleanId}`)?.value;
@@ -59,10 +65,7 @@ export async function GET(request, { params }) {
   const resolvedBotId = botId === "aa" ? "bot_aa" : botId;
   const bot = (await botsStore.getBotAsync(resolvedBotId)) || botsStore.getBot(resolvedBotId);
   if (!bot) {
-    return new Response(JSON.stringify({ error: "Bot not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonError("Bot not found", 404, request);
   }
 
   // Enforce allowedDomains before attaching credentialed CORS headers (SEC-15)
@@ -73,43 +76,40 @@ export async function GET(request, { params }) {
       : bot.allowedDomains;
   const domainCheck = checkDomainAuthorization(originHeader, allowedDomains);
   if (!domainCheck.allowed) {
-    return new Response(
-      JSON.stringify({ error: `Unauthorized domain for widget events.` }),
-      { status: 403, headers: { "Content-Type": "application/json" } }
-    );
+    return jsonError("Unauthorized domain for widget events.", 403, request);
   }
 
   const { searchParams } = new URL(request.url);
   const conversationId = searchParams.get("conversationId");
   if (!conversationId || conversationId.length > 128) {
-    return new Response(JSON.stringify({ error: "Valid conversationId is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonError("Valid conversationId is required", 400, request);
   }
 
-  // Verify conversation belongs to this bot & verify visitor token if bound (SEC-15)
+  // Verify conversation exists and belongs to this bot (SEC-02 / SEC-15)
   const conv = conversationsStore.getConversation(conversationId);
-  if (conv && conv.botId && conv.botId !== bot.id) {
-    return new Response(JSON.stringify({ error: "Conversation not found for this chatbot" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+  if (!conv || (conv.botId && conv.botId !== bot.id)) {
+    return jsonError("Conversation not found for this chatbot", 404, request);
   }
 
-  if (conv && conv.visitorId) {
-    const token = extractVisitorToken(request, bot.id);
-    if (token) {
-      const visitor =
-        (await visitorsStore.getVisitorByTokenAsync(bot.id, token)) ||
-        visitorsStore.getVisitorByToken(bot.id, token);
-      if (!visitor || visitor.id !== conv.visitorId) {
-        return new Response(JSON.stringify({ error: "Unauthorized visitor token for conversation" }), {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
+  // Strict visitor token enforcement: reject missing, invalid, or mismatched tokens (SEC-02)
+  const token = extractVisitorToken(request, bot.id);
+  if (!token) {
+    return jsonError("Visitor token is required to access conversation events", 403, request);
+  }
+
+  const visitor =
+    (await visitorsStore.getVisitorByTokenAsync(bot.id, token)) ||
+    visitorsStore.getVisitorByToken(bot.id, token);
+  if (!visitor) {
+    return jsonError("Invalid or expired visitor token", 403, request);
+  }
+
+  if (conv.visitorId && visitor.id !== conv.visitorId) {
+    return jsonError("Unauthorized visitor token for conversation", 403, request);
+  }
+
+  if (!conv.visitorId) {
+    conv.visitorId = visitor.id;
   }
 
   const handlingMode = conv?.handlingMode || "AI";
