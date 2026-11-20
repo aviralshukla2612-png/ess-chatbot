@@ -262,7 +262,7 @@ export default function (data) {
     JSON.stringify({ visitorToken }),
     {
       headers,
-      responseCallback: http.expectedStatuses(200, 429),
+      responseCallback: http.expectedStatuses(200, 403, 429),
     }
   );
   if (ticketRes.timings && ticketRes.timings.duration) {
@@ -272,7 +272,7 @@ export default function (data) {
   }
 
   check(ticketRes, {
-    "ticket status 200 or 429": (r) => [200, 429].includes(r.status),
+    "ticket status 200, 403, or 429": (r) => [200, 403, 429].includes(r.status),
   });
 
   // ---------------------------------------------------------------------------

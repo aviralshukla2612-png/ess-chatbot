@@ -97,6 +97,20 @@ let ollamaEmbedOfflineUntil = 0;
  * Generates embeddings via Ollama nomic-embed-text with fast circuit-breaker fallback
  */
 async function generateEmbedding(text) {
+  // Fast-path: In mock/test environments, return deterministic vector instantly (0.01ms)
+  if (
+    process.env.DEFAULT_AI_PROVIDER === "mock" ||
+    process.env.NODE_ENV === "test" ||
+    process.env.ALLOW_TEST_EMBEDDINGS === "true"
+  ) {
+    const hash = crypto.createHash("sha256").update(text).digest();
+    const vector = new Array(768).fill(0);
+    for (let i = 0; i < 768; i++) {
+      vector[i] = (hash[i % hash.length] - 128) / 128;
+    }
+    return vector;
+  }
+
   const now = Date.now();
   if (now >= ollamaEmbedOfflineUntil) {
     try {
@@ -127,16 +141,6 @@ async function generateEmbedding(text) {
       // Circuit-break for 60s when Ollama embed endpoint is unreachable so chat never stalls 6s per message
       ollamaEmbedOfflineUntil = now + 60000;
     }
-  }
-
-  // If in test environment without Ollama container running, return deterministic test vector
-  if (process.env.NODE_ENV === "test" || process.env.ALLOW_TEST_EMBEDDINGS === "true") {
-    const hash = crypto.createHash("sha256").update(text).digest();
-    const vector = new Array(768).fill(0);
-    for (let i = 0; i < 768; i++) {
-      vector[i] = (hash[i % hash.length] - 128) / 128;
-    }
-    return vector;
   }
 
   throw new Error(`Embedding model '${EMBED_MODEL}' unavailable at ${OLLAMA_URL}`);

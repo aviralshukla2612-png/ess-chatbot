@@ -16,6 +16,19 @@ function resolveDataFile() {
 const DATA_FILE = resolveDataFile();
 let memoryCache = null;
 let lastLoadedMtimeMs = 0;
+const inMemoryTokenMap = new Map();
+
+function indexVisitorInMap(v) {
+  if (!v || !v.botId || !v.visitorTokenHash) return;
+  const botId = v.botId;
+  const hash = v.visitorTokenHash;
+  inMemoryTokenMap.set(`${botId}:${hash}`, v);
+  if (botId.startsWith("bot_")) {
+    inMemoryTokenMap.set(`${botId.replace("bot_", "")}:${hash}`, v);
+  } else {
+    inMemoryTokenMap.set(`bot_${botId}:${hash}`, v);
+  }
+}
 
 function loadFromDisk() {
   try {
@@ -42,7 +55,17 @@ function loadFromDisk() {
     const raw = fs.readFileSync(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      memoryCache = parsed;
+      if (memoryCache && Array.isArray(memoryCache) && memoryCache.length > 0) {
+        // Merge in-memory visitors that may not yet be persisted to disk
+        const onDiskIds = new Set(parsed.map((v) => v.id));
+        const unwritten = memoryCache.filter((v) => !onDiskIds.has(v.id));
+        memoryCache = [...unwritten, ...parsed];
+      } else {
+        memoryCache = parsed;
+      }
+      for (const v of memoryCache) {
+        indexVisitorInMap(v);
+      }
       try { lastLoadedMtimeMs = fs.statSync(DATA_FILE).mtimeMs; } catch {}
       return memoryCache;
     }
@@ -117,13 +140,22 @@ export const visitorsStore = {
   getVisitorByToken(botId, rawToken) {
     if (!botId || !rawToken || typeof rawToken !== "string") return null;
     const tokenHash = hashVisitorToken(rawToken);
+
+    // O(1) Instant memory map lookup
+    const fromMap = inMemoryTokenMap.get(`${botId}:${tokenHash}`);
+    if (fromMap && !fromMap.revoked) return fromMap;
+
     const list = loadFromDisk();
     const visitor = list.find(
       (v) => (v.botId === botId || v.botId === `bot_${botId}` || (botId.startsWith("bot_") && v.botId === botId.replace("bot_", ""))) &&
              v.visitorTokenHash === tokenHash &&
              !v.revoked
     );
-    return visitor || null;
+    if (visitor) {
+      indexVisitorInMap(visitor);
+      return visitor;
+    }
+    return null;
   },
 
   async getVisitorByTokenAsync(botId, rawToken) {
@@ -214,6 +246,7 @@ export const visitorsStore = {
     };
 
     list.unshift(newVisitor);
+    indexVisitorInMap(newVisitor);
     saveToDisk(list);
 
     // Async sync to PostgreSQL

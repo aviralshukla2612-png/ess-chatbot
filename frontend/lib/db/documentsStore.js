@@ -66,19 +66,39 @@ function scoreChunkRelevance(query, chunk) {
   return score;
 }
 
+let memoryDocs = null;
+let lastDocsMtime = 0;
+
 function loadDocumentsFromDisk() {
   try {
     if (!fs.existsSync(DATA_FILE)) {
       const dir = path.dirname(DATA_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), "utf8");
-      return [];
+      memoryDocs = [];
+      try { lastDocsMtime = fs.statSync(DATA_FILE).mtimeMs; } catch {}
+      return memoryDocs;
     }
+
+    if (memoryDocs && Array.isArray(memoryDocs)) {
+      try {
+        const stat = fs.statSync(DATA_FILE);
+        if (stat.mtimeMs === lastDocsMtime) {
+          return memoryDocs;
+        }
+      } catch {
+        return memoryDocs;
+      }
+    }
+
     const raw = fs.readFileSync(DATA_FILE, "utf8");
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    memoryDocs = Array.isArray(parsed) ? parsed : [];
+    try { lastDocsMtime = fs.statSync(DATA_FILE).mtimeMs; } catch {}
+    return memoryDocs;
   } catch (e) {
     console.error("Error reading documents store:", e);
-    return [];
+    return memoryDocs || [];
   }
 }
 
@@ -87,6 +107,8 @@ function saveDocumentsToDisk(docs) {
     const dir = path.dirname(DATA_FILE);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(DATA_FILE, JSON.stringify(docs, null, 2), "utf8");
+    memoryDocs = docs;
+    try { lastDocsMtime = fs.statSync(DATA_FILE).mtimeMs; } catch {}
   } catch (e) {
     console.error("Error saving documents store:", e);
   }
