@@ -95,13 +95,8 @@ export async function GET(request) {
       );
       dependencies.inference.status = hasEnvKey || hasPoolKey ? "configured" : "awaiting_key_in_admin_panel";
       dependencies.inference.model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
-    } else if (DEFAULT_PROVIDER === "ollama") {
-      try {
-        const ping = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(2000) });
-        dependencies.inference.status = ping.ok ? "connected" : `degraded_http_${ping.status}`;
-      } catch {
-        dependencies.inference.status = "unreachable";
-      }
+    } else {
+      dependencies.inference.status = "ready";
     }
 
     Object.assign(basePayload, {

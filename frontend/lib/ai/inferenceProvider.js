@@ -74,11 +74,21 @@ export class InferenceProvider {
     onToken = null,
     timeoutMs = 45000,
   }) {
+    const defaultEnvProvider = (process.env.DEFAULT_AI_PROVIDER || "").toLowerCase();
+    const isMock =
+      provider?.toLowerCase() === "mock" ||
+      defaultEnvProvider === "mock" ||
+      process.env.IS_LOAD_TEST === "true";
+
+    // Fast-path: When mock is requested or during synthetic load tests, execute directly without acquiring limiter slots
+    if (isMock) {
+      return await InferenceProvider._callMock({ messages, onToken, stream });
+    }
+
     const release = await globalLimiter.acquire();
     const startTime = Date.now();
 
     try {
-      const defaultEnvProvider = (process.env.DEFAULT_AI_PROVIDER || "").toLowerCase();
       const { GroqKeyPoolManager } = await import("./groqKeyPool.js");
       const hasPoolKeys = GroqKeyPoolManager.hasAvailableKeys();
       const hasValidGroqKey = hasPoolKeys || Boolean(
@@ -88,15 +98,11 @@ export class InferenceProvider {
       );
 
       let selectedProvider = provider?.toLowerCase() ||
-        (defaultEnvProvider === "mock" || process.env.IS_LOAD_TEST === "true"
-          ? "mock"
-          : (defaultEnvProvider || (hasValidGroqKey ? "groq" : "mock"))).toLowerCase();
+        (hasValidGroqKey ? "groq" : "mock");
 
       // Permanent Ollama decoupling: System uses Groq. Never route to offline Ollama.
       if (selectedProvider === "ollama") {
-        selectedProvider = (defaultEnvProvider === "mock" || process.env.IS_LOAD_TEST === "true")
-          ? "mock"
-          : (hasValidGroqKey ? "groq" : "mock");
+        selectedProvider = hasValidGroqKey ? "groq" : "mock";
       }
 
       // If groq was requested but no valid key exists, failover to mock in test/staging or throw
