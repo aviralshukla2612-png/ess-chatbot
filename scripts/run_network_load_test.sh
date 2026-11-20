@@ -103,7 +103,23 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# 6. Execute k6 Network Load Test
+# 6. Ensure k6 binary is available
+if ! command -v k6 >/dev/null 2>&1; then
+  echo "[STARTUP] k6 binary not found in PATH. Installing static k6 binary (v0.56.0 linux-amd64)..."
+  if curl -sSL https://github.com/grafana/k6/releases/download/v0.56.0/k6-v0.56.0-linux-amd64.tar.gz | tar -xz -C /tmp 2>/dev/null; then
+    mv /tmp/k6-v0.56.0-linux-amd64/k6 /usr/local/bin/k6 2>/dev/null || true
+    chmod +x /usr/local/bin/k6 2>/dev/null || true
+    rm -rf /tmp/k6-v0.56.0-linux-amd64 2>/dev/null || true
+    echo "[PASS] k6 successfully installed: $(k6 version 2>/dev/null || echo 'installed')"
+  fi
+fi
+
+if ! command -v k6 >/dev/null 2>&1; then
+  echo "[FATAL ERROR] k6 could not be located or installed. Run 'apt-get install -y k6'." >&2
+  exit 1
+fi
+
+# 7. Execute k6 Network Load Test
 OUTPUT_JSON="stage3_${SCENARIO}_raw_k6.json"
 SUMMARY_JSON="stage3_${SCENARIO}_summary.json"
 
@@ -125,7 +141,7 @@ echo "==========================================================================
 echo "K6 RUN COMPLETED WITH EXIT CODE: ${K6_EXIT_CODE}"
 echo "================================================================================"
 
-# 7. Harvest Infrastructure & Database Telemetry
+# 8. Harvest Infrastructure & Database Telemetry
 if [ -f "scripts/collect_telemetry.sh" ]; then
   echo "[TELEMETRY] Harvesting post-test infrastructure telemetry..."
   bash scripts/collect_telemetry.sh "${SCENARIO}" || true
