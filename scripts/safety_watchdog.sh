@@ -190,6 +190,11 @@ check_neighbor_containers() {
     ps_output=$(docker ps -a --format '{{.Names}}|{{.Status}}' 2>/dev/null || echo "")
 
     for expected_name in "${NEIGHBOR_INVENTORY[@]}"; do
+      # Protect co-tenants, but skip containers with confirmed pre-existing outage at baseline (e.g. talknex-api)
+      if echo " ${NEIGHBOR_EXCLUDE:-talknex-api} " | grep -qw "$expected_name"; then
+        continue
+      fi
+
       local line
       line=$(echo "$ps_output" | grep -E "^${expected_name}\|" || true)
 

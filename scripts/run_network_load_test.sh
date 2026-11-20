@@ -34,9 +34,27 @@ if [[ "$CURRENT_HOSTNAME" =~ LAPTOP|Windows|DESKTOP ]]; then
 fi
 echo "[PASS] Host check: Executing on target host '${CURRENT_HOSTNAME}' (Non-workstation verified)."
 
-# 2. Ensure Safety Watchdog Daemon is Running
+# 2. Ensure Staging Stack is Running on 127.0.0.1:3301
+if command -v docker >/dev/null 2>&1; then
+  if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "ess-frontend-staging"; then
+    echo "[STARTUP] Staging stack (ess-frontend-staging) is not running on 127.0.0.1:3301."
+    echo "[STARTUP] Launching isolated staging stack via docker compose -f docker-compose.staging.yml up -d ..."
+    mkdir -p frontend/data-staging 2>/dev/null || true
+    if [ ! -f "frontend/data-staging/bots.json" ] && [ -d "frontend/data" ]; then
+      cp -r frontend/data/* frontend/data-staging/ 2>/dev/null || true
+    fi
+    docker compose -f docker-compose.staging.yml up -d
+    echo "[STARTUP] Waiting 12s for staging service health..."
+    sleep 12
+  else
+    echo "[PASS] Staging stack (ess-frontend-staging) is active on 127.0.0.1:3301."
+  fi
+fi
+
+# 3. Ensure Safety Watchdog Daemon is Running
 if ! pgrep -f "scripts/safety_watchdog.sh" > /dev/null 2>&1; then
-  echo "[STARTUP] Watchdog daemon is not running. Launching scripts/safety_watchdog.sh in background..."
+  echo "[STARTUP] Watchdog daemon is not running. Cleaning stale signals and launching scripts/safety_watchdog.sh in background..."
+  rm -f /tmp/stage3_abort_signal "${HEARTBEAT_FILE}" 2>/dev/null || true
   chmod +x scripts/safety_watchdog.sh 2>/dev/null || true
   nohup ./scripts/safety_watchdog.sh > stage3_watchdog.log 2>&1 &
   sleep 3

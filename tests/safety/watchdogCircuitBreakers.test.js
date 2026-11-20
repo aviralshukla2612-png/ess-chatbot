@@ -81,8 +81,9 @@ describe("Stage 3 Safety Watchdog Circuit Breaker Simulation Suite", () => {
       "talknex-web", "talknex-api", "aviatorguide-app-1", "aviatorguide-db-1", "rockyblog-app-1", "rockyblog-db-1"
     ];
 
-    function evaluateNeighbors(actualContainerMap) {
+    function evaluateNeighbors(actualContainerMap, excluded = []) {
       for (const name of EXPECTED_NEIGHBORS) {
+        if (excluded.includes(name)) continue;
         if (!actualContainerMap.has(name)) {
           return { aborted: true, code: "NEIGHBOR_MISSING", name };
         }
@@ -94,7 +95,7 @@ describe("Stage 3 Safety Watchdog Circuit Breaker Simulation Suite", () => {
           return { aborted: true, code: "NEIGHBOR_CRASHED", name, status };
         }
       }
-      return { aborted: false, count: EXPECTED_NEIGHBORS.length };
+      return { aborted: false, count: EXPECTED_NEIGHBORS.length - excluded.length };
     }
 
     test("All 24 baseline containers healthy returns PASS", () => {
