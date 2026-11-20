@@ -132,6 +132,17 @@ function pickNewestRecord(...records) {
 export const otpStore = {
   _resetMemoryStore() {
     memoryOtp.clear();
+    consumedVerificationTokens.clear();
+    inFlightOtpSends.clear();
+  },
+
+  clearCooldown(rawPhone) {
+    const phone = this.normalizePhone(rawPhone);
+    if (!phone) return;
+    const rec = memoryOtp.get(phone);
+    if (rec) {
+      rec.lastSentAt = null;
+    }
   },
 
   /**
@@ -371,6 +382,114 @@ export const otpStore = {
     ).catch(() => { });
 
     return updated;
+  },
+
+  /**
+   * Check whether phone is currently banned or under 60-second cooldown.
+   * Enforces identical cooldown behavior for registered and unregistered numbers.
+   */
+  async checkCooldownAndBan(rawPhone) {
+    const phone = this.normalizePhone(rawPhone);
+    if (!phone) {
+      return { ok: false, error: "Invalid phone number format." };
+    }
+
+    const now = Date.now();
+    const existing = await this.getRecord(phone);
+
+    // 1. Check if user is currently banned (24 Hours lock after 5 wrong attempts)
+    if (existing && existing.bannedUntil) {
+      const banTime = new Date(existing.bannedUntil).getTime();
+      if (now < banTime) {
+        const msLeft = banTime - now;
+        const hoursLeft = Math.ceil(msLeft / (1000 * 60 * 60));
+        const minutesLeft = Math.ceil(msLeft / (1000 * 60));
+        const timeText = hoursLeft > 1 ? `${hoursLeft} hours` : `${minutesLeft} minutes`;
+        return {
+          ok: false,
+          banned: true,
+          bannedUntil: existing.bannedUntil,
+          error: `This mobile number is temporarily locked for 24 hours due to 5 consecutive failed attempts. Please try again after ${timeText}.`,
+        };
+      }
+    }
+
+    // 2. Check distributed Redis cooldown if configured
+    if (isRedisConfigured() && isRedisConnected()) {
+      const redis = getRedisClient();
+      if (redis) {
+        try {
+          const ttl = await redis.ttl(`otp:cooldown:${phone}`);
+          if (ttl > 0) {
+            return {
+              ok: false,
+              cooldown: true,
+              cooldownSeconds: ttl,
+              error: `Please wait ${ttl} seconds before requesting a new OTP.`,
+            };
+          }
+        } catch {}
+      }
+    }
+
+    // 3. Check local record cooldown
+    if (existing && existing.lastSentAt) {
+      const lastSent = new Date(existing.lastSentAt).getTime();
+      const elapsedMs = now - lastSent;
+      if (elapsedMs < COOLDOWN_SECONDS * 1000) {
+        const remainingSec = Math.ceil((COOLDOWN_SECONDS * 1000 - elapsedMs) / 1000);
+        return {
+          ok: false,
+          cooldown: true,
+          cooldownSeconds: remainingSec,
+          error: `Please wait ${remainingSec} seconds before requesting a new OTP.`,
+        };
+      }
+    }
+
+    // 4. In-flight dispatch race check
+    if (inFlightOtpSends.has(phone)) {
+      return {
+        ok: false,
+        cooldown: true,
+        cooldownSeconds: COOLDOWN_SECONDS,
+        error: "An OTP dispatch is already in progress for this number. Please wait a moment.",
+      };
+    }
+
+    return { ok: true, phone };
+  },
+
+  /**
+   * Record cooldown timestamp for phone across Redis and local memory.
+   */
+  async recordCooldown(rawPhone, seconds = COOLDOWN_SECONDS) {
+    const phone = this.normalizePhone(rawPhone);
+    if (!phone) return;
+
+    // 1. Record in Redis if configured
+    if (isRedisConfigured() && isRedisConnected()) {
+      const redis = getRedisClient();
+      if (redis) {
+        try {
+          await redis.set(`otp:cooldown:${phone}`, String(Date.now()), "EX", seconds);
+        } catch {}
+      }
+    }
+
+    // 2. Record in memory
+    const existing = (await this.getRecord(phone)) || {
+      id: `otp_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`,
+      phone,
+      otpHash: "",
+      attempts: 0,
+      maxAttempts: MAX_ATTEMPTS,
+      bannedUntil: null,
+      expiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    existing.lastSentAt = new Date().toISOString();
+    await this.saveRecord(existing);
   },
 
   /**

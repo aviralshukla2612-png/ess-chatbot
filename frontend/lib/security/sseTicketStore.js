@@ -7,7 +7,7 @@
  */
 
 import crypto from "crypto";
-import { getRedisClient, isRedisConnected } from "../redis/redisClient.js";
+import { getRedisClient, isRedisConnected, isRedisConfigured } from "../redis/redisClient.js";
 
 const DEFAULT_TICKET_TTL_SECONDS = 60;
 const memorySseTickets = new Map();
@@ -53,17 +53,29 @@ export const sseTicketStore = {
       createdAt: Date.now(),
     });
 
-    // 1. Store in distributed Redis if connected
-    const redis = getRedisClient();
-    if (redis && isRedisConnected()) {
+    // 1. Distributed Redis mode: ticket is stored exclusively in Redis
+    if (isRedisConfigured()) {
+      if (!isRedisConnected()) {
+        console.warn("[SSE_TICKET_REDIS_OUTAGE] Cannot create ticket: Redis configured but disconnected (fail-closed)");
+        return null;
+      }
+      const redis = getRedisClient();
+      if (!redis) return null;
       try {
         await redis.set(`sse:tkt:${ticket}`, payload, "EX", ttlSeconds);
+        return ticket;
       } catch (err) {
         console.warn("[SSE_TICKET_REDIS_SET_WARN]", err.message);
+        return null;
       }
     }
 
-    // 2. Also register in local memory fallback
+    // 2. Single-instance development mode ONLY (Redis explicitly unconfigured)
+    if (process.env.NODE_ENV === "production") {
+      console.error("[SSE_TICKET_SECURITY_ERR] Local memory ticket store forbidden in production when Redis is unconfigured.");
+      return null;
+    }
+
     memorySseTickets.set(ticket, {
       botId,
       visitorId,
@@ -82,25 +94,41 @@ export const sseTicketStore = {
       return null;
     }
 
-    // 1. Try distributed Redis atomic consumption via Lua
-    const redis = getRedisClient();
-    if (redis && isRedisConnected()) {
+    // Distributed Redis mode (CASE A, B, C)
+    if (isRedisConfigured()) {
+      // CASE B: Redis configured but disconnected -> Fail closed
+      if (!isRedisConnected()) {
+        console.warn("[SSE_TICKET_REDIS_OUTAGE] Rejecting ticket consumption: Redis configured but disconnected (fail-closed)");
+        return null;
+      }
+
+      const redis = getRedisClient();
+      if (!redis) return null;
+
       try {
         const raw = await redis.eval(LUA_CONSUME_TICKET, 1, `sse:tkt:${ticket}`);
-        if (raw) {
-          memorySseTickets.delete(ticket); // Clean local copy
-          const parsed = JSON.parse(raw);
-          if (parsed.botId === botId || parsed.botId === `bot_${botId}` || botId === `bot_${parsed.botId}`) {
-            return { visitorId: parsed.visitorId };
-          }
-          return null;
+        // CASE A: Redis is single source of truth. If raw is nil, ticket does not exist or was ALREADY consumed
+        if (!raw) {
+          return null; // Never fall through to local memory
         }
+        const parsed = JSON.parse(raw);
+        if (parsed.botId === botId || parsed.botId === `bot_${botId}` || botId === `bot_${parsed.botId}`) {
+          return { visitorId: parsed.visitorId };
+        }
+        return null; // Bot mismatch
       } catch (err) {
+        // CASE C: Redis command throws or times out -> Fail closed
         console.warn("[SSE_TICKET_REDIS_CONSUME_WARN]", err.message);
+        return null;
       }
     }
 
-    // 2. Fall back to local in-memory store
+    // CASE D: Redis explicitly unconfigured (Single-instance development ONLY)
+    if (process.env.NODE_ENV === "production") {
+      console.error("[SSE_TICKET_SECURITY_ERR] Local memory ticket consumption forbidden in production without Redis.");
+      return null;
+    }
+
     if (memorySseTickets.has(ticket)) {
       const entry = memorySseTickets.get(ticket);
       memorySseTickets.delete(ticket); // Single-use consumption

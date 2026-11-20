@@ -197,9 +197,9 @@ export const leadsStore = {
       return true;
     });
 
-    // Strict tenant isolation: no cross-tenant wildcard matching
+    // Strict tenant isolation: no cross-tenant wildcard matching (SEC-04-B)
     if (filters.organizationId) {
-      list = list.filter((l) => (l.organizationId || "org_ess_default") === filters.organizationId);
+      list = list.filter((l) => l.organizationId === filters.organizationId);
     }
     if (filters.status && filters.status !== "All" && filters.status !== "All Status") {
       list = list.filter((l) => l.status?.toLowerCase() === filters.status.toLowerCase());
@@ -230,7 +230,7 @@ export const leadsStore = {
 
   getLead(id, organizationId = null) {
     const list = loadFromDisk();
-    return list.find((l) => l.id === id && (!organizationId || (l.organizationId || "org_ess_default") === organizationId)) || null;
+    return list.find((l) => l.id === id && (!organizationId || l.organizationId === organizationId)) || null;
   },
 
   async getLeadsAsync(filters = {}) {
@@ -300,7 +300,7 @@ export const leadsStore = {
   createLead(data) {
     const list = loadFromDisk();
     const now = new Date();
-    const targetOrgId = data.organizationId || "org_ess_default";
+    const targetOrgId = data.organizationId || null;
     data.organizationId = targetOrgId;
 
     // Check if lead already exists within this bot and organization

@@ -319,6 +319,11 @@ export const authStore = {
     }
 
     if (!user) {
+      // Run dummy scrypt hash check to prevent timing analysis of user existence (SEC-03-C)
+      await verifyPassword(
+        password,
+        "scrypt:00000000000000000000000000000000:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      );
       throw new Error("Invalid mobile number or password");
     }
 

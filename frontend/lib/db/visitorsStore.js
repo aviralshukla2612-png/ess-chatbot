@@ -103,7 +103,7 @@ export const visitorsStore = {
   getVisitorById(id, organizationId = null) {
     const list = loadFromDisk();
     return list.find(
-      (v) => v.id === id && (!organizationId || (v.organizationId || "org_ess_default") === organizationId)
+      (v) => v.id === id && (!organizationId || v.organizationId === organizationId)
     ) || null;
   },
 

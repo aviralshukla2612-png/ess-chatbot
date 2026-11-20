@@ -133,6 +133,8 @@ export async function POST(request) {
     const safeMsg =
       err?.message === "Account has been suspended. Please contact support."
         ? err.message
+        : err?.message === "Invalid mobile number or password"
+        ? err.message
         : "Invalid email or password";
     return NextResponse.json(
       { success: false, error: safeMsg },

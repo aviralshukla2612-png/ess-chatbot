@@ -110,7 +110,7 @@ export const conversationsStore = {
   getConversations(filters = {}) {
     let list = loadFromDisk();
     if (filters.organizationId) {
-      list = list.filter((c) => (c.organizationId || "org_ess_default") === filters.organizationId);
+      list = list.filter((c) => c.organizationId === filters.organizationId);
     }
     if (filters.botId && filters.botId !== "All") {
       list = list.filter((c) => c.botId === filters.botId || c.botName === filters.botId);
@@ -250,9 +250,18 @@ export const conversationsStore = {
     const lastActivityAt = data.lastActivityAt || now.toISOString();
     const historyExpiresAt = data.historyExpiresAt || new Date(now.getTime() + DEFAULT_HISTORY_WINDOW_MS).toISOString();
 
+    // Resolve organizationId: require explicit organizationId, or resolve strictly from bot (SEC-04-B)
+    let resolvedOrgId = data.organizationId || null;
+    if (!resolvedOrgId && data.botId) {
+      try {
+        const bot = botsStore.getBot(data.botId);
+        if (bot?.organizationId) resolvedOrgId = bot.organizationId;
+      } catch {}
+    }
+
     const newConv = {
       id,
-      organizationId: data.organizationId || "org_ess_default",
+      organizationId: resolvedOrgId || null,
       botId: data.botId || "bot_1791618269632",
       botName: data.botName || "Emperor AI Assistant",
       visitorId: data.visitorId || null,
@@ -348,11 +357,20 @@ export const conversationsStore = {
     const now = options.now instanceof Date ? options.now : (options.now ? new Date(options.now) : new Date());
 
     if (!conv) {
+      let resolvedOrgId = options.organizationId || message.organizationId || null;
+      const targetBotId = options.botId || message.botId || null;
+      if (!resolvedOrgId && targetBotId) {
+        try {
+          const bot = botsStore.getBot(targetBotId);
+          if (bot?.organizationId) resolvedOrgId = bot.organizationId;
+        } catch {}
+      }
+
       conv = this.createConversation({
         id: conversationId,
-        botId: options.botId || message.botId || "bot_1791618269632",
+        botId: targetBotId || "bot_1791618269632",
         botName: options.botName || message.botName || "Emperor AI Assistant",
-        organizationId: options.organizationId || message.organizationId || "org_ess_default",
+        organizationId: resolvedOrgId || null,
         visitorId: options.visitorId || null,
         visitorName: message.role === "user" ? (options.visitorName || "Client Inquiry") : (options.botName || "Emperor AI Assistant"),
         messages: [],
@@ -429,7 +447,7 @@ export const conversationsStore = {
            ON CONFLICT ("id") DO NOTHING;`,
           [
             conv.id,
-            conv.organizationId || "org_ess_default",
+            conv.organizationId || null,
             conv.botId || "bot_1791618269632",
             conv.visitorId || null,
             conv.visitorName || "Client Inquiry",
@@ -1001,7 +1019,7 @@ export const conversationsStore = {
     const note = {
       id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
       conversationId,
-      organizationId: organizationId || conv.organizationId || "org_ess_default",
+      organizationId: organizationId || conv.organizationId || null,
       authorId: authorId || null,
       authorName: authorName || "Team Member",
       content: content.trim(),
@@ -1055,7 +1073,7 @@ export const conversationsStore = {
     }
 
     const list = loadFromDisk();
-    const remaining = list.filter((c) => (c.organizationId || "org_ess_default") !== organizationId);
+    const remaining = list.filter((c) => c.organizationId !== organizationId);
     saveToDisk(remaining);
     sseBroker.broadcast("conversations_cleared", { organizationId });
     try {
