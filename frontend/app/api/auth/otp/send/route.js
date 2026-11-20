@@ -69,7 +69,16 @@ export async function POST(request) {
       await otpStore.recordCooldown(cleanPhone);
 
       // Enqueue background dispatch job (verifies account existence and sends SMS asynchronously)
-      await otpQueue.enqueue({ phone: cleanPhone, purpose, name });
+      const queueRes = await otpQueue.enqueue({ phone: cleanPhone, purpose, name });
+      if (!queueRes.ok && (queueRes.backend === "redis_disconnected" || queueRes.backend === "forbidden")) {
+        return applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Authentication service temporarily unavailable. Please retry in a few moments." },
+            { status: 503 }
+          ),
+          ipCheck.result
+        );
+      }
 
       // Return standardized public response (sub-3ms, identical for registered & unregistered)
       return applyRateLimitHeaders(

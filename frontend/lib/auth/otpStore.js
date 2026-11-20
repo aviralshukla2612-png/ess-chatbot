@@ -556,8 +556,9 @@ export const otpStore = {
     const expiresAt = new Date(now + OTP_EXPIRY_MINUTES * 60 * 1000).toISOString();
     const id = existing?.id || `otp_${now}_${crypto.randomUUID().slice(0, 8)}`;
 
+    const masked = phone.slice(0, 3) + "****" + phone.slice(-4);
     console.log(
-      `[EMPEROR_NEXUS_OTP] Dispatching to ${phone} | Purpose: ${purpose} | Valid: ${OTP_EXPIRY_MINUTES}m`
+      `[EMPEROR_NEXUS_OTP] Dispatching to ${masked} | Purpose: ${purpose} | Valid: ${OTP_EXPIRY_MINUTES}m`
     );
 
     // 4. Dispatch via TRAI DLT SMS Gateway FIRST (3 Variables: "User", 6-digit OTP, "Team Nexus")
@@ -701,8 +702,9 @@ export const otpStore = {
       record.bannedUntil = bannedUntil;
       await this.saveRecord(record);
 
+      const masked = phone.slice(0, 3) + "****" + phone.slice(-4);
       console.warn(
-        `🚨 [SECURITY ALERT] Phone ${phone} locked for 24 hours after ${MAX_ATTEMPTS} failed OTP attempts.`
+        `🚨 [SECURITY ALERT] Phone ${masked} locked for 24 hours after ${MAX_ATTEMPTS} failed OTP attempts.`
       );
 
       return {

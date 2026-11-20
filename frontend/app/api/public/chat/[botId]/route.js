@@ -260,8 +260,22 @@ export async function POST(request, { params }) {
       );
     }
 
+    // SEC-09: Reject chat inference when tenant ownership cannot be established
+    if (!bot?.organizationId) {
+      return corsResponse(
+        applyRateLimitHeaders(
+          NextResponse.json(
+            { error: "Tenant ownership could not be established for this chatbot." },
+            { status: 403 }
+          ),
+          ipRateCheck.result
+        ),
+        request
+      );
+    }
+
     // --- PHASE 5: TENANT / ORGANIZATION AGGREGATE BURST LIMIT ---
-    const tenantOrgCheck = await enforceRateLimit("chat_org", bot.organizationId || bot.id);
+    const tenantOrgCheck = await enforceRateLimit("chat_org", bot.organizationId);
     if (!tenantOrgCheck.ok) {
       return corsResponse(tenantOrgCheck.response, request);
     }
@@ -328,7 +342,7 @@ export async function POST(request, { params }) {
 
     if (!persistentVisitor) {
       const created = visitorsStore.createVisitor({
-        organizationId: bot.organizationId || "org_ess_default",
+        organizationId: bot.organizationId,
         botId: bot.id,
       });
       persistentVisitor = created.visitor;
@@ -1051,7 +1065,7 @@ export async function POST(request, { params }) {
           leadsStore.createLead({
             sessionId: currentSessionId,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: bot.organizationId,
             name: "Website Prospect",
             email: resolvedEmail || leadDetails.email || "",
             phone: resolvedPhone || leadDetails.phone || "",
@@ -1097,7 +1111,7 @@ export async function POST(request, { params }) {
           leadsStore.createLead({
             sessionId: currentSessionId,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: bot.organizationId,
             name: displayName,
             email: resolvedEmail || leadDetails.email || "",
             phone: resolvedPhone || leadDetails.phone || "",
@@ -1170,7 +1184,7 @@ export async function POST(request, { params }) {
           leadsStore.createLead({
             sessionId: currentSessionId,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: bot.organizationId,
             name: displayName,
             email: resolvedEmail || "",
             phone: resolvedPhone || "",
@@ -1634,7 +1648,7 @@ Here are our official contact details to speak with our engineering leadership:
           } else {
             conversationsStore.createConversation({
               id: currentSessionId,
-              organizationId: bot?.organizationId || "org_ess_default",
+              organizationId: bot.organizationId,
               visitorId: persistentVisitor?.id || null,
               botId: bot?.id || botId,
               botName: botName,
@@ -1653,7 +1667,7 @@ Here are our official contact details to speak with our engineering leadership:
             sessionId: currentSessionId,
             visitorId: persistentVisitor?.id || null,
             botId: bot?.id || botId,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: bot.organizationId,
             name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
             email: resolvedEmail || "",
             phone: resolvedPhone || "",
@@ -1709,7 +1723,7 @@ Here are our official contact details to speak with our engineering leadership:
             sessionId: currentSessionId,
             visitorId: persistentVisitor?.id || null,
             botId: bot.id,
-            organizationId: bot?.organizationId || "org_ess_default",
+            organizationId: bot.organizationId,
             name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
             email: resolvedEmail,
             phone: resolvedPhone,
@@ -1849,7 +1863,7 @@ Here are our official contact details to speak with our engineering leadership:
               sessionId: currentSessionId,
               visitorId: persistentVisitor?.id || null,
               botId: bot.id,
-              organizationId: bot?.organizationId || "org_ess_default",
+              organizationId: bot.organizationId,
               name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
               email: resolvedEmail,
               phone: resolvedPhone,
@@ -1930,7 +1944,7 @@ Here are our official contact details to speak with our engineering leadership:
         sessionId: currentSessionId,
         visitorId: persistentVisitor?.id || null,
         botId: bot.id,
-        organizationId: bot?.organizationId || "org_ess_default",
+        organizationId: bot.organizationId,
         name: (!isPlaceholderName(resolvedName)) ? resolvedName : (leadDetails.name || "Website Prospect"),
         email: resolvedEmail,
         phone: resolvedPhone,
@@ -1992,7 +2006,7 @@ Here are our official contact details to speak with our engineering leadership:
     } else {
       conversationsStore.createConversation({
         id: currentSessionId,
-        organizationId: bot?.organizationId || "org_ess_default",
+        organizationId: bot.organizationId,
         visitorId: persistentVisitor?.id || null,
         botId: bot.id,
         botName: botName,

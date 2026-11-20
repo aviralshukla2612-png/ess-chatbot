@@ -77,7 +77,8 @@ function saveToDisk(data) {
 }
 
 export const leadsStore = {
-  getLeads(filters = {}) {
+  getLeads(rawFilters = {}) {
+    const filters = typeof rawFilters === "string" ? { organizationId: rawFilters } : (rawFilters || {});
     let list = loadFromDisk();
     const cleanDigits = (p) => (p || "").replace(/\D/g, "");
 
@@ -91,18 +92,21 @@ export const leadsStore = {
       let hasNewLeads = false;
 
       for (const conv of scopedConvs) {
+        // SEC-09: Skip lead auto-sync when source conversation has no valid organization
+        if (!conv || !conv.organizationId) continue;
+
         if (conv.id) convById.set(conv.id, conv);
         const ph = cleanDigits(conv.visitorPhone);
-        if (ph.length >= 10) convByPhone.set(`${conv.organizationId || "org_ess_default"}:${ph}`, conv);
+        if (ph.length >= 10) convByPhone.set(`${conv.organizationId}:${ph}`, conv);
 
         const hasContact = Boolean(conv.visitorPhone || conv.visitorEmail);
         const isMarkedLead = conv.isLead !== false && Boolean(conv.isLead || hasContact);
         if (!isMarkedLead) continue;
 
-        const convOrg = conv.organizationId || "org_ess_default";
+        const convOrg = conv.organizationId;
         const exists = list.some(
           (l) =>
-            (l.organizationId || "org_ess_default") === convOrg &&
+            l.organizationId === convOrg &&
             ((l.sessionId && l.sessionId === conv.id) ||
               (ph.length >= 10 && l.phone && cleanDigits(l.phone) === ph) ||
               (conv.visitorEmail && l.email && l.email.toLowerCase() === conv.visitorEmail.toLowerCase()))
@@ -164,13 +168,14 @@ export const leadsStore = {
 
     // O(1) enrichment per lead via pre-indexed Maps
     for (const l of list) {
-      const lOrg = l.organizationId || "org_ess_default";
+      if (!l || !l.organizationId) continue;
+      const lOrg = l.organizationId;
       const ph = cleanDigits(l.phone);
       const conv =
         (l.sessionId && convById.get(l.sessionId)) ||
         (ph.length >= 10 ? convByPhone.get(`${lOrg}:${ph}`) : null);
 
-      if (conv?.qualification && (conv.organizationId || "org_ess_default") === lOrg) {
+      if (conv?.qualification && conv.organizationId === lOrg) {
         if (!l.qualification) l.qualification = conv.qualification;
         if (conv.qualification.answers) {
           l.answers = { ...(conv.qualification.answers || {}), ...(l.answers || {}) };
@@ -316,9 +321,6 @@ export const leadsStore = {
     );
     if (existing) {
       if (data.visitorId && !existing.visitorId) existing.visitorId = data.visitorId;
-      if (data.organizationId && (!existing.organizationId || existing.organizationId === "org_ess_default")) {
-        existing.organizationId = data.organizationId;
-      }
       if (data.sessionId) existing.sessionId = data.sessionId;
       if (data.name && data.name !== "Website Prospect" && data.name !== "Website Visitor") {
         existing.name = data.name;

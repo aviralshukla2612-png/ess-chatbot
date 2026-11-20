@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { queryDb } from "./dbPool.js";
+import { botsStore } from "./botsStore.js";
 
 function resolveDataFile() {
   const frontendPath = path.join(process.cwd(), "frontend", "data", "visitors.json");
@@ -111,7 +112,7 @@ export const visitorsStore = {
    * Create a new persistent visitor record with an opaque token
    */
   createVisitor({
-    organizationId = "org_ess_default",
+    organizationId = null,
     botId = "unknown_bot",
     token = null,
     name = "",
@@ -122,6 +123,15 @@ export const visitorsStore = {
   }) {
     const list = loadFromDisk();
     const now = new Date();
+
+    // SEC-09: Resolve organization ID strictly from validated bot ownership or explicit workspace
+    let resolvedOrgId = organizationId || null;
+    if (!resolvedOrgId && botId && botId !== "unknown_bot") {
+      try {
+        const b = botsStore.getBot(botId);
+        if (b?.organizationId) resolvedOrgId = b.organizationId;
+      } catch {}
+    }
 
     let rawToken = token;
     let tokenHash = "";
@@ -136,7 +146,7 @@ export const visitorsStore = {
     const id = `vis_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
     const newVisitor = {
       id,
-      organizationId: organizationId || "org_ess_default",
+      organizationId: resolvedOrgId || null,
       botId: botId || "unknown_bot",
       visitorTokenHash: tokenHash,
       leadId: leadId || null,

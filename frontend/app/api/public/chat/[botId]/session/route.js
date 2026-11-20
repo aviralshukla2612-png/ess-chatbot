@@ -47,7 +47,7 @@ function resolveCookieName(botId) {
 function extractVisitorToken(request, botId, body = null) {
   // 1. From Cookie
   const cookieName = resolveCookieName(botId);
-  const cookieVal = request.cookies.get(cookieName)?.value;
+  const cookieVal = request.cookies?.get?.(cookieName)?.value;
   if (cookieVal && cookieVal.length >= 16) return cookieVal.trim();
 
   // 2. From Custom Header (first-party/widget fallback when cookies blocked)
@@ -118,6 +118,20 @@ async function handleSession(request, { params }) {
       );
     }
 
+    // SEC-09: Reject session creation when tenant ownership cannot be established
+    if (!bot.organizationId) {
+      return corsResponse(
+        applyRateLimitHeaders(
+          NextResponse.json(
+            { success: false, error: "Tenant ownership could not be established for this chatbot." },
+            { status: 403 }
+          ),
+          sessionRateCheck.result
+        ),
+        request
+      );
+    }
+
     let requestBody = null;
     if (request.method === "POST") {
       try {
@@ -144,7 +158,7 @@ async function handleSession(request, { params }) {
 
     if (!visitor) {
       const created = visitorsStore.createVisitor({
-        organizationId: bot.organizationId || "org_ess_default",
+        organizationId: bot.organizationId,
         botId: bot.id,
       });
       visitor = created.visitor;
@@ -181,7 +195,7 @@ async function handleSession(request, { params }) {
       // Do NOT restore expired messages, but preserve recognized visitor profile and qualification
       const newConv = conversationsStore.createConversation({
         visitorId: visitor.id,
-        organizationId: bot.organizationId || "org_ess_default",
+        organizationId: bot.organizationId,
         botId: bot.id,
         botName: bot.name || "AI Assistant",
         visitorName: visitor.name || latestConv?.visitorName || "Website Visitor",
@@ -283,7 +297,7 @@ export async function DELETE(request, { params }) {
         // Create a new clean conversation for the visitor
         const newConv = conversationsStore.createConversation({
           visitorId: visitor.id,
-          organizationId: bot.organizationId || "org_ess_default",
+          organizationId: bot.organizationId,
           botId: bot.id,
           visitorName: visitor.name || "Website Visitor",
           visitorEmail: visitor.email || "",

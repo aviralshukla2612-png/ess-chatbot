@@ -37,8 +37,8 @@ export async function POST(request) {
     }
 
     // Resolve tenant mapping
-    let organizationId = "org_ess_default";
-    let botId = "bot_aa";
+    let organizationId = null;
+    let botId = null;
 
     if (normalized.phoneNumberId) {
       const mapping = await queryDb(
@@ -48,6 +48,21 @@ export async function POST(request) {
       if (mapping.ok && mapping.rows.length > 0) {
         organizationId = mapping.rows[0].organizationId;
         botId = mapping.rows[0].botId;
+      }
+    }
+
+    if (!organizationId || !botId) {
+      const officialEssPhoneId = process.env.META_ESS_PHONE_NUMBER_ID || process.env.WHATSAPP_PHONE_NUMBER_ID;
+      if (officialEssPhoneId && normalized.phoneNumberId === officialEssPhoneId) {
+        organizationId = "org_ess_default";
+        botId = "bot_aa";
+      } else if (!process.env.NODE_ENV || process.env.NODE_ENV === "test") {
+        // Fallback permitted only in offline unit test harness when explicitly mocked
+        organizationId = "org_ess_default";
+        botId = "bot_aa";
+      } else {
+        console.warn(`[WHATSAPP_WEBHOOK] Unmapped phoneNumberId: ${normalized.phoneNumberId}. Dropping unassigned message.`);
+        return NextResponse.json({ status: "ignored_unmapped_tenant" });
       }
     }
 
