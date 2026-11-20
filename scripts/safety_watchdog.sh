@@ -18,6 +18,7 @@ set -u
 
 AUDIT_LOG="${WATCHDOG_LOG_FILE:-./stage3_watchdog_audit.log}"
 ERROR_LOG="${TEST_ERROR_LOG:-/tmp/stage3_test_errors.log}"
+HEARTBEAT_FILE="${WATCHDOG_HEARTBEAT_FILE:-/tmp/watchdog_heartbeat.json}"
 TARGET_PG_CONTAINER="${TARGET_PG_CONTAINER:-ess-postgres-staging}"
 TARGET_PG_DB="${TARGET_PG_DB:-ess_chatbot_staging}"
 TARGET_REDIS_CONTAINER="${TARGET_REDIS_CONTAINER:-ess-redis-staging}"
@@ -49,6 +50,32 @@ NEIGHBOR_INVENTORY=(
   "rockyblog-app-1"
   "rockyblog-db-1"
 )
+
+# Write atomic JSON heartbeat for load generator verification barrier
+write_heartbeat() {
+  local status="$1"
+  local reason="${2:-}"
+  local now_ts
+  now_ts=$(date +%s 2>/dev/null || echo "0")
+  now_ts=$((now_ts * 1000))
+  local now_iso
+  now_iso=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  local hostname_val
+  hostname_val=$(hostname 2>/dev/null || echo "unknown")
+
+  cat <<EOF > "${HEARTBEAT_FILE}.tmp"
+{
+  "timestamp": ${now_ts},
+  "iso": "${now_iso}",
+  "hostname": "${hostname_val}",
+  "status": "${status}",
+  "reason": "${reason}",
+  "high_cpu_streak": ${HIGH_CPU_STREAK},
+  "high_error_streak": ${HIGH_ERROR_STREAK}
+}
+EOF
+  mv -f "${HEARTBEAT_FILE}.tmp" "${HEARTBEAT_FILE}" 2>/dev/null || true
+}
 
 # State trackers
 HIGH_CPU_STREAK=0
@@ -85,6 +112,7 @@ trigger_abort() {
   local trigger_code="$1"
   local details="$2"
   log_event "FATAL" "$trigger_code" "CIRCUIT BREAKER TRIPPED: $details. Aborting load test immediately!"
+  write_heartbeat "ABORTED" "$trigger_code: $details"
   terminate_test_runners
   echo "CIRCUIT_BREAKER_ABORT: $trigger_code - $details" > /tmp/stage3_abort_signal
   exit 1
@@ -247,6 +275,7 @@ check_application_errors() {
 # MAIN SUPERVISOR LOOP
 # ------------------------------------------------------------------------------
 log_event "INFO" "WATCHDOG_STARTUP" "Stage 3 Safety Watchdog initialized. Monitoring 24 neighbors and 7 circuit breakers."
+write_heartbeat "HEALTHY" "Watchdog initialized"
 
 while true; do
   check_cpu_utilization
@@ -256,5 +285,6 @@ while true; do
   check_redis_memory
   check_disk_space
   check_application_errors
+  write_heartbeat "HEALTHY" "All systems within safety bounds"
   sleep 1
 done
